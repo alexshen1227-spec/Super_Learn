@@ -9,7 +9,8 @@ import { buildContentIndex } from '../../content/registry'
 import { dueReviews } from '../../engine/scheduler'
 import type { BucketId, ItemTemplate } from '../../domain/types'
 import { BUCKET_BY_ID } from '../../domain/types'
-import { Button, Card, Chip, EmptyState, HeaderBar, Modal, SectionTitle } from '../components'
+import { Button, Card, Chip, DifficultyBadge, DifficultyGuide, EmptyState, HeaderBar, Modal, SectionTitle } from '../components'
+import { DIFFICULTY_INFO } from '../../content/difficulty'
 import { KB_BY_SKILL } from '../../content/kb'
 import { openRepairTargets } from '../../engine/errors'
 
@@ -65,7 +66,7 @@ export function Practice() {
               onClick={() => go({ name: 'session', launch: { kind: 'single', templateId: t.id } })}
             >
               <span className="text-[14px] font-medium truncate">{t.name}</span>
-              <Chip tone="neutral">{'●'.repeat(t.difficulty)}</Chip>
+              <DifficultyBadge difficulty={t.difficulty} />
             </button>
           ))}
         </div>
@@ -153,6 +154,8 @@ function BrowseSheet({ bucket, onClose }: { bucket: BucketId | null; onClose: ()
     .sort((a, b) => a.difficulty - b.difficulty || a.name.localeCompare(b.name))
   return (
     <Modal open={true} onClose={onClose} title={BUCKET_BY_ID[bucket].name} wide>
+      <DifficultyGuide />
+      <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mt-4 mb-2">Filter by difficulty</p>
       <div className="flex gap-1.5 mb-3 flex-wrap">
         {([0, 1, 2, 3, 4, 5] as const).map((d) => (
           <button
@@ -160,9 +163,11 @@ function BrowseSheet({ bucket, onClose }: { bucket: BucketId | null; onClose: ()
             key={d}
             onClick={() => setDiff(d)}
             aria-pressed={diff === d}
+            aria-label={d === 0 ? 'All difficulties' : `${d} star ${DIFFICULTY_INFO[d].name}`}
+            title={d === 0 ? 'All difficulties' : DIFFICULTY_INFO[d].description}
             className={`min-h-11 px-3 rounded-full border text-[13px] font-medium ${diff === d ? 'bg-ink text-bg border-ink' : 'bg-surface border-line text-muted'}`}
           >
-            {d === 0 ? 'All' : '●'.repeat(d)}
+            {d === 0 ? 'All' : `${d}★`}
           </button>
         ))}
       </div>
@@ -180,7 +185,7 @@ function BrowseSheet({ bucket, onClose }: { bucket: BucketId | null; onClose: ()
             <div className="flex items-center justify-between gap-2">
               <span className="font-medium text-[14px]">{t.name}</span>
               <span className="flex items-center gap-1.5 shrink-0">
-                <Chip tone="neutral">{'●'.repeat(t.difficulty)}</Chip>
+                <DifficultyBadge difficulty={t.difficulty} showName />
                 <Chip tone="neutral">~{Math.round(t.minutes)}m</Chip>
               </span>
             </div>

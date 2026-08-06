@@ -1,11 +1,11 @@
 /** Allocation, calibration, planner, placement, coach, puzzles, persistence. */
 import { describe, expect, it } from 'vitest'
-import type { AppState, AttemptEvent, BucketId, CheckIn } from '../domain/types'
+import type { AppState, AttemptEvent, BucketId, CheckIn, SkillEvidence } from '../domain/types'
 import { initialState } from '../domain/types'
 import { allocationReport, relativeDebt } from './allocation'
 import { brierScore, calibrationBands, calibrationGap, highConfidenceErrors } from './calibration'
 import { deriveEvidence } from './mastery'
-import { buildChallengePlan, buildFocusPlan, buildMixedReviewPlan, buildSessionPlan, estimatedPlanMinutes, prereqsMet, scoreSkills } from './planner'
+import { buildChallengePlan, buildFocusPlan, buildMixedReviewPlan, buildSessionPlan, estimatedPlanMinutes, prereqsMet, scoreSkills, targetDifficulty } from './planner'
 import { applyProbe, nextProbe, PLACEMENT_MAX_ITEMS, startPlacement, summarizePlacement, MATH_LADDER } from './placement'
 import { activityIntake, coachBeliefs, findBottleneck, todayInsight, weeklyObjective } from './coach'
 import { assignmentCorrect, countSolutions, puzzleValid } from './logicGrid'
@@ -305,17 +305,33 @@ describe('placement follow-ups', () => {
   })
 })
 
+describe('five-level difficulty routing', () => {
+  it('moves retained and transferred skills into advanced and expert work', () => {
+    const base: SkillEvidence = {
+      skillId: 'o-obsinf', state: 'unseen', bestState: 'unseen', needsReview: false, exposure: 0,
+      guidedSuccesses: 0, independentForms: [], retainedAt: null, transferredAt: null,
+      lastCorrectAt: null, lastAttemptAt: null, lastOutcomeCorrect: null, recentMisses: 0,
+      blockedByMisconception: false, hintDependence: null, review: null, attempts: 0,
+    }
+    expect(targetDifficulty({ ...base, state: 'independent', bestState: 'independent' }, 'ok', false)).toBe(3)
+    expect(targetDifficulty({ ...base, state: 'retained', bestState: 'retained' }, 'ok', false)).toBe(4)
+    expect(targetDifficulty({ ...base, state: 'transferred', bestState: 'transferred' }, 'ok', false)).toBe(5)
+    expect(targetDifficulty({ ...base, state: 'transferred', bestState: 'transferred' }, 'ok', true)).toBe(3)
+  })
+})
+
 describe('coach-tuned allocations', () => {
-  it('boosts a deadline bucket, floors everything at 13 weight points, and discloses', async () => {
+  it('boosts a deadline bucket, preserves a true 5% floor, and discloses', async () => {
     const { tuneTargets } = await import('./allocationPlus')
     const s = stateWith([])
     s.deadlines = [{ id: 'd', title: 'Physics quiz', dateISO: new Date(NOW + 3 * DAY).toISOString().slice(0, 10), bucket: 'physics', note: '' }]
     const tuned = tuneTargets(s, deriveEvidence([], NOW), DEFAULT_INDEX, NOW)
     expect(tuned.tuned).toBe(true)
     expect(tuned.targets.physics).toBe(s.settings.allocations.physics + 8)
+    expect(Object.values(tuned.targets).reduce((sum, value) => sum + value, 0)).toBe(100)
     expect(tuned.notes.join(' ')).toContain('Physics quiz')
     for (const v of Object.values(tuned.targets)) {
-      expect(v).toBeGreaterThanOrEqual(13)
+      expect(v).toBeGreaterThanOrEqual(5)
     }
   })
   it('boosts buckets with piled-up due reviews', async () => {
@@ -546,8 +562,9 @@ describe('export / import / sanitize', () => {
       expect(evil.state.sessions.length).toBe(0)
       expect(evil.state.profile.name).toBe('')
       expect(evil.state.profile.sessionMinutes).toBe(30)
-      expect(evil.state.settings.allocations.math).toBe(initialState().settings.allocations.math)
-      expect(evil.state.settings.allocations.physics).toBe(13)
+      expect(evil.state.settings.allocations.math).toBeGreaterThanOrEqual(5)
+      expect(evil.state.settings.allocations.physics).toBe(5)
+      expect(Object.values(evil.state.settings.allocations).reduce((sum, value) => sum + value, 0)).toBe(100)
       expect('bogus' in evil.state.settings.allocations).toBe(false)
     }
   })

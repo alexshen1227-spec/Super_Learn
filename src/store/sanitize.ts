@@ -28,13 +28,13 @@ import { localDateISO } from '../engine/time'
 import {
   BUCKETS,
   DEFAULT_ALLOCATIONS,
-  MIN_ALLOCATION_WEIGHT,
   STATE_VERSION,
   defaultProfile,
   defaultSettings,
   initialState,
 } from '../domain/types'
 import { validatePack } from '../engine/contentSchema'
+import { normalizeAllocationPercentages } from '../engine/allocationTargets'
 
 const BUCKET_IDS = new Set<string>(BUCKETS.map((b) => b.id))
 const MODES = new Set<AttemptMode>(['guided', 'independent', 'review', 'transfer', 'placement', 'exam'])
@@ -87,7 +87,7 @@ function sanitizeSettings(raw: unknown): AppSettings {
   if (typeof s.allocations === 'object' && s.allocations !== null) {
     for (const [k, v] of Object.entries(s.allocations as Record<string, unknown>)) {
       if (BUCKET_IDS.has(k)) {
-        allocations[k as BucketId] = num(v, MIN_ALLOCATION_WEIGHT, 100, DEFAULT_ALLOCATIONS[k as BucketId])
+        allocations[k as BucketId] = num(v, 0, 100, DEFAULT_ALLOCATIONS[k as BucketId])
       }
     }
   }
@@ -95,7 +95,7 @@ function sanitizeSettings(raw: unknown): AppSettings {
   return {
     theme: ['light', 'dark', 'system'].includes(s.theme as string) ? (s.theme as AppSettings['theme']) : d.theme,
     textSpacing: bool(s.textSpacing, d.textSpacing),
-    allocations,
+    allocations: normalizeAllocationPercentages(allocations),
     coachManagedAllocations: bool(s.coachManagedAllocations, d.coachManagedAllocations),
     notifications: bool(s.notifications, d.notifications),
     confidencePrompts: ['normal', 'minimal'].includes(s.confidencePrompts as string)

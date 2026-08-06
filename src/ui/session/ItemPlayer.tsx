@@ -12,7 +12,7 @@ import { describeAnswer, validate, validatorName } from '../../engine/validate'
 import type { ContentIndex } from '../../engine/content-index'
 import { KB_BY_SKILL } from '../../content/kb'
 import type { ActivityRecord } from '../../store/draft'
-import { Button, Card, Chip, Modal } from '../components'
+import { Button, Card, Chip, DifficultyBadge, Modal } from '../components'
 import { Rich } from '../richtext'
 import { IconFlag, IconHint } from '../icons'
 import { useStore } from '../../store/store'
@@ -245,6 +245,7 @@ export function ItemPlayer({
       <div className="flex items-center justify-between mt-4 mb-1">
         <div className="flex items-center gap-2 flex-wrap">
           <Chip tone="neutral">{item.title}</Chip>
+          <DifficultyBadge difficulty={template.difficulty} showName />
           {parts ? <Chip tone="accent">part {partIndex + 1}/{parts.length}</Chip> : null}
           {mode === 'review' ? <Chip tone="warn">review</Chip> : mode === 'transfer' ? <Chip tone="good">transfer</Chip> : null}
           {twinItem ? <Chip tone="accent">twin problem</Chip> : null}

@@ -100,11 +100,15 @@ export function pickSeed(template: ItemTemplate, used: Set<string>): number {
 /** Target item difficulty for a skill's current evidence. */
 export function targetDifficulty(ev: SkillEvidence, energy: CheckIn['energy'], conservative: boolean): number {
   const base =
-    stateRank(ev.state) >= stateRank('independent')
-      ? 3
-      : ev.state === 'guided'
-        ? 2
-        : 1.5
+    ev.state === 'transferred'
+      ? 5
+      : ev.state === 'retained'
+        ? 4
+        : ev.state === 'independent'
+          ? 3
+          : ev.state === 'guided'
+            ? 2
+            : 1.5
   const adjusted =
     base + (energy === 'high' && !conservative ? 0.5 : 0) - (energy === 'low' ? 0.5 : 0) - (ev.recentMisses >= 2 ? 1 : 0)
   return Math.max(1, Math.min(conservative ? 3 : 5, adjusted))
@@ -655,7 +659,7 @@ export function buildChallengePlan(ctx: PlannerContext): SessionPlan {
     cursor++
     guard++
     const hard = (index.bySkill.get(ev.skillId) ?? []).filter((t) => t.difficulty >= 3)
-    const picks = pickTemplates(hard, 4, 99, templateUse)
+    const picks = pickTemplates(hard, 4.5, 99, templateUse)
     if (!picks.length) continue
     const reusable = picks.filter((t) => t.variants > 1)
     const template = picks[round] ?? (reusable.length ? reusable[round % reusable.length] : null)

@@ -5,6 +5,7 @@ import type { SkillState } from '../domain/types'
 import { STATE_LABEL } from '../engine/mastery'
 import { useNav } from './nav'
 import { IconSettings } from './icons'
+import { DIFFICULTY_INFO, difficultyInfo, type Difficulty } from '../content/difficulty'
 
 export function Button({
   children,
@@ -70,6 +71,44 @@ export function Chip({ children, tone = 'neutral', className = '' }: { children:
     <span className={`inline-flex items-center gap-1 text-xs font-medium border rounded-full px-2.5 py-1 whitespace-nowrap ${tones[tone]} ${className}`}>
       {children}
     </span>
+  )
+}
+
+export function DifficultyBadge({ difficulty, showName = false }: { difficulty: number; showName?: boolean }) {
+  const info = difficultyInfo(difficulty)
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-xs font-medium border rounded-full px-2.5 py-1 whitespace-nowrap bg-surface2 text-muted border-line"
+      title={`${info.level} of 5 — ${info.name}: ${info.description}`}
+      aria-label={`Difficulty ${info.level} of 5, ${info.name}. ${info.description}`}
+    >
+      <span className="font-mono tracking-[-0.08em] text-warn" aria-hidden>
+        {'★'.repeat(info.level)}{'☆'.repeat(5 - info.level)}
+      </span>
+      {showName ? <span>{info.name}</span> : null}
+    </span>
+  )
+}
+
+export function DifficultyGuide({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className="rounded-xl border border-line bg-surface2 px-3.5 py-3">
+      <p className="text-[12px] font-semibold text-muted uppercase tracking-wide">Difficulty measures task complexity</p>
+      <p className="text-[11px] text-faint mt-0.5 leading-snug">
+        Stars are not grades or mastery. The coach chooses near your current frontier; accuracy comes before speed.
+      </p>
+      <div className={`${compact ? 'flex flex-wrap gap-x-3 gap-y-1.5' : 'grid sm:grid-cols-2 gap-x-4 gap-y-2'} mt-2.5`}>
+        {([1, 2, 3, 4, 5] as Difficulty[]).map((level) => (
+          <div key={level} className="flex items-start gap-2 min-w-0">
+            <span className="font-mono text-[11px] text-warn whitespace-nowrap" aria-hidden>{'★'.repeat(level)}{'☆'.repeat(5 - level)}</span>
+            <span className="text-[11px] leading-snug">
+              <strong className="font-semibold">{DIFFICULTY_INFO[level].name}</strong>
+              {compact ? null : <span className="text-faint"> — {DIFFICULTY_INFO[level].description}</span>}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 

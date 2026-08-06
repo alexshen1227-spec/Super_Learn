@@ -219,7 +219,7 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
             summary: tunedLine.replace('Balance tuned: ', 'Targets tuned: '),
             evidence: ['Your base targets in Settings are untouched; tuning recomputes from live evidence each session.'],
             confidence: 'high',
-            wouldChange: 'Passing the deadline or clearing the due reviews drifts targets back to your base. A 13-point weight floor protects every area either way.',
+            wouldChange: 'Passing the deadline or clearing the due reviews drifts targets back to your base. A true 5% floor protects every area either way.',
           },
         })
       }

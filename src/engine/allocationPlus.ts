@@ -8,25 +8,26 @@
  * evidence each time, so they decay naturally).
  *
  * Hard guarantees ("it won't let you forget stuff"):
- *  - every bucket keeps a ≥13-point weight floor — nothing starves;
+ *  - every bucket keeps a true ≥5% share — nothing starves;
  *  - due reviews are pulled into the warm-up REGARDLESS of allocation, and a
  *    bucket whose reviews pile up gets a temporary boost here as well;
  *  - all tuning is visible: notes ship with the targets and reach the
  *    decision log and the balance cards.
  */
 import type { AppState, BucketId, SkillEvidence } from '../domain/types'
-import { BUCKETS, BUCKET_BY_ID, MIN_ALLOCATION_WEIGHT } from '../domain/types'
+import { BUCKET_BY_ID } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { allocationReport, type AllocationReport } from './allocation'
 import { dueReviews } from './scheduler'
 import { calendarDaysUntil } from './time'
+import { normalizeAllocationPercentages, rebalanceAllocationPercentage } from './allocationTargets'
 
 const DEADLINE_BOOST = 8
 const REVIEW_BOOST_PER_2 = 2
 const REVIEW_BOOST_CAP = 6
 
 export interface TunedAllocation {
-  /** Relative target weights (same scale as settings.allocations). */
+  /** Real target percentages summing to exactly 100. */
   targets: Record<BucketId, number>
   tuned: boolean
   notes: string[]
@@ -38,7 +39,7 @@ export function tuneTargets(
   index: ContentIndex,
   now: number,
 ): TunedAllocation {
-  const base = { ...state.settings.allocations }
+  const base = normalizeAllocationPercentages(state.settings.allocations)
   if (!state.settings.coachManagedAllocations) {
     return { targets: base, tuned: false, notes: [] }
   }
@@ -52,9 +53,11 @@ export function tuneTargets(
     .sort((a, b) => a.days - b.days)[0]
   if (deadline && deadline.bucket) {
     const boost = deadline.days <= 5 ? DEADLINE_BOOST : DEADLINE_BOOST / 2
-    targets[deadline.bucket] += boost
+    const before = targets[deadline.bucket]
+    Object.assign(targets, rebalanceAllocationPercentage(targets, deadline.bucket, before + boost))
+    const applied = targets[deadline.bucket] - before
     notes.push(
-      `${BUCKET_BY_ID[deadline.bucket].name} +${boost} points while “${deadline.title}” is ${deadline.days} day${deadline.days === 1 ? '' : 's'} out.`,
+      `${BUCKET_BY_ID[deadline.bucket].name} +${applied} points while “${deadline.title}” is ${deadline.days} day${deadline.days === 1 ? '' : 's'} out.`,
     )
   }
 
@@ -67,23 +70,17 @@ export function tuneTargets(
   for (const [bucket, count] of dueByBucket) {
     const boost = Math.min(REVIEW_BOOST_CAP, Math.floor(count / 2) * REVIEW_BOOST_PER_2)
     if (boost > 0) {
-      targets[bucket] += boost
-      notes.push(`${BUCKET_BY_ID[bucket].name} +${boost} while ${count} review${count === 1 ? ' is' : 's are'} due.`)
+      const before = targets[bucket]
+      Object.assign(targets, rebalanceAllocationPercentage(targets, bucket, before + boost))
+      const applied = targets[bucket] - before
+      notes.push(`${BUCKET_BY_ID[bucket].name} +${applied} while ${count} review${count === 1 ? ' is' : 's are'} due.`)
     }
   }
 
-  // Floor every bucket so no area can be starved into forgetting.
-  for (const b of BUCKETS) {
-    if (targets[b.id] < MIN_ALLOCATION_WEIGHT) targets[b.id] = MIN_ALLOCATION_WEIGHT
-  }
-
-  const tuned = notes.length > 0 || BUCKETS.some((b) => targets[b.id] !== base[b.id])
-  if (tuned && notes.length === 0) {
-    notes.push(`Floors applied so every area keeps at least ${MIN_ALLOCATION_WEIGHT} weight points.`)
-  }
+  const tuned = notes.length > 0
   if (tuned) notes.push('Temporary — targets drift back to your base as deadlines pass and reviews clear.')
-  // allocationReport normalizes by the sum, so boosted weights trade off
-  // against everything else proportionally — no manual rebalancing needed.
+  // Boosts have already rebalanced the exact 100% mix, so no category can be
+  // squeezed below its floor and no manual cleanup is needed downstream.
   return { targets, tuned, notes }
 }
 

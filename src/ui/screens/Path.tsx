@@ -12,7 +12,7 @@ import { evidenceFor, stateRank, STATE_LABEL } from '../../engine/mastery'
 import { prereqsMet } from '../../engine/planner'
 import type { BucketId, SkillNode } from '../../domain/types'
 import { BUCKET_BY_ID } from '../../domain/types'
-import { Button, Card, Chip, Divider, HeaderBar, Modal, ProgressBar, Row, StateBadge } from '../components'
+import { Button, Card, Chip, DifficultyBadge, Divider, HeaderBar, Modal, ProgressBar, Row, StateBadge } from '../components'
 import { Rich } from '../richtext'
 import { PATHS, pathProgress, type PathDef } from '../../content/paths'
 import { resourcesFor } from '../../content/resources'
@@ -253,14 +253,19 @@ function PathDetailSheet({
       ),
     ).values(),
   ]
-  const autoGradedForms = pathTemplates
-    .filter((template) => {
+  const autoGradedTemplates = pathTemplates.filter((template) => {
       const item = template.generate(0)
       if (item.kind === 'single') return Boolean(item.answer && item.answer.type !== 'rubric')
       if (item.kind === 'multi') return Boolean(item.parts?.length && item.parts.every((part) => part.answer.type !== 'rubric'))
       return true
     })
-    .reduce((sum, template) => sum + template.variants, 0)
+  const autoGradedForms = autoGradedTemplates.reduce((sum, template) => sum + template.variants, 0)
+  const difficultyForms = ([1, 2, 3, 4, 5] as const).map((difficulty) => ({
+    difficulty,
+    forms: autoGradedTemplates
+      .filter((template) => template.difficulty === difficulty)
+      .reduce((sum, template) => sum + template.variants, 0),
+  }))
   return (
     <Modal open onClose={onClose} title={path.name} wide>
       <div className="flex items-center gap-3">
@@ -300,6 +305,19 @@ function PathDetailSheet({
             </li>
           ))}
         </ol>
+      </div>
+
+      <div className="mt-4">
+        <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-1.5">Difficulty ladder</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+          {difficultyForms.map(({ difficulty, forms }) => (
+            <div key={difficulty} className="flex items-center justify-between gap-2 rounded-xl bg-surface2 px-2.5 py-2">
+              <DifficultyBadge difficulty={difficulty} showName />
+              <span className="text-[11px] font-mono text-faint">{forms} forms</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-faint mt-1.5">The coach moves up only when evidence supports it; five stars means synthesis, never speed.</p>
       </div>
 
       <div className="mt-4">

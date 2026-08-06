@@ -9,7 +9,7 @@ import { useNav } from '../nav'
 import { exportState, importState } from '../../engine/exportImport'
 import { storageInfo, type StorageInfo } from '../../store/persist'
 import { validatePack } from '../../engine/contentSchema'
-import { BUCKETS, MIN_ALLOCATION_WEIGHT, type BucketId, type Deadline } from '../../domain/types'
+import { BUCKETS, MIN_ALLOCATION_PERCENT, type BucketId, type Deadline } from '../../domain/types'
 import { uid } from '../../engine/rng'
 import { Button, Card, Chip, Confirm, Divider, Modal, Row, SectionTitle, Segmented, Toggle } from '../components'
 import { IconBack } from '../icons'
@@ -18,6 +18,7 @@ import { requestNotificationPermission } from '../notify'
 import { PackAuthor } from '../PackAuthor'
 import { SKILLS } from '../../content/skills'
 import { addLocalDaysISO, localDateISO } from '../../engine/time'
+import { rebalanceAllocationPercentage } from '../../engine/allocationTargets'
 
 export function SettingsScreen() {
   const { state, dispatch, enterSample, exitSample, resetAll } = useStore()
@@ -171,19 +172,19 @@ export function SettingsScreen() {
         )}
       </Card>
 
-      <SectionTitle>Practice emphasis weights</SectionTitle>
+      <SectionTitle>Practice balance</SectionTitle>
       <Card className="p-4">
         <p className="text-[13px] text-muted mb-3">
-          These are relative weights, not literal percentages. The app normalizes them into a 100% practice mix.
-          Every area stays at 13 points or higher; larger numbers receive proportionally more time. Math starts higher
-          because middle-grade mastery is a strong lever on later readiness. Current weight total: {allocTotal}.
+          Real percentages that always total 100%. Every area keeps at least 5%, reserving half the program for breadth
+          while the other half can follow your priorities. Moving one slider rebalances the others automatically.
+          Math starts higher because middle-grade mastery is a strong lever on later readiness.
         </p>
         <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-line">
           <div>
             <p className="text-[14px] font-medium">Let the coach tune the balance</p>
             <p className="text-[12px] text-muted leading-snug">
               Temporary, disclosed nudges around your base — toward a near deadline or a bucket with piled-up reviews.
-              Never below a 13-point floor for any area, and reviews surface in sessions regardless, so nothing gets
+              Never below a true 5% share for any area, and reviews surface in sessions regardless, so nothing gets
               forgotten. Off = your sliders rule exactly.
             </p>
           </div>
@@ -199,27 +200,23 @@ export function SettingsScreen() {
               <span className="text-[13px] w-24 shrink-0 font-medium">{b.short}</span>
               <input
                 type="range"
-                min={MIN_ALLOCATION_WEIGHT}
-                max={60}
+                min={MIN_ALLOCATION_PERCENT}
+                max={55}
                 value={allocations[b.id]}
-                aria-label={`${b.name} emphasis weight`}
+                aria-label={`${b.name} target percentage`}
                 onChange={(e) =>
                   dispatch({
                     type: 'update-settings',
-                    settings: { allocations: { ...allocations, [b.id]: Number(e.target.value) } as Record<BucketId, number> },
+                    settings: { allocations: rebalanceAllocationPercentage(allocations, b.id, Number(e.target.value)) },
                   })
                 }
                 className="flex-1"
               />
-              <span
-                className="text-[12px] font-mono text-muted w-[5.5rem] text-right"
-                title={`${Math.round((allocations[b.id] / allocTotal) * 100)}% of the normalized mix`}
-              >
-                {allocations[b.id]} pts · {Math.round((allocations[b.id] / allocTotal) * 100)}%
-              </span>
+              <span className="text-[12px] font-mono text-muted w-9 text-right">{allocations[b.id]}%</span>
             </div>
           ))}
         </div>
+        <p className="text-[11px] text-faint mt-3 text-right">Total: {allocTotal}%</p>
       </Card>
 
       <SectionTitle>Appearance & accessibility</SectionTitle>

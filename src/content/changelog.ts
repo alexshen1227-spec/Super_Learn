@@ -11,13 +11,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.8',
+    date: '2026-08-06',
+    title: 'A Real Difficulty Ladder',
+    points: [
+      'Practice balance now uses real percentages that always total 100%, with a hard 5% minimum for every category. Learner slider changes and temporary coach boosts rebalance the remaining flexible share without breaking any floor.',
+      'The four thinking Paths gain 12 new question families and 100 more deterministic variants. Every Path now has automatically graded practice at all five difficulty levels, from direct foundations through multi-constraint expert synthesis.',
+      'The five-star system is defined everywhere it appears: Foundation, Guided, Independent, Advanced, and Expert. Stars measure reasoning complexity, not learner worth or speed, and active questions display both stars and the level name.',
+      'Difficulty filters use readable numbered stars, activity cards expose level names, and the complete guide explains what changes from one level to the next.',
+    ],
+  },
+  {
     version: '1.7',
     date: '2026-08-06',
     title: 'Four Paths, Fully Checkable',
     points: [
       'Each of the Observer, Investigator, Strategist, and Guardian Paths gains four new deterministic question families: 126 additional variants spanning exact recall, evidence boundaries, logic, Bayes, separating tests, payoff tables, dependency planning, expected value, estimation, ethical strategy, pressure defense, boundaries, and de-escalation.',
       'Every new Path question is automatically graded from an authored or computed answer key. A release-blocking test proves every correct response passes and a deliberately wrong response fails across all 126 variants.',
-      'Practice emphasis now has a 13-point minimum for every category. The interface calls these relative weights and shows the normalized percentage, avoiding the impossible claim that ten categories can each be at least 13% of one 100% total.',
+      'Practice emphasis initially introduced a protected breadth floor; version 1.8 replaces its relative weights with a clearer true-percentage model.',
       'Mobile sheets regain full bottom padding on every phone, including devices without a notch, and bottom navigation gets edge spacing so actions and focus rings no longer sit outside their boxes.',
     ],
   },
@@ -62,7 +73,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Four named Paths — Observer, Investigator, Strategist, Guardian — each with a visible mastery arc, its own code of practice, and per-path progress drawn from real evidence.',
       'Deeper banks everywhere: game theory (dominant strategies, commitment, coordination), algebra and physics depth, and new lab activities across every archetype — plus curated "go deeper" links (optional, online-only).',
       'The Coach shows exactly what it is counting: a live intake of every attempt — daily sessions, Practice launches, reviews, puzzles, case files — all visibly feeding one evidence log, with beliefs that acknowledge puzzle and self-assessed work honestly.',
-      'The coach can tune practice-emphasis weights itself (yours to switch off): bounded, disclosed nudges for deadlines and review pressure, never below a 13-point floor, always drifting back to your base.',
+      'The coach can tune practice balance itself (yours to switch off): bounded, disclosed nudges for deadlines and review pressure, always drifting back to your base.',
       'Quality of life: Enter submits, auto-focused answers, Practice search, batch-safe inputs, focus-trapped dialogs, live-region feedback, ghost-draft and sample-mode isolation fixes, and installed-app update checks on resume and network-regain.',
       'Fixed along the way: Case File self-assessments scoring zero, toggle knobs escaping their track, and a settings gear that finally looks like one.',
     ],

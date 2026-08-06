@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react'
 import type { AnswerSpec, BucketId, ContentPackJson, PackItemJson } from '../domain/types'
 import { validatePack } from '../engine/contentSchema'
 import { validate, correctResponse } from '../engine/validate'
+import { DIFFICULTY_INFO } from '../content/difficulty'
 import { SKILLS } from '../content/skills'
 import { useStore } from '../store/store'
 import { Button, Card, Chip, Modal, Segmented } from './components'
@@ -170,7 +171,7 @@ export function PackAuthor({ open, onClose }: { open: boolean; onClose: () => vo
             <select aria-label="Difficulty" value={draft.difficulty} onChange={(e) => setDraft({ ...draft, difficulty: Number(e.target.value) as DraftItem['difficulty'] })} className={inputCls}>
               {[1, 2, 3, 4, 5].map((d) => (
                 <option key={d} value={d}>
-                  difficulty {d}
+                  {d}★ — {DIFFICULTY_INFO[d as DraftItem['difficulty']].name}
                 </option>
               ))}
             </select>
