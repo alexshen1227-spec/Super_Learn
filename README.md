@@ -8,6 +8,8 @@ observation, deduction, strategy, influence-defense, and learning-how-to-learn.
 **North star:** delayed, independent, transferable learning per focused minute.
 Not streaks, not screen time, not a fictional IQ number.
 
+**Live app:** https://alexshen1227-spec.github.io/Super_Learn/ — open on your phone and “Add to Home Screen / Install app” for the full offline experience.
+
 ## Run it
 
 ```bash
