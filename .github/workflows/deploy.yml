@@ -45,3 +45,7 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # This account's Pages CDN propagation runs slow; the default 10-min
+          # poll window reports false failures while the deploy still lands.
+          timeout: 1800000
