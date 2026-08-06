@@ -74,9 +74,18 @@ function Shell() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisterError: () => undefined,
-    // Long-lived installed-app tabs still learn about new builds: check hourly.
+    // Installed-app update coverage: phones rarely "navigate", so besides the
+    // launch-time check we re-check when the app resumes from background,
+    // when the network comes back, and hourly while running. The banner (and
+    // the never-mid-session rule) handles the rest identically to a tab.
     onRegisteredSW: (_url, registration) => {
-      if (registration) setInterval(() => void registration.update(), 60 * 60 * 1000)
+      if (!registration) return
+      const check = () => void registration.update().catch(() => undefined)
+      setInterval(check, 60 * 60 * 1000)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') check()
+      })
+      window.addEventListener('online', check)
     },
   })
 
