@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5"
+    />
+    <meta name="description" content="Axiom Lab — a private, offline-first adaptive learning system for math, physics, coding, reasoning, and thinking skills." />
+    <meta name="theme-color" content="#0d1420" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f6f4ee" media="(prefers-color-scheme: light)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Axiom Lab" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Axiom Lab</title>
+    <style>
+      /* Pre-hydration boot styles: match app background to avoid a flash. */
+      html { background: #f6f4ee; }
+      @media (prefers-color-scheme: dark) { html { background: #0d1420; } }
+      html.dark { background: #0d1420; }
+      html.light { background: #f6f4ee; }
+      #root:empty::after {
+        content: 'Axiom Lab';
+        position: fixed; inset: 0; display: grid; place-items: center;
+        font: 600 20px/1.2 system-ui, sans-serif; color: #8a94a6;
+        letter-spacing: 0.08em;
+      }
+    </style>
+    <script>
+      // Apply the saved theme before first paint. Tiny preference only —
+      // all structured data lives in IndexedDB.
+      try {
+        var t = localStorage.getItem('axiomlab.theme')
+        if (t === 'dark' || t === 'light') document.documentElement.classList.add(t)
+        else document.documentElement.classList.add(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      } catch (e) { document.documentElement.classList.add('dark') }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>Axiom Lab needs JavaScript. All data stays on your device.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

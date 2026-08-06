@@ -1,0 +1,121 @@
+/**
+ * Content authoring helpers. The cardinal rule: ANSWERS ARE COMPUTED from the
+ * generated values, never hand-typed, so a generator cannot drift out of sync
+ * with its own answer key. The content audit re-renders every template across
+ * many seeds and re-validates the computed answer through the real validator.
+ */
+import type {
+  AnswerSpec,
+  ItemKind,
+  ItemTemplate,
+  McqAnswer,
+  RenderedItem,
+} from '../domain/types'
+import { mulberry32, shuffle, type Rng } from '../engine/rng'
+
+export const PROV = 'Original — composed for Axiom Lab; answer computed by generator.'
+export const PROV_FIXED = 'Original — composed for Axiom Lab; solved independently during authoring.'
+
+export interface TplOpts {
+  id: string
+  name: string
+  skillIds: string[]
+  bucket: ItemTemplate['bucket']
+  difficulty: ItemTemplate['difficulty']
+  variants: number
+  minutes: number
+  kind?: ItemKind
+  transfer?: boolean
+  calibration?: boolean
+  provenance?: string
+  version?: number
+}
+
+export type SingleBody = Omit<RenderedItem, 'templateId' | 'version' | 'seed' | 'kind'>
+
+/** Define a template whose generator receives a seeded RNG. */
+export function tpl(opts: TplOpts, gen: (rng: Rng, seed: number) => SingleBody): ItemTemplate {
+  const version = opts.version ?? 1
+  return {
+    id: opts.id,
+    version,
+    kind: opts.kind ?? 'single',
+    name: opts.name,
+    skillIds: opts.skillIds,
+    bucket: opts.bucket,
+    difficulty: opts.difficulty,
+    variants: opts.variants,
+    minutes: opts.minutes,
+    ...(opts.transfer ? { transfer: true } : {}),
+    ...(opts.calibration ? { calibration: true } : {}),
+    provenance: opts.provenance ?? PROV,
+    generate: (seed: number): RenderedItem => {
+      // Variant-fold the seed so equal variants render identically (novelty
+      // tracking keys off seed % variants).
+      const folded = opts.variants > 0 ? seed % opts.variants : seed
+      const body = gen(mulberry32(folded * 2654435761 + 1013904223), folded)
+      return { templateId: opts.id, version, seed, kind: opts.kind ?? 'single', ...body }
+    },
+  }
+}
+
+/** Fixed (non-parameterized) item. */
+export function fixed(opts: Omit<TplOpts, 'variants'>, body: SingleBody): ItemTemplate {
+  return tpl({ ...opts, variants: 1, provenance: opts.provenance ?? PROV_FIXED }, () => body)
+}
+
+/** Build an MCQ from a correct string + distractors (deduped, shuffled). */
+export function mcq(rng: Rng, correct: string, distractors: string[]): McqAnswer {
+  const uniq: string[] = []
+  for (const d of distractors) {
+    if (d !== correct && !uniq.includes(d)) uniq.push(d)
+  }
+  const options = shuffle(rng, [correct, ...uniq.slice(0, 4)])
+  return { type: 'mcq', options, correct: options.indexOf(correct) }
+}
+
+export function gcd(a: number, b: number): number {
+  a = Math.abs(a)
+  b = Math.abs(b)
+  while (b) [a, b] = [b, a % b]
+  return a || 1
+}
+
+export function simplify(n: number, d: number): [number, number] {
+  const g = gcd(n, d)
+  const sign = d < 0 ? -1 : 1
+  return [(sign * n) / g, (sign * d) / g]
+}
+
+/** Display "n/d" (or integer when it reduces to one). */
+export function fracStr(n: number, d: number): string {
+  const [sn, sd] = simplify(n, d)
+  return sd === 1 ? String(sn) : `${sn}/${sd}`
+}
+
+export function money(v: number): string {
+  return `$${v.toFixed(2).replace(/\.00$/, '')}`
+}
+
+/** Round for display without float dust. */
+export function round(v: number, places = 2): number {
+  const f = 10 ** places
+  return Math.round(v * f) / f
+}
+
+export const numeric = (answer: number, extras: Partial<Extract<AnswerSpec, { type: 'numeric' }>> = {}): AnswerSpec => ({
+  type: 'numeric',
+  answer,
+  ...extras,
+})
+
+export const fraction = (n: number, d: number): AnswerSpec => {
+  const [sn, sd] = simplify(n, d)
+  return { type: 'fraction', n: sn, d: sd }
+}
+
+export const text = (accept: string[], placeholder?: string): AnswerSpec => ({
+  type: 'text',
+  accept,
+  ...(placeholder ? { placeholder } : {}),
+})

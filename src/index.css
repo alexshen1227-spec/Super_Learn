@@ -1,0 +1,187 @@
+@import 'tailwindcss';
+
+/* Dark-mode variant keyed off the html class set pre-paint in index.html. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Axiom Lab visual system — "quiet intelligence laboratory".
+ * Semantic tokens flip with the theme; components use tokens, not raw colors.
+ *   ink      body text            accent   information / interactive (cyan)
+ *   muted    secondary text       green    verified evidence only
+ *   faint    tertiary/labels      amber    uncertainty / caution
+ *   surface  card background     red      actual errors & safety only
+ */
+:root,
+html.light {
+  --c-bg: #f6f4ee;
+  --c-surface: #fffdf8;
+  --c-surface2: #efece2;
+  --c-surface3: #e7e3d6;
+  --c-border: #ddd8ca;
+  --c-border-strong: #c4bfae;
+  --c-ink: #1c2433;
+  --c-muted: #566074;
+  --c-faint: #8b93a5;
+  --c-accent: #0e7490;
+  --c-accent-strong: #155e75;
+  --c-accent-soft: #0e749018;
+  --c-green: #15803d;
+  --c-green-soft: #15803d16;
+  --c-amber: #b45309;
+  --c-amber-soft: #b4530916;
+  --c-red: #b91c1c;
+  --c-red-soft: #b91c1c14;
+  --c-overlay: #1c243370;
+  --shadow-card: 0 1px 2px #1c243310, 0 2px 8px #1c24330a;
+}
+html.dark {
+  --c-bg: #0d1420;
+  --c-surface: #141d2e;
+  --c-surface2: #1b2638;
+  --c-surface3: #223047;
+  --c-border: #273550;
+  --c-border-strong: #3a4a68;
+  --c-ink: #e9e7e2;
+  --c-muted: #a4aec3;
+  --c-faint: #6d7890;
+  --c-accent: #22d3ee;
+  --c-accent-strong: #67e8f9;
+  --c-accent-soft: #22d3ee1c;
+  --c-green: #4ade80;
+  --c-green-soft: #4ade801a;
+  --c-amber: #f5a524;
+  --c-amber-soft: #f5a5241a;
+  --c-red: #f87171;
+  --c-red-soft: #f871711a;
+  --c-overlay: #05080ea8;
+  --shadow-card: 0 1px 2px #00000040, 0 2px 10px #00000030;
+}
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-surface2: var(--c-surface2);
+  --color-surface3: var(--c-surface3);
+  --color-line: var(--c-border);
+  --color-line-strong: var(--c-border-strong);
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-faint: var(--c-faint);
+  --color-accent: var(--c-accent);
+  --color-accent-strong: var(--c-accent-strong);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-good: var(--c-green);
+  --color-good-soft: var(--c-green-soft);
+  --color-warn: var(--c-amber);
+  --color-warn-soft: var(--c-amber-soft);
+  --color-bad: var(--c-red);
+  --color-bad-soft: var(--c-red-soft);
+  --color-overlay: var(--c-overlay);
+  --font-sans: 'Inter Variable', system-ui, -apple-system, sans-serif;
+  --font-display: 'Space Grotesk Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Mono', monospace;
+  --shadow-card: var(--shadow-card);
+}
+
+html {
+  background: var(--c-bg);
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--c-ink);
+  background: var(--c-bg);
+  overscroll-behavior-y: none;
+  text-rendering: optimizeLegibility;
+}
+
+/* Readability option: extra letter/word/line spacing (a preference, not a cure). */
+html.spaced body {
+  letter-spacing: 0.02em;
+  word-spacing: 0.08em;
+}
+html.spaced p,
+html.spaced li {
+  line-height: 1.75;
+}
+
+/* Visible, consistent keyboard focus everywhere. */
+:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Respect reduced-motion at the CSS layer; JS checks the same media query. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Safe-area helpers for notched phones. */
+.pt-safe { padding-top: env(safe-area-inset-top, 0); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0); }
+
+/* Graph-paper motif, used sparingly (Today header, Path background). */
+.graph-paper {
+  background-image:
+    linear-gradient(var(--c-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--c-border) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Number inputs without spinners (answers are typed, not nudged). */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Range slider theming */
+input[type='range'] {
+  accent-color: var(--c-accent);
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.anim-in { animation: fade-in-up 0.22s ease-out both; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.anim-fade { animation: fade-in 0.18s ease-out both; }
+
+/* Session player: hide scrollbars on the scratchpad but keep it scrollable. */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-border-strong) transparent;
+}
+
+/* Skill-map connector lines are SVG; keep crisp on zoom. */
+.crisp { shape-rendering: crispEdges; }
+
+/* Buttons and interactive rows never show the mobile long-press callout. */
+button, a { -webkit-touch-callout: none; }
+
+/* KaTeX-free math: we render with plain HTML/monospace; sup/sub sizing. */
+sup, sub { font-size: 0.72em; }

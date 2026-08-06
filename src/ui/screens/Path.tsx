@@ -1,0 +1,391 @@
+/**
+ * Path: the skill map. Course → unit → skill with evidence states,
+ * prerequisite visibility, and honest "not enough evidence" defaults.
+ */
+import { useMemo, useState } from 'react'
+import { useEvidence, useStore } from '../../store/store'
+import { useNav } from '../nav'
+import { HeaderBar } from '../../App'
+import { COURSES } from '../../content/skills'
+import { buildContentIndex } from '../../content/registry'
+import { KB_BY_SKILL } from '../../content/kb'
+import { evidenceFor, stateRank, STATE_LABEL } from '../../engine/mastery'
+import { prereqsMet } from '../../engine/planner'
+import type { BucketId, SkillNode } from '../../domain/types'
+import { BUCKET_BY_ID } from '../../domain/types'
+import { Button, Card, Chip, Divider, Modal, ProgressBar, Row, StateBadge } from '../components'
+import { Rich } from '../richtext'
+import { PATHS, pathProgress, type PathDef } from '../../content/paths'
+import { resourcesFor } from '../../content/resources'
+
+const FILTERS: { id: 'all' | 'academic' | 'labs'; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'academic', label: 'Academic' },
+  { id: 'labs', label: 'Thinking labs' },
+]
+
+export function PathScreen() {
+  const { state } = useStore()
+  const evidence = useEvidence()
+  const { go } = useNav()
+  const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
+  const [filter, setFilter] = useState<'all' | 'academic' | 'labs'>('all')
+  const [openCourse, setOpenCourse] = useState<string | null>('math-foundations')
+  const [detail, setDetail] = useState<SkillNode | null>(null)
+  const [pathDetail, setPathDetail] = useState<PathDef | null>(null)
+
+  const isAcademic = (b: BucketId) => ['math', 'physics', 'coding', 'science'].includes(b)
+  const courses = COURSES.filter((c) =>
+    filter === 'all' ? true : filter === 'academic' ? isAcademic(c.bucket) : !isAcademic(c.bucket),
+  )
+
+  return (
+    <div>
+      <HeaderBar title="Path" subtitle="Your skill map — evidence, not vibes" />
+      <div className="flex gap-1.5 mt-2">
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            aria-pressed={filter === f.id}
+            className={`min-h-9 px-3.5 rounded-full border text-[13px] font-medium transition-colors ${
+              filter === f.id ? 'bg-ink text-bg border-ink' : 'bg-surface border-line text-muted'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {filter !== 'academic' ? (
+        <>
+          <p className="text-[11px] font-semibold text-faint uppercase tracking-widest mt-5 mb-2 px-1">The four paths</p>
+          <div className="grid grid-cols-2 gap-3">
+            {PATHS.map((p) => {
+              const prog = pathProgress(p, evidence)
+              return (
+                <Card key={p.id} className="p-4" onClick={() => setPathDetail(p)}>
+                  <PathEmblem path={p} size={26} />
+                  <p className="font-display font-semibold text-[15px] mt-2">{p.name}</p>
+                  <p className="text-[11px] text-faint italic leading-snug mt-0.5">{p.tagline}</p>
+                  <div className="mt-2.5 flex items-center gap-2">
+                    <div className="flex-1">
+                      <ProgressBar value={prog.progress} max={1} tone="accent" label={`${p.name} arc`} />
+                    </div>
+                    <span className="text-[10px] font-mono text-muted shrink-0">{prog.rankName}</span>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+        </>
+      ) : null}
+
+      <div className="mt-4 space-y-3 mb-6">
+        {courses.map((course) => {
+          const allSkills = course.units.flatMap((u) => u.skillIds)
+          const independent = allSkills.filter((id) => stateRank(evidenceFor(evidence, id).state) >= 3).length
+          const open = openCourse === course.id
+          return (
+            <Card key={course.id} className="overflow-hidden">
+              <button className="w-full text-left px-4 py-3.5 flex items-center gap-3" onClick={() => setOpenCourse(open ? null : course.id)} aria-expanded={open}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display font-semibold text-[16px]">{course.name}</h3>
+                    <Chip tone="neutral">{BUCKET_BY_ID[course.bucket].short}</Chip>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="flex-1">
+                      <ProgressBar value={independent} max={allSkills.length} tone="good" label={`${course.name} progress`} />
+                    </div>
+                    <span className="text-[11px] font-mono text-faint shrink-0">
+                      {independent}/{allSkills.length}
+                    </span>
+                  </div>
+                </div>
+                <span className={`text-faint transition-transform ${open ? 'rotate-90' : ''}`} aria-hidden>
+                  ›
+                </span>
+              </button>
+              {open ? (
+                <div className="border-t border-line">
+                  {course.units.map((unit) => (
+                    <div key={unit.id}>
+                      <p className="text-[11px] font-semibold text-faint uppercase tracking-widest px-4 pt-3 pb-1">{unit.name}</p>
+                      {unit.skillIds.map((id) => {
+                        const skill = index.skills.get(id)!
+                        const ev = evidenceFor(evidence, id)
+                        const unlocked = prereqsMet(skill, evidence, state)
+                        return (
+                          <Row
+                            key={id}
+                            onClick={() => setDetail(skill)}
+                            label={
+                              <span className={unlocked || ev.state !== 'unseen' ? '' : 'text-faint'}>
+                                {skill.name}
+                                {!unlocked && ev.state === 'unseen' ? ' 🔒' : ''}
+                              </span>
+                            }
+                            sub={ev.state === 'unseen' && !ev.attempts ? (unlocked ? 'ready to start' : 'prerequisites first') : undefined}
+                            right={<StateBadge state={ev.state} needsReview={ev.needsReview} />}
+                          />
+                        )
+                      })}
+                    </div>
+                  ))}
+                  <div className="h-2" />
+                </div>
+              ) : null}
+            </Card>
+          )
+        })}
+      </div>
+
+      <SkillDetail skill={detail} onClose={() => setDetail(null)} onPractice={(id) => { setDetail(null); go({ name: 'session', launch: { kind: 'focus', skillId: id } }) }} />
+      <PathDetailSheet
+        path={pathDetail}
+        onClose={() => setPathDetail(null)}
+        onTrain={(skillId) => {
+          setPathDetail(null)
+          go({ name: 'session', launch: { kind: 'focus', skillId } })
+        }}
+        onSkill={(s) => {
+          setPathDetail(null)
+          setDetail(s)
+        }}
+      />
+    </div>
+  )
+}
+
+function PathEmblem({ path, size }: { path: PathDef; size: number }) {
+  const color = path.hue === 'accent' ? 'var(--c-accent)' : path.hue === 'good' ? 'var(--c-green)' : path.hue === 'warn' ? 'var(--c-amber)' : 'var(--c-ink)'
+  const common = { fill: 'none', stroke: color, strokeWidth: 1.9, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+      {path.id === 'observer' ? (
+        <g {...common}>
+          <path d="M2.5 12c2.6-4.4 5.8-6.6 9.5-6.6s6.9 2.2 9.5 6.6c-2.6 4.4-5.8 6.6-9.5 6.6S5.1 16.4 2.5 12Z" />
+          <circle cx="12" cy="12" r="3" />
+        </g>
+      ) : path.id === 'investigator' ? (
+        <g {...common}>
+          <circle cx="10.2" cy="10.2" r="6" />
+          <path d="M14.6 14.6 21 21" />
+          <path d="M7.5 10.2h5.4M10.2 7.5v5.4" />
+        </g>
+      ) : path.id === 'strategist' ? (
+        <g {...common}>
+          <path d="M12 20.5v-6M12 14.5 6 8.5M12 14.5l6-6" />
+          <circle cx="6" cy="6.5" r="2.4" />
+          <circle cx="18" cy="6.5" r="2.4" />
+          <circle cx="12" cy="20.5" r="0.4" />
+        </g>
+      ) : (
+        <g {...common}>
+          <path d="M12 3 5 6v5c0 4.6 3 8 7 10 4-2 7-5.4 7-10V6l-7-3Z" />
+          <path d="M9 11.8l2.1 2.1 4-4.2" />
+        </g>
+      )}
+    </svg>
+  )
+}
+
+function PathDetailSheet({
+  path,
+  onClose,
+  onTrain,
+  onSkill,
+}: {
+  path: PathDef | null
+  onClose: () => void
+  onTrain: (skillId: string) => void
+  onSkill: (s: SkillNode) => void
+}) {
+  const { state } = useStore()
+  const evidence = useEvidence()
+  const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
+  if (!path) return null
+  const prog = pathProgress(path, evidence)
+  const nextSkill = index.skills.get(prog.nextStep)
+  return (
+    <Modal open onClose={onClose} title={path.name} wide>
+      <div className="flex items-center gap-3">
+        <PathEmblem path={path} size={34} />
+        <p className="text-[15px] italic text-muted">“{path.tagline}”</p>
+      </div>
+      <p className="text-[14px] text-muted leading-relaxed mt-3">{path.essence}</p>
+
+      <div className="mt-4">
+        <div className="flex items-baseline justify-between mb-1.5">
+          <p className="text-[12px] font-semibold text-muted uppercase tracking-wide">The arc</p>
+          <span className="text-[12px] font-mono text-accent">{prog.rankName}</span>
+        </div>
+        <div className="flex gap-1">
+          {path.ranks.map((r, i) => (
+            <div key={r} className="flex-1">
+              <div className={`h-1.5 rounded-full ${i <= prog.rankIndex ? 'bg-accent' : 'bg-surface3'}`} />
+              <p className={`text-[9px] mt-1 text-center truncate ${i <= prog.rankIndex ? 'text-accent font-medium' : 'text-faint'}`}>{r}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-faint mt-1.5">
+          Rank derives from live skill evidence — it can fall when skills need review. That is the system being honest,
+          not cruel.
+        </p>
+      </div>
+
+      <div className="mt-4">
+        <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-1.5">The code</p>
+        <ol className="space-y-1.5">
+          {path.code.map((c, i) => (
+            <li key={i} className="text-[14px] flex gap-2 leading-snug">
+              <span className="font-mono text-faint shrink-0">{i + 1}.</span> {c}
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="mt-4">
+        <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-1.5">Disciplines</p>
+        <div className="space-y-1">
+          {path.skillIds.map((id) => {
+            const skill = index.skills.get(id)
+            if (!skill) return null
+            const ev = evidence.get(id)
+            return (
+              <button key={id} className="w-full flex items-center justify-between gap-2 px-2 py-2 rounded-lg hover:bg-surface2 text-left" onClick={() => onSkill(skill)}>
+                <span className="text-[14px] font-medium">{skill.name}</span>
+                <StateBadge state={ev?.state ?? 'unseen'} needsReview={ev?.needsReview} />
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <Button className="w-full mt-4" onClick={() => onTrain(prog.nextStep)}>
+        Train the weakest discipline{nextSkill ? ` — ${nextSkill.name}` : ''}
+      </Button>
+    </Modal>
+  )
+}
+
+function SkillDetail({ skill, onClose, onPractice }: { skill: SkillNode | null; onClose: () => void; onPractice: (id: string) => void }) {
+  const { state } = useStore()
+  const evidence = useEvidence()
+  const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
+  if (!skill) return null
+  const ev = evidenceFor(evidence, skill.id)
+  const kb = KB_BY_SKILL.get(skill.id)
+  const unlocked = prereqsMet(skill, evidence, state)
+  const placementSignal = state.placement?.signals.find((s) => s.skillId === skill.id)
+  const templates = index.bySkill.get(skill.id) ?? []
+  return (
+    <Modal open={true} onClose={onClose} title={skill.name} wide>
+      <div className="flex items-center gap-2 flex-wrap">
+        <StateBadge state={ev.state} needsReview={ev.needsReview} />
+        {ev.bestState !== ev.state ? <Chip tone="neutral">once reached {STATE_LABEL[ev.bestState]}</Chip> : null}
+        {placementSignal ? <Chip tone={placementSignal.signal === 'gap' ? 'warn' : 'accent'}>placement: {placementSignal.signal}</Chip> : null}
+      </div>
+      <p className="text-muted text-[14px] mt-3 leading-relaxed">{skill.blurb}</p>
+
+      {kb ? (
+        <Card className="p-4 mt-3 bg-surface2">
+          <p className="text-[12px] font-semibold text-accent uppercase tracking-wide mb-1">Concept card</p>
+          <Rich text={kb.card} className="text-[14px]" />
+        </Card>
+      ) : null}
+
+      <div className="mt-4">
+        <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-1.5">Evidence</p>
+        {ev.attempts === 0 ? (
+          <p className="text-[13px] text-faint">
+            Not enough evidence — nothing measured yet.{' '}
+            {placementSignal ? 'The placement gave a routing signal, which practice will confirm or overturn.' : ''}
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13px]">
+            <span className="text-muted">Attempts</span>
+            <span className="font-mono">{ev.attempts}</span>
+            <span className="text-muted">Unaided first-try successes</span>
+            <span className="font-mono">{ev.independentForms.length} distinct form{ev.independentForms.length === 1 ? '' : 's'}</span>
+            <span className="text-muted">Guided successes</span>
+            <span className="font-mono">{ev.guidedSuccesses}</span>
+            <span className="text-muted">Delayed retention</span>
+            <span className="font-mono">{ev.retainedAt ? '✓ shown' : 'not yet shown'}</span>
+            <span className="text-muted">Novel transfer</span>
+            <span className="font-mono">{ev.transferredAt ? '✓ shown' : 'not yet shown'}</span>
+            {ev.hintDependence !== null ? (
+              <>
+                <span className="text-muted">Recent hint use</span>
+                <span className="font-mono">{Math.round(ev.hintDependence * 100)}%</span>
+              </>
+            ) : null}
+            {ev.review ? (
+              <>
+                <span className="text-muted">Next review</span>
+                <span className="font-mono">{new Date(ev.review.due).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              </>
+            ) : null}
+          </div>
+        )}
+        {ev.blockedByMisconception ? (
+          <p className="text-[13px] text-warn mt-2 bg-warn-soft border border-warn/30 rounded-lg px-3 py-2">
+            A high-confidence error is blocking promotion — one clean unaided solve clears it.
+          </p>
+        ) : null}
+        <p className="text-[11px] text-faint mt-2">
+          Promotion rules are heuristics, stated plainly: 2 unaided first-try successes on distinct forms → Independent;
+          a later success ≥48h after the previous → Retained; success on a novel-context item → Transferred.
+        </p>
+      </div>
+
+      {resourcesFor(skill).length ? (
+        <div className="mt-4">
+          <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-1.5">Go deeper (online)</p>
+          <div className="space-y-1.5">
+            {resourcesFor(skill).map((r) => (
+              <a
+                key={r.url + r.label}
+                href={r.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between gap-2 border border-line rounded-xl px-3.5 py-2.5 hover:border-line-strong transition-colors"
+              >
+                <span className="text-[13px] text-accent underline underline-offset-2">{r.label}</span>
+                <span className="text-[11px] text-faint shrink-0">{r.source} ↗</span>
+              </a>
+            ))}
+          </div>
+          <p className="text-[11px] text-faint mt-1.5">
+            External links — they need a connection and open outside the app. Everything else here works offline.
+          </p>
+        </div>
+      ) : null}
+
+      {skill.prereqs.length ? (
+        <div className="mt-4">
+          <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-1.5">Builds on</p>
+          <div className="flex flex-wrap gap-1.5">
+            {skill.prereqs.map((p) => {
+              const pev = evidenceFor(evidence, p)
+              const ok = stateRank(pev.state) >= 3 || state.placement?.signals.some((s) => s.skillId === p && (s.signal === 'ok' || s.signal === 'strong'))
+              return (
+                <Chip key={p} tone={ok ? 'good' : 'neutral'}>
+                  {index.skills.get(p)?.name ?? p}
+                </Chip>
+              )
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      <Divider />
+      <div className="pt-3 pb-1">
+        <Button className="w-full" onClick={() => onPractice(skill.id)} disabled={templates.length === 0}>
+          {unlocked || ev.state !== 'unseen' ? 'Practice this skill' : 'Practice anyway (prereqs pending)'}
+        </Button>
+      </div>
+    </Modal>
+  )
+}
