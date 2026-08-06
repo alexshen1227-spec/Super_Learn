@@ -13,6 +13,7 @@ import { Button, Card, Chip, DifficultyBadge, DifficultyGuide, EmptyState, Heade
 import { DIFFICULTY_INFO } from '../../content/difficulty'
 import { KB_BY_SKILL } from '../../content/kb'
 import { openRepairTargets } from '../../engine/errors'
+import { effectiveAllocation } from '../../engine/allocationPlus'
 
 const LAB_ORDER: BucketId[] = ['observer', 'investigator', 'strategist', 'puzzle', 'insight', 'meta']
 const ACADEMIC_ORDER: BucketId[] = ['math', 'physics', 'coding', 'science']
@@ -52,6 +53,10 @@ export function Practice() {
   const authenticWork = useMemo(
     () => [...index.templates.values()].filter((t) => t.authentic).sort((a, b) => b.minutes - a.minutes || a.name.localeCompare(b.name)),
     [index],
+  )
+  const effectiveTargets = useMemo(
+    () => effectiveAllocation(state, evidence, index, Date.now()).targets,
+    [state, evidence, index],
   )
 
   return (
@@ -125,6 +130,7 @@ export function Practice() {
       {workOpen ? (
         <WorkChooser
           work={authenticWork}
+          targets={effectiveTargets}
           onClose={() => setWorkOpen(false)}
           onPick={(id) => {
             setWorkOpen(false)
@@ -387,7 +393,7 @@ function searchMatchingSkills(problem: string): { skillId: string; title: string
     .map(({ skillId, title }) => ({ skillId, title }))
 }
 
-function WorkChooser({ work, onPick, onClose }: { work: ItemTemplate[]; onPick: (id: string) => void; onClose: () => void }) {
+function WorkChooser({ work, targets, onPick, onClose }: { work: ItemTemplate[]; targets: Record<BucketId, number>; onPick: (id: string) => void; onClose: () => void }) {
   const [format, setFormat] = useState<AuthenticFormat | 'all'>('all')
   const visible = format === 'all' ? work : work.filter((item) => item.authentic?.format === format)
   const formats = [...new Set(work.map((item) => item.authentic?.format).filter(Boolean))] as AuthenticFormat[]
@@ -395,6 +401,9 @@ function WorkChooser({ work, onPick, onClose }: { work: ItemTemplate[]; onPick: 
     <Modal open onClose={onClose} title="Authentic Work" wide>
       <p className="text-muted text-sm leading-relaxed">
         Compressed, realistic workflows with a clear brief, checkable decisions, a substantial artifact, critique, and revision. Objective checkpoints are graded; open writing and code are honestly self-assessed against models.
+      </p>
+      <p className="text-[12px] text-faint mt-2 leading-relaxed">
+        Authentic Work is not a separate allocation category. Each studio belongs to one of your existing percentage categories, and completed time counts toward that target.
       </p>
       <div className="flex gap-1.5 mt-3 mb-3 overflow-x-auto pb-1 scroll-thin">
         <button type="button" onClick={() => setFormat('all')} aria-pressed={format === 'all'} className={`min-h-11 px-3 rounded-full border text-[13px] font-medium shrink-0 ${format === 'all' ? 'bg-ink text-bg border-ink' : 'bg-surface border-line text-muted'}`}>All</button>
@@ -415,6 +424,7 @@ function WorkChooser({ work, onPick, onClose }: { work: ItemTemplate[]; onPick: 
                 <DifficultyBadge difficulty={c.difficulty} />
               </div>
               <p className="text-[12px] text-accent mt-1">{c.authentic ? FORMAT_LABEL[c.authentic.format] : 'Case'} · {c.authentic?.deliverable ?? 'cross-domain recommendation'}</p>
+              <p className="text-[12px] text-muted mt-0.5">{BUCKET_BY_ID[c.bucket].name} · counts toward your current {targets[c.bucket]}% target</p>
               <p className="text-[12px] text-faint mt-0.5">~{Math.round(c.minutes)} min · {c.generate(0).parts?.length ?? 1} checkpoints · {c.variants} scenario{c.variants === 1 ? '' : 's'}</p>
             </button>
           ))}

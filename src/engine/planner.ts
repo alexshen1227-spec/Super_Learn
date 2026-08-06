@@ -174,6 +174,36 @@ function pickTemplatesForBudget(
   return out
 }
 
+/** Pick one substantial application whose PRIMARY category is currently
+ * under-served. These are scheduled as whole workflows, never squeezed into
+ * a short block. A focus request is authoritative: if that category has no
+ * suitable studio, the normal focused plan wins instead. */
+function pickAuthenticApplication(
+  ctx: PlannerContext,
+  report: AllocationReport,
+  availableMinutes: number,
+  templateUse: Map<string, number>,
+): ItemTemplate | null {
+  const candidates = [...ctx.index.templates.values()].filter((template) => {
+    if (!template.authentic) return false
+    if (template.minutes > availableMinutes || template.minutes < availableMinutes - 6) return false
+    const primary = evidenceFor(ctx.evidence, template.skillIds[0])
+    return stateRank(primary.state) >= stateRank('guided')
+  })
+  const focused = ctx.checkIn.focus
+    ? candidates.filter((template) => template.bucket === ctx.checkIn.focus)
+    : candidates
+  return focused
+    .map((template) => ({
+      template,
+      score:
+        relativeDebt(report, template.bucket) * 8 -
+        (templateUse.get(template.id) ?? 0) * 2 -
+        Math.abs(availableMinutes - template.minutes) * 0.15,
+    }))
+    .sort((a, b) => b.score - a.score)[0]?.template ?? null
+}
+
 // ---------------------------------------------------------------- skill scoring
 
 export interface SkillScore {
@@ -347,6 +377,38 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     if (due.length) {
       const names = due.slice(0, 3).map((d) => index.skills.get(d.skillId)?.name ?? d.skillId)
       rationale.push(`Reviews due: ${names.join(', ')}${due.length > 3 ? ` and ${due.length - 3} more` : ''}.`)
+    }
+  }
+
+  // Every fourth established 25–35 minute session can become one coherent
+  // real-work application. The percentage system chooses its existing bucket,
+  // its full elapsed time is logged there, and urgent missions/low-energy days
+  // keep the ordinary shorter-block plan.
+  const applicationDay =
+    total >= 25 &&
+    total <= 35 &&
+    checkIn.energy !== 'low' &&
+    !conservative &&
+    mission === null &&
+    state.sessions.length % 4 === 3
+  if (applicationDay) {
+    const warmPlannedMinutes = warmActs.length ? Math.max(2, warmMin) : 0
+    const application = pickAuthenticApplication(ctx, report, total - warmPlannedMinutes, templateUse)
+    if (application) {
+      const target = Math.round(report.target[application.bucket] * 100)
+      blocks.push({
+        id: uid('b'),
+        kind: 'core',
+        bucket: application.bucket,
+        label: `${BUCKET_BY_ID[application.bucket].name} · applied work`,
+        minutes: application.minutes,
+        activities: [act(application, 'transfer', used)],
+        why: `${BUCKET_BY_ID[application.bucket].name} is selected through your ${target}% balance target; this full workflow tests whether its skills transfer into realistic work.`,
+      })
+      rationale.push(
+        `Applied-work rotation: ${application.name} counts toward ${BUCKET_BY_ID[application.bucket].name} (${target}% target).`,
+      )
+      return { id: uid('s'), createdAt: now, targetMinutes: total, blocks, rationale }
     }
   }
 

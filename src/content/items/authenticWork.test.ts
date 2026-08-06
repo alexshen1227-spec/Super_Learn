@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { AuthenticFormat, BucketId } from '../../domain/types'
+import { BUCKETS, type AuthenticFormat, type BucketId } from '../../domain/types'
+import { SKILL_BY_ID } from '../skills'
 import { AUTHENTIC_WORK_TEMPLATES } from './authenticWork'
 import { REAL_WORLD_TEMPLATES } from './realWorldPractice'
 
@@ -37,9 +38,9 @@ describe('authentic work studios', () => {
 
 describe('short real-world practice', () => {
   it('adds broad, checkable transfer practice rather than one-off anecdotes', () => {
-    expect(REAL_WORLD_TEMPLATES.length).toBeGreaterThanOrEqual(18)
-    expect(REAL_WORLD_TEMPLATES.reduce((sum, template) => sum + template.variants, 0)).toBeGreaterThanOrEqual(270)
-    expect(new Set(REAL_WORLD_TEMPLATES.map((template) => template.bucket)).size).toBeGreaterThanOrEqual(8)
+    expect(REAL_WORLD_TEMPLATES.length).toBeGreaterThanOrEqual(19)
+    expect(REAL_WORLD_TEMPLATES.reduce((sum, template) => sum + template.variants, 0)).toBeGreaterThanOrEqual(280)
+    expect(new Set(REAL_WORLD_TEMPLATES.map((template) => template.bucket)).size).toBeGreaterThanOrEqual(9)
     expect(REAL_WORLD_TEMPLATES.every((template) => template.transfer)).toBe(true)
     expect(REAL_WORLD_TEMPLATES.every((template) => template.generate(0).answer?.type !== 'rubric')).toBe(true)
   })
@@ -48,6 +49,22 @@ describe('short real-world practice', () => {
     const pathBuckets: BucketId[] = ['observer', 'investigator', 'strategist', 'insight']
     for (const bucket of pathBuckets) {
       expect(REAL_WORLD_TEMPLATES.filter((template) => template.bucket === bucket).length, `${bucket} needs multiple families`).toBeGreaterThanOrEqual(2)
+    }
+  })
+})
+
+describe('percentage-category integration', () => {
+  const expanded = [...AUTHENTIC_WORK_TEMPLATES, ...REAL_WORLD_TEMPLATES]
+
+  it('places the expanded work across every existing allocation category', () => {
+    for (const bucket of BUCKETS) {
+      expect(expanded.some((template) => template.bucket === bucket.id), `missing ${bucket.name}`).toBe(true)
+    }
+  })
+
+  it('uses a primary skill from the category that receives the minutes', () => {
+    for (const template of expanded) {
+      expect(SKILL_BY_ID.get(template.skillIds[0])?.bucket, `${template.id}: primary allocation mismatch`).toBe(template.bucket)
     }
   })
 })

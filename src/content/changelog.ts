@@ -17,9 +17,9 @@ export const CHANGELOG: ChangelogEntry[] = [
     points: [
       'Authentic Work upgrades the existing Case File mode into a studio for projects, evidence writing, program building, experiments, original-book seminars, expert office hours, field investigations, real-life decisions, and difficult Guardian conversations.',
       'Nine long-form studios provide 70 generated scenarios and more than 400 staged checkpoints. Each preserves a real workflow—brief, evidence, objective decisions, substantial artifact, critique, and revision—while stating exactly what the offline simulation cannot reproduce.',
-      'Eighteen new real-world question families add 272 automatically graded variants across receipts, unit prices, travel time, energy use, automations, bug reports, household experiments, source claims, schedules, subscriptions, privacy, boundaries, incident response, and project triage.',
+      'Nineteen new real-world question families add 284 automatically graded variants across receipts, unit prices, travel time, energy use, automations, bug reports, household experiments, source claims, schedules, subscriptions, privacy, boundaries, incident response, project triage, and constraint-safe packing.',
       'Serious drafts now require meaningful word counts, provide deliverable-specific prompts, and compare against explicit models and criteria. Self-assessed artifacts remain separated from verified mastery evidence.',
-      'Long multi-stage work now resumes at the exact checkpoint after a reload—including the unfinished draft and rubric state—and the daily planner no longer squeezes a 20-minute project into a short practice block.',
+      'Long multi-stage work now resumes at the exact checkpoint after a reload—including the unfinished draft and rubric state. Every new activity belongs to one of the ten existing percentage categories; the coach can periodically schedule a whole studio from an under-target category when time, readiness, energy, and active missions permit, but never squeezes one into a short block.',
     ],
   },
   {

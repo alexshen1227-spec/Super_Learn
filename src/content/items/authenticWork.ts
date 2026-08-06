@@ -476,8 +476,8 @@ const bookStudio = tpl(
   {
     id: 'studio-book-seminar',
     name: 'Work Studio: Read a Chapter Like a Scholar',
-    skillIds: ['o-recall', 'o-obsinf', 'x-explain'],
-    bucket: 'observer',
+    skillIds: ['x-explain', 'o-recall', 'o-obsinf'],
+    bucket: 'meta',
     difficulty: 4,
     variants: 4,
     minutes: 20,

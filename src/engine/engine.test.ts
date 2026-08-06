@@ -192,6 +192,42 @@ describe('planner', () => {
     expect(new Set(forms).size).toBe(forms.length)
   })
 
+  it('rotates a whole authentic workflow through its existing percentage category', () => {
+    const events = [
+      attempt('math', 'm-lineq1', { elapsedSec: 1800 }),
+      attempt('coding', 'c-decomp', { seed: 401, elapsedSec: 60 }),
+      attempt('coding', 'c-decomp', { seed: 402, elapsedSec: 60 }),
+    ]
+    const s = stateWith(events)
+    s.sessions = Array.from({ length: 3 }, (_, i) => ({
+      id: `session-${i}`,
+      startedAt: NOW - (i + 1) * DAY,
+      endedAt: NOW - (i + 1) * DAY + 30 * 60_000,
+      activeMinutes: 30,
+      checkIn: { minutes: 30, energy: 'ok', focus: null },
+      attempts: 2,
+      correctFirst: 2,
+      bucketMinutes: { math: 30 },
+      learned: [],
+      exitPrinciple: null,
+      interrupted: false,
+    }))
+    const plan = buildSessionPlan({
+      index: DEFAULT_INDEX,
+      evidence: deriveEvidence(events, NOW),
+      state: s,
+      now: NOW,
+      checkIn: { minutes: 30, energy: 'ok', focus: null },
+    })
+    const applied = plan.blocks.find((block) => block.label.includes('applied work'))
+    expect(applied).toBeTruthy()
+    const template = DEFAULT_INDEX.templates.get(applied!.activities[0].templateId)!
+    expect(template.authentic).toBeTruthy()
+    expect(applied!.bucket).toBe(template.bucket)
+    expect(applied!.why).toContain('balance target')
+    expect(plan.rationale.join(' ')).toContain('counts toward')
+  })
+
   it('honors an explicit lab focus request', () => {
     const s = stateWith([])
     const plan = buildSessionPlan({

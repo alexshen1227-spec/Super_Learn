@@ -366,6 +366,25 @@ const projectTriage = tpl(
   },
 )
 
+const packingConstraints = tpl(
+  { id: 'real-packing-constraints', name: 'Real Life: Pack Under Constraints', skillIds: ['z-deduce'], bucket: 'puzzle', difficulty: 4, variants: 12, minutes: 4, transfer: true },
+  (rng) => {
+    const setting = pick(rng, ['equipment shelf', 'delivery cart', 'storage locker', 'stage supply rack'] as const)
+    return {
+      title: 'Constraint-safe packing',
+      prompt: `Four labeled cases must go left-to-right on one **${setting}**: **C**amera, **T**oolbox, **B**attery, and **F**irst-aid kit. The toolbox must be immediately left of the battery; first aid must be at an end; and first aid cannot touch the camera. Which loading order satisfies every constraint?`,
+      answer: mcq(rng, 'C – T – B – F', [
+        'T – B – C – F',
+        'F – C – T – B',
+        'C – B – T – F',
+      ]),
+      hints: ['Treat “immediately left” as one locked T–B block.', 'Test the end condition and the no-touch condition separately.'],
+      explanation: '**C – T – B – F** keeps T immediately left of B, puts F at an end, and separates F from C. Each distractor breaks at least one named constraint.',
+      transferBridge: 'Real packing, seating, and scheduling become easier when you lock the strongest constraint first, then test every remaining rule before committing.',
+    }
+  },
+)
+
 export const REAL_WORLD_TEMPLATES: ItemTemplate[] = [
   receipt,
   unitPrice,
@@ -385,4 +404,5 @@ export const REAL_WORLD_TEMPLATES: ItemTemplate[] = [
   permissionChoice,
   communityAlert,
   projectTriage,
+  packingConstraints,
 ]
