@@ -173,16 +173,22 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
           p = buildChallengePlan(ctx)
           break
         case 'error-clinic': {
-          // Repair queue: skills with recent unrepaired errors, via focus plans.
+          // Repair queue: skills with recent misses that still need repair —
+          // tagged or not (skipping the tag must not hide the error).
           const errSkills = [
             ...new Set(
               state.events
-                .filter((e) => e.errorTags.length > 0 && e.t > Date.now() - 14 * 86_400_000)
+                .filter((e) => e.firstCorrect === false && e.t > Date.now() - 14 * 86_400_000)
                 .flatMap((e) => e.skillIds),
             ),
           ].filter((s) => {
             const ev = evidence.get(s)
             return ev && (ev.needsReview || ev.recentMisses > 0 || ev.blockedByMisconception)
+          })
+          // Confident errors jump the queue.
+          errSkills.sort((a, b) => {
+            const blocked = (id: string) => (evidence.get(id)?.blockedByMisconception ? 1 : 0)
+            return blocked(b) - blocked(a)
           })
           if (errSkills.length) {
             p = buildFocusPlan(ctx, errSkills[0])
