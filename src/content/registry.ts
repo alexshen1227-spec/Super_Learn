@@ -24,6 +24,7 @@ import { CASEFILE2_TEMPLATES } from './items/caseFiles2'
 import { EXPANSION_TEMPLATES } from './items/expansion'
 import { METHOD_DRILL_TEMPLATES } from './items/methodDrills'
 import { ADVANCED_CURRICULUM_TEMPLATES } from './items/advancedCurriculum'
+import { PATH_QUESTION_TEMPLATES } from './items/pathQuestionExpansion'
 
 export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...MATH_NUMBER_TEMPLATES,
@@ -44,6 +45,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...EXPANSION_TEMPLATES,
   ...METHOD_DRILL_TEMPLATES,
   ...ADVANCED_CURRICULUM_TEMPLATES,
+  ...PATH_QUESTION_TEMPLATES,
 ]
 
 export function packItemToTemplate(pack: ContentPackJson, i: number): ItemTemplate {

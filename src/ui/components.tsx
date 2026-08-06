@@ -193,7 +193,7 @@ export function Modal({
             ×
           </button>
         </div>
-        <div className="overflow-y-auto px-5 pb-5 pb-safe scroll-thin">{children}</div>
+        <div className="overflow-y-auto px-5 safe-bottom-content scroll-thin">{children}</div>
       </div>
     </div>,
     document.body,

@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.7',
+    date: '2026-08-06',
+    title: 'Four Paths, Fully Checkable',
+    points: [
+      'Each of the Observer, Investigator, Strategist, and Guardian Paths gains four new deterministic question families: 126 additional variants spanning exact recall, evidence boundaries, logic, Bayes, separating tests, payoff tables, dependency planning, expected value, estimation, ethical strategy, pressure defense, boundaries, and de-escalation.',
+      'Every new Path question is automatically graded from an authored or computed answer key. A release-blocking test proves every correct response passes and a deliberately wrong response fails across all 126 variants.',
+      'Practice emphasis now has a 13-point minimum for every category. The interface calls these relative weights and shows the normalized percentage, avoiding the impossible claim that ten categories can each be at least 13% of one 100% total.',
+      'Mobile sheets regain full bottom padding on every phone, including devices without a notch, and bottom navigation gets edge spacing so actions and focus rings no longer sit outside their boxes.',
+    ],
+  },
+  {
     version: '1.6',
     date: '2026-08-06',
     title: 'Mission Control & Quality Pass',
@@ -51,7 +62,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Four named Paths — Observer, Investigator, Strategist, Guardian — each with a visible mastery arc, its own code of practice, and per-path progress drawn from real evidence.',
       'Deeper banks everywhere: game theory (dominant strategies, commitment, coordination), algebra and physics depth, and new lab activities across every archetype — plus curated "go deeper" links (optional, online-only).',
       'The Coach shows exactly what it is counting: a live intake of every attempt — daily sessions, Practice launches, reviews, puzzles, case files — all visibly feeding one evidence log, with beliefs that acknowledge puzzle and self-assessed work honestly.',
-      'The coach can tune practice-balance targets itself (yours to switch off): bounded, disclosed nudges for deadlines and review pressure, never below a 3% floor, always drifting back to your base.',
+      'The coach can tune practice-emphasis weights itself (yours to switch off): bounded, disclosed nudges for deadlines and review pressure, never below a 13-point floor, always drifting back to your base.',
       'Quality of life: Enter submits, auto-focused answers, Practice search, batch-safe inputs, focus-trapped dialogs, live-region feedback, ghost-draft and sample-mode isolation fixes, and installed-app update checks on resume and network-regain.',
       'Fixed along the way: Case File self-assessments scoring zero, toggle knobs escaping their track, and a settings gear that finally looks like one.',
     ],

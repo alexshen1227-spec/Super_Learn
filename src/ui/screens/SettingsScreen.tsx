@@ -9,7 +9,7 @@ import { useNav } from '../nav'
 import { exportState, importState } from '../../engine/exportImport'
 import { storageInfo, type StorageInfo } from '../../store/persist'
 import { validatePack } from '../../engine/contentSchema'
-import { BUCKETS, type BucketId, type Deadline } from '../../domain/types'
+import { BUCKETS, MIN_ALLOCATION_WEIGHT, type BucketId, type Deadline } from '../../domain/types'
 import { uid } from '../../engine/rng'
 import { Button, Card, Chip, Confirm, Divider, Modal, Row, SectionTitle, Segmented, Toggle } from '../components'
 import { IconBack } from '../icons'
@@ -171,19 +171,19 @@ export function SettingsScreen() {
         )}
       </Card>
 
-      <SectionTitle>Practice balance targets</SectionTitle>
+      <SectionTitle>Practice emphasis weights</SectionTitle>
       <Card className="p-4">
         <p className="text-[13px] text-muted mb-3">
-          Long-run share of focused minutes per area. The defaults weight math and the academic core because
-          middle-grade mastery is the best-evidenced lever on grades and high-school readiness — but this is your lab:
-          set your own mix{allocTotal !== 100 ? ` (currently sums to ${allocTotal}% — shares are normalized automatically)` : ''}.
+          These are relative weights, not literal percentages. The app normalizes them into a 100% practice mix.
+          Every area stays at 13 points or higher; larger numbers receive proportionally more time. Math starts higher
+          because middle-grade mastery is a strong lever on later readiness. Current weight total: {allocTotal}.
         </p>
         <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-line">
           <div>
             <p className="text-[14px] font-medium">Let the coach tune the balance</p>
             <p className="text-[12px] text-muted leading-snug">
               Temporary, disclosed nudges around your base — toward a near deadline or a bucket with piled-up reviews.
-              Never below a 3% floor for any area, and reviews surface in sessions regardless, so nothing gets
+              Never below a 13-point floor for any area, and reviews surface in sessions regardless, so nothing gets
               forgotten. Off = your sliders rule exactly.
             </p>
           </div>
@@ -199,10 +199,10 @@ export function SettingsScreen() {
               <span className="text-[13px] w-24 shrink-0 font-medium">{b.short}</span>
               <input
                 type="range"
-                min={0}
-                max={50}
+                min={MIN_ALLOCATION_WEIGHT}
+                max={60}
                 value={allocations[b.id]}
-                aria-label={`${b.name} target percent`}
+                aria-label={`${b.name} emphasis weight`}
                 onChange={(e) =>
                   dispatch({
                     type: 'update-settings',
@@ -211,7 +211,12 @@ export function SettingsScreen() {
                 }
                 className="flex-1"
               />
-              <span className="text-[12px] font-mono text-muted w-9 text-right">{allocations[b.id]}%</span>
+              <span
+                className="text-[12px] font-mono text-muted w-[5.5rem] text-right"
+                title={`${Math.round((allocations[b.id] / allocTotal) * 100)}% of the normalized mix`}
+              >
+                {allocations[b.id]} pts · {Math.round((allocations[b.id] / allocTotal) * 100)}%
+              </span>
             </div>
           ))}
         </div>

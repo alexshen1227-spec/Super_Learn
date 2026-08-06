@@ -306,7 +306,7 @@ describe('placement follow-ups', () => {
 })
 
 describe('coach-tuned allocations', () => {
-  it('boosts a deadline bucket, floors everything at 3%, and discloses', async () => {
+  it('boosts a deadline bucket, floors everything at 13 weight points, and discloses', async () => {
     const { tuneTargets } = await import('./allocationPlus')
     const s = stateWith([])
     s.deadlines = [{ id: 'd', title: 'Physics quiz', dateISO: new Date(NOW + 3 * DAY).toISOString().slice(0, 10), bucket: 'physics', note: '' }]
@@ -314,8 +314,8 @@ describe('coach-tuned allocations', () => {
     expect(tuned.tuned).toBe(true)
     expect(tuned.targets.physics).toBe(s.settings.allocations.physics + 8)
     expect(tuned.notes.join(' ')).toContain('Physics quiz')
-    for (const [k, v] of Object.entries(tuned.targets)) {
-      if (s.settings.allocations[k as keyof typeof s.settings.allocations] > 0) expect(v).toBeGreaterThanOrEqual(3)
+    for (const v of Object.values(tuned.targets)) {
+      expect(v).toBeGreaterThanOrEqual(13)
     }
   })
   it('boosts buckets with piled-up due reviews', async () => {
@@ -536,7 +536,7 @@ describe('export / import / sanitize', () => {
           events: [{ templateId: 'x' }, null, 5, { templateId: 'ok', t: NOW, skillIds: ['s'], bucket: 'math' }],
           sessions: 'nope',
           profile: { name: 12345, sessionMinutes: 999 },
-          settings: { allocations: { math: 'NaN', bogus: 50 } },
+          settings: { allocations: { math: 'NaN', physics: 3, bogus: 50 } },
         },
       }),
     )
@@ -547,6 +547,7 @@ describe('export / import / sanitize', () => {
       expect(evil.state.profile.name).toBe('')
       expect(evil.state.profile.sessionMinutes).toBe(30)
       expect(evil.state.settings.allocations.math).toBe(initialState().settings.allocations.math)
+      expect(evil.state.settings.allocations.physics).toBe(13)
       expect('bogus' in evil.state.settings.allocations).toBe(false)
     }
   })

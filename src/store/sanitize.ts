@@ -28,6 +28,7 @@ import { localDateISO } from '../engine/time'
 import {
   BUCKETS,
   DEFAULT_ALLOCATIONS,
+  MIN_ALLOCATION_WEIGHT,
   STATE_VERSION,
   defaultProfile,
   defaultSettings,
@@ -85,7 +86,9 @@ function sanitizeSettings(raw: unknown): AppSettings {
   const allocations = { ...DEFAULT_ALLOCATIONS }
   if (typeof s.allocations === 'object' && s.allocations !== null) {
     for (const [k, v] of Object.entries(s.allocations as Record<string, unknown>)) {
-      if (BUCKET_IDS.has(k)) allocations[k as BucketId] = num(v, 0, 100, DEFAULT_ALLOCATIONS[k as BucketId])
+      if (BUCKET_IDS.has(k)) {
+        allocations[k as BucketId] = num(v, MIN_ALLOCATION_WEIGHT, 100, DEFAULT_ALLOCATIONS[k as BucketId])
+      }
     }
   }
   const qh = s.quietHours as Record<string, unknown> | null | undefined

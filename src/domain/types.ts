@@ -29,29 +29,29 @@ export interface BucketMeta {
   id: BucketId
   name: string
   short: string
-  /** Default share of focused minutes, percent. Sums to 100 across buckets. */
-  defaultPercent: number
+  /** Default relative practice weight. Every bucket starts at 13 or higher. */
+  defaultWeight: number
   /** One-line description used in Practice and Settings. */
   blurb: string
 }
 
 /**
- * Default allocation (user-editable in Settings). Weighted toward the
- * academic core (~55%) because middle-grade mastery and algebra readiness
- * are the best-evidenced levers on school grades and high-school success
- * (see docs/RESEARCH.md §16) — a design judgment, labeled as such.
+ * Default allocation (user-editable in Settings). Weighted toward math and
+ * the academic core because middle-grade mastery and algebra readiness are
+ * well-evidenced levers on later school success (see docs/RESEARCH.md §16)
+ * — a design judgment, labeled as such.
  */
 export const BUCKETS: BucketMeta[] = [
-  { id: 'math', name: 'Mathematics', short: 'Math', defaultPercent: 32, blurb: 'Core math from arithmetic through algebra, geometry, and data — the spine of high-school readiness.' },
-  { id: 'physics', name: 'Physics', short: 'Physics', defaultPercent: 8, blurb: 'Quantitative physics: motion, forces, energy, estimation.' },
-  { id: 'coding', name: 'Coding', short: 'Coding', defaultPercent: 8, blurb: 'Computational thinking: tracing, debugging, algorithms.' },
-  { id: 'science', name: 'Scientific reasoning', short: 'Sci-Reason', defaultPercent: 7, blurb: 'Experiments, evidence, statistics traps, Fermi estimates.' },
-  { id: 'observer', name: 'Observer', short: 'Observer', defaultPercent: 8, blurb: 'Observation vs inference, recall, listening, calibration.' },
-  { id: 'investigator', name: 'Investigator', short: 'Investigator', defaultPercent: 10, blurb: 'Logic, Bayesian updating, hypotheses, forecasting.' },
-  { id: 'strategist', name: 'Strategist', short: 'Strategist', defaultPercent: 10, blurb: 'Planning, decision trees, estimation, ethical strategy.' },
-  { id: 'puzzle', name: 'Puzzle Lab', short: 'Puzzles', defaultPercent: 8, blurb: 'Chess tactics, spatial fitting, logic grids — with transfer bridges.' },
-  { id: 'insight', name: 'Human Insight', short: 'Insight', defaultPercent: 5, blurb: 'Perspective-taking, influence defense, boundaries, de-escalation.' },
-  { id: 'meta', name: 'Meta Lab', short: 'Meta', defaultPercent: 4, blurb: 'Learning how to learn, calibration, source literacy, explanation.' },
+  { id: 'math', name: 'Mathematics', short: 'Math', defaultWeight: 32, blurb: 'Core math from arithmetic through algebra, geometry, and data — the spine of high-school readiness.' },
+  { id: 'physics', name: 'Physics', short: 'Physics', defaultWeight: 13, blurb: 'Quantitative physics: motion, forces, energy, estimation.' },
+  { id: 'coding', name: 'Coding', short: 'Coding', defaultWeight: 13, blurb: 'Computational thinking: tracing, debugging, algorithms.' },
+  { id: 'science', name: 'Scientific reasoning', short: 'Sci-Reason', defaultWeight: 13, blurb: 'Experiments, evidence, statistics traps, Fermi estimates.' },
+  { id: 'observer', name: 'Observer', short: 'Observer', defaultWeight: 13, blurb: 'Observation vs inference, recall, listening, calibration.' },
+  { id: 'investigator', name: 'Investigator', short: 'Investigator', defaultWeight: 13, blurb: 'Logic, Bayesian updating, hypotheses, forecasting.' },
+  { id: 'strategist', name: 'Strategist', short: 'Strategist', defaultWeight: 13, blurb: 'Planning, decision trees, estimation, ethical strategy.' },
+  { id: 'puzzle', name: 'Puzzle Lab', short: 'Puzzles', defaultWeight: 13, blurb: 'Chess tactics, spatial fitting, logic grids — with transfer bridges.' },
+  { id: 'insight', name: 'Human Insight', short: 'Insight', defaultWeight: 13, blurb: 'Perspective-taking, influence defense, boundaries, de-escalation.' },
+  { id: 'meta', name: 'Meta Lab', short: 'Meta', defaultWeight: 13, blurb: 'Learning how to learn, calibration, source literacy, explanation.' },
 ]
 
 export const BUCKET_BY_ID: Record<BucketId, BucketMeta> = Object.fromEntries(
@@ -59,6 +59,14 @@ export const BUCKET_BY_ID: Record<BucketId, BucketMeta> = Object.fromEntries(
 ) as Record<BucketId, BucketMeta>
 
 export const ACADEMIC_BUCKETS: BucketId[] = ['math', 'physics', 'coding', 'science']
+
+/**
+ * Practice allocations are relative weights, not literal percentages. With
+ * ten buckets, a 13% minimum each would be mathematically impossible; a
+ * 13-point weight floor preserves every area while normalization still
+ * produces a valid 100% session mix.
+ */
+export const MIN_ALLOCATION_WEIGHT = 13
 
 // ---------------------------------------------------------------- skills
 
@@ -528,12 +536,12 @@ export interface Deadline {
 export interface AppSettings {
   theme: 'light' | 'dark' | 'system'
   textSpacing: boolean
-  /** LONG-RUN base percents per bucket (the user's own targets). */
+  /** LONG-RUN relative weights per bucket (normalized into a 100% mix). */
   allocations: Record<BucketId, number>
   /**
    * When true the coach may temporarily tune targets around the base —
-   * bounded nudges for deadlines and review pressure, never below a 3%
-   * floor, always disclosed. The base stays untouched.
+   * bounded nudges for deadlines and review pressure, never below the
+   * 13-point weight floor, always disclosed. The base stays untouched.
    */
   coachManagedAllocations: boolean
   confidencePrompts: 'normal' | 'minimal'
@@ -624,7 +632,7 @@ export interface AppState {
 }
 
 export const DEFAULT_ALLOCATIONS: Record<BucketId, number> = Object.fromEntries(
-  BUCKETS.map((b) => [b.id, b.defaultPercent]),
+  BUCKETS.map((b) => [b.id, b.defaultWeight]),
 ) as Record<BucketId, number>
 
 export function defaultProfile(): Profile {

@@ -246,11 +246,29 @@ function PathDetailSheet({
   if (!path) return null
   const prog = pathProgress(path, evidence)
   const nextSkill = index.skills.get(prog.nextStep)
+  const pathTemplates = [
+    ...new Map(
+      path.skillIds.flatMap((skillId) =>
+        (index.bySkill.get(skillId) ?? []).map((template) => [template.id, template] as const),
+      ),
+    ).values(),
+  ]
+  const autoGradedForms = pathTemplates
+    .filter((template) => {
+      const item = template.generate(0)
+      if (item.kind === 'single') return Boolean(item.answer && item.answer.type !== 'rubric')
+      if (item.kind === 'multi') return Boolean(item.parts?.length && item.parts.every((part) => part.answer.type !== 'rubric'))
+      return true
+    })
+    .reduce((sum, template) => sum + template.variants, 0)
   return (
     <Modal open onClose={onClose} title={path.name} wide>
       <div className="flex items-center gap-3">
         <PathEmblem path={path} size={34} />
-        <p className="text-[15px] italic text-muted">“{path.tagline}”</p>
+        <div className="min-w-0">
+          <p className="text-[15px] italic text-muted">“{path.tagline}”</p>
+          <Chip tone="good">{autoGradedForms} auto-graded forms</Chip>
+        </div>
       </div>
       <p className="text-[14px] text-muted leading-relaxed mt-3">{path.essence}</p>
 

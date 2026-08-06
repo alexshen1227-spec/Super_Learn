@@ -161,6 +161,13 @@ html.spaced li {
 /* Safe-area helpers for notched phones. */
 .pt-safe { padding-top: env(safe-area-inset-top, 0); }
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0); }
+.safe-bottom-content {
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  scroll-padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+}
+.safe-bottom-content > :last-child {
+  scroll-margin-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+}
 
 /* Graph-paper motif, used sparingly (Today header, Path background). */
 .graph-paper {

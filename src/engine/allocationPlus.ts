@@ -8,26 +8,25 @@
  * evidence each time, so they decay naturally).
  *
  * Hard guarantees ("it won't let you forget stuff"):
- *  - every bucket with a nonzero base keeps a ≥3% floor — nothing starves;
+ *  - every bucket keeps a ≥13-point weight floor — nothing starves;
  *  - due reviews are pulled into the warm-up REGARDLESS of allocation, and a
  *    bucket whose reviews pile up gets a temporary boost here as well;
  *  - all tuning is visible: notes ship with the targets and reach the
  *    decision log and the balance cards.
  */
 import type { AppState, BucketId, SkillEvidence } from '../domain/types'
-import { BUCKETS, BUCKET_BY_ID } from '../domain/types'
+import { BUCKETS, BUCKET_BY_ID, MIN_ALLOCATION_WEIGHT } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { allocationReport, type AllocationReport } from './allocation'
 import { dueReviews } from './scheduler'
 import { calendarDaysUntil } from './time'
 
-const FLOOR = 3 // percent points
 const DEADLINE_BOOST = 8
 const REVIEW_BOOST_PER_2 = 2
 const REVIEW_BOOST_CAP = 6
 
 export interface TunedAllocation {
-  /** Targets in percent points (same scale as settings.allocations). */
+  /** Relative target weights (same scale as settings.allocations). */
   targets: Record<BucketId, number>
   tuned: boolean
   notes: string[]
@@ -73,13 +72,15 @@ export function tuneTargets(
     }
   }
 
-  // Floor every nonzero-base bucket so no area can be starved into forgetting.
+  // Floor every bucket so no area can be starved into forgetting.
   for (const b of BUCKETS) {
-    if (base[b.id] > 0 && targets[b.id] < FLOOR) targets[b.id] = FLOOR
+    if (targets[b.id] < MIN_ALLOCATION_WEIGHT) targets[b.id] = MIN_ALLOCATION_WEIGHT
   }
 
   const tuned = notes.length > 0 || BUCKETS.some((b) => targets[b.id] !== base[b.id])
-  if (tuned && notes.length === 0) notes.push('Floors applied so every area keeps at least 3%.')
+  if (tuned && notes.length === 0) {
+    notes.push(`Floors applied so every area keeps at least ${MIN_ALLOCATION_WEIGHT} weight points.`)
+  }
   if (tuned) notes.push('Temporary — targets drift back to your base as deadlines pass and reviews clear.')
   // allocationReport normalizes by the sum, so boosted weights trade off
   // against everything else proportionally — no manual rebalancing needed.

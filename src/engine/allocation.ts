@@ -33,7 +33,7 @@ export function allocationReport(
   events: AttemptEvent[],
   settings: AppSettings,
   now: number,
-  /** Optional coach-tuned targets (percent points); defaults to the user's base. */
+  /** Optional coach-tuned relative weights; defaults to the user's base. */
   targetsOverride?: Record<BucketId, number>,
 ): AllocationReport {
   const weights = targetsOverride ?? settings.allocations

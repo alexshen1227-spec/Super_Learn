@@ -222,7 +222,7 @@ function Shell() {
           aria-label="Main"
           className="fixed bottom-0 inset-x-0 bg-surface/95 backdrop-blur-xl border-t border-line pb-safe z-40 sm:bottom-4 sm:inset-x-4 sm:max-w-2xl sm:mx-auto sm:rounded-2xl sm:border sm:pb-0 sm:shadow-modal"
         >
-          <div className="mx-auto flex sm:p-1">
+          <div className="mx-auto flex px-2 pt-1 sm:p-1">
             {TABS.map((t) => {
               const active = view.name === t.id
               const Icon = t.icon
