@@ -222,6 +222,22 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
           wouldChange: 'New evidence this session — misses, hints, or a focus request — reshapes tomorrow’s plan.',
         },
       })
+      // Disclose allocation tuning as its own decision when it happened.
+      const tunedLine = p.rationale.find((r) => r.startsWith('Balance tuned:'))
+      if (tunedLine) {
+        dispatch({
+          type: 'log-decision',
+          decision: {
+            id: uid('cd'),
+            t: Date.now(),
+            kind: 'allocation',
+            summary: tunedLine.replace('Balance tuned: ', 'Targets tuned: '),
+            evidence: ['Your base targets in Settings are untouched; tuning recomputes from live evidence each session.'],
+            confidence: 'high',
+            wouldChange: 'Passing the deadline or clearing the due reviews drifts targets back to your base. A 3% floor protects every area either way.',
+          },
+        })
+      }
       evidenceBefore.current = deriveEvidence(state.events, Date.now())
     },
     [index, evidence, state, launch, dispatch],

@@ -509,8 +509,14 @@ export interface Deadline {
 export interface AppSettings {
   theme: 'light' | 'dark' | 'system'
   textSpacing: boolean
-  /** percent per bucket; validated to sum to 100. */
+  /** LONG-RUN base percents per bucket (the user's own targets). */
   allocations: Record<BucketId, number>
+  /**
+   * When true the coach may temporarily tune targets around the base —
+   * bounded nudges for deadlines and review pressure, never below a 3%
+   * floor, always disclosed. The base stays untouched.
+   */
+  coachManagedAllocations: boolean
   confidencePrompts: 'normal' | 'minimal'
   /** Suppress any nudges between these local hours. Informational only in V1. */
   quietHours: { start: number; end: number } | null
@@ -618,6 +624,7 @@ export function defaultSettings(): AppSettings {
     theme: 'system',
     textSpacing: false,
     allocations: { ...DEFAULT_ALLOCATIONS },
+    coachManagedAllocations: true,
     confidencePrompts: 'normal',
     quietHours: null,
   }

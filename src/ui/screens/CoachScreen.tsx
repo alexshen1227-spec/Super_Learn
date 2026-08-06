@@ -7,7 +7,7 @@ import { useMemo, useState } from 'react'
 import { useEvidence, useStore } from '../../store/store'
 import { HeaderBar } from '../../App'
 import { buildContentIndex } from '../../content/registry'
-import { coachBeliefs, findBottleneck, weeklyObjective } from '../../engine/coach'
+import { activityIntake, coachBeliefs, findBottleneck, weeklyObjective } from '../../engine/coach'
 import { brierScore } from '../../engine/calibration'
 import { searchKb, type KbCard } from '../../content/kb'
 import { uid } from '../../engine/rng'
@@ -25,6 +25,7 @@ export function CoachScreen() {
   const beliefs = useMemo(() => coachBeliefs(index, evidence, state, now), [index, evidence, state, now])
   const bottleneck = useMemo(() => findBottleneck(index, evidence, state), [index, evidence, state])
   const objective = useMemo(() => weeklyObjective(index, evidence, state, now), [index, evidence, state, now])
+  const intake = useMemo(() => activityIntake(state.events, now), [state.events, now])
   const [query, setQuery] = useState('')
   const results = useMemo(() => (query.trim() ? searchKb(query) : []), [query])
   const [forecastOpen, setForecastOpen] = useState(false)
@@ -45,6 +46,36 @@ export function CoachScreen() {
             <span className="font-semibold text-ink">Bottleneck:</span> {bottleneck.why}
           </p>
         ) : null}
+      </Card>
+
+      <SectionTitle>What the coach is counting</SectionTitle>
+      <Card className="p-4">
+        {intake.total === 0 ? (
+          <p className="text-[13px] text-muted leading-relaxed">
+            Nothing in the last {intake.days} days yet. Every attempt counts here the moment it happens — daily
+            sessions, anything launched from Practice, reviews, puzzles, and case files all feed the same evidence log.
+          </p>
+        ) : (
+          <>
+            <p className="text-[14px] leading-relaxed">
+              Last {intake.days} days: <span className="font-semibold">{intake.total} attempts</span> across{' '}
+              <span className="font-semibold">{intake.skillsTouched} skills</span> — every one counted, whether it came
+              from a daily session, a Practice launch, a review, or a puzzle.
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-2.5">
+              {intake.academic > 0 ? <Chip tone="accent">{intake.academic} academic</Chip> : null}
+              {intake.labs > 0 ? <Chip tone="accent">{intake.labs} thinking-lab</Chip> : null}
+              {intake.puzzles > 0 ? <Chip tone="accent">{intake.puzzles} puzzle</Chip> : null}
+              {intake.reviews > 0 ? <Chip tone="warn">{intake.reviews} review</Chip> : null}
+              {intake.transfers > 0 ? <Chip tone="good">{intake.transfers} transfer</Chip> : null}
+              {intake.selfAssessed > 0 ? <Chip tone="neutral">{intake.selfAssessed} self-assessed</Chip> : null}
+            </div>
+            <p className="text-[12px] text-faint mt-2">
+              {intake.graded} were deterministically graded; self-assessed work guides the plan but never counts as
+              independent mastery evidence.
+            </p>
+          </>
+        )}
       </Card>
 
       <SectionTitle>Model of you</SectionTitle>

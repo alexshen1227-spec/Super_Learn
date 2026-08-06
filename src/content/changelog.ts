@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.1',
+    date: '2026-08-06',
+    title: "The Coach's Ledger",
+    points: [
+      'The Coach now shows exactly what it is counting: a live intake of every attempt from the last week — daily sessions, Practice launches, reviews, puzzles, and case files all visibly feed the same evidence log.',
+      'The coach can now tune your practice-balance targets itself (on by default, yours to switch off): bounded, disclosed nudges toward a near deadline or a bucket with piled-up reviews, never below a 3% floor for any area, always drifting back to your base — and reviews surface in sessions regardless, so nothing gets forgotten.',
+      'New beliefs acknowledge lab and puzzle work directly, including a clean-solve rate and an honest note on self-assessed activities (they guide, they never grade).',
+      'Fixed: self-scored rubric steps inside Case Files were being run through the deterministic grader and scored zero — they now use your criteria checklist as intended.',
+      'Fixed: toggle switches rendered with the knob escaping the track when on. Also: a settings gear that actually looks like a gear.',
+      'Update checks now also fire when the installed app resumes from background or regains network, so phones learn about new versions without a relaunch.',
+    ],
+  },
+  {
     version: '2.0',
     date: '2026-08-05',
     title: 'The Expansion',

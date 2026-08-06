@@ -172,6 +172,21 @@ export function SettingsScreen() {
           middle-grade mastery is the best-evidenced lever on grades and high-school readiness — but this is your lab:
           set your own mix{allocTotal !== 100 ? ` (currently sums to ${allocTotal}% — shares are normalized automatically)` : ''}.
         </p>
+        <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-line">
+          <div>
+            <p className="text-[14px] font-medium">Let the coach tune the balance</p>
+            <p className="text-[12px] text-muted leading-snug">
+              Temporary, disclosed nudges around your base — toward a near deadline or a bucket with piled-up reviews.
+              Never below a 3% floor for any area, and reviews surface in sessions regardless, so nothing gets
+              forgotten. Off = your sliders rule exactly.
+            </p>
+          </div>
+          <Toggle
+            checked={state.settings.coachManagedAllocations}
+            onChange={(v) => dispatch({ type: 'update-settings', settings: { coachManagedAllocations: v } })}
+            label="Let the coach tune the balance"
+          />
+        </div>
         <div className="space-y-3">
           {BUCKETS.map((b) => (
             <div key={b.id} className="flex items-center gap-3">

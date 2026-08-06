@@ -23,7 +23,8 @@ import { ACADEMIC_BUCKETS, BUCKET_BY_ID } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { evidenceFor, stateRank } from './mastery'
 import { dueReviews } from './scheduler'
-import { allocationReport, relativeDebt, type AllocationReport } from './allocation'
+import { relativeDebt, type AllocationReport } from './allocation'
+import { effectiveAllocation } from './allocationPlus'
 import { uid } from './rng'
 
 export interface PlannerContext {
@@ -217,8 +218,12 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   const { index, evidence, state, now, checkIn } = ctx
   const rationale: string[] = []
   const blocks: PlannedBlock[] = []
-  const report = allocationReport(state.events, state.settings, now)
+  const alloc = effectiveAllocation(state, evidence, index, now)
+  const report = alloc.report
   const conservative = state.sessions.length < 3
+  if (alloc.tuned && alloc.notes.length) {
+    rationale.push(`Balance tuned: ${alloc.notes[0]}`)
+  }
   if (conservative) {
     rationale.push(
       'Personalization is still calibrating (fewer than 3 sessions of evidence), so difficulty stays moderate.',

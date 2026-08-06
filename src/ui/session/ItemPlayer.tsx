@@ -178,6 +178,16 @@ export function ItemPlayer({
 
   // ----- multi-part flow -----
   const submitPart = () => {
+    // Rubric parts are SELF-scored from the checked criteria — the free-text
+    // attempt must never be run through the deterministic validator.
+    if (spec.type === 'rubric') {
+      const score = Math.min(1, rubricSelfChecked.length / spec.criteria.length)
+      if (firstResponse === null) setFirstResponse(response || '(self-assessed)')
+      setPartOutcomes((prev) => [...prev, { firstCorrect: null, score }])
+      setRetryVerdictOk(null)
+      setPhase('final')
+      return
+    }
     const verdict = validate(spec, response)
     if (verdict.formatError && !verdict.ok) {
       setFormatError(verdict.formatError)
@@ -185,7 +195,7 @@ export function ItemPlayer({
     }
     setFormatError(null)
     if (firstResponse === null) setFirstResponse(response)
-    setPartOutcomes((prev) => [...prev, { firstCorrect: spec.type === 'rubric' ? null : verdict.ok, score: verdict.score }])
+    setPartOutcomes((prev) => [...prev, { firstCorrect: verdict.ok, score: verdict.score }])
     setRetryVerdictOk(verdict.ok)
     setPhase('final')
   }

@@ -62,8 +62,12 @@ export const IconProgress = base(
 
 export const IconSettings = base(
   <>
-    <circle cx="12" cy="12" r="3.2" />
-    <path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8" />
+    {/* A gear that reads as a gear: solid ring + hub, with stout teeth. */}
+    <circle cx="12" cy="12" r="6" />
+    <circle cx="12" cy="12" r="2.1" />
+    <g strokeWidth={3.1}>
+      <path d="M12 2.9v1.9M12 19.2v1.9M2.9 12h1.9M19.2 12h1.9M5.6 5.6l1.35 1.35M17.05 17.05l1.35 1.35M18.4 5.6l-1.35 1.35M6.95 17.05 5.6 18.4" />
+    </g>
   </>,
 )
 

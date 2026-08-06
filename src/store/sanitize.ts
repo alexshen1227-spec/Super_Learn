@@ -92,6 +92,7 @@ function sanitizeSettings(raw: unknown): AppSettings {
     theme: ['light', 'dark', 'system'].includes(s.theme as string) ? (s.theme as AppSettings['theme']) : d.theme,
     textSpacing: bool(s.textSpacing, d.textSpacing),
     allocations,
+    coachManagedAllocations: bool(s.coachManagedAllocations, d.coachManagedAllocations),
     confidencePrompts: ['normal', 'minimal'].includes(s.confidencePrompts as string)
       ? (s.confidencePrompts as AppSettings['confidencePrompts'])
       : d.confidencePrompts,

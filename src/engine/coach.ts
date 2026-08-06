@@ -13,7 +13,7 @@ import type {
 import { ACADEMIC_BUCKETS, BUCKETS } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { evidenceFor, stateRank } from './mastery'
-import { allocationReport } from './allocation'
+import { effectiveAllocation } from './allocationPlus'
 import { calibrationGap, highConfidenceErrors } from './calibration'
 import { dueReviews } from './scheduler'
 import { prereqLeverage, prereqsMet, scoreSkills } from './planner'
@@ -21,6 +21,41 @@ import { prereqLeverage, prereqsMet, scoreSkills } from './planner'
 function recentEvents(events: AttemptEvent[], now: number, days: number): AttemptEvent[] {
   const cutoff = now - days * 86_400_000
   return events.filter((e) => e.t >= cutoff && e.mode !== 'placement')
+}
+
+/**
+ * Everything the coach is counting, made visible. All evidence flows through
+ * the same append-only log — daily sessions, Practice launches, reviews,
+ * puzzles, case files — and this summary proves it to the learner.
+ */
+export interface ActivityIntake {
+  days: number
+  total: number
+  graded: number
+  selfAssessed: number
+  academic: number
+  labs: number
+  puzzles: number
+  reviews: number
+  transfers: number
+  skillsTouched: number
+}
+
+export function activityIntake(events: AttemptEvent[], now: number, days = 7): ActivityIntake {
+  const recent = recentEvents(events, now, days)
+  const academicSet = new Set<string>(ACADEMIC_BUCKETS)
+  return {
+    days,
+    total: recent.length,
+    graded: recent.filter((e) => e.firstCorrect !== null).length,
+    selfAssessed: recent.filter((e) => e.firstCorrect === null && e.score !== null).length,
+    academic: recent.filter((e) => academicSet.has(e.bucket)).length,
+    labs: recent.filter((e) => !academicSet.has(e.bucket) && e.bucket !== 'puzzle').length,
+    puzzles: recent.filter((e) => e.bucket === 'puzzle').length,
+    reviews: recent.filter((e) => e.mode === 'review').length,
+    transfers: recent.filter((e) => e.mode === 'transfer').length,
+    skillsTouched: new Set(recent.flatMap((e) => e.skillIds)).size,
+  }
 }
 
 /** The single highest-leverage blocked skill, or null. */
@@ -151,6 +186,29 @@ export function coachBeliefs(
     }
   }
 
+  // Lab & puzzle work is first-class evidence — say so when it's happening.
+  const puzzleSolves = recent.filter((e) => e.bucket === 'puzzle' && e.firstCorrect === true).length
+  const puzzleTries = recent.filter((e) => e.bucket === 'puzzle' && e.firstCorrect !== null).length
+  if (puzzleTries >= 3) {
+    beliefs.push({
+      id: 'puzzles',
+      statement: `Puzzle work is counted here too: ${puzzleSolves}/${puzzleTries} clean solves in 28 days.`,
+      confidence: puzzleTries >= 8 ? 'medium' : 'low',
+      evidence: [`Chess, spatial, and logic-grid attempts flow into the same evidence log as everything else.`],
+      resolve: 'Transfer bridges test whether the strategies travel beyond the board — that evidence is tracked separately.',
+    })
+  }
+  const rubricWork = recent.filter((e) => e.firstCorrect === null && e.score !== null)
+  if (rubricWork.length >= 3) {
+    beliefs.push({
+      id: 'self-assessed',
+      statement: `${rubricWork.length} self-assessed lab activities in 28 days — these guide the plan but never grade you.`,
+      confidence: 'high',
+      evidence: [`Average self-score ${Math.round((rubricWork.reduce((a, e) => a + (e.score ?? 0), 0) / rubricWork.length) * 100)}% across pre-mortems, explanations, and perspective work.`],
+      unknown: 'Self-scores measure your standards as much as your work — the deterministic items are the anchor.',
+    })
+  }
+
   // Bottleneck
   const bn = findBottleneck(index, evidence, state)
   if (bn) {
@@ -174,7 +232,7 @@ export function weeklyObjective(
   now: number,
 ): string {
   const due = dueReviews(evidence, now)
-  const report = allocationReport(state.events, state.settings, now)
+  const report = effectiveAllocation(state, evidence, index, now).report
   const ctx = { index, evidence, state, now, checkIn: { minutes: 25, energy: 'ok' as const, focus: null } }
   let top: ReturnType<typeof scoreSkills>[number] | null = null
   for (const bucket of ACADEMIC_BUCKETS) {

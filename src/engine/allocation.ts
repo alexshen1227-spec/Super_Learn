@@ -33,7 +33,10 @@ export function allocationReport(
   events: AttemptEvent[],
   settings: AppSettings,
   now: number,
+  /** Optional coach-tuned targets (percent points); defaults to the user's base. */
+  targetsOverride?: Record<BucketId, number>,
 ): AllocationReport {
+  const weights = targetsOverride ?? settings.allocations
   const minutes = zeroRecord()
   const cutoff = now - WINDOW_MS
   for (const e of events) {
@@ -44,9 +47,9 @@ export function allocationReport(
   const actual = zeroRecord()
   const target = zeroRecord()
   const debtMinutes = zeroRecord()
-  const totalTarget = Object.values(settings.allocations).reduce((a, b) => a + b, 0) || 100
+  const totalTarget = Object.values(weights).reduce((a, b) => a + b, 0) || 100
   for (const b of BUCKETS) {
-    target[b.id] = (settings.allocations[b.id] ?? 0) / totalTarget
+    target[b.id] = (weights[b.id] ?? 0) / totalTarget
     actual[b.id] = totalMinutes > 0 ? minutes[b.id] / totalMinutes : 0
     debtMinutes[b.id] = target[b.id] * totalMinutes - minutes[b.id]
   }

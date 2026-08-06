@@ -7,7 +7,7 @@ import { brierScore, calibrationBands, calibrationGap, highConfidenceErrors } fr
 import { deriveEvidence } from './mastery'
 import { buildChallengePlan, buildFocusPlan, buildMixedReviewPlan, buildSessionPlan, prereqsMet, scoreSkills } from './planner'
 import { applyProbe, nextProbe, PLACEMENT_MAX_ITEMS, startPlacement, summarizePlacement, MATH_LADDER } from './placement'
-import { coachBeliefs, findBottleneck, todayInsight, weeklyObjective } from './coach'
+import { activityIntake, coachBeliefs, findBottleneck, todayInsight, weeklyObjective } from './coach'
 import { assignmentCorrect, countSolutions, puzzleValid } from './logicGrid'
 import { fits, isComplete, occupiedCells, rotateCells, solutionValid, specFromDrawing } from './polyomino'
 import { applySan, isForcedMate, matingMoves, movesFrom, movesKeepingMate, toughestReply } from './chessTools'
@@ -220,6 +220,43 @@ describe('planner', () => {
   })
 })
 
+describe('coach-tuned allocations', () => {
+  it('boosts a deadline bucket, floors everything at 3%, and discloses', async () => {
+    const { tuneTargets } = await import('./allocationPlus')
+    const s = stateWith([])
+    s.deadlines = [{ id: 'd', title: 'Physics quiz', dateISO: new Date(NOW + 3 * DAY).toISOString().slice(0, 10), bucket: 'physics', note: '' }]
+    const tuned = tuneTargets(s, deriveEvidence([], NOW), DEFAULT_INDEX, NOW)
+    expect(tuned.tuned).toBe(true)
+    expect(tuned.targets.physics).toBe(s.settings.allocations.physics + 8)
+    expect(tuned.notes.join(' ')).toContain('Physics quiz')
+    for (const [k, v] of Object.entries(tuned.targets)) {
+      if (s.settings.allocations[k as keyof typeof s.settings.allocations] > 0) expect(v).toBeGreaterThanOrEqual(3)
+    }
+  })
+  it('boosts buckets with piled-up due reviews', async () => {
+    const { tuneTargets } = await import('./allocationPlus')
+    // Two observer skills independent 10 days ago → both overdue.
+    const events = ['o-obsinf', 'o-recall'].flatMap((sk, i) => [
+      attempt('observer', sk, { t: NOW - 10 * DAY, seed: 100 + i }),
+      attempt('observer', sk, { t: NOW - 10 * DAY + 3_600_000, seed: 200 + i }),
+    ])
+    const s = stateWith(events)
+    const tuned = tuneTargets(s, deriveEvidence(events, NOW), DEFAULT_INDEX, NOW)
+    expect(tuned.tuned).toBe(true)
+    expect(tuned.targets.observer).toBeGreaterThan(s.settings.allocations.observer)
+    expect(tuned.notes.join(' ')).toContain('review')
+  })
+  it('is inert when the user turns coach management off', async () => {
+    const { tuneTargets } = await import('./allocationPlus')
+    const s = stateWith([])
+    s.settings.coachManagedAllocations = false
+    s.deadlines = [{ id: 'd', title: 'Quiz', dateISO: new Date(NOW + 2 * DAY).toISOString().slice(0, 10), bucket: 'math', note: '' }]
+    const tuned = tuneTargets(s, deriveEvidence([], NOW), DEFAULT_INDEX, NOW)
+    expect(tuned.tuned).toBe(false)
+    expect(tuned.targets).toEqual(s.settings.allocations)
+  })
+})
+
 describe('placement', () => {
   const profile = { ...initialState().profile, gradeLevel: 8 }
   it('starts near grade level, climbs on success, brackets on failure', () => {
@@ -280,6 +317,28 @@ describe('coach', () => {
     expect(bn).not.toBeNull()
     expect(weeklyObjective(DEFAULT_INDEX, evidence, s, NOW)).toContain('This week')
     expect(todayInsight(DEFAULT_INDEX, evidence, s, NOW).length).toBeGreaterThan(10)
+  })
+  it('intake counts every source: academic, labs, puzzles, reviews, self-assessed', () => {
+    const events = [
+      attempt('math', 'm-lineq1', { t: NOW - DAY }),
+      attempt('puzzle', 'z-chess', { t: NOW - DAY }),
+      attempt('puzzle', 'z-chess', { t: NOW - DAY, firstCorrect: false, correct: false }),
+      attempt('observer', 'o-obsinf', { t: NOW - DAY, mode: 'review' }),
+      attempt('strategist', 'st-premortem', { t: NOW - DAY, correct: null, firstCorrect: null, score: 0.75, validator: 'rubric' }),
+      attempt('math', 'm-percent', { t: NOW - DAY, mode: 'transfer' }),
+      attempt('math', 'm-percent', { t: NOW - 40 * DAY }), // outside window
+      attempt('math', 'm-percent', { t: NOW - DAY, mode: 'placement' }), // excluded
+    ]
+    const intake = activityIntake(events, NOW, 7)
+    expect(intake.total).toBe(6)
+    expect(intake.academic).toBe(2) // m-lineq1 + the m-percent transfer
+    expect(intake.puzzles).toBe(2)
+    expect(intake.labs).toBe(2) // observer review + strategist rubric
+    expect(intake.reviews).toBe(1)
+    expect(intake.transfers).toBe(1)
+    expect(intake.selfAssessed).toBe(1)
+    expect(intake.graded).toBe(5)
+    expect(intake.skillsTouched).toBe(5)
   })
 })
 

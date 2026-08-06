@@ -7,7 +7,7 @@ import { useMemo } from 'react'
 import { useEvidence, useStore } from '../../store/store'
 import { HeaderBar } from '../../App'
 import { buildContentIndex } from '../../content/registry'
-import { allocationReport } from '../../engine/allocation'
+import { effectiveAllocation } from '../../engine/allocationPlus'
 import { brierScore, calibrationBands, calibrationGap, highConfidenceErrors } from '../../engine/calibration'
 import { reviewBurden } from '../../engine/scheduler'
 import { findBottleneck } from '../../engine/coach'
@@ -57,7 +57,8 @@ export function ProgressScreen() {
   const bands = useMemo(() => calibrationBands(events), [events])
   const gap = useMemo(() => calibrationGap(events.filter((e) => e.t > now - 28 * DAY)), [events, now])
   const hce = useMemo(() => highConfidenceErrors(events).filter((e) => e.t > now - 28 * DAY), [events, now])
-  const report = useMemo(() => allocationReport(state.events, state.settings, now), [state.events, state.settings, now])
+  const alloc = useMemo(() => effectiveAllocation(state, evidence, index, now), [state, evidence, index, now])
+  const report = alloc.report
   const burden = useMemo(() => reviewBurden(evidence, now, 7), [evidence, now])
   const bottleneck = useMemo(() => findBottleneck(index, evidence, state), [index, evidence, state])
   const brier = brierScore(state.forecasts)
@@ -186,8 +187,17 @@ export function ProgressScreen() {
         </>
       ) : null}
 
-      <SectionTitle>Balance · 28 days</SectionTitle>
+      <SectionTitle>Balance · 28 days{alloc.tuned ? ' · coach-tuned' : ''}</SectionTitle>
       <Card className="p-4">
+        {alloc.tuned && alloc.notes.length ? (
+          <div className="mb-3 bg-warn-soft border border-warn/30 rounded-lg px-3 py-2">
+            {alloc.notes.map((n, i) => (
+              <p key={i} className="text-[12px] text-warn leading-snug">
+                {n}
+              </p>
+            ))}
+          </div>
+        ) : null}
         <BarPair
           rows={BUCKETS.filter((b) => report.target[b.id] > 0).map((b) => ({
             name: b.short,

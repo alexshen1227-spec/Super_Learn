@@ -8,7 +8,7 @@ import { useNav } from '../nav'
 import { HeaderBar } from '../../App'
 import { buildContentIndex } from '../../content/registry'
 import { dueReviews, nextReviewAt } from '../../engine/scheduler'
-import { allocationReport } from '../../engine/allocation'
+import { effectiveAllocation } from '../../engine/allocationPlus'
 import { todayInsight, weeklyObjective } from '../../engine/coach'
 import { scoreSkills } from '../../engine/planner'
 import { clearDraft, loadDraftSync } from '../../store/draft'
@@ -32,7 +32,8 @@ export function Today() {
   // not surface (or be resumable) inside the sample profile.
   const draft = state.sampleMode ? null : loadDraftSync()
   const due = useMemo(() => dueReviews(evidence, now), [evidence, now])
-  const report = useMemo(() => allocationReport(state.events, state.settings, now), [state.events, state.settings, now])
+  const alloc = useMemo(() => effectiveAllocation(state, evidence, index, now), [state, evidence, index, now])
+  const report = alloc.report
   const objective = useMemo(() => weeklyObjective(index, evidence, state, now), [index, evidence, state, now])
   const insight = useMemo(() => todayInsight(index, evidence, state, now), [index, evidence, state, now])
 
@@ -155,8 +156,11 @@ export function Today() {
           ) : undefined
         }
       >
-        Practice balance
+        Practice balance{alloc.tuned ? ' · coach-tuned' : ''}
       </SectionTitle>
+      {alloc.tuned && alloc.notes.length ? (
+        <p className="text-[12px] text-warn px-1 mb-1.5 leading-snug">{alloc.notes[0]}</p>
+      ) : null}
       <Card className="p-4">
         {report.totalMinutes < 10 ? (
           <p className="text-[13px] text-muted">
