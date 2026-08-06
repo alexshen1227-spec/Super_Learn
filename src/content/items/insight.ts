@@ -5,7 +5,7 @@
  * real danger break the game frame and point to trusted adults/resources.
  */
 import type { ItemTemplate } from '../../domain/types'
-import { mcq, tpl } from '../lib'
+import { draft, mcq, multi, tpl } from '../lib'
 
 const emotionVocab = tpl(
   { id: 'h-emotion-vocab', name: 'Precise emotional vocabulary', skillIds: ['h-emotion'], bucket: 'insight', difficulty: 2, variants: 4, minutes: 2 },
@@ -52,21 +52,51 @@ const emotionVocab = tpl(
 )
 
 const multipleMinds = tpl(
-  { id: 'h-multiple-minds', name: 'Multiple Minds', skillIds: ['h-emotion'], bucket: 'insight', difficulty: 3, variants: 3, minutes: 3.5 },
-  (_rng, seed) => {
+  { id: 'h-multiple-minds', name: 'Multiple Minds', skillIds: ['h-emotion'], bucket: 'insight', difficulty: 3, variants: 3, minutes: 4.5, kind: 'multi' },
+  (rng, seed) => {
     const cases = [
       {
         s: 'You wave at a classmate across the street. They look toward you and walk on without waving.',
+        assumesIntent: [
+          'They decided to snub me.',
+          'They wanted me to notice being ignored.',
+          'They have chosen to cool off the friendship.',
+        ],
+        staysOpen: [
+          '"Looked toward" is not the same as "saw" — especially at that distance.',
+          'They may not have recognized me out of the context they expect me in.',
+          'How they greet me next time we meet normally would tell me more.',
+        ],
         model:
           'Plausible minds: (1) Didn\'t actually see you — "looked toward" is not "saw", especially at distance. (2) Saw movement, didn\'t recognize you without expecting you there. (3) Preoccupied — rehearsing something, bad morning. (4) Saw and snubbed you — possible, but it is ONE hypothesis of four, and the only one that assigns intent. What would separate them: their behavior next time you meet normally.',
       },
       {
         s: 'Your group chat goes quiet for a whole evening after you share your project idea.',
+        assumesIntent: [
+          'They think the idea is bad and are avoiding saying so.',
+          'They are deliberately leaving me without an answer.',
+          'They have already agreed among themselves to drop it.',
+        ],
+        staysOpen: [
+          'On a weekday evening, silence is the default state of a group chat.',
+          'A substantive reply costs more effort than an emoji, so it waits.',
+          'The message may simply be buried under later ones.',
+        ],
         model:
           'Plausible minds: (1) Evening — people are at practice, dinner, homework; silence is the default, not a verdict. (2) They\'re thinking it over; substantive replies cost more than emoji. (3) They missed it under other messages. (4) They dislike it and are unsure how to say so. Only (4) is about the idea\'s quality, and the morning replies will separate the worlds cheaply.',
       },
       {
         s: 'The teacher returns everyone\'s quiz but asks you to stay after class.',
+        assumesIntent: [
+          'They are keeping me back to tell me off.',
+          'They want to single me out in front of the class.',
+          'They have decided there is a problem with my work.',
+        ],
+        staysOpen: [
+          'An unusual answer can prompt curiosity as easily as concern.',
+          'It may be logistics — a form, a schedule, a signature.',
+          'Whatever it is, the information arrives at the same moment either way.',
+        ],
         model:
           'Plausible minds: (1) A question about an unusual answer — curiosity, not accusation. (2) They noticed improvement or want to suggest a competition/advanced material. (3) Logistics: a form, a schedule issue. (4) A concern about the quiz. Pre-living only scenario (4) for the whole class period costs real attention and settles nothing — the information arrives at the same time either way.',
       },
@@ -74,21 +104,39 @@ const multipleMinds = tpl(
     const c = cases[seed % cases.length]
     return {
       title: 'Hold several readings at once',
-      prompt: `${c.s}\n\nWrite three genuinely different explanations for their behavior, at most one involving hostility toward you. Then score yourself.`,
-      answer: {
-        type: 'rubric',
-        criteria: [
-          'Three explanations with genuinely different causes',
-          'At most one involves hostility or judgment of me',
-          'At least one is purely situational (timing, logistics, chance)',
-          'I named what evidence would separate the explanations',
-        ],
-        model: c.model,
-      },
+      prompt: `${c.s}`,
+      parts: [
+        {
+          stage: 'Readings',
+          prompt:
+            'Write three genuinely different explanations for their behavior, at most one involving hostility toward you. Write yours first — the model appears once you are done.',
+          answer: draft({
+            criteria: [
+              'Three explanations with genuinely different causes',
+              'At most one involving hostility or judgment of me',
+              'At least one purely situational (timing, logistics, chance)',
+              'The evidence that would separate the explanations, named',
+            ],
+            model: c.model,
+            minWords: 25,
+            placeholder: 'Reading 1… Reading 2… Reading 3… What would tell them apart…',
+          }),
+          explanation:
+            'Rotating the cause — perception, situation, inner state, and only then intent-about-you — is the habit being trained. This draft is yours; nothing here is scored.',
+        },
+        {
+          stage: 'Check',
+          prompt:
+            'Now the graded part. Select every reading below that **assumes you already know what the other person intended**.',
+          answer: multi(rng, c.assumesIntent, c.staysOpen),
+          explanation:
+            'A reading that assigns intent has quietly closed the question. The open readings keep more than one world alive and point at the cheap observation that would separate them — which is what makes them useful rather than merely charitable.',
+        },
+      ],
       hints: [
         'Rotate the causes: perception (did they even see/read it?), situation, their inner state, and only then intent-about-you.',
         'The self-centered reading feels most TRUE because it is most VIVID — that is a property of your attention, not of their mind.',
-        'Compare with the model after scoring.',
+        'For the check: if a reading states what they meant, it assumes intent — even a kind one does.',
       ],
       explanation: `Model: ${c.model} The skill is holding readings as open hypotheses. It protects you twice: from needless hurt when the boring explanation is true, and from missing real signals — because testing beats assuming in both directions.`,
     }

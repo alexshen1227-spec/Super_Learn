@@ -92,6 +92,20 @@ others are cited from their stable published records.
   first meaningful error → why → smallest next step → corrected attempt →
   a different item on the same idea later). The exact 6-step script is a
   HEURISTIC implementation of these findings.
+- **Coverage correction (2026-08-06)**: this claim was previously broader than
+  the implementation. The repair fork existed only for single-item activities;
+  multi-part activities — case files, work studios, and the method drill —
+  showed the explanation on an error and moved on, with no corrected attempt.
+  That was ~30% of all graded forms, including the 360 forms of the method
+  drill. Every graded checkpoint now enters the same fork. Where a full reveal
+  is taken inside a multi-part activity there is no twin problem (regenerating
+  the template would swap every other checkpoint), so the repair is
+  consolidated by the shortened review interval instead — which is the
+  delayed re-testing half of the finding rather than the immediate half.
+- **Evidence rule**: a repaired checkpoint yields GUIDED evidence only.
+  `firstCorrect` is fixed at the first submission and a hint anywhere in the
+  activity disqualifies independent evidence (`engine/activity.ts`, tested in
+  `activity.test.ts`).
 
 ## 6. Self-explanation — EVIDENCE (moderate)
 

@@ -134,10 +134,11 @@ export function buildSampleState(): AppState {
           firstResponse = isCorrect ? 'solved' : 'incomplete'
           finalResponse = 'solved'
         } else if (spec) {
-          if (spec.type === 'rubric') {
+          if (spec.type === 'draft') {
+            // Drafts are exposure, never evidence — the sample log says so too.
             correct = null
-            score = isCorrect ? 1 : 0.5
-            firstResponse = correctResponse(spec)
+            score = null
+            firstResponse = '(written draft)'
             finalResponse = firstResponse
           } else {
             firstResponse = isCorrect ? correctResponse(spec) : wrongResponse(spec)

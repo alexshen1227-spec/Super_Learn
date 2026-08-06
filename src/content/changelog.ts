@@ -11,6 +11,32 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.1',
+    date: '2026-08-06',
+    title: 'Every Error Gets a Repair',
+    points: [
+      'The corrective loop now covers all of your work. Case files, work studios, and the "which method?" drill used to show the explanation after a wrong checkpoint and move straight on — no corrected attempt. That was about 30% of every graded thing in the app, including all 360 forms of the method drill, which is the activity that trains recognising what kind of problem you are looking at.',
+      'A wrong checkpoint now stops and offers the same fork the single problems always had: try again, or have it walked through. Getting it right after a correction counts as guided evidence — it can never become independent evidence, and a hint anywhere in the activity still disqualifies the whole thing.',
+      'Repairing an error is no longer treated the same as walking away from one. Previously a multi-part activity was scored purely on first attempts, so correcting your mistake changed nothing. Now a corrected activity earns guided credit, while an abandoned error still counts as a miss and still shortens the review interval.',
+      'The method drill scaffolds each of its six checkpoints separately. They are six different problems, so the single shared hint list could not help with any of them; each now has its own ladder that goes from "read the question sentence, not the story" to naming the method.',
+      'The coach stops describing your bottleneck and hands you the work. The highest-leverage blocked skill now has a button that starts a focused session on it directly.',
+    ],
+  },
+  {
+    version: '2.0',
+    date: '2026-08-06',
+    title: 'Nothing Grades Itself Any More',
+    points: [
+      'Self-scoring is gone. Written work used to be rated against criteria by you, and a rating of 75% or better counted as a first-attempt success — meaning a skill could reach Independent on writing nobody checked. It cannot now: only deterministic grading produces evidence, and the mastery replay ignores scores entirely.',
+      'Every written artifact became a draft: you write it from memory, then read it beside the model and the criteria. There is no rating control, because neither the app nor you should be grading it. All nineteen of these checkpoints are now followed by an objective probe on the same material — a peer-review discrimination, a repair test, a real problem — and that probe is what counts.',
+      'Explain-it-back is the clearest case. You still explain a retained skill from memory, ungraded; then you solve a real problem drawn from that skill\'s own audited bank. An explanation that reads well but cannot drive a problem is exactly the hollow retention this drill exists to catch.',
+      'The content audit now enforces all of it: no item can be graded by anything but the validator, no draft may end an activity, and every draft must be followed by a graded part. Three new mastery tests prove that ungraded work never promotes, never counts as a miss, and never moves a review date.',
+      'Your history recomputes honestly, as it always has. Past self-scored attempts stay in the log as practice, but they no longer prop up any rung — so a skill that reached Independent purely on self-rated writing will show its real state.',
+      'Puzzles are now generated rather than finite. The hand-authored bank held 53 distinct forms against roughly 660 focused minutes a year — the same puzzles three times over. New generators build spatial layouts by partitioning a solved rectangle, and logic grids solution-first with clues pruned against the real solver until exactly one solution survives. Every generated form is verified solvable and unique across its whole variant range.',
+      'Observation and deduction gained parameterized families with computed answers: scene audits, delayed-recall stock checks, natural-frequency base-rate problems, and validity checks. No category now recycles its material inside a year — the worst was three times over, and the audit fails the build if any declared variant count is padded.',
+    ],
+  },
+  {
     version: '1.9',
     date: '2026-08-06',
     title: 'Authentic Work, Not Worksheet Theater',

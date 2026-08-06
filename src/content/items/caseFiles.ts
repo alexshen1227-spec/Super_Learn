@@ -18,7 +18,7 @@ const CASES: CaseDef[] = [
     id: 'case-lunch-waste',
     name: 'Case File: The Lunchroom Numbers',
     skillIds: ['m-data', 's-corr', 'm-percent'],
-    minutes: 12,
+    minutes: 14,
     body: {
       title: 'The Lunchroom Numbers',
       prompt:
@@ -65,7 +65,7 @@ const CASES: CaseDef[] = [
           prompt:
             'Write the council a 2–3 sentence conclusion: what the data shows, how confident to be, and what check would firm it up.',
           answer: {
-            type: 'rubric',
+            type: 'draft',
             criteria: [
               'States the ~20% within-menu drop (not the cross-menu 28 kg)',
               'Confidence is hedged: consistent with, not proven',
@@ -75,7 +75,24 @@ const CASES: CaseDef[] = [
               'Model: "Comparing matching menus, waste fell about 20% after the posters went up (pizza 40→32 kg, stew 60→48 kg). That is consistent with the posters helping, but the design can\'t rule out other week 3–4 changes. Suggest: confirm nothing else changed with the kitchen, or take posters down for one week — if waste rebounds, the case is strong."',
           },
           explanation:
-            'A good conclusion is sized to its evidence: effect stated within like-for-like comparisons, confidence hedged, and a falsifying follow-up named. The posters-down week is a reversal test — the strongest cheap design available here.',
+            'A good conclusion is sized to its evidence: effect stated within like-for-like comparisons, confidence hedged, and a falsifying follow-up named. The posters-down week is a reversal test — the strongest cheap design available here. Nothing here is scored — the next part is.',
+        },
+        {
+          stage: 'Peer review',
+          prompt:
+            'Now the graded part. Four councils submitted conclusions from the same table. Which one is **both** numerically honest **and** correctly hedged?',
+          answer: {
+            type: 'mcq',
+            options: [
+              'Waste fell about 20% within each menu after the posters went up — consistent with the posters helping, though other week 3–4 changes are not ruled out.',
+              'Waste fell about 20% within each menu after the posters went up, proving the posters caused the drop.',
+              'Waste fell 28 kg after the posters went up, a clear success for the campaign.',
+              'The menus differ between weeks, so this data cannot say anything about the posters.',
+            ],
+            correct: 0,
+          },
+          explanation:
+            'Two distinct failures are on offer. "Proving" has the right number with the wrong confidence — a before/after design cannot establish cause. "28 kg" is the cross-menu cherry-pick (stew 60 vs pizza 32), which quietly credits the posters with the menu change. The last option over-corrects: the matched pairs exist precisely so the menu can be held constant, so the data is not silent. Only the first sizes the claim to the design.',
         },
       ],
       hints: [
@@ -91,7 +108,7 @@ const CASES: CaseDef[] = [
     id: 'case-tournament',
     name: 'Case File: The Tournament Weekend',
     skillIds: ['st-ev', 'st-decomp', 'st-premortem'],
-    minutes: 12,
+    minutes: 14,
     body: {
       title: 'The Tournament Weekend',
       prompt:
@@ -137,7 +154,7 @@ const CASES: CaseDef[] = [
         {
           prompt: 'Pre-mortem the plan: it is Monday and the worksheet is NOT done. Write the two most likely causes and a repair for each.',
           answer: {
-            type: 'rubric',
+            type: 'draft',
             criteria: [
               'Two different causes, at least one boring/logistical',
               'Each cause has a repair that changes the plan NOW (not "try harder")',
@@ -147,7 +164,26 @@ const CASES: CaseDef[] = [
               'Model: (1) Tournament exhaustion wiped out Sunday morning — repair: move the worksheet to a fixed 10 am start with a friend check-in, and protect Saturday sleep. (2) The worksheet needed the textbook left at school — repair: the Friday skim exists precisely to catch this; photograph the pages Friday. (3) Sunday plans appeared — repair: the evening buffer absorbs one surprise; two means the Friday skim becomes Friday DO.',
           },
           explanation:
-            'Plans fail on logistics more than on willpower. The Friday skim de-risks the whole weekend for 10 minutes — highest leverage-per-minute in the plan.',
+            'Plans fail on logistics more than on willpower. The Friday skim de-risks the whole weekend for 10 minutes — highest leverage-per-minute in the plan. Nothing here is scored — the next part is.',
+        },
+        {
+          stage: 'Repair test',
+          prompt:
+            'Now the graded part. Select every response below that is a **real repair** — one that changes a condition in the weekend plan, rather than restating the intention.',
+          answer: {
+            type: 'multi',
+            options: [
+              'Photograph the worksheet pages on Friday so the textbook staying at school cannot block Sunday.',
+              'Set the worksheet for a fixed 10 am Sunday start rather than "Sunday morning".',
+              'Decide to be disciplined about Sunday regardless of how Saturday goes.',
+              'Keep Sunday evening free as a buffer for exactly one surprise.',
+              'Remember that the worksheet matters for the science grade.',
+              'Promise yourself an early night on Saturday if the tournament runs long.',
+            ],
+            correct: [0, 1, 3],
+          },
+          explanation:
+            'A repair changes something you could point at on Friday: a photograph exists, a time is fixed, an evening is reserved. "Be disciplined", "remember it matters", and a promise contingent on how the day goes all leave every failure condition untouched — which is why the same weekend fails the same way twice.',
         },
       ],
       hints: [

@@ -10,13 +10,13 @@
  * Responses are serialized as strings for the event log:
  *  numeric/fraction/text → raw input; mcq → option index; multi → sorted
  *  indexes "0,2"; order → permutation "2,0,1"; classify → per-statement
- *  category "0,1,2"; rubric → checked criteria "0,2".
+ *  category "0,1,2"; draft → the written text itself (never graded).
  */
 import type { AnswerSpec } from '../domain/types'
 
 export interface Verdict {
   ok: boolean
-  /** Rubric-style partial credit 0..1 (equals ok?1:0 for deterministic types). */
+  /** Deterministic partial credit 0..1 (equals ok?1:0 for all-or-nothing types). */
   score: number
   /** Short note on format problems ("could not read that as a number"). */
   formatError?: string
@@ -143,13 +143,11 @@ export function validate(spec: AnswerSpec, raw: string): Verdict {
       const score = right / spec.statements.length
       return { ok: score === 1, score }
     }
-    case 'rubric': {
-      const picks = parseIndexList(raw)
-      if (!picks) return { ok: false, score: 0 }
-      const score = Math.min(1, new Set(picks).size / spec.criteria.length)
-      // Rubric items are self-assessed: ok reflects a substantial pass.
-      return { ok: score >= 0.75, score }
-    }
+    case 'draft':
+      // A draft is never graded. `ok` here means "accepted, move on" — callers
+      // must log it as correct: null / score: null so the mastery replay sees
+      // exposure and nothing more.
+      return { ok: true, score: 0 }
   }
 }
 
@@ -170,8 +168,41 @@ export function describeAnswer(spec: AnswerSpec): string {
       return spec.correct.map((i) => spec.options[i]).join(' → ')
     case 'classify':
       return spec.statements.map((s) => `${s.text} → ${spec.categories[s.category]}`).join('; ')
-    case 'rubric':
+    case 'draft':
       return spec.model
+  }
+}
+
+/**
+ * Human-readable form of what the LEARNER submitted, for the repair screen.
+ * Choice answers are serialized as indexes, and showing "Your answer: 2" back
+ * to someone who just picked a sentence is useless at exactly the moment they
+ * need to see their own reasoning.
+ */
+export function describeResponse(spec: AnswerSpec, raw: string): string {
+  // Number('') is 0 — a blank must never read back as "you picked option 0",
+  // the same trap the mcq validator guards against.
+  if (raw.trim() === '') return raw
+  const indexes = parseIndexList(raw)
+  switch (spec.type) {
+    case 'mcq': {
+      const i = Number(raw)
+      return Number.isInteger(i) && i >= 0 && i < spec.options.length ? spec.options[i] : raw
+    }
+    case 'multi':
+    case 'order': {
+      if (!indexes?.length) return raw
+      const picked = indexes.filter((i) => i >= 0 && i < spec.options.length).map((i) => spec.options[i])
+      return picked.length ? picked.join(spec.type === 'order' ? ' → ' : '; ') : raw
+    }
+    case 'classify': {
+      if (!indexes?.length) return raw
+      return indexes
+        .map((c, i) => `${spec.statements[i]?.text ?? `#${i + 1}`} → ${spec.categories[c] ?? '?'}`)
+        .join('; ')
+    }
+    default:
+      return raw
   }
 }
 
@@ -200,8 +231,10 @@ export function correctResponse(spec: AnswerSpec): string {
       return spec.correct.join(',')
     case 'classify':
       return spec.statements.map((s) => s.category).join(',')
-    case 'rubric':
-      return spec.criteria.map((_, i) => i).join(',')
+    case 'draft':
+      // A draft has no "correct" text. The audit treats drafts as ungraded and
+      // never asserts a verdict on them; this keeps the function total.
+      return spec.model
   }
 }
 
@@ -228,7 +261,7 @@ export function wrongResponse(spec: AnswerSpec): string {
     }
     case 'classify':
       return spec.statements.map((s) => (s.category + 1) % spec.categories.length).join(',')
-    case 'rubric':
-      return '' // empty rubric = score 0
+    case 'draft':
+      return '' // a draft cannot be wrong; the audit skips the negative case
   }
 }

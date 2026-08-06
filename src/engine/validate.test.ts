@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseNumeric, validate, correctResponse, wrongResponse } from './validate'
+import { parseNumeric, validate, correctResponse, describeResponse, wrongResponse } from './validate'
 import type { AnswerSpec } from '../domain/types'
 
 describe('parseNumeric', () => {
@@ -123,10 +123,31 @@ describe('text/mcq/multi/order/classify/rubric', () => {
     expect(half.ok).toBe(false)
     expect(half.score).toBe(0.5)
   })
-  it('rubric self-score maps to fraction of criteria', () => {
-    const s: AnswerSpec = { type: 'rubric', criteria: ['a', 'b', 'c', 'd'], model: 'm' }
-    expect(validate(s, '0,1,2,3').score).toBe(1)
-    expect(validate(s, '0,1,2').ok).toBe(true) // 0.75 passes
-    expect(validate(s, '0').ok).toBe(false)
+  it('describeResponse shows the learner what they actually chose', () => {
+    const mcq: AnswerSpec = { type: 'mcq', options: ['alpha', 'beta', 'gamma'], correct: 2 }
+    expect(describeResponse(mcq, '1')).toBe('beta')
+    // Out-of-range or unparseable input falls back to the raw string.
+    expect(describeResponse(mcq, '9')).toBe('9')
+    expect(describeResponse(mcq, '')).toBe('')
+
+    const multi: AnswerSpec = { type: 'multi', options: ['red', 'green', 'blue'], correct: [0, 2] }
+    expect(describeResponse(multi, '0,2')).toBe('red; blue')
+
+    const order: AnswerSpec = { type: 'order', options: ['first', 'second', 'third'], correct: [0, 1, 2] }
+    expect(describeResponse(order, '2,0,1')).toBe('third → first → second')
+
+    // Free-entry types are already readable.
+    expect(describeResponse({ type: 'numeric', answer: 12 }, '15')).toBe('15')
+  })
+
+  it('a draft is accepted but never carries a score', () => {
+    const s: AnswerSpec = { type: 'draft', criteria: ['a', 'b', 'c'], model: 'a model answer' }
+    // Any text is "accepted" so the learner can move on...
+    expect(validate(s, 'anything at all').ok).toBe(true)
+    expect(validate(s, '').ok).toBe(true)
+    // ...but the score is always zero, so no caller can turn a draft into
+    // partial credit and no draft can ever reach a promotion threshold.
+    expect(validate(s, 'a long and genuinely excellent answer').score).toBe(0)
+    expect(validate(s, '').score).toBe(0)
   })
 })

@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AnswerSpec, AttemptMode, ErrorTag, ItemTemplate, RenderedItem } from '../../domain/types'
 import { ERROR_TAGS } from '../../domain/types'
-import { describeAnswer, validate, validatorName } from '../../engine/validate'
+import { describeAnswer, describeResponse, validate, validatorName } from '../../engine/validate'
 import type { ContentIndex } from '../../engine/content-index'
 import { KB_BY_SKILL } from '../../content/kb'
 import type { ActivityRecord } from '../../store/draft'
@@ -18,31 +18,31 @@ import { IconFlag, IconHint } from '../icons'
 import { useStore } from '../../store/store'
 import { uid } from '../../engine/rng'
 import type { ActivityResult } from './SessionScreen'
+import { aggregateParts, type PartOutcome } from '../../engine/activity'
 
 type Phase = 'study' | 'answer' | 'wrong' | 'retry' | 'revealed' | 'final'
 
-interface PartOutcome {
-  firstCorrect: boolean | null
-  score: number
-}
-
 interface SavedItemPlayerState {
-  kind: 'item-player-v1'
+  kind: 'item-player-v3'
   partIndex: number
   partOutcomes: PartOutcome[]
   phase: Phase
   response: string
-  rubricSelfChecked: number[]
-  rubricStage: 'attempt' | 'compare'
+  draftStage: 'write' | 'compare'
   firstResponse: string | null
   retryVerdictOk: boolean | null
   confidence: number | null
+  /** Mid-repair state for the CURRENT part, so a reload cannot skip a repair. */
+  partFirstResponse: string | null
+  partWasWrongFirst: boolean
 }
 
 function savedItemPlayerState(extra: unknown): SavedItemPlayerState | null {
   if (!extra || typeof extra !== 'object') return null
   const candidate = extra as Partial<SavedItemPlayerState>
-  if (candidate.kind !== 'item-player-v1' || typeof candidate.partIndex !== 'number') return null
+  // Earlier shapes predate ungraded drafts and per-part repair; a partially
+  // restored repair would be worse than starting the activity cleanly.
+  if (candidate.kind !== 'item-player-v3' || typeof candidate.partIndex !== 'number') return null
   return candidate as SavedItemPlayerState
 }
 
@@ -89,8 +89,12 @@ export function ItemPlayer({
   const [errorTag, setErrorTag] = useState<ErrorTag | null>(null)
   const [formatError, setFormatError] = useState<string | null>(null)
   const [partOutcomes, setPartOutcomes] = useState<PartOutcome[]>(saved?.partOutcomes ?? [])
-  const [rubricSelfChecked, setRubricSelfChecked] = useState<number[]>(saved?.rubricSelfChecked ?? [])
-  const [rubricStage, setRubricStage] = useState<'attempt' | 'compare'>(saved?.rubricStage ?? 'attempt')
+  const [draftStage, setDraftStage] = useState<'write' | 'compare'>(saved?.draftStage ?? 'write')
+  // Per-part repair state. Multi-part items used to skip the corrective loop
+  // entirely — a wrong checkpoint went straight to the explanation — so ~30%
+  // of graded work never required a correction. These track the CURRENT part.
+  const [partFirstResponse, setPartFirstResponse] = useState<string | null>(saved?.partFirstResponse ?? null)
+  const [partWasWrongFirst, setPartWasWrongFirst] = useState(saved?.partWasWrongFirst ?? false)
   const [scratchOpen, setScratchOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const finished = useRef(false)
@@ -105,24 +109,25 @@ export function ItemPlayer({
   }, [])
 
   // Multi-stage work can take most of a session. Preserve the exact
-  // checkpoint, draft, and rubric comparison state if a phone backgrounds or
+  // checkpoint, draft text, and comparison state if a phone backgrounds or
   // reloads the app midway through the artifact.
   useEffect(() => {
     if (!parts) return
     const extra: SavedItemPlayerState = {
-      kind: 'item-player-v1',
+      kind: 'item-player-v3',
       partIndex,
       partOutcomes,
       phase,
       response,
-      rubricSelfChecked,
-      rubricStage,
+      draftStage,
       firstResponse,
       retryVerdictOk,
       confidence,
+      partFirstResponse,
+      partWasWrongFirst,
     }
     onSnapshot({ extra, hintsUsed: hintsShown, firstResponse })
-  }, [parts, partIndex, partOutcomes, phase, response, rubricSelfChecked, rubricStage, firstResponse, retryVerdictOk, confidence, hintsShown, onSnapshot])
+  }, [parts, partIndex, partOutcomes, phase, response, draftStage, firstResponse, retryVerdictOk, confidence, hintsShown, partFirstResponse, partWasWrongFirst, onSnapshot])
 
   // Twin item after a reveal: same template, different variant.
   const twinItem = useMemo(
@@ -135,10 +140,14 @@ export function ItemPlayer({
   void kbIndex
 
   const isFirstAttemptPhase = phase === 'answer'
-  const needsConfidence = askConfidence && isFirstAttemptPhase && spec.type !== 'rubric'
+  const needsConfidence = askConfidence && isFirstAttemptPhase && spec.type !== 'draft'
+
+  // A multi-part activity asks a different question at every checkpoint, so
+  // prefer that checkpoint's own ladder when the content provides one.
+  const activeHints = (parts && parts[partIndex].hints?.length ? parts[partIndex].hints : item.hints) as string[]
 
   const revealHint = () => {
-    if (hintsShown < item.hints.length) {
+    if (hintsShown < activeHints.length) {
       const next = hintsShown + 1
       setHintsShown(next)
       onSnapshot({ hintsUsed: next })
@@ -154,7 +163,7 @@ export function ItemPlayer({
         firstResponse: firstResponse ?? opts.finalResp,
         finalResponse: opts.finalResp,
         correct: opts.eventualOk,
-        firstCorrect: spec.type === 'rubric' ? null : opts.firstOk && hintsShown === 0,
+        firstCorrect: spec.type === 'draft' ? null : opts.firstOk && hintsShown === 0,
         score: opts.score,
         hintLevel: hintsShown,
         confidence,
@@ -196,36 +205,49 @@ export function ItemPlayer({
     finishSingle({ firstOk: false, eventualOk: verdict.ok, score: verdict.score, finalResp: response })
   }
 
-  const submitRubric = () => {
-    const score = spec.type === 'rubric' ? Math.min(1, rubricSelfChecked.length / spec.criteria.length) : 0
+  /**
+   * Defensive only: the content audit forbids a `draft` as a single item's
+   * whole answer, because a draft can never produce evidence. If one ever
+   * slipped through, it must log as exposure — never as a score.
+   */
+  const submitDraftSingle = () => {
     setPhase('final')
     setRetryVerdictOk(null)
     if (finished.current) return
     finished.current = true
     onFinish(
       {
-        firstResponse: response || '(self-assessed)',
-        finalResponse: rubricSelfChecked.join(','),
+        firstResponse: response,
+        finalResponse: response,
         correct: null,
         firstCorrect: null,
-        score,
+        score: null,
         hintLevel: hintsShown,
-        confidence,
+        confidence: null,
         errorTag: null,
-        validator: 'rubric',
+        validator: 'draft',
       },
       activeSec.current,
     )
   }
 
   // ----- multi-part flow -----
+
+  /** Close out the current part. `firstCorrect` always reflects the FIRST
+   *  submission, never the corrected one — a repair earns guided evidence,
+   *  never independent evidence. */
+  const resolvePart = (firstCorrect: boolean, eventualScore: number, eventualOk: boolean | null) => {
+    setPartOutcomes((prev) => [...prev, { firstCorrect, eventualOk, score: eventualScore, graded: true }])
+    setRetryVerdictOk(eventualOk)
+    setPhase('final')
+  }
+
   const submitPart = () => {
-    // Rubric parts are SELF-scored from the checked criteria — the free-text
-    // attempt must never be run through the deterministic validator.
-    if (spec.type === 'rubric') {
-      const score = Math.min(1, rubricSelfChecked.length / spec.criteria.length)
-      if (firstResponse === null) setFirstResponse(response || '(self-assessed)')
-      setPartOutcomes((prev) => [...prev, { firstCorrect: null, score }])
+    // A draft is never validated and never scored. It is recorded as an
+    // ungraded outcome so the aggregation below can skip it entirely.
+    if (spec.type === 'draft') {
+      if (firstResponse === null) setFirstResponse(response)
+      setPartOutcomes((prev) => [...prev, { firstCorrect: null, eventualOk: null, score: 0, graded: false }])
       setRetryVerdictOk(null)
       setPhase('final')
       return
@@ -237,35 +259,57 @@ export function ItemPlayer({
     }
     setFormatError(null)
     if (firstResponse === null) setFirstResponse(response)
-    setPartOutcomes((prev) => [...prev, { firstCorrect: verdict.ok, score: verdict.score }])
-    setRetryVerdictOk(verdict.ok)
-    setPhase('final')
+    if (partFirstResponse === null) setPartFirstResponse(response)
+    if (verdict.ok) {
+      resolvePart(!partWasWrongFirst, verdict.score, true)
+      return
+    }
+    // WRONG on the first look at this checkpoint: enter the repair fork rather
+    // than revealing the answer and moving on. The corrected attempt is the
+    // part of the loop that the evidence actually supports (RESEARCH.md §5).
+    setPartWasWrongFirst(true)
+    setPhase('wrong')
   }
+
+  /** Corrected attempt on a part after an error. */
+  const submitPartRetry = () => {
+    const verdict = validate(spec, response)
+    if (verdict.formatError && !verdict.ok) {
+      setFormatError(verdict.formatError)
+      return
+    }
+    setFormatError(null)
+    resolvePart(false, verdict.ok ? verdict.score : 0, verdict.ok)
+  }
+
+  /** After a full reveal there is nothing left to prove on this checkpoint —
+   *  the miss is already logged and the scheduler will resurface the skill. */
+  const resolvePartAfterReveal = () => resolvePart(false, 0, false)
 
   const nextPart = () => {
     if (!parts) return
     if (partIndex + 1 < parts.length) {
       setPartIndex(partIndex + 1)
       setResponse('')
-      setRubricSelfChecked([])
-      setRubricStage('attempt')
+      setDraftStage('write')
       setRetryVerdictOk(null)
+      setPartFirstResponse(null)
+      setPartWasWrongFirst(false)
+      setFormatError(null)
       setPhase(parts[partIndex + 1].study ? 'study' : 'answer')
     } else {
-      // aggregate the whole case
-      const scores = partOutcomes.map((p) => p.score)
-      const avg = scores.reduce((a, b) => a + b, 0) / Math.max(1, scores.length)
-      const deterministic = partOutcomes.filter((p) => p.firstCorrect !== null)
-      const allFirst = deterministic.length > 0 && deterministic.every((p) => p.firstCorrect)
+      // Evidence rules live in engine/activity.ts so they can be tested
+      // without a DOM — see activity.test.ts.
+      const agg = aggregateParts(partOutcomes, hintsShown)
       if (!finished.current) {
         finished.current = true
         onFinish(
           {
             firstResponse: firstResponse ?? '',
-            finalResponse: `${partOutcomes.length} parts`,
-            correct: deterministic.length ? deterministic.every((p) => p.firstCorrect) : null,
-            firstCorrect: deterministic.length ? allFirst && hintsShown === 0 : null,
-            score: avg,
+            finalResponse: `${partOutcomes.length} parts (${agg.gradedCount} graded)`,
+            correct: agg.correct,
+            firstCorrect: agg.firstCorrect,
+            score: agg.score,
             hintLevel: hintsShown,
             confidence,
             errorTag: null,
@@ -330,7 +374,7 @@ export function ItemPlayer({
               <div key={`${part.stage ?? 'part'}-${i}`} className={`h-1.5 rounded-full ${i < partIndex ? 'bg-good' : i === partIndex ? 'bg-accent' : 'bg-surface3'}`} title={part.stage ?? `Part ${i + 1}`} />
             ))}
           </div>
-          {partIndex === 0 ? <p className="text-[12px] text-muted mt-2 leading-snug">{template.authentic.simulationNote} Objective checkpoints are auto-checked; the final artifact is compared with an explicit model and rubric.</p> : null}
+          {partIndex === 0 ? <p className="text-[12px] text-muted mt-2 leading-snug">{template.authentic.simulationNote} Every graded checkpoint is auto-checked; the written artifact is compared with an explicit model and is never scored.</p> : null}
         </Card>
       ) : null}
 
@@ -356,16 +400,15 @@ export function ItemPlayer({
           {/* ---------- input area ---------- */}
           {(phase === 'answer' || phase === 'retry') && (
             <div className="mt-4">
-              {spec.type === 'rubric' ? (
-                <RubricInput
+              {spec.type === 'draft' ? (
+                <DraftInput
                   spec={spec}
-                  stage={rubricStage}
-                  setStage={setRubricStage}
+                  stage={draftStage}
+                  setStage={setDraftStage}
                   attempt={response}
                   setAttempt={setResponse}
-                  checked={rubricSelfChecked}
-                  setChecked={setRubricSelfChecked}
-                  onDone={parts ? submitPart : submitRubric}
+                  onDone={parts ? submitPart : submitDraftSingle}
+                  gradedNext={Boolean(parts && partIndex + 1 < parts.length)}
                 />
               ) : (
                 <>
@@ -375,7 +418,7 @@ export function ItemPlayer({
                     onChange={(v) => { setResponse(v); setFormatError(null) }}
                     onSubmit={() => {
                       if (!response.trim() || (needsConfidence && confidence === null)) return
-                      if (phase === 'retry') (parts ? submitPart : submitRetry)()
+                      if (phase === 'retry') (parts ? submitPartRetry : submitRetry)()
                       else (parts ? submitPart : submitFirst)()
                     }}
                   />
@@ -408,7 +451,7 @@ export function ItemPlayer({
                   <div className="flex gap-2 mt-4">
                     <Button
                       className="flex-1"
-                      onClick={phase === 'retry' ? (parts ? submitPart : submitRetry) : parts ? submitPart : submitFirst}
+                      onClick={phase === 'retry' ? (parts ? submitPartRetry : submitRetry) : parts ? submitPart : submitFirst}
                       disabled={!response.trim() || (needsConfidence && confidence === null)}
                     >
                       {phase === 'retry' ? 'Submit corrected answer' : 'Submit'}
@@ -431,8 +474,11 @@ export function ItemPlayer({
             <Card className="mt-4 p-4 border-warn/40 bg-warn-soft">
               <p className="font-semibold text-[15px]">Not yet.</p>
               <p className="text-muted text-[14px] mt-1">
-                Your answer: <span className="font-mono">{firstResponse}</span>. The attempt is the valuable part —
-                now find the first place it went off.
+                Your answer:{' '}
+                <span className="font-medium text-ink">
+                  {describeResponse(activeSpec, (parts ? partFirstResponse : firstResponse) ?? '')}
+                </span>
+                . The attempt is the valuable part — now find the first place it went off.
               </p>
               <div className="flex flex-col gap-2 mt-4">
                 <Button
@@ -441,13 +487,13 @@ export function ItemPlayer({
                     setPhase('retry')
                   }}
                 >
-                  Try again{hintsShown < item.hints.length ? ' (hints available)' : ''}
+                  Try again{hintsShown < activeHints.length ? ' (hints available)' : ''}
                 </Button>
                 <Button
                   kind="secondary"
                   onClick={() => {
-                    setHintsShown(item.hints.length)
-                    onSnapshot({ hintsUsed: item.hints.length })
+                    setHintsShown(activeHints.length)
+                    onSnapshot({ hintsUsed: activeHints.length })
                     setPhase('revealed')
                   }}
                 >
@@ -465,7 +511,10 @@ export function ItemPlayer({
               <p className="text-[13px] text-muted mt-2">
                 Answer: <span className="font-mono font-semibold text-ink">{describeAnswer(activeSpec)}</span>
               </p>
-              {template.variants > 1 ? (
+              {/* A twin regenerates the whole template, so it only makes sense
+                  for a single item — inside a multi-part activity it would
+                  silently swap every other checkpoint too. */}
+              {!parts && template.variants > 1 ? (
                 <>
                   <p className="text-[13px] text-muted mt-3">
                     A worked example only becomes yours when you use it — here is a twin with different numbers.
@@ -480,6 +529,16 @@ export function ItemPlayer({
                     }}
                   >
                     Try the twin problem
+                  </Button>
+                </>
+              ) : parts ? (
+                <>
+                  <p className="text-[13px] text-muted mt-3">
+                    This checkpoint is logged as a miss, so the skill behind it comes back on a shorter review
+                    schedule — that delayed re-test is what makes the repair stick.
+                  </p>
+                  <Button className="w-full mt-2" onClick={resolvePartAfterReveal}>
+                    Got it
                   </Button>
                 </>
               ) : (
@@ -501,8 +560,8 @@ export function ItemPlayer({
           {phase === 'final' && (
             <FinalFeedback
               misconceptionNote={
-                firstResponse !== null && activeSpec.type === 'mcq'
-                  ? ((twinItem ?? item).distractorNotes?.[Number(firstResponse)] ?? null)
+                (parts ? partFirstResponse : firstResponse) !== null && activeSpec.type === 'mcq'
+                  ? ((twinItem ?? item).distractorNotes?.[Number(parts ? partFirstResponse : firstResponse)] ?? null)
                   : null
               }
               parts={Boolean(parts)}
@@ -511,10 +570,10 @@ export function ItemPlayer({
                 ? partOutcomes[partOutcomes.length - 1]?.firstCorrect === true
                 : retryVerdictOk === null && firstResponse === response}
               hintsUsed={hintsShown}
-              spec={spec.type === 'rubric' ? null : activeSpec}
+              spec={spec.type === 'draft' ? null : activeSpec}
               explanation={currentExplanation}
               commonErrors={item.commonErrors}
-              wasWrongFirst={parts ? retryVerdictOk === false : firstResponse !== null && retryVerdictOk !== null}
+              wasWrongFirst={parts ? partWasWrongFirst : firstResponse !== null && retryVerdictOk !== null}
               errorTag={errorTag}
               setErrorTag={(t) => {
                 setErrorTag(t)
@@ -546,7 +605,7 @@ export function ItemPlayer({
         </div>
       ) : null}
 
-      <HintSheet open={hintOpen} onClose={() => setHintOpen(false)} hints={item.hints} shown={hintsShown} onMore={revealHint} />
+      <HintSheet open={hintOpen} onClose={() => setHintOpen(false)} hints={activeHints} shown={hintsShown} onMore={revealHint} />
       <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} templateId={template.id} version={template.version} seed={item.seed} />
     </div>
   )
@@ -755,33 +814,37 @@ export function AnswerInput({
         </div>
       )
     }
-    case 'rubric':
-      return null
+    case 'draft':
+      return null // drafts render through DraftInput, never as a graded input
   }
 }
 
-function RubricInput({
+/**
+ * The written artifact. Two stages: write it from your own head, then read it
+ * beside the model. There is deliberately NO rating control — the app does not
+ * score this and neither do you. The evidence lives in the graded part that
+ * follows, which is the only thing that can move a skill.
+ */
+function DraftInput({
   spec,
   stage,
   setStage,
   attempt,
   setAttempt,
-  checked,
-  setChecked,
   onDone,
+  gradedNext,
 }: {
-  spec: Extract<AnswerSpec, { type: 'rubric' }>
-  stage: 'attempt' | 'compare'
-  setStage: (s: 'attempt' | 'compare') => void
+  spec: Extract<AnswerSpec, { type: 'draft' }>
+  stage: 'write' | 'compare'
+  setStage: (s: 'write' | 'compare') => void
   attempt: string
   setAttempt: (s: string) => void
-  checked: number[]
-  setChecked: (c: number[]) => void
   onDone: () => void
+  gradedNext: boolean
 }) {
   const wordCount = attempt.trim() ? attempt.trim().split(/\s+/).length : 0
   const minWords = Math.max(3, spec.minWords ?? 3)
-  if (stage === 'attempt') {
+  if (stage === 'write') {
     return (
       <div>
         <textarea
@@ -795,6 +858,9 @@ function RubricInput({
           <span>{wordCount} word{wordCount === 1 ? '' : 's'}</span>
           <span>{wordCount >= minWords ? 'Ready to compare' : `${minWords - wordCount} more for a complete attempt`}</span>
         </div>
+        <p className="text-[12px] text-faint mt-2 px-1 leading-snug">
+          Not scored — writing it is the point. Get it out of your own head before the model appears.
+        </p>
         <Button className="w-full mt-3" onClick={() => setStage('compare')} disabled={wordCount < minWords}>
           Compare with the model answer
         </Button>
@@ -808,29 +874,24 @@ function RubricInput({
         <Rich text={spec.model} className="text-[14px]" />
       </Card>
       <Card className="p-4 mt-3">
-        <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-2">Score yourself honestly</p>
-        <div className="space-y-2">
-          {spec.criteria.map((c, i) => (
-            <button
-              type="button"
-              key={i}
-              aria-pressed={checked.includes(i)}
-              onClick={() => setChecked(checked.includes(i) ? checked.filter((x) => x !== i) : [...checked, i])}
-              className={`w-full min-h-11 text-left px-3 py-2.5 rounded-lg border text-[14px] leading-snug flex items-start gap-2.5 transition-colors ${
-                checked.includes(i) ? 'bg-good-soft border-good/40' : 'bg-surface border-line'
-              }`}
-            >
-              <span className={`mt-0.5 min-w-4 h-4 w-4 rounded border grid place-items-center text-[10px] ${checked.includes(i) ? 'bg-good text-bg border-good' : 'border-line-strong'}`} aria-hidden>
-                {checked.includes(i) ? '✓' : ''}
+        <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-2">What a strong version contains</p>
+        <ul className="space-y-2">
+          {spec.criteria.map((c) => (
+            <li key={c} className="flex items-start gap-2.5 text-[14px] leading-snug">
+              <span className="text-faint mt-0.5" aria-hidden>
+                •
               </span>
               <span>{c}</span>
-            </button>
+            </li>
           ))}
-        </div>
-        <p className="text-[12px] text-faint mt-2">Self-scored work never counts as independent mastery evidence — it guides, it doesn't grade.</p>
+        </ul>
+        <p className="text-[12px] text-faint mt-3 leading-snug">
+          Read these against your draft. Nothing here is scored — not by the app, not by you.
+          {gradedNext ? ' The graded part is next.' : ''}
+        </p>
       </Card>
       <Button className="w-full mt-3" onClick={onDone}>
-        Done
+        {gradedNext ? 'Continue to the graded part' : 'Done'}
       </Button>
     </div>
   )

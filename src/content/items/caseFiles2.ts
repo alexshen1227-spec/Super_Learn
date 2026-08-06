@@ -4,6 +4,7 @@
  */
 import type { ItemPart, ItemTemplate, RenderedItem } from '../../domain/types'
 import { mulberry32, rint } from '../../engine/rng'
+import { mcq } from '../lib'
 
 function mk(
   def: {
@@ -114,7 +115,7 @@ const streamingPlans = mk(
 // ---------------------------------------------------------------- 2. free-throw claim (parameterized)
 
 const freeThrow = mk(
-  { id: 'case-freethrow', name: 'Case File: The Free-Throw Claim', skillIds: ['s-measure', 'm-percent', 'i-hypo'], bucket: 'science', minutes: 10, variants: 10 },
+  { id: 'case-freethrow', name: 'Case File: The Free-Throw Claim', skillIds: ['s-measure', 'm-percent', 'i-hypo'], bucket: 'science', minutes: 12, variants: 10 },
   (v) => {
     const rng = mulberry32(v * 104729 + 11)
     const beforeMade = rint(rng, 9, 12)
@@ -164,7 +165,7 @@ const freeThrow = mk(
         {
           prompt: 'Write the two-sentence reply you\'d actually send: honest about the data, kind about the effort.',
           answer: {
-            type: 'rubric',
+            type: 'draft',
             criteria: [
               'Acknowledges the promising start without calling it proof',
               'Names the sample-size issue in plain words',
@@ -173,7 +174,21 @@ const freeThrow = mk(
             model:
               'Model: "Nice start — ' + afterMade + ' of ' + afterTotal + ' is exactly what we want to see. Small samples lie though, so let\'s log your next 50 with the new routine; if you\'re still above ' + beforePct + '%, the routine has earned its case."',
           },
-          explanation: 'The social skill and the statistical skill are the same move here: take the claim seriously enough to TEST it properly. That sentence pattern — "promising, unproven, here\'s the test" — works on far more than free throws.',
+          explanation: 'The social skill and the statistical skill are the same move here: take the claim seriously enough to TEST it properly. That sentence pattern — "promising, unproven, here\'s the test" — works on far more than free throws. Nothing here is scored — the next part is.',
+        },
+        {
+          stage: 'Peer review',
+          prompt: 'Now the graded part. Four teammates drafted a reply. Which one is honest about the data without dismissing the effort?',
+          answer: mcq(
+            rng,
+            `Promising start — ${afterMade} of ${afterTotal}. That is a small sample though, so log the next 50; if you stay above ${beforePct}%, the routine has earned it.`,
+            [
+              `${afterPct}% against ${beforePct}% — the routine works. The whole team should switch to it.`,
+              'One session tells us nothing at all, so there is nothing here worth following up.',
+              `Compare your ${afterPct}% against the team's best shooter to find out whether the routine helped.`,
+            ],
+          ),
+          explanation: `Three ways to get this wrong. Declaring it proven ignores that a ${beforePct}% shooter goes ${afterMade}-for-${afterTotal} by luck fairly often. Declaring it meaningless over-corrects — a promising signal is worth testing, just not worth believing yet. And benchmarking against the best shooter answers a different question entirely: whether the ROUTINE changed THIS shooter, not who shoots best. Only the first is sized to the evidence and still points at a decisive next step.`,
         },
       ],
       hints: ['Percent = made ÷ attempts.', 'Ask how often chance alone produces the new streak.', 'Better data beats better arguing.'],
@@ -237,7 +252,7 @@ const gardenGrid = mk(
 // ---------------------------------------------------------------- 4. the group chat argument (fixed)
 
 const groupChat = mk(
-  { id: 'case-groupchat', name: 'Case File: The Group Chat Argument', skillIds: ['h-influence', 'h-boundary', 'i-logic'], bucket: 'insight', minutes: 10, variants: 1 },
+  { id: 'case-groupchat', name: 'Case File: The Group Chat Argument', skillIds: ['h-influence', 'h-boundary', 'i-logic'], bucket: 'insight', minutes: 12, variants: 1 },
   () => ({
     title: 'The Group Chat Argument',
     prompt: 'The class group chat is melting down over a canceled trip-planning meeting. Read the thread like an analyst, then act like a Guardian.',
@@ -275,7 +290,7 @@ const groupChat = mk(
       {
         prompt: 'Steelman Jordan before you reply privately: write the strongest fair version of their frustration.',
         answer: {
-          type: 'rubric',
+          type: 'draft',
           criteria: [
             'States Jordan\'s real grievance (three cancellations) without the mind-reading',
             'Grants what\'s legitimate: repeated cancellations DO cost the group time and trust',
@@ -284,7 +299,26 @@ const groupChat = mk(
           model:
             'Model: "Three cancellations in a row is genuinely frustrating — the group keeps clearing Friday for nothing, and no explanation was communicated. That\'s a real planning failure worth raising. It still doesn\'t tell us WHY: conference season fits the same facts without anyone being the villain."',
         },
-        explanation: 'Steelmanning the angriest person keeps them an ally while removing the motive-reading. Most group blowups are a legitimate grievance wearing a mind-reading costume — honor the first, decline the second.',
+        explanation: 'Steelmanning the angriest person keeps them an ally while removing the motive-reading. Most group blowups are a legitimate grievance wearing a mind-reading costume — honor the first, decline the second. Nothing here is scored — the next part is.',
+      },
+      {
+        stage: 'Separate the two',
+        prompt:
+          'Now the graded part. Select every statement that is a **checkable grievance** — something the group could verify — rather than a claim about what Jordan\'s teammate is thinking or intending.',
+        answer: {
+          type: 'multi',
+          options: [
+            'Friday was cleared three times and cancelled three times.',
+            'He does not care about this project.',
+            'No reason for the cancellations was given to the group.',
+            'He is deliberately wasting everyone\'s time.',
+            'The cancellations have cost the group real planning time.',
+            'He thinks his schedule matters more than everyone else\'s.',
+          ],
+          correct: [0, 2, 4],
+        },
+        explanation:
+          'The three checkable statements survive without anyone being a villain — you could confirm every one of them from a calendar and the chat history. The other three are motive-reads: they assert a private state, cannot be verified, and are the part that turns a fixable scheduling problem into a fight. Steelmanning means keeping the whole first list and dropping the whole second one.',
       },
     ],
     hints: ['Sort claim / evidence / pressure / fact first.', 'Find the checkable thing and volunteer to check it.', 'Grant the legitimate grievance; drop the motive-read.'],
@@ -295,7 +329,7 @@ const groupChat = mk(
 // ---------------------------------------------------------------- 5. science fair data (parameterized)
 
 const scienceFair = mk(
-  { id: 'case-sciencefair', name: 'Case File: The Science Fair Data', skillIds: ['m-stats', 's-measure', 'x-explain'], bucket: 'science', minutes: 10, variants: 10 },
+  { id: 'case-sciencefair', name: 'Case File: The Science Fair Data', skillIds: ['m-stats', 's-measure', 'x-explain'], bucket: 'science', minutes: 12, variants: 10 },
   (v) => {
     const rng = mulberry32(v * 65537 + 29)
     const base = rint(rng, 18, 26)
@@ -336,7 +370,7 @@ const scienceFair = mk(
         {
           prompt: 'Write the one-paragraph "Results" section a judge would trust.',
           answer: {
-            type: 'rubric',
+            type: 'draft',
             criteria: [
               'Reports the clean mean AND mentions the excluded trial with its reason',
               'Describes the spread/consistency of the clean trials',
@@ -345,7 +379,21 @@ const scienceFair = mk(
             model:
               `Model: "Across four valid trials the plane flew a mean of ${meanClean} (range ${Math.min(...clean)}–${Math.max(...clean)}), a tight cluster suggesting a repeatable design. A fifth trial (${outlier}) was excluded: the launch table was bumped mid-throw, recorded at the time in the lab log; including it would raise the mean to ${meanAll}. More trials would sharpen the estimate."`,
           },
-          explanation: 'Judges (and reviewers, and bosses) trust reports that show their seams: what was excluded, why, and what the number would have been otherwise. Transparency converts a flaw into credibility.',
+          explanation: 'Judges (and reviewers, and bosses) trust reports that show their seams: what was excluded, why, and what the number would have been otherwise. Transparency converts a flaw into credibility. Nothing here is scored — the next part is.',
+        },
+        {
+          stage: 'Judging panel',
+          prompt: 'Now the graded part. Four teams submitted a Results sentence from this same data. Which one would a judge trust?',
+          answer: mcq(
+            rng,
+            `Mean across four valid trials: ${meanClean}. A fifth trial (${outlier}) was excluded because the table was bumped mid-launch, as recorded in the lab log; including it would give ${meanAll}.`,
+            [
+              `Mean across the trials: ${meanClean}. The design flew consistently.`,
+              `Mean across all five trials: ${meanAll}, showing the design performs well.`,
+              `Mean across four valid trials: ${meanClean}, proving this design is the best of the ones we considered.`,
+            ],
+          ),
+          explanation: `Each wrong answer fails differently. Reporting ${meanClean} with no mention of trial 5 is silent deletion — indistinguishable from cherry-picking, even when the exclusion was justified. Reporting ${meanAll} keeps a known-corrupted point and quietly misleads. And "proving this design is the best" claims far more than four trials of ONE design can support. Only the first shows its seams: the number, the exclusion, the documented reason, and what the number would otherwise have been.`,
         },
       ],
       hints: ['Compute both means — the difference IS the outlier\'s story.', 'Documented cause is what separates exclusion from cherry-picking.', 'Report the seams, not just the number.'],

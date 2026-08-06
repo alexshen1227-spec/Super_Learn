@@ -455,13 +455,13 @@ describe('coach', () => {
     expect(weeklyObjective(DEFAULT_INDEX, evidence, s, NOW)).toContain('This week')
     expect(todayInsight(DEFAULT_INDEX, evidence, s, NOW).length).toBeGreaterThan(10)
   })
-  it('intake counts every source: academic, labs, puzzles, reviews, self-assessed', () => {
+  it('intake counts every source: academic, labs, puzzles, reviews, written', () => {
     const events = [
       attempt('math', 'm-lineq1', { t: NOW - DAY }),
       attempt('puzzle', 'z-chess', { t: NOW - DAY }),
       attempt('puzzle', 'z-chess', { t: NOW - DAY, firstCorrect: false, correct: false }),
       attempt('observer', 'o-obsinf', { t: NOW - DAY, mode: 'review' }),
-      attempt('strategist', 'st-premortem', { t: NOW - DAY, correct: null, firstCorrect: null, score: 0.75, validator: 'rubric' }),
+      attempt('strategist', 'st-premortem', { t: NOW - DAY, correct: null, firstCorrect: null, score: null, validator: 'draft' }),
       attempt('math', 'm-percent', { t: NOW - DAY, mode: 'transfer' }),
       attempt('math', 'm-percent', { t: NOW - 40 * DAY }), // outside window
       attempt('math', 'm-percent', { t: NOW - DAY, mode: 'placement' }), // excluded
@@ -470,10 +470,10 @@ describe('coach', () => {
     expect(intake.total).toBe(6)
     expect(intake.academic).toBe(2) // m-lineq1 + the m-percent transfer
     expect(intake.puzzles).toBe(2)
-    expect(intake.labs).toBe(2) // observer review + strategist rubric
+    expect(intake.labs).toBe(2) // observer review + strategist draft
     expect(intake.reviews).toBe(1)
     expect(intake.transfers).toBe(1)
-    expect(intake.selfAssessed).toBe(1)
+    expect(intake.written).toBe(1)
     expect(intake.graded).toBe(5)
     expect(intake.skillsTouched).toBe(5)
   })

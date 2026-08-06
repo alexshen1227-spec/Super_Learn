@@ -116,7 +116,7 @@ export type AnswerSpec =
   | MultiAnswer
   | OrderAnswer
   | ClassifyAnswer
-  | RubricAnswer
+  | DraftAnswer
 
 export interface NumericAnswer {
   type: 'numeric'
@@ -171,13 +171,21 @@ export interface ClassifyAnswer {
   statements: { text: string; category: number }[]
 }
 
-/** Self-scored against explicit criteria; produces a 0..1 score, no auto-grade. */
-export interface RubricAnswer {
-  type: 'rubric'
+/**
+ * A written artifact: drafted from memory, then compared against a model.
+ * NEVER scored — not by the app, and not by the learner either. It exists for
+ * the generation effect; the EVIDENCE comes from the deterministically graded
+ * probe that follows it in the same item. A draft part contributes no
+ * `correct`, no `firstCorrect`, and no `score` to its attempt event, so it can
+ * never advance a skill on its own (audited).
+ */
+export interface DraftAnswer {
+  type: 'draft'
+  /** What a strong response contains — shown WITH the model, to read, not to rate. */
   criteria: string[]
-  /** A model answer shown AFTER the attempt for comparison. */
+  /** A model answer shown AFTER the draft is written. */
   model: string
-  /** Minimum honest draft length before comparison is allowed. */
+  /** Minimum honest draft length before the model is revealed. */
   minWords?: number
   /** Deliverable-specific prompt for the drafting area. */
   placeholder?: string
@@ -213,6 +221,12 @@ export interface ItemPart {
   answer: AnswerSpec
   /** Explanation for this part, shown after the attempt. */
   explanation: string
+  /**
+   * Hint ladder for THIS checkpoint, mildest first. Multi-part activities pose
+   * a different problem at every part, so a single item-level ladder cannot
+   * scaffold any of them well. When absent the item's own hints are used.
+   */
+  hints?: string[]
 }
 
 export interface ChessSpec {
@@ -382,11 +396,15 @@ export interface AttemptEvent {
   /** First submitted response (serialized), before any retry. */
   firstResponse: string
   finalResponse: string
-  /** null for rubric/self-scored parts. */
+  /** null only when an item had no deterministically graded part. */
   correct: boolean | null
   /** First-submission correctness — promotion looks at this, not eventual success. */
   firstCorrect: boolean | null
-  /** Rubric score 0..1 when correct is null. */
+  /**
+   * Partial credit 0..1 from deterministic grading (e.g. `classify`), for
+   * display only. Never a substitute for `firstCorrect`: the mastery replay
+   * ignores this field entirely, so nothing ungraded can advance a skill.
+   */
   score: number | null
   validator: string
   /** 0 = unaided. Counts hints revealed before first submission. */

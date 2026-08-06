@@ -4,7 +4,7 @@
  * EVIDENCE-backed (see docs/RESEARCH.md); specific routines are heuristics.
  */
 import type { ItemTemplate } from '../../domain/types'
-import { mcq, tpl } from '../lib'
+import { draft, mcq, tpl } from '../lib'
 
 const studyChoice = tpl(
   { id: 'x-study-choice', name: 'Pick the technique that works', skillIds: ['x-learn'], bucket: 'meta', difficulty: 2, variants: 4, minutes: 2.5, calibration: true },
@@ -167,21 +167,39 @@ const errorDiagnose = tpl(
 )
 
 const compression = tpl(
-  { id: 'x-compression', name: 'Learning Compression', skillIds: ['x-explain'], bucket: 'meta', difficulty: 3, variants: 3, minutes: 4 },
-  (_rng, seed) => {
+  { id: 'x-compression', name: 'Learning Compression', skillIds: ['x-explain'], bucket: 'meta', difficulty: 3, variants: 3, minutes: 5, kind: 'multi' },
+  (rng, seed) => {
     const cases = [
       {
         topic: 'Compress the idea of a MEAN (average)',
+        best: 'The value every data point would have if the total were shared out equally.',
+        worse: [
+          ['The average of the numbers in the set.', 'Circular — it renames the idea instead of saying what it does.'],
+          ['The number that appears most often in the set.', 'Near neighbour — that is the MODE, the commonest confusion here.'],
+          ['The number sitting in the middle when the set is put in order.', 'Near neighbour — that is the MEDIAN, which is exactly why outliers behave differently.'],
+        ] as [string, string][],
         model:
           'One sentence: the mean is the value every data point would have if the total were shared out equally. Example: test scores 70, 80, 90 → mean 80. Non-example: the mean of 1, 1, 1, 97 is 25 — which describes NO ONE (that is what outliers do to means, and why medians exist). Trap: the mean need not be a possible value (2.4 children).',
       },
       {
         topic: 'Compress the idea of a VARIABLE in algebra',
+        best: 'A named placeholder for a number you have not pinned down yet, meaning the same number everywhere it appears in one problem.',
+        worse: [
+          ['A letter used instead of a number in algebra.', 'Circular and hollow — it describes the notation, not what the notation buys you.'],
+          ['A quantity that keeps changing while you solve.', 'Near neighbour — that is a variable in the everyday sense; within one equation it holds still.'],
+          ['A symbol whose value you are free to choose.', 'Near neighbour — that is a parameter you set, not an unknown the equation pins down.'],
+        ] as [string, string][],
         model:
           'One sentence: a variable is a named placeholder that stands for a number you haven\'t pinned down yet — and it means the SAME number everywhere it appears in one problem. Example: in 2x + 3 = 11, x is 4 in both places. Non-example: x in one equation and x in a totally different problem need not match. Trap: reading 2x as "2 and x" (twenty-something) instead of 2 × x.',
       },
       {
         topic: 'Compress the idea of a CONTROLLED experiment',
+        best: 'Change one thing, hold everything else steady, and compare — so any difference in outcome has only one available cause.',
+        worse: [
+          ['An experiment that is properly controlled by the scientist.', 'Circular — it reuses the word being defined.'],
+          ['An experiment run carefully, with accurate measurements.', 'Near neighbour — care improves precision but does not isolate a cause.'],
+          ['An experiment repeated enough times for a reliable result.', 'Near neighbour — repetition fights noise; only holding variables steady fights confounding.'],
+        ] as [string, string][],
         model:
           'One sentence: change one thing, hold everything else steady, and compare — so any difference in outcome has only one available cause. Example: same plant, soil, water; only the fertilizer differs. Non-example: comparing this year\'s grades (new teacher, new schedule, new textbook) with last year\'s and crediting the textbook. Trap: a "control group" is not a lazy group — it is the baseline that gives the comparison meaning.',
       },
@@ -189,21 +207,37 @@ const compression = tpl(
     const c = cases[seed % cases.length]
     return {
       title: 'One sentence, one example, one trap',
-      prompt: `${c.topic} into:\n1. **One sentence** (the idea, no jargon)\n2. **One example**\n3. **One non-example** (something it is NOT, that people confuse it with)\n4. **One trap** (the mistake newcomers make)\n\nWrite all four, then score yourself.`,
-      answer: {
-        type: 'rubric',
-        criteria: [
-          'My sentence states the idea without circular wording or jargon',
-          'My example is concrete, with actual numbers or objects',
-          'My non-example targets a real confusion, not a random wrong thing',
-          'My trap describes a mistake someone would actually make',
-        ],
-        model: c.model,
-      },
+      prompt: `${c.topic}.`,
+      parts: [
+        {
+          stage: 'Compress',
+          prompt: `Compress it into:\n1. **One sentence** (the idea, no jargon)\n2. **One example**\n3. **One non-example** (something it is NOT, that people confuse it with)\n4. **One trap** (the mistake newcomers make)\n\nWrite all four from your own head — the model appears once you are done.`,
+          answer: draft({
+            criteria: [
+              'A sentence stating the idea without circular wording or jargon',
+              'A concrete example, with actual numbers or objects',
+              'A non-example targeting a real confusion, not a random wrong thing',
+              'A trap describing a mistake someone would actually make',
+            ],
+            model: c.model,
+            minWords: 30,
+            placeholder: 'One sentence… Example… Non-example… Trap…',
+          }),
+          explanation:
+            'Compression is a test disguised as note-taking: every gap becomes visible as a sentence you cannot finish. This draft is yours; nothing here is scored.',
+        },
+        {
+          stage: 'Boundary',
+          prompt:
+            'Now the graded part. Which one-sentence version actually says what the idea DOES — rather than renaming it or naming its nearest neighbour?',
+          answer: mcq(rng, c.best, c.worse.map(([t]) => t)),
+          explanation: `**${c.best}**\n\nWhy the others fail:\n${c.worse.map(([t, why]) => `- “${t}” — ${why}`).join('\n')}\n\nBoundaries define concepts: the near neighbours are where the actual learning is, which is why the non-example was worth writing.`,
+        },
+      ],
       hints: [
         'If the sentence needs the topic\'s own name to work, it is circular — say what it DOES.',
         'The non-example is the hard one: pick the nearest neighbor people confuse it with.',
-        'Compare against the model after scoring.',
+        'For the graded part: cross out any option you could not act on without already knowing the idea.',
       ],
       explanation: `Model: ${c.model} Compression is a test disguised as note-taking: every gap in understanding becomes visible as a sentence you cannot finish. The non-example is where most learning happens — boundaries define concepts.`,
     }

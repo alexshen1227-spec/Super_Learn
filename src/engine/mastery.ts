@@ -4,6 +4,10 @@
  * Nothing here is stored; every number is derived, so deleting or importing
  * history always recomputes progress honestly.
  *
+ * Only DETERMINISTIC grading produces evidence here. Written artifacts are
+ * drafted, compared against a model, and logged as exposure — they never
+ * carry a skill up a rung. Anything that advances a skill was machine-graded.
+ *
  * Promotion thresholds are PRODUCT HEURISTICS (labeled as such in the UI):
  *  - independent: ≥2 first-attempt unaided successes on distinct item forms
  *  - retained: a later unaided first-attempt success ≥48h after the previous
@@ -104,27 +108,39 @@ export function stabilityFactor(reviewSuccesses: number, lapses: number): number
 /**
  * Success for evidence purposes = correct on the FIRST submission with no
  * hints. Eventually-correct after hints earns guided evidence only.
- * Rubric-scored parts count as success at score ≥ 0.75 (self-assessed; the
- * UI labels rubric evidence separately).
+ *
+ * ONLY deterministic grading counts. `score` is deliberately not consulted:
+ * an event with `firstCorrect === null` produced no graded verdict (a draft,
+ * a written artifact) and therefore produces no evidence, however good the
+ * work was. Self-assessment guides the plan; it never advances a skill.
  */
 function isFirstUnaidedSuccess(e: AttemptEvent): boolean {
   if (e.hintLevel > 0) return false
-  if (e.firstCorrect !== null) return e.firstCorrect
-  return e.score !== null && e.score >= 0.75
+  return e.firstCorrect === true
 }
 
 function isEventualSuccess(e: AttemptEvent): boolean {
-  if (e.correct !== null) return e.correct
-  return e.score !== null && e.score >= 0.75
+  return e.correct === true
+}
+
+/**
+ * An event that produced no deterministic verdict at all — a pure written
+ * artifact, or a legacy self-scored attempt from before drafts became
+ * ungraded. It is EXPOSURE, not evidence: never a success, never a miss, and
+ * it never moves the review schedule in either direction.
+ */
+function isUngraded(e: AttemptEvent): boolean {
+  return e.firstCorrect === null && e.correct === null
 }
 
 function applyEvent(tr: Tracker, e: AttemptEvent): void {
   tr.attempts++
   tr.exposure++
   tr.lastAttemptAt = e.t
+  if (isUngraded(e)) return
   const firstSuccess = isFirstUnaidedSuccess(e)
   const eventualSuccess = isEventualSuccess(e)
-  tr.lastOutcomeCorrect = e.firstCorrect ?? (e.score !== null ? e.score >= 0.75 : null)
+  tr.lastOutcomeCorrect = e.firstCorrect
 
   tr.hintedRecent.push(e.hintLevel > 0)
   if (tr.hintedRecent.length > 10) tr.hintedRecent.shift()

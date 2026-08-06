@@ -400,7 +400,7 @@ function WorkChooser({ work, targets, onPick, onClose }: { work: ItemTemplate[];
   return (
     <Modal open onClose={onClose} title="Authentic Work" wide>
       <p className="text-muted text-sm leading-relaxed">
-        Compressed, realistic workflows with a clear brief, checkable decisions, a substantial artifact, critique, and revision. Objective checkpoints are graded; open writing and code are honestly self-assessed against models.
+        Compressed, realistic workflows with a clear brief, checkable decisions, a substantial artifact, critique, and revision. Every graded checkpoint is objective; the writing and code you produce are compared against models and never scored.
       </p>
       <p className="text-[12px] text-faint mt-2 leading-relaxed">
         Authentic Work is not a separate allocation category. Each studio belongs to one of your existing percentage categories, and completed time counts toward that target.

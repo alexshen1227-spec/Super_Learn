@@ -54,7 +54,7 @@ export function PlacementScreen() {
     () => (template ? template.generate((probeCount + 1) * 7919 + (followUp ? 13 : 0)) : null),
     [template, probeCount, followUp],
   )
-  const askConf = probeCount % 3 === 1 && !followUp && item?.answer?.type !== 'rubric'
+  const askConf = probeCount % 3 === 1 && !followUp && item?.answer?.type !== 'draft'
 
   const submit = (skipped: boolean) => {
     if (!skillId || !template || !item || !item.answer) return

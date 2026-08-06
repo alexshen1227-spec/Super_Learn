@@ -42,9 +42,19 @@ export function CoachScreen() {
         <p className="text-[12px] font-semibold text-accent uppercase tracking-wide">This week</p>
         <p className="text-[15px] font-medium mt-1 leading-relaxed">{objective.replace(/^This week:\s*/i, '')}</p>
         {bottleneck ? (
-          <p className="text-[13px] text-muted mt-2">
-            <span className="font-semibold text-ink">Bottleneck:</span> {bottleneck.why}
-          </p>
+          <>
+            <p className="text-[13px] text-muted mt-2">
+              <span className="font-semibold text-ink">Bottleneck:</span> {bottleneck.why}
+            </p>
+            {/* Naming the highest-leverage skill and then making the learner go
+                find it is friction between insight and practice. One tap. */}
+            <Button
+              className="w-full mt-3"
+              onClick={() => go({ name: 'session', launch: { kind: 'focus', skillId: bottleneck.skillId } })}
+            >
+              Work on {bottleneck.name} now
+            </Button>
+          </>
         ) : null}
       </Card>
 
@@ -68,11 +78,11 @@ export function CoachScreen() {
               {intake.puzzles > 0 ? <Chip tone="accent">{intake.puzzles} puzzle</Chip> : null}
               {intake.reviews > 0 ? <Chip tone="warn">{intake.reviews} review</Chip> : null}
               {intake.transfers > 0 ? <Chip tone="good">{intake.transfers} transfer</Chip> : null}
-              {intake.selfAssessed > 0 ? <Chip tone="neutral">{intake.selfAssessed} self-assessed</Chip> : null}
+              {intake.written > 0 ? <Chip tone="neutral">{intake.written} written</Chip> : null}
             </div>
             <p className="text-[12px] text-faint mt-2">
-              {intake.graded} were deterministically graded; self-assessed work guides the plan but never counts as
-              independent mastery evidence.
+              {intake.graded} were deterministically graded — the only kind of attempt that can move a skill. Written
+              artifacts are drafted, compared with a model, and never scored by the app or by you.
             </p>
           </>
         )}

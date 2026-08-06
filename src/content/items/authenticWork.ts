@@ -5,20 +5,26 @@
  * that an offline app can replace a laboratory, editor, senior developer, or
  * seminar. Each preserves the useful workflow: receive a brief, inspect
  * evidence, make checkable intermediate decisions, produce an artifact,
- * compare it with a model, and revise. Deterministic checkpoints are graded;
- * open artifacts remain explicitly self-assessed.
+ * compare it with a model, and revise.
+ *
+ * EVERY graded checkpoint here is deterministic. The written artifact is a
+ * `draft`: you write it, you read the model beside the criteria, and the app
+ * scores neither. The evidence for the studio comes from the objective
+ * checkpoints around it — including the revision probe that follows the
+ * draft, which is only answerable if you actually engaged with the artifact.
  */
 import type { AnswerSpec, ItemPart, ItemTemplate } from '../../domain/types'
 import { mcq, tpl } from '../lib'
 import { pick, rint } from '../../engine/rng'
 
-function rubric(
+/** An ungraded written artifact: drafted, then compared against the model. */
+function draft(
   criteria: string[],
   model: string,
   minWords: number,
   placeholder: string,
 ): AnswerSpec {
-  return { type: 'rubric', criteria, model, minWords, placeholder }
+  return { type: 'draft', criteria, model, minWords, placeholder }
 }
 
 function part(stage: string, body: Omit<ItemPart, 'stage'>): ItemPart {
@@ -107,7 +113,7 @@ const projectStudio = tpl(
         }),
         part('Deliver', {
           prompt: 'Write the one-page launch plan. It must be usable by someone who did not attend this planning session.',
-          answer: rubric(
+          answer: draft(
             [
               'Defines success and non-negotiable constraints (Friday time, capacity, safety approval, budget)',
               'Lists dependency-ordered milestones with a named owner or role and a deadline for each',
@@ -193,7 +199,7 @@ const writingStudio = tpl(
         }),
         part('Draft', {
           prompt: 'Write the 120–180 word brief: answer first, use the strongest evidence, handle the weaker sources correctly, and recommend a next action.',
-          answer: rubric(
+          answer: draft(
             [
               `Leads with a clear answer and the ${diff}-percentage-point result`,
               `Attributes the result to the ${topic.n}-student comparison instead of presenting it as universal fact`,
@@ -305,7 +311,7 @@ const programStudio = tpl(
         }),
         part('Build', {
           prompt: `Write the implementation and a compact test table. Include normal, empty, equality-boundary, and all-nonmatching cases.`,
-          answer: rubric(
+          answer: draft(
             [
               `Implements \`${signature}\` with the required ${op} comparison and a returned count`,
               'Does not sort, splice, or otherwise modify the input array',
@@ -410,7 +416,7 @@ const experimentStudio = tpl(
         }),
         part('Report', {
           prompt: 'Write Methods + Results so another student could repeat the test and a skeptical reader could audit the conclusion.',
-          answer: rubric(
+          answer: draft(
             [
               `States the independent variable (${ex.change}) and dependent measure (${ex.outcome})`,
               'Describes random trial order and what was held constant with enough detail to reproduce',
@@ -531,7 +537,7 @@ const bookStudio = tpl(
         }),
         part('Seminar note', {
           prompt: 'Write a seminar note: one arguable claim, two concrete details, the reasoning connecting them, and one genuine complication or question.',
-          answer: rubric(
+          answer: draft(
             [
               'Makes an arguable interpretive claim rather than a plot summary',
               'Uses at least two accurate, concrete details from the excerpt',
@@ -656,7 +662,7 @@ const dialogueStudio = tpl(
         }),
         part('Consultation note', {
           prompt: 'Write the note you would keep: original problem, expert’s principle in your own words, boundary question, concrete next test, and what evidence you will bring back.',
-          answer: rubric(
+          answer: draft(
             [
               'States the original problem specifically enough that another person can understand the block',
               `Accurately paraphrases the principle: ${mentor.principle}`,
@@ -777,7 +783,7 @@ const guardianDialogueStudio = tpl(
         }),
         part('Plan', {
           prompt: 'Write the conversation plan: neutral observation, impact/need, boundary, optional alternative, listening question, likely pressure response, and escalation threshold.',
-          answer: rubric(
+          answer: draft(
             [
               'Opens with a specific observable behavior rather than “always/never” or a character judgment',
               `States the underlying need (${c.need}) without making the other person responsible for every emotion`,
@@ -896,7 +902,7 @@ const fieldStudio = tpl(
         }),
         part('Report', {
           prompt: 'Write the incident update: confirmed facts, live hypotheses, tests completed/planned, current confidence, and safeguards against unfair accusation.',
-          answer: rubric(
+          answer: draft(
             [
               'Separates confirmed observations/attributed records from interpretations',
               `Keeps at least two live hypotheses, including a non-blame explanation`,
@@ -995,7 +1001,7 @@ const decisionStudio = tpl(
         }),
         part('Memo', {
           prompt: 'Write the decision memo: objective, numerical comparison, key assumptions, privacy constraint, choice, and review trigger.',
-          answer: rubric(
+          answer: draft(
             [
               `Computes A = $${costA} and B = $${costB} at ${expectedUses} expected uses`,
               `Uses the ${breakEven.toFixed(1)}-use break-even to discuss low/likely/high sensitivity`,

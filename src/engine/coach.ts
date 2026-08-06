@@ -33,7 +33,8 @@ export interface ActivityIntake {
   days: number
   total: number
   graded: number
-  selfAssessed: number
+  /** Written artifacts: logged as practice, never graded, never evidence. */
+  written: number
   academic: number
   labs: number
   puzzles: number
@@ -49,7 +50,7 @@ export function activityIntake(events: AttemptEvent[], now: number, days = 7): A
     days,
     total: recent.length,
     graded: recent.filter((e) => e.firstCorrect !== null).length,
-    selfAssessed: recent.filter((e) => e.firstCorrect === null && e.score !== null).length,
+    written: recent.filter((e) => e.firstCorrect === null).length,
     academic: recent.filter((e) => academicSet.has(e.bucket)).length,
     labs: recent.filter((e) => !academicSet.has(e.bucket) && e.bucket !== 'puzzle').length,
     puzzles: recent.filter((e) => e.bucket === 'puzzle').length,
@@ -199,14 +200,20 @@ export function coachBeliefs(
       resolve: 'Transfer bridges test whether the strategies travel beyond the board — that evidence is tracked separately.',
     })
   }
-  const rubricWork = recent.filter((e) => e.firstCorrect === null && e.score !== null)
-  if (rubricWork.length >= 3) {
+  // Written artifacts are exposure, not evidence. Report the volume so the
+  // work is visible, and be explicit that it moved nothing.
+  const written = recent.filter((e) => e.validator === 'draft' || e.firstCorrect === null)
+  if (written.length >= 3) {
     beliefs.push({
-      id: 'self-assessed',
-      statement: `${rubricWork.length} self-assessed lab activities in 28 days — these guide the plan but never grade you.`,
+      id: 'written-work',
+      statement: `${written.length} written artifacts in 28 days — drafted and compared, never scored.`,
       confidence: 'high',
-      evidence: [`Average self-score ${Math.round((rubricWork.reduce((a, e) => a + (e.score ?? 0), 0) / rubricWork.length) * 100)}% across pre-mortems, explanations, and perspective work.`],
-      unknown: 'Self-scores measure your standards as much as your work — the deterministic items are the anchor.',
+      evidence: [
+        'Pre-mortems, explanations, and perspective writing are logged as practice; nothing here advanced a skill.',
+        'Every rung you hold was earned on a deterministically graded problem.',
+      ],
+      unknown: 'How good the writing actually was — the app deliberately does not judge it, and neither does a self-rating.',
+      resolve: 'The graded probe that follows each draft is where that evidence comes from.',
     })
   }
 

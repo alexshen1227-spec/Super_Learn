@@ -31,8 +31,13 @@ garbage and must never resume.
    answer from its own values; the audit re-validates every template across
    seeds (`src/content/contentAudit.test.ts`). If you add content, the audit
    must stay green — it is the release gate.
-2. **Hinted ≠ independent.** `firstCorrect` means first submission, zero
-   hints. Guided evidence is real but labeled. Do not "round up".
+2. **Hinted ≠ independent, and repaired ≠ independent.** `firstCorrect` means
+   first submission, zero hints. Guided evidence is real but labeled. Do not
+   "round up". EVERY graded checkpoint — single item or one part of a case
+   file, studio, or drill — enters the same corrective fork on an error, and a
+   corrected checkpoint earns guided credit only. Multi-part evidence rules
+   live in `engine/activity.ts` (`aggregateParts`) so they are testable without
+   a DOM; the player must not re-implement them.
 3. **Placement routes, never proves.** Its events count once (`'placement'`
    form key) and schedule no reviews.
 4. **Every number must be able to refuse to exist.** Calibration bands hide

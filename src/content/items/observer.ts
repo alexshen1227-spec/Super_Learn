@@ -5,7 +5,7 @@
  * "tells", profiling, or practicing on non-consenting people.
  */
 import type { ItemTemplate } from '../../domain/types'
-import { mcq, tpl } from '../lib'
+import { draft, mcq, multi, tpl } from '../lib'
 
 // ---------- Evidence Ledger: Observed / Inferred / Unknown ----------
 
@@ -289,48 +289,104 @@ const contradictionHunt = tpl(
 // ---------- Three Explanations ----------
 
 const threeExplanations = tpl(
-  { id: 'o-three-explanations', name: 'Three Explanations', skillIds: ['o-obsinf', 'o-bias'], bucket: 'observer', difficulty: 3, variants: 4, minutes: 4 },
-  (_rng, seed) => {
+  { id: 'o-three-explanations', name: 'Three Explanations', skillIds: ['o-obsinf', 'o-bias'], bucket: 'observer', difficulty: 3, variants: 4, minutes: 5, kind: 'multi' },
+  (rng, seed) => {
     const cases = [
       {
         obs: 'Your friend has not replied to your message for a full day, though the app shows it was delivered.',
         model:
           '1) Busy or overwhelmed (exams, family, phone confiscated). 2) Saw it, meant to reply, forgot — the delivered-flag says nothing about attention. 3) Notification never surfaced (silent mode, app glitch). A fourth, upset-with-you, is possible but NOT favored by this evidence alone.',
+        beyond: [
+          'They are upset with me.',
+          'They read the message and chose not to answer.',
+          'They care less about this friendship than I do.',
+        ],
+        supported: [
+          'A full day has passed with no reply.',
+          'The app recorded the message as delivered.',
+          'Whether they have actually seen it is unknown.',
+        ],
       },
       {
         obs: 'A usually-talkative classmate sat silently through the whole group project meeting.',
         model:
           '1) Something outside school is weighing on them. 2) They dislike this project or their assigned part. 3) They were simply tired or unwell. The observation alone cannot pick between these — and "they are mad at me" adds an assumption the scene never supplied.',
+        beyond: [
+          'They are annoyed with someone in the group.',
+          'They did not prepare and were hiding it.',
+          'They have lost interest in the project.',
+        ],
+        supported: [
+          'They did not speak during the meeting.',
+          'This is quieter than they usually are.',
+          'The reason for the silence is unknown.',
+        ],
       },
       {
         obs: 'The teacher moved your seat to the front of the class without explanation.',
         model:
           '1) A whole-class reshuffle you noticed only your part of. 2) Practical logistics: sightlines, a chatty pairing being split, board visibility. 3) The teacher wants to support your focus. "I am in trouble" is one MORE hypothesis — not the default.',
+        beyond: [
+          'I am in trouble for something.',
+          'The teacher thinks I talk too much.',
+          'The move was aimed at me personally.',
+        ],
+        supported: [
+          'My seat is now at the front.',
+          'No reason was given to me.',
+          'Whether other seats also changed is unknown.',
+        ],
       },
       {
         obs: 'Your bike, which you always park by the fence, is leaning against the wall instead.',
         model:
           '1) Someone moved it to reach something behind the fence. 2) You parked it differently while distracted — memory of routine actions is weak. 3) Maintenance/cleaning required moving everything. "Someone tried to steal it" needs more evidence than a changed position.',
+        beyond: [
+          'Someone tried to steal it.',
+          'Someone moved it to annoy me.',
+          'Whoever moved it was being careless with my property.',
+        ],
+        supported: [
+          'The bike is against the wall.',
+          'I usually park it by the fence.',
+          'Who moved it, if anyone, is unknown.',
+        ],
       },
     ]
     const c = cases[seed % cases.length]
     return {
       title: 'Generate three explanations',
-      prompt: `Observation: **${c.obs}**\n\nWrite **three different plausible explanations**, then check yourself against the criteria.`,
-      answer: {
-        type: 'rubric',
-        criteria: [
-          'I wrote three genuinely different explanations (not one story reworded)',
-          'At least one explanation involves no one doing anything wrong',
-          'None of my explanations claims to know another person\'s private thoughts as fact',
-          'I could name evidence that would separate my explanations',
-        ],
-        model: c.model,
-      },
+      prompt: `Observation: **${c.obs}**`,
+      parts: [
+        {
+          stage: 'Generate',
+          prompt: `Write **three different plausible explanations** for this observation. Write them from your own head first — the model appears once you are done.`,
+          answer: draft({
+            criteria: [
+              'Three genuinely different explanations, not one story reworded',
+              'At least one in which nobody did anything wrong',
+              'None stating another person\'s private thoughts as fact',
+              'Evidence named that would separate the explanations',
+            ],
+            model: c.model,
+            minWords: 25,
+            placeholder: 'Explanation 1… Explanation 2… Explanation 3… What evidence would tell them apart…',
+          }),
+          explanation:
+            'Generating alternatives is the whole exercise: the first story that arrives is usually about you, and the evidence usually is not. This draft is yours — nothing here is scored.',
+        },
+        {
+          stage: 'Check',
+          prompt: `Now the graded part. Given ONLY the observation — “${c.obs}” — select every statement below that goes **beyond** what was actually observed.`,
+          answer: multi(rng, c.beyond, c.supported),
+          explanation:
+            'Anything asserting another person\'s motive, feeling, or intent is inference, not observation. The supported statements describe what happened, what you remember, and — importantly — what remains unknown. Naming the unknown is the move that keeps the other explanations alive.',
+        },
+      ],
       hints: [
         'Vary the AGENT: one explanation about circumstances, one about routine/chance, one about intent.',
         'The most useful third explanation is usually the boring one.',
-        'Compare against the model after scoring yourself.',
+        'For the check: if a statement could be wrong while the observation stays true, it goes beyond the evidence.',
       ],
       explanation: `Model answers: ${c.model} The reflex being trained: hold multiple stories loosely instead of marrying the first one — the first story is usually about YOU, and the evidence usually is not.`,
     }

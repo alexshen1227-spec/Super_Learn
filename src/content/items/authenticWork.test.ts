@@ -20,11 +20,17 @@ describe('authentic work studios', () => {
       const item = template.generate(0)
       expect(item.parts?.length, `${template.id}: needs a real workflow`).toBeGreaterThanOrEqual(5)
       expect(item.parts?.every((part) => Boolean(part.stage)), `${template.id}: every checkpoint needs a stage label`).toBe(true)
-      const rubrics = item.parts?.filter((part) => part.answer.type === 'rubric') ?? []
-      const objective = item.parts?.filter((part) => part.answer.type !== 'rubric') ?? []
-      expect(rubrics.length, `${template.id}: needs an artifact`).toBeGreaterThanOrEqual(1)
+      const drafts = item.parts?.filter((part) => part.answer.type === 'draft') ?? []
+      const objective = item.parts?.filter((part) => part.answer.type !== 'draft') ?? []
+      expect(drafts.length, `${template.id}: needs an artifact`).toBeGreaterThanOrEqual(1)
       expect(objective.length, `${template.id}: needs objective process checks`).toBeGreaterThanOrEqual(4)
-      expect(rubrics[0].answer.type === 'rubric' ? rubrics[0].answer.minWords : 0).toBeGreaterThanOrEqual(50)
+      expect(drafts[0].answer.type === 'draft' ? drafts[0].answer.minWords : 0).toBeGreaterThanOrEqual(50)
+      // The artifact must never be the last word: something graded follows it.
+      const lastDraft = item.parts!.findLastIndex((part) => part.answer.type === 'draft')
+      expect(
+        item.parts!.slice(lastDraft + 1).some((part) => part.answer.type !== 'draft'),
+        `${template.id}: the artifact must be followed by a graded checkpoint`,
+      ).toBe(true)
     }
   })
 
@@ -42,7 +48,7 @@ describe('short real-world practice', () => {
     expect(REAL_WORLD_TEMPLATES.reduce((sum, template) => sum + template.variants, 0)).toBeGreaterThanOrEqual(280)
     expect(new Set(REAL_WORLD_TEMPLATES.map((template) => template.bucket)).size).toBeGreaterThanOrEqual(9)
     expect(REAL_WORLD_TEMPLATES.every((template) => template.transfer)).toBe(true)
-    expect(REAL_WORLD_TEMPLATES.every((template) => template.generate(0).answer?.type !== 'rubric')).toBe(true)
+    expect(REAL_WORLD_TEMPLATES.every((template) => template.generate(0).answer?.type !== 'draft')).toBe(true)
   })
 
   it('adds real-world questions to all four thinking Paths', () => {

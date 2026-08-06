@@ -5,7 +5,7 @@
  */
 import type { ItemTemplate } from '../../domain/types'
 import { rint } from '../../engine/rng'
-import { fixed, mcq, numeric, round, tpl } from '../lib'
+import { draft, fixed, mcq, multi, numeric, round, tpl } from '../lib'
 
 // ---------- Backward planning ----------
 
@@ -117,43 +117,91 @@ const oppCost = tpl(
 // ---------- Pre-mortem ----------
 
 const premortem = tpl(
-  { id: 'st-premortem', name: 'Pre-Mortem', skillIds: ['st-premortem'], bucket: 'strategist', difficulty: 3, variants: 3, minutes: 4 },
-  (_rng, seed) => {
+  { id: 'st-premortem', name: 'Pre-Mortem', skillIds: ['st-premortem'], bucket: 'strategist', difficulty: 3, variants: 3, minutes: 5, kind: 'multi' },
+  (rng, seed) => {
     const cases = [
       {
         plan: 'PLAN: Study for the science final by reviewing one unit per evening for the five nights before the exam.',
         model:
           'Likely failure modes: (1) An evening gets eaten by homework/family plans — no slack night exists. (2) Unit 3 turns out twice as hard as the others — equal time per unit assumed equal difficulty. (3) "Review" drifts into rereading — no retrieval, so the final feels familiar but unanswerable. (4) The plan starts the night AFTER it should — no defined start trigger. Repairs: one buffer night, difficulty-weighted time, self-testing as the review method, a phone reminder to start.',
+        repairs: [
+          'Add a sixth buffer evening so one lost night does not break the plan.',
+          'Make "review" mean answering questions with the book shut, not rereading.',
+          'Set a phone alarm for the first session so starting is not a decision.',
+        ],
+        nonRepairs: [
+          'Commit to taking the revision more seriously this time.',
+          'Remind yourself that this exam really matters.',
+          'Plan to catch up later if an evening is missed.',
+        ],
       },
       {
         plan: 'PLAN: Save $60 in six weeks by putting aside $10 of allowance each week.',
         model:
           'Likely failures: (1) A week with an unmissable expense (gift, outing) breaks the streak and the plan dies of discouragement. (2) The money sits reachable and gets spent. (3) Allowance timing shifts. Repairs: define a catch-up rule in advance ("a missed week splits over the rest"), move savings somewhere annoying to access, save the DAY allowance arrives.',
+        repairs: [
+          'Write the catch-up rule now: a missed week splits across the weeks that remain.',
+          'Move the saved money somewhere genuinely awkward to reach.',
+          'Transfer the $10 on the day allowance arrives, before anything else.',
+        ],
+        nonRepairs: [
+          'Decide to be more disciplined about spending.',
+          'Keep the goal in mind whenever shopping.',
+          'Hope no big expense turns up in the six weeks.',
+        ],
       },
       {
         plan: 'PLAN: The group will finish the project website the weekend before Monday\'s deadline.',
         model:
           'Likely failures: (1) Weekend availability was never actually confirmed — assumed. (2) All integration lands in one moment; any missing piece blocks everything. (3) No one owns the final merge. (4) A laptop/file-format surprise at the last minute. Repairs: confirm hours now, integrate a rough version FRIDAY, name an owner, do a 10-minute tech check midweek.',
+        repairs: [
+          'Ask each person today which weekend hours they can actually work.',
+          'Assemble a rough end-to-end version on Friday, before anything is polished.',
+          'Name one person who owns the final merge and says when it is done.',
+        ],
+        nonRepairs: [
+          'Agree as a group that everyone will do their part.',
+          'Assume the weekend will be free because it usually is.',
+          'Message the group again closer to the weekend.',
+        ],
       },
     ]
     const c = cases[seed % cases.length]
     return {
       title: 'Assume it failed — why?',
-      prompt: `${c.plan}\n\nIt is the day after the deadline and the plan **failed**. Write down the two or three most likely reasons why, then one repair for each.`,
-      answer: {
-        type: 'rubric',
-        criteria: [
-          'I named at least two DIFFERENT failure modes (not one reworded)',
-          'At least one failure is boring/logistical (time, access, energy) rather than dramatic',
-          'Each failure got a concrete repair that changes the plan now',
-          'I checked the plan for hidden assumptions (availability, equal difficulty, motivation)',
-        ],
-        model: c.model,
-      },
+      prompt: `${c.plan}`,
+      parts: [
+        {
+          stage: 'Pre-mortem',
+          prompt:
+            'It is the day after the deadline and the plan **failed**. Write down the two or three most likely reasons why, then one repair for each. Write yours first — the model appears once you are done.',
+          answer: draft({
+            criteria: [
+              'At least two DIFFERENT failure modes, not one reworded',
+              'At least one boring/logistical failure (time, access, energy) rather than a dramatic one',
+              'A concrete repair for each failure that changes the plan now',
+              'Hidden assumptions checked (availability, equal difficulty, motivation)',
+            ],
+            model: c.model,
+            minWords: 30,
+            placeholder: 'It failed because… Repair… It also failed because… Repair…',
+          }),
+          explanation:
+            'Prospective hindsight — writing as if the failure already happened — reliably surfaces more risks than "what might go wrong?". This draft is yours; nothing here is scored.',
+        },
+        {
+          stage: 'Repair test',
+          prompt:
+            'Now the graded part. Select every response below that is a **real repair** — one that changes a condition in the plan right now, rather than restating the wish.',
+          answer: multi(rng, c.repairs, c.nonRepairs),
+          explanation:
+            'A repair names what changes, who owns it, and when it is verified. "Try harder", "be careful", and "remember to start" leave every condition that produced the failure exactly as it was — which is why the same failure repeats.',
+        },
+      ],
       hints: [
         'Write as if the failure already happened: "It failed because…" unlocks more honest answers than "what might go wrong?"',
         'The most common killers are boring: no start trigger, no slack, no owner, resources assumed.',
-        'Compare with the model after scoring yourself.',
+        'For the repair test: if a response changes nothing you could point at tomorrow, it is not a repair.',
       ],
       explanation: `Model pre-mortem: ${c.model} Evidence note: prospective hindsight ("it already failed") reliably surfaces more risks than plain risk-listing — that is the entire trick.`,
     }

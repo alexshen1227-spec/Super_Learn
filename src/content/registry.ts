@@ -19,6 +19,8 @@ import { META_TEMPLATES } from './items/meta'
 import { CHESS_TEMPLATES } from './items/chessTactics'
 import { POLYOMINO_TEMPLATES } from './items/polyominoPuzzles'
 import { LOGIC_TEMPLATES } from './items/logicPuzzles'
+import { GENERATED_PUZZLE_TEMPLATES } from './items/generatedPuzzles'
+import { GENERATED_LAB_TEMPLATES } from './items/generatedLabs'
 import { CASEFILE_TEMPLATES } from './items/caseFiles'
 import { CASEFILE2_TEMPLATES } from './items/caseFiles2'
 import { EXPANSION_TEMPLATES } from './items/expansion'
@@ -43,6 +45,8 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...CHESS_TEMPLATES,
   ...POLYOMINO_TEMPLATES,
   ...LOGIC_TEMPLATES,
+  ...GENERATED_PUZZLE_TEMPLATES,
+  ...GENERATED_LAB_TEMPLATES,
   ...CASEFILE_TEMPLATES,
   ...CASEFILE2_TEMPLATES,
   ...EXPANSION_TEMPLATES,

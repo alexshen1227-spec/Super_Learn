@@ -255,8 +255,11 @@ function PathDetailSheet({
   ]
   const autoGradedTemplates = pathTemplates.filter((template) => {
       const item = template.generate(0)
-      if (item.kind === 'single') return Boolean(item.answer && item.answer.type !== 'rubric')
-      if (item.kind === 'multi') return Boolean(item.parts?.length && item.parts.every((part) => part.answer.type !== 'rubric'))
+      if (item.kind === 'single') return Boolean(item.answer && item.answer.type !== 'draft')
+      // A multi-part item counts once it has ANY deterministically graded part.
+      // An ungraded draft alongside real checkpoints does not disqualify it —
+      // the draft simply contributes nothing to the evidence.
+      if (item.kind === 'multi') return Boolean(item.parts?.some((part) => part.answer.type !== 'draft'))
       return true
     })
   const autoGradedForms = autoGradedTemplates.reduce((sum, template) => sum + template.variants, 0)

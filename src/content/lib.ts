@@ -143,3 +143,50 @@ export const text = (accept: string[], placeholder?: string): AnswerSpec => ({
   accept,
   ...(placeholder ? { placeholder } : {}),
 })
+
+/**
+ * Multi-select built from correct + incorrect option texts. The key is
+ * COMPUTED from the shuffled positions, so a generator can never drift out of
+ * sync with hand-typed indexes.
+ */
+export function multi(rng: Rng, correct: string[], incorrect: string[]): AnswerSpec {
+  const seen = new Set<string>()
+  const dedupe = (xs: string[]) => xs.filter((x) => (seen.has(x) ? false : (seen.add(x), true)))
+  const good = dedupe(correct)
+  const bad = dedupe(incorrect)
+  const options = shuffle(rng, [...good, ...bad])
+  return {
+    type: 'multi',
+    options,
+    correct: good.map((g) => options.indexOf(g)).sort((a, b) => a - b),
+  }
+}
+
+/** Classify statements into named categories; display order is shuffled. */
+export function classify(
+  rng: Rng,
+  categories: string[],
+  statements: { text: string; category: number }[],
+): AnswerSpec {
+  return { type: 'classify', categories, statements: shuffle(rng, statements) }
+}
+
+/**
+ * An ungraded written artifact. Drafted from memory, then compared against
+ * the model. Never scored — the evidence comes from the graded probe that
+ * must follow it in the same item (enforced by the content audit).
+ */
+export function draft(opts: {
+  criteria: string[]
+  model: string
+  minWords?: number
+  placeholder?: string
+}): AnswerSpec {
+  return {
+    type: 'draft',
+    criteria: opts.criteria,
+    model: opts.model,
+    ...(opts.minWords !== undefined ? { minWords: opts.minWords } : {}),
+    ...(opts.placeholder ? { placeholder: opts.placeholder } : {}),
+  }
+}

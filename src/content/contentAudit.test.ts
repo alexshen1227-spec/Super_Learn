@@ -27,9 +27,16 @@ import { MATH_LADDER, BREADTH_PROBES } from '../engine/placement'
 const UNSAFE = /<\s*(script|iframe|object|embed|img|svg|style)/i
 
 function checkAnswer(spec: AnswerSpec, where: string) {
+  if (spec.type === 'draft') {
+    // A draft has no answer key by design. What must hold is that it can never
+    // become partial credit: whatever is written, the score stays zero.
+    expect(validate(spec, 'an excellent and complete response').score, `${where}: a draft must never score`).toBe(0)
+    expect(validate(spec, '').score, `${where}: a draft must never score`).toBe(0)
+    return
+  }
   const good = validate(spec, correctResponse(spec))
   expect(good.ok, `${where}: correct answer must validate (got ${JSON.stringify(good)})`).toBe(true)
-  if (spec.type !== 'rubric') {
+  {
     const bad = validate(spec, wrongResponse(spec))
     expect(bad.ok, `${where}: wrong answer must fail`).toBe(false)
   }
@@ -51,13 +58,15 @@ function checkAnswer(spec: AnswerSpec, where: string) {
   if (spec.type === 'numeric') {
     expect(Number.isFinite(spec.answer), `${where}: numeric answer must be finite`).toBe(true)
   }
-  if (spec.type === 'rubric') {
-    expect(spec.criteria.length, `${where}: rubric needs concrete criteria`).toBeGreaterThanOrEqual(3)
-    expect(spec.model.length, `${where}: rubric needs a substantive model`).toBeGreaterThan(40)
-    if (spec.minWords !== undefined) {
-      expect(spec.minWords, `${where}: minimum draft length must be meaningful`).toBeGreaterThanOrEqual(3)
-      expect(spec.minWords, `${where}: minimum draft length must remain phone-usable`).toBeLessThanOrEqual(300)
-    }
+}
+
+/** A draft carries no key, so its criteria and model must carry the weight. */
+function checkDraftShape(spec: Extract<AnswerSpec, { type: 'draft' }>, where: string) {
+  expect(spec.criteria.length, `${where}: draft needs concrete criteria`).toBeGreaterThanOrEqual(3)
+  expect(spec.model.length, `${where}: draft needs a substantive model`).toBeGreaterThan(40)
+  if (spec.minWords !== undefined) {
+    expect(spec.minWords, `${where}: minimum draft length must be meaningful`).toBeGreaterThanOrEqual(3)
+    expect(spec.minWords, `${where}: minimum draft length must remain phone-usable`).toBeLessThanOrEqual(300)
   }
 }
 
@@ -70,17 +79,44 @@ function checkRendered(item: RenderedItem, where: string) {
     part.study ?? '',
     part.prompt,
     part.explanation,
-    ...(part.answer.type === 'rubric' ? [part.answer.model, ...part.answer.criteria] : []),
+    ...(part.hints ?? []),
+    ...(part.answer.type === 'draft' ? [part.answer.model, ...part.answer.criteria] : []),
   ])
   const allText = [item.prompt, item.explanation, ...item.hints, item.title, ...partText].join(' ')
   expect(UNSAFE.test(allText), `${where}: unsafe markup`).toBe(false)
   if (item.kind === 'single') {
     expect(item.answer, `${where}: single item needs answer`).toBeTruthy()
+    // THE EVIDENCE LAW: a draft is never scored, so an item whose only answer
+    // is a draft could never produce evidence — it must not exist.
+    expect(item.answer!.type, `${where}: a draft can never be a single item's whole answer`).not.toBe('draft')
     checkAnswer(item.answer!, where)
   }
   if (item.kind === 'multi') {
     expect(item.parts && item.parts.length, `${where}: multi item needs parts`).toBeTruthy()
-    for (const [i, part] of item.parts!.entries()) {
+    const parts = item.parts!
+    parts.forEach((part, i) => {
+      if (part.answer.type !== 'draft') return
+      checkDraftShape(part.answer, `${where} part ${i}`)
+      // Every draft must be FOLLOWED by something that actually grades. A
+      // draft at the end of an item is a checkpoint that proves nothing.
+      const gradedAfter = parts.slice(i + 1).some((p) => p.answer.type !== 'draft')
+      expect(gradedAfter, `${where} part ${i}: a draft must be followed by a graded probe in the same item`).toBe(true)
+    })
+    expect(
+      parts.some((p) => p.answer.type !== 'draft'),
+      `${where}: a multi item needs at least one deterministically graded part`,
+    ).toBe(true)
+    // Every graded checkpoint can now fail into the repair fork, which offers
+    // hints. A part-level ladder is optional (the item's own is the fallback),
+    // but a declared one must be a real ladder, not a single throwaway line.
+    parts.forEach((part, i) => {
+      if (!part.hints) return
+      expect(part.hints.length, `${where} part ${i}: a part hint ladder needs ≥2 rungs`).toBeGreaterThanOrEqual(2)
+      for (const [h, hint] of part.hints.entries()) {
+        expect(hint.trim().length, `${where} part ${i} hint ${h}: empty hint`).toBeGreaterThan(8)
+      }
+    })
+    for (const [i, part] of parts.entries()) {
       expect(part.prompt.length, `${where} part ${i}: prompt`).toBeGreaterThan(4)
       expect(part.explanation.length, `${where} part ${i}: explanation`).toBeGreaterThan(10)
       checkAnswer(part.answer, `${where} part ${i}`)
@@ -182,6 +218,64 @@ describe('template registry', () => {
   })
 })
 
+/**
+ * THE NO-SELF-GRADING LAW.
+ *
+ * Written work is real practice and must stay in the app, but it cannot be
+ * evidence: nobody — not the app, not the learner — grades it. Anything that
+ * moves a skill was machine-graded. These tests are the lock on that.
+ */
+describe('no self-grading (evidence law)', () => {
+  const rendered = BUILTIN_TEMPLATES.flatMap((t) => {
+    const seeds = t.variants === 1 ? [0] : Array.from({ length: Math.min(t.variants, 8) }, (_, i) => i)
+    return seeds.map((seed) => ({ t, seed, item: t.generate(seed) }))
+  })
+
+  it('no rendered item is graded by anything but the validator', () => {
+    for (const { t, seed, item } of rendered) {
+      const answers = item.parts?.length ? item.parts.map((p) => p.answer) : item.answer ? [item.answer] : []
+      for (const a of answers) {
+        // The only ungraded type permitted is `draft`, and a draft always
+        // scores zero — so no answer type can yield self-assessed credit.
+        if (a.type === 'draft') {
+          expect(validate(a, 'a thorough, well-argued response').score, `${t.id}@${seed}`).toBe(0)
+          expect(validate(a, 'a thorough, well-argued response').ok, `${t.id}@${seed}`).toBe(true)
+        }
+      }
+    }
+  })
+
+  it('every template carrying a draft still produces graded evidence', () => {
+    const withDrafts = rendered.filter(({ item }) => item.parts?.some((p) => p.answer.type === 'draft'))
+    expect(withDrafts.length, 'the draft mechanism should still be in use').toBeGreaterThan(0)
+    for (const { t, seed, item } of withDrafts) {
+      const graded = item.parts!.filter((p) => p.answer.type !== 'draft')
+      expect(graded.length, `${t.id}@${seed}: draft item must carry graded parts`).toBeGreaterThan(0)
+      // and each graded part must really be checkable
+      for (const [i, part] of graded.entries()) {
+        const v = validate(part.answer, correctResponse(part.answer))
+        expect(v.ok, `${t.id}@${seed} graded part ${i} must accept its own key`).toBe(true)
+      }
+    }
+  })
+
+  it('no skill can reach independence on ungraded work alone', () => {
+    // Any template whose ONLY answers are drafts would be able to advance a
+    // skill under a scoring rule. There must be none.
+    for (const { t, seed, item } of rendered) {
+      // chess / polyomino / logic-grid items carry no AnswerSpec; their own
+      // players grade them against a search-verified solution.
+      if (item.kind !== 'single' && item.kind !== 'multi') continue
+      const answers = item.parts?.length ? item.parts.map((p) => p.answer) : item.answer ? [item.answer] : []
+      expect(answers.length, `${t.id}@${seed}: item needs at least one answer`).toBeGreaterThan(0)
+      expect(
+        answers.every((a) => a.type === 'draft'),
+        `${t.id}@${seed}: an item made only of drafts could never produce evidence`,
+      ).toBe(false)
+    }
+  })
+})
+
 describe('chess tactics (exhaustive verification)', () => {
   const chessTemplates = BUILTIN_TEMPLATES.filter((t) => t.kind === 'chess')
   it('has at least 20 tactics', () => {
@@ -247,6 +341,146 @@ describe('logic grids', () => {
       const verdict = puzzleValid(spec)
       expect(verdict.ok, `${t.id}: ${verdict.reason}`).toBe(true)
       expect(spec.clues.length).toBeGreaterThanOrEqual(3)
+    }
+  })
+})
+
+/**
+ * Generated puzzles carry the puzzle bucket's supply, so their promises have
+ * to hold across the WHOLE declared variant range, not just seed 0: every form
+ * solvable, every form genuinely different, and generation fast enough to run
+ * on a phone at render time.
+ */
+describe('generated puzzles', () => {
+  const generated = BUILTIN_TEMPLATES.filter(
+    (t) => t.id.includes('-gen-') && (t.kind === 'polyomino' || t.kind === 'logicgrid'),
+  )
+
+  it('exists and carries real variant supply', () => {
+    expect(generated.length).toBeGreaterThanOrEqual(6)
+    expect(generated.reduce((a, t) => a + t.variants, 0)).toBeGreaterThanOrEqual(200)
+  })
+
+  it('every declared variant is solvable and unique', () => {
+    for (const t of generated) {
+      for (let seed = 0; seed < t.variants; seed++) {
+        const item = t.generate(seed)
+        if (item.polyomino) {
+          expect(solutionValid(item.polyomino), `${t.id}@${seed}: not solvable`).toBe(true)
+          const cells = item.polyomino.pieces.reduce((a, p) => a + p.cells.length, 0)
+          expect(cells, `${t.id}@${seed}: pieces must tile the region exactly`).toBe(item.polyomino.region.length)
+          expect(item.polyomino.pieces.length, `${t.id}@${seed}: too few pieces`).toBeGreaterThanOrEqual(4)
+        }
+        if (item.logicgrid) {
+          const verdict = puzzleValid(item.logicgrid)
+          expect(verdict.ok, `${t.id}@${seed}: ${verdict.reason}`).toBe(true)
+          expect(item.logicgrid.clues.length, `${t.id}@${seed}: too few clues`).toBeGreaterThanOrEqual(3)
+        }
+      }
+    }
+  })
+
+  it('declared variants are actually distinct — no padded counts', () => {
+    for (const t of generated) {
+      const seen = new Set<string>()
+      for (let seed = 0; seed < t.variants; seed++) {
+        const item = t.generate(seed)
+        seen.add(
+          item.polyomino
+            ? JSON.stringify(item.polyomino.pieces.map((p) => p.cells))
+            : JSON.stringify(item.logicgrid!.clues.map((c) => c.text).sort()),
+        )
+      }
+      // `variants` drives novelty tracking and the auto-graded-forms count, so
+      // an inflated number is a quiet lie about how much material exists.
+      expect(
+        seen.size / t.variants,
+        `${t.id}: only ${seen.size} distinct of ${t.variants} declared variants`,
+      ).toBeGreaterThanOrEqual(0.95)
+    }
+  })
+
+  it('generates fast enough for a phone', () => {
+    const start = performance.now()
+    let n = 0
+    for (const t of generated) {
+      for (let seed = 0; seed < t.variants; seed++) {
+        t.generate(seed)
+        n++
+      }
+    }
+    const perItem = (performance.now() - start) / n
+    expect(perItem, `${perItem.toFixed(1)} ms per generated puzzle`).toBeLessThan(25)
+  })
+
+  it('generated lab families deliver the variety they declare', () => {
+    const labs = BUILTIN_TEMPLATES.filter(
+      (t) => t.id.includes('-gen-') && t.kind !== 'polyomino' && t.kind !== 'logicgrid',
+    )
+    expect(labs.length, 'generated lab families should exist').toBeGreaterThanOrEqual(4)
+    // Canonicalize: reshuffling the SAME options is not new content, so option
+    // order is sorted away before comparing. Otherwise a generator could look
+    // varied while asking one question over and over.
+    const canonical = (spec: AnswerSpec | undefined): unknown => {
+      if (!spec) return null
+      if (spec.type === 'mcq' || spec.type === 'multi' || spec.type === 'order') return [...spec.options].sort()
+      if (spec.type === 'classify') return [...spec.statements.map((s) => s.text)].sort()
+      return spec
+    }
+    for (const t of labs) {
+      const seen = new Set<string>()
+      for (let seed = 0; seed < t.variants; seed++) {
+        const item = t.generate(seed)
+        seen.add(
+          JSON.stringify([
+            item.prompt,
+            canonical(item.answer),
+            item.parts?.map((p) => [p.prompt, p.study ?? '', canonical(p.answer)]),
+          ]),
+        )
+      }
+      expect(
+        seen.size / t.variants,
+        `${t.id}: only ${seen.size} distinct of ${t.variants} declared variants`,
+      ).toBeGreaterThanOrEqual(0.95)
+    }
+  })
+})
+
+/**
+ * Every graded checkpoint can fail into the corrective repair fork, so the
+ * content has to be able to support a repair: something to say when the
+ * learner asks for help, and a real explanation once they have finished.
+ */
+describe('repair loop coverage', () => {
+  const multi = BUILTIN_TEMPLATES.filter((t) => t.generate(0).kind === 'multi')
+
+  it('every graded checkpoint can explain itself after an error', () => {
+    for (const t of multi) {
+      const item = t.generate(0)
+      for (const [i, part] of (item.parts ?? []).entries()) {
+        if (part.answer.type === 'draft') continue
+        expect(part.explanation.trim().length, `${t.id} part ${i}: needs a real explanation`).toBeGreaterThan(20)
+        // Either its own ladder or the item's — the repair fork always offers hints.
+        const ladder = part.hints?.length ? part.hints : item.hints
+        expect(ladder.length, `${t.id} part ${i}: no hint ladder available`).toBeGreaterThanOrEqual(2)
+      }
+    }
+  })
+
+  it('the method drill scaffolds each checkpoint separately', () => {
+    // Its six checkpoints are six different problems, so one shared ladder
+    // could not scaffold any of them — this is the largest multi-part family.
+    const drill = BUILTIN_TEMPLATES.find((t) => t.id === 'x-method-drill')
+    expect(drill, 'x-method-drill should exist').toBeTruthy()
+    for (const seed of [0, 3, 17, 59]) {
+      const item = drill!.generate(seed)
+      for (const [i, part] of item.parts!.entries()) {
+        expect(part.hints?.length ?? 0, `x-method-drill@${seed} part ${i}: needs its own hints`).toBeGreaterThanOrEqual(2)
+      }
+      // and the ladders must differ between checkpoints, or they are not per-part
+      const ladders = new Set(item.parts!.map((p) => JSON.stringify(p.hints)))
+      expect(ladders.size, `x-method-drill@${seed}: per-part hints should differ`).toBeGreaterThan(1)
     }
   })
 })

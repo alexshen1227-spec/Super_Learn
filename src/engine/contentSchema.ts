@@ -53,7 +53,9 @@ function validAnswer(a: unknown): a is AnswerSpec {
         [...(s.correct as number[])].sort((x, y) => x - y).every((v, i) => v === i)
       )
     default:
-      return false // classify/rubric not supported in JSON packs (V1)
+      // classify is unsupported in V1 packs; `draft` is refused on principle —
+      // an imported pack must never be able to introduce ungraded answers.
+      return false
   }
 }
 

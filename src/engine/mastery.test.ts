@@ -163,3 +163,42 @@ describe('review scheduling', () => {
     expect(deriveEvidence([], T0).get('sk1')).toBeUndefined()
   })
 })
+
+/**
+ * The no-self-grading law, enforced at the point it actually matters: replay.
+ * Written work is exposure. It must never promote, never demote, and never
+ * touch the review schedule.
+ */
+describe('ungraded work produces no evidence', () => {
+  const ungraded = (over: Partial<AttemptEvent> = {}) =>
+    ev({ correct: null, firstCorrect: null, score: null, validator: 'draft', ...over })
+
+  it('a perfect-looking ungraded event cannot advance a skill', () => {
+    // Score 1 would once have counted as a first unaided success. Not any more.
+    const events = [ungraded({ seed: 1, score: 1 }), ungraded({ seed: 2, score: 1 })]
+    const state = evidenceFor(deriveEvidence(events, T0), 'sk1')
+    expect(state.state).toBe('introduced') // exposure only
+    expect(state.independentForms).toEqual([])
+    expect(state.review).toBeNull()
+  })
+
+  it('ungraded work is not counted as a miss either', () => {
+    const events = [ungraded({ seed: 1 }), ungraded({ seed: 2 }), ungraded({ seed: 3 })]
+    const state = evidenceFor(deriveEvidence(events, T0), 'sk1')
+    expect(state.recentMisses).toBe(0)
+    expect(state.needsReview).toBe(false)
+    expect(state.exposure).toBe(3)
+  })
+
+  it('ungraded work never disturbs an earned rung or its review date', () => {
+    const graded = [ev({ seed: 1 }), ev({ seed: 2 })]
+    const before = evidenceFor(deriveEvidence(graded, T0), 'sk1')
+    expect(before.state).toBe('independent')
+
+    const withDrafts = [...graded, ungraded({ seed: 3, score: 0 }), ungraded({ seed: 4, score: 1 })]
+    const after = evidenceFor(deriveEvidence(withDrafts, T0), 'sk1')
+    expect(after.state).toBe('independent')
+    expect(after.review!.due).toBe(before.review!.due)
+    expect(after.independentForms).toEqual(before.independentForms)
+  })
+})

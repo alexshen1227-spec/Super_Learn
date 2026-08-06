@@ -8,9 +8,11 @@
  *
  * Evidence honesty: drill events log under 'x-method' (strategy recognition),
  * never under the stem skills — naming a method is not solving evidence.
- * Explain-back logs under 'x-explain' with the target skill carried as an
- * extra id for coverage display; being self-scored it can never create
- * independent evidence for an academic skill (rubric law).
+ * Explain-back pairs an UNGRADED written explanation with a real graded
+ * problem from the target skill's own bank. The written half is never scored;
+ * the problem is. Both log under 'x-explain', with the target skill carried
+ * only as an extra id for coverage display — a single exit-ticket problem is
+ * not independence, so it must not claim to be.
  */
 import type { ItemPart, ItemTemplate, RenderedItem } from '../../domain/types'
 import { mulberry32, shuffle } from '../../engine/rng'
@@ -109,6 +111,13 @@ export const methodDrill: ItemTemplate = {
       return {
         prompt: `**Don't solve it.** Which method does this problem call for?\n\n> ${stem.prompt.replace(/\n/g, '\n> ')}`,
         answer: { type: 'mcq', options, correct: options.indexOf(correct) },
+        // Per-checkpoint ladder: each part is a different problem, so an
+        // item-level hint list could not scaffold any of them.
+        hints: [
+          'Read the QUESTION sentence first, not the story. What quantity has to exist at the end?',
+          'Strip the surface details and name the structure: a rate, a part-and-whole, two unknowns, a shape, a change over time, a sequence of steps?',
+          `This stem is a **${skillName}** problem — the method is: ${correct}.`,
+        ],
         explanation: `This is a **${skillName}** problem: ${correct}. The cue to bank: notice what identified it — the structure, not the surface details. (Solving it happens in regular practice; this drill trains the choosing.)`,
       }
     })
@@ -135,49 +144,93 @@ export const methodDrill: ItemTemplate = {
 
 // ---------------------------------------------------------------- explain-back
 
-/** Skills eligible for explain-back = those with substantial KB cards. */
-const EXPLAIN_TARGETS: string[] = SKILLS.filter((s) => KB_BY_SKILL.has(s.id)).map((s) => s.id)
+/**
+ * Graded probes for the explain-back drill: single-answer, deterministically
+ * validated templates drawn from the same audited academic banks.
+ */
+const PROBE_POOL: ItemTemplate[] = [
+  ...MATH_NUMBER_TEMPLATES,
+  ...MATH_ALGEBRA_TEMPLATES,
+  ...PHYSICS_TEMPLATES,
+  ...ADVANCED_CURRICULUM_TEMPLATES,
+].filter((t) => t.kind === 'single' && !t.authentic)
+
+function probesFor(skillId: string): ItemTemplate[] {
+  return PROBE_POOL.filter((t) => t.skillIds.includes(skillId))
+}
+
+/**
+ * Skills eligible for explain-back: those with a substantial KB card AND at
+ * least one deterministically graded problem to prove the explanation against.
+ * An explanation with nothing to test it is a claim, not evidence.
+ */
+const EXPLAIN_TARGETS: string[] = SKILLS.filter(
+  (s) => KB_BY_SKILL.has(s.id) && probesFor(s.id).length > 0,
+).map((s) => s.id)
 
 export const explainBack: ItemTemplate = {
   id: 'x-explain-back',
-  version: 1,
-  kind: 'single',
+  version: 2,
+  kind: 'multi',
   name: 'Explain it back',
   skillIds: ['x-explain'],
   bucket: 'meta',
   difficulty: 3,
   variants: EXPLAIN_TARGETS.length,
-  minutes: 4,
-  provenance: 'Original; model answer = the skill’s own audited concept card.',
+  minutes: 5,
+  provenance:
+    'Original; model answer = the skill’s own audited concept card, graded probe = a real problem from that skill’s audited bank.',
   generate: (seed: number): RenderedItem => {
     const skillId = EXPLAIN_TARGETS[seed % EXPLAIN_TARGETS.length]
     const skill = SKILLS.find((s) => s.id === skillId)!
     const card = KB_BY_SKILL.get(skillId)!
+    // Deterministic probe choice: same seed → same problem.
+    const rng = mulberry32((seed % Math.max(1, EXPLAIN_TARGETS.length)) * 2654435761 + 31)
+    const pool = probesFor(skillId)
+    const probeTemplate = pool[Math.floor(rng() * pool.length) % pool.length]
+    const probe = probeTemplate.generate(Math.floor(rng() * Math.max(1, probeTemplate.variants)))
     return {
       templateId: 'x-explain-back',
-      version: 1,
+      version: 2,
       seed,
-      kind: 'single',
+      kind: 'multi',
       title: `Explain it back: ${skill.name}`,
-      prompt:
-        `From memory — no peeking at the Path — explain **${skill.name}** as if to a friend who missed that class:\n\n` +
-        `1. What is it, in one plain sentence?\n2. One worked micro-example.\n3. One trap people fall into.\n\nAbout 60 seconds of writing.`,
-      answer: {
-        type: 'rubric',
-        criteria: [
-          'My one-sentence version captures the core idea without circular wording',
-          'My example uses actual numbers/objects and is correct',
-          'My trap is a mistake someone would really make',
-          'I did this from memory before comparing',
-        ],
-        model: card.card,
-      },
+      prompt: `**${skill.name}** — explain it, then use it.`,
+      parts: [
+        {
+          stage: 'From memory',
+          prompt:
+            `No peeking at the Path. Explain **${skill.name}** as if to a friend who missed that class:\n\n` +
+            `1. What is it, in one plain sentence?\n2. One worked micro-example.\n3. One trap people fall into.\n\nAbout 60 seconds of writing. The concept card appears once you are done.`,
+          answer: {
+            type: 'draft',
+            criteria: [
+              'A one-sentence version capturing the core idea without circular wording',
+              'An example using actual numbers or objects, and correct',
+              'A trap someone would really make',
+              'Written from memory before comparing',
+            ],
+            model: card.card,
+            minWords: 25,
+            placeholder: 'In one sentence… For example… The trap is…',
+          },
+          explanation:
+            'Explaining from memory is retrieval practice and self-explanation at once, and it exposes hollow retention that recognition quizzes miss. Where your version diverged from the card is precisely what to re-study. Nothing here is scored — the next part is.',
+        },
+        {
+          stage: 'Now use it',
+          prompt: `A real ${skill.name} problem. Your explanation just claimed you have this — here is the test.\n\n${probe.prompt}`,
+          answer: probe.answer!,
+          explanation: `${probe.explanation}\n\nThis part is the graded one. An explanation that reads well but cannot drive a problem is exactly the hollow retention this drill exists to catch.`,
+        },
+      ],
       hints: [
         'Start with what the idea DOES, not what it is called.',
         'If the sentence won’t form, that is the finding — note exactly where it breaks.',
+        'For the problem: use your own explanation as the method. If it does not reach, that gap is the result.',
       ],
       explanation:
-        'Explaining from memory is retrieval practice and self-explanation at once — and it exposes hollow retention that recognition quizzes miss. Where your version diverged from the card is precisely what to re-study. (Self-scored: this guides your plan and the explanation skill; it never grades the target skill itself.)',
+        'Retention is not the feeling of familiarity — it is being able to reconstruct the idea and then run it. The written half guides your plan; the graded half is what counts as evidence, and it counts toward your explanation skill rather than the target skill, because one problem is not independence.',
       extraSkillIds: [skillId],
     }
   },
