@@ -19,6 +19,7 @@ import { useNav, type SessionLaunch } from '../nav'
 import { buildContentIndex } from '../../content/registry'
 import {
   buildChallengePlan,
+  buildErrorClinicPlan,
   buildFocusPlan,
   buildMixedReviewPlan,
   buildSessionPlan,
@@ -33,7 +34,10 @@ import { ItemPlayer } from './ItemPlayer'
 import { ChessPlayer } from './ChessPlayer'
 import { PolyominoPlayer } from './PolyominoPlayer'
 import { LogicGridPlayer } from './LogicGridPlayer'
+import { activeMission } from '../../engine/mission'
+import { openRepairTargets } from '../../engine/errors'
 import { IconClock } from '../icons'
+import { calendarDaysUntil } from '../../engine/time'
 
 export interface ActivityResult {
   firstResponse: string
@@ -173,28 +177,9 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
           p = buildChallengePlan(ctx)
           break
         case 'error-clinic': {
-          // Repair queue: skills with recent misses that still need repair —
-          // tagged or not (skipping the tag must not hide the error).
-          const errSkills = [
-            ...new Set(
-              state.events
-                .filter((e) => e.firstCorrect === false && e.t > Date.now() - 14 * 86_400_000)
-                .flatMap((e) => e.skillIds),
-            ),
-          ].filter((s) => {
-            const ev = evidence.get(s)
-            return ev && (ev.needsReview || ev.recentMisses > 0 || ev.blockedByMisconception)
-          })
-          // Confident errors jump the queue.
-          errSkills.sort((a, b) => {
-            const blocked = (id: string) => (evidence.get(id)?.blockedByMisconception ? 1 : 0)
-            return blocked(b) - blocked(a)
-          })
-          if (errSkills.length) {
-            p = buildFocusPlan(ctx, errSkills[0])
-            p.rationale = [
-              `Error Clinic: repairing ${index.skills.get(errSkills[0])?.name ?? errSkills[0]} — improvement counts only after a corrected attempt and a later fresh solve.`,
-            ]
+          const repairs = openRepairTargets(state, evidence, Date.now())
+          if (repairs.length) {
+            p = buildErrorClinicPlan(ctx, repairs)
           } else {
             p = buildMixedReviewPlan(ctx)
             p.rationale = ['No unrepaired errors right now — running mixed review instead.']
@@ -402,7 +387,7 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
 
   // ---------- screens ----------
   if (phase === 'checkin') {
-    return <CheckInScreen defaultMinutes={state.profile.sessionMinutes} deadlines={state.deadlines} onStart={buildPlan} onCancel={() => go({ name: 'today' })} />
+    return <CheckInScreen defaultMinutes={activeMission(state, Date.now())?.dailyMinutes ?? state.profile.sessionMinutes} deadlines={state.deadlines} onStart={buildPlan} onCancel={() => go({ name: 'today' })} />
   }
   if (!plan || !checkIn) {
     return <div className="min-h-dvh grid place-items-center text-faint">Preparing…</div>
@@ -564,7 +549,7 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
       {overTime ? (
         <div className="bg-warn-soft border-b border-warn/30 text-warn text-[13px] px-4 py-2 flex items-center justify-between gap-3 -mx-4" role="status">
           <span>Well past your planned {checkIn.minutes} min — a clean stop beats a long blur.</span>
-          <button className="underline font-semibold shrink-0" onClick={() => setPhase('exit-reflect')}>
+          <button type="button" className="underline font-semibold shrink-0 min-h-11" onClick={() => setPhase('exit-reflect')}>
             Wrap up
           </button>
         </div>
@@ -599,20 +584,28 @@ function SessionHeader({ label, done, total, onLeave, onPark }: { label: string;
   return (
     <div className="sticky top-0 z-30 bg-bg/95 backdrop-blur pt-2 pb-2 -mx-4 px-4 border-b border-line">
       <div className="flex items-center gap-3">
-        <button aria-label="Leave session" onClick={onLeave} className="h-9 w-9 grid place-items-center rounded-full text-muted hover:bg-surface2 shrink-0">
+        <button type="button" aria-label="Leave session" onClick={onLeave} className="h-11 w-11 grid place-items-center rounded-full text-muted hover:bg-surface2 shrink-0">
           ✕
         </button>
         <div className="flex-1 min-w-0">
           <div className="text-[13px] font-medium truncate">{label}</div>
-          <div className="mt-1 h-1 rounded-full bg-surface3 overflow-hidden">
+          <div
+            className="mt-1 h-1 rounded-full bg-surface3 overflow-hidden"
+            role="progressbar"
+            aria-label="Session progress"
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={done}
+          >
             <div className="h-full bg-accent rounded-full transition-[width]" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
           </div>
         </div>
         <button
+          type="button"
           aria-label="Park a distracting thought"
           title="Park a thought for later"
           onClick={onPark}
-          className="h-9 px-3 grid place-items-center rounded-full text-muted hover:bg-surface2 text-[13px] shrink-0"
+          className="min-h-11 px-3 grid place-items-center rounded-full text-muted hover:bg-surface2 text-[13px] shrink-0"
         >
           ✎ park
         </button>
@@ -667,13 +660,13 @@ function CheckInScreen({
   const [minutes, setMinutes] = useState(defaultMinutes)
   const [energy, setEnergy] = useState<CheckIn['energy']>('ok')
   const soon = deadlines
-    .map((d) => ({ ...d, days: Math.ceil((Date.parse(d.dateISO) - Date.now()) / 86_400_000) }))
+    .map((d) => ({ ...d, days: calendarDaysUntil(d.dateISO, Date.now()) }))
     .filter((d) => d.days >= 0 && d.days <= 10)
     .sort((a, b) => a.days - b.days)[0]
   return (
     <div className="pt-safe min-h-dvh flex flex-col">
       <div className="flex items-center pt-3">
-        <button aria-label="Cancel" onClick={onCancel} className="h-10 w-10 grid place-items-center rounded-full text-muted hover:bg-surface2">
+        <button type="button" aria-label="Cancel" onClick={onCancel} className="h-11 w-11 grid place-items-center rounded-full text-muted hover:bg-surface2">
           ✕
         </button>
       </div>
@@ -687,6 +680,7 @@ function CheckInScreen({
           <div className="flex gap-2 mt-2">
             {[10, 20, 25, 30, 45].map((m) => (
               <button
+                type="button"
                 key={m}
                 onClick={() => setMinutes(m)}
                 aria-pressed={minutes === m}

@@ -1,8 +1,10 @@
 /** Shared UI kit — quiet lab aesthetic, 44px touch targets, visible focus. */
 import { createPortal } from 'react-dom'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import type { SkillState } from '../domain/types'
 import { STATE_LABEL } from '../engine/mastery'
+import { useNav } from './nav'
+import { IconSettings } from './icons'
 
 export function Button({
   children,
@@ -32,7 +34,7 @@ export function Button({
     <button
       type={type}
       aria-label={ariaLabel}
-      className={`min-h-11 px-4 rounded-xl text-[15px] transition-colors inline-flex items-center justify-center gap-2 select-none ${styles[kind]} ${className}`}
+      className={`min-h-11 px-4 rounded-xl text-[15px] transition-[color,background-color,border-color,opacity,transform] inline-flex items-center justify-center gap-2 select-none disabled:cursor-not-allowed active:scale-[0.99] ${styles[kind]} ${className}`}
       onClick={onClick}
       disabled={disabled}
     >
@@ -42,23 +44,14 @@ export function Button({
 }
 
 export function Card({ children, className = '', onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
-  const interactive = onClick
-    ? 'cursor-pointer hover:border-line-strong active:bg-surface2 transition-colors'
-    : ''
-  const Tag = onClick ? 'button' : 'div'
-  return (
-    <Tag
-      className={`block w-full text-left bg-surface border border-line rounded-2xl shadow-card ${interactive} ${className}`}
-      onClick={onClick}
-    >
-      {children}
-    </Tag>
-  )
+  const classes = `block w-full text-left bg-surface border border-line rounded-2xl shadow-card ${onClick ? 'interactive-card cursor-pointer active:bg-surface2' : ''} ${className}`
+  if (onClick) return <button type="button" className={classes} onClick={onClick}>{children}</button>
+  return <div className={classes}>{children}</div>
 }
 
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between mt-6 mb-2 px-1">
+    <div className="flex flex-wrap gap-x-3 gap-y-1 items-baseline justify-between mt-7 mb-2.5 px-1">
       <h2 className="font-display font-semibold text-[15px] tracking-wide text-muted uppercase">{children}</h2>
       {right}
     </div>
@@ -110,9 +103,10 @@ export function ProgressBar({ value, max, tone = 'accent', label }: { value: num
   return (
     <div
       role="progressbar"
-      aria-valuenow={Math.round(value)}
+      aria-valuenow={Math.round(pct)}
       aria-valuemin={0}
-      aria-valuemax={Math.round(max)}
+      aria-valuemax={100}
+      aria-valuetext={`${Math.round(pct)}%`}
       aria-label={label}
       className="h-1.5 rounded-full bg-surface3 overflow-hidden"
     >
@@ -135,6 +129,7 @@ export function Modal({
   wide?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const titleId = useId()
   useEffect(() => {
     if (!open) return
     const prevFocus = document.activeElement as HTMLElement | null
@@ -166,10 +161,11 @@ export function Modal({
     document.addEventListener('keydown', onKey)
     // focus the dialog for screen readers / keyboard
     ref.current?.focus()
+    const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
+      document.body.style.overflow = previousOverflow
       prevFocus?.focus?.()
     }
   }, [open, onClose])
@@ -181,16 +177,18 @@ export function Modal({
         ref={ref}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby={titleId}
         tabIndex={-1}
-        className={`relative anim-in bg-surface border border-line rounded-t-3xl sm:rounded-3xl shadow-card w-full ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'} max-h-[88dvh] flex flex-col`}
+        className={`relative anim-in bg-surface border border-line rounded-t-3xl sm:rounded-3xl shadow-modal w-full ${wide ? 'sm:max-w-2xl' : 'sm:max-w-md'} max-h-[90dvh] sm:max-h-[86dvh] flex flex-col sm:mx-4`}
       >
-        <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
-          <h2 className="font-display font-semibold text-lg">{title}</h2>
+        <div className="w-10 h-1 rounded-full bg-line-strong mx-auto mt-2 sm:hidden" aria-hidden />
+        <div className="flex items-center justify-between gap-4 pl-5 pr-3 pt-2 sm:pt-3 pb-2 shrink-0">
+          <h2 id={titleId} className="font-display font-semibold text-lg leading-tight">{title}</h2>
           <button
+            type="button"
             aria-label="Close"
             onClick={onClose}
-            className="h-9 w-9 rounded-full bg-surface2 text-muted hover:text-ink grid place-items-center text-lg leading-none"
+            className="h-11 w-11 rounded-full text-muted hover:text-ink hover:bg-surface2 active:bg-surface3 grid place-items-center text-xl leading-none shrink-0"
           >
             ×
           </button>
@@ -260,11 +258,12 @@ export function Segmented<T extends string>({
     <div role="radiogroup" aria-label={ariaLabel} className="flex gap-1 bg-surface2 border border-line rounded-xl p-1">
       {options.map((o) => (
         <button
+          type="button"
           key={o.value}
           role="radio"
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
-          className={`flex-1 min-h-9 px-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex-1 min-h-11 px-2 rounded-lg text-sm font-medium transition-colors ${
             value === o.value ? 'bg-surface text-ink shadow-card border border-line' : 'text-muted hover:text-ink'
           }`}
         >
@@ -278,15 +277,18 @@ export function Segmented<T extends string>({
 export function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${checked ? 'bg-accent' : 'bg-surface3 border border-line-strong'}`}
+      className="min-h-11 w-14 grid place-items-center shrink-0 rounded-xl"
     >
-      <span
-        className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-surface border border-line shadow-card transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`}
-      />
+      <span className={`relative block w-12 h-7 rounded-full transition-colors ${checked ? 'bg-accent' : 'bg-surface3 border border-line-strong'}`}>
+        <span
+          className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-surface border border-line shadow-card transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`}
+        />
+      </span>
     </button>
   )
 }
@@ -303,7 +305,7 @@ export function Row({ label, sub, right, onClick }: { label: ReactNode; sub?: Re
   )
   if (onClick) {
     return (
-      <button onClick={onClick} className="w-full min-h-12 flex items-center gap-3 px-4 py-2.5 text-left hover:bg-surface2 active:bg-surface3 transition-colors">
+      <button type="button" onClick={onClick} className="w-full min-h-12 flex items-center gap-3 px-4 py-2.5 text-left hover:bg-surface2 active:bg-surface3 transition-colors">
         {inner}
       </button>
     )
@@ -313,4 +315,29 @@ export function Row({ label, sub, right, onClick }: { label: ReactNode; sub?: Re
 
 export function Divider() {
   return <div className="h-px bg-line mx-4" role="separator" />
+}
+
+/** Consistent screen title and Settings entry point. */
+export function HeaderBar({ title, subtitle }: { title: string; subtitle?: string }) {
+  const { go, view } = useNav()
+  return (
+    <header className="pt-safe">
+      <div className="flex items-start justify-between gap-4 pt-5 sm:pt-7 pb-1">
+        <div className="min-w-0">
+          <h1 className="font-display text-[24px] sm:text-[26px] font-bold leading-tight text-balance">{title}</h1>
+          {subtitle ? <p className="text-muted text-sm mt-0.5">{subtitle}</p> : null}
+        </div>
+        {view.name !== 'settings' ? (
+          <button
+            type="button"
+            aria-label="Settings"
+            onClick={() => go({ name: 'settings' })}
+            className="h-11 w-11 grid place-items-center rounded-full text-muted hover:text-ink hover:bg-surface2 active:bg-surface3 transition-colors mt-0.5 shrink-0"
+          >
+            <IconSettings size={21} />
+          </button>
+        ) : null}
+      </div>
+    </header>
+  )
 }

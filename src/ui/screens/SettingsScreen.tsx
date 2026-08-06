@@ -16,6 +16,8 @@ import { IconBack } from '../icons'
 import { CHANGELOG } from '../../content/changelog'
 import { requestNotificationPermission } from '../notify'
 import { PackAuthor } from '../PackAuthor'
+import { SKILLS } from '../../content/skills'
+import { addLocalDaysISO, localDateISO } from '../../engine/time'
 
 export function SettingsScreen() {
   const { state, dispatch, enterSample, exitSample, resetAll } = useStore()
@@ -78,7 +80,7 @@ export function SettingsScreen() {
     <div>
       <header className="pt-safe">
         <div className="flex items-center gap-2 pt-5 pb-1">
-          <button aria-label="Back" onClick={back} className="h-10 w-10 grid place-items-center rounded-full text-muted hover:bg-surface2 -ml-2">
+          <button type="button" aria-label="Back" onClick={back} className="h-11 w-11 grid place-items-center rounded-full text-muted hover:bg-surface2 -ml-2">
             <IconBack size={20} />
           </button>
           <h1 className="font-display text-[24px] font-bold">Settings</h1>
@@ -99,13 +101,14 @@ export function SettingsScreen() {
           </label>
           <div>
             <span className="text-[13px] font-medium text-muted">Grade level</span>
-            <div className="flex gap-1.5 mt-1.5 flex-wrap">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 mt-1.5">
               {[6, 7, 8, 9, 10, 11].map((g) => (
                 <button
+                  type="button"
                   key={g}
                   onClick={() => dispatch({ type: 'update-profile', profile: { gradeLevel: g } })}
                   aria-pressed={state.profile.gradeLevel === g}
-                  className={`min-h-10 px-3.5 rounded-lg border text-[14px] font-medium ${state.profile.gradeLevel === g ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'}`}
+                  className={`min-h-11 px-3 rounded-lg border text-[14px] font-medium ${state.profile.gradeLevel === g ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'}`}
                 >
                   {g}th
                 </button>
@@ -134,18 +137,18 @@ export function SettingsScreen() {
 
       <SectionTitle
         right={
-          <button className="text-[13px] text-accent underline" onClick={() => setDeadlineOpen(true)}>
+          <button type="button" className="text-[13px] text-accent underline min-h-11 -my-2 px-1" onClick={() => setDeadlineOpen(true)}>
             add
           </button>
         }
       >
-        Tests & deadlines
+        Learning missions
       </SectionTitle>
       <Card>
         {state.deadlines.length === 0 ? (
           <p className="text-[13px] text-muted p-4">
-            Add upcoming tests so sessions can lean toward them (openly — the plan always says when a deadline changed
-            it).
+            Create a mission around an upcoming test or real-world goal. Pick the exact skills; the daily plan will
+            teach prerequisites, repair weak spots, and schedule retention before the date.
           </p>
         ) : (
           state.deadlines
@@ -156,9 +159,9 @@ export function SettingsScreen() {
                 {i > 0 ? <Divider /> : null}
                 <Row
                   label={d.title}
-                  sub={`${d.dateISO}${d.bucket ? ` · ${BUCKETS.find((b) => b.id === d.bucket)?.name}` : ''}`}
+                  sub={`${d.dateISO}${d.bucket ? ` · ${BUCKETS.find((b) => b.id === d.bucket)?.name}` : ''}${d.skillIds?.length ? ` · ${d.skillIds.length} target skill${d.skillIds.length === 1 ? '' : 's'} · ${d.dailyMinutes ?? 30} min/day` : ''}`}
                   right={
-                    <button className="text-[13px] text-bad underline" onClick={() => dispatch({ type: 'remove-deadline', id: d.id })}>
+                    <button type="button" className="text-[13px] text-bad underline min-h-11 px-1" onClick={() => dispatch({ type: 'remove-deadline', id: d.id })}>
                       remove
                     </button>
                   }
@@ -325,7 +328,7 @@ export function SettingsScreen() {
         <Row
           label="Export everything"
           sub="One JSON file: profile, history, evidence — yours"
-          onClick={() => download(`axiom-lab-export-${new Date().toISOString().slice(0, 10)}.json`, exportState(state))}
+          onClick={() => download(`axiom-lab-export-${localDateISO()}.json`, exportState(state))}
         />
         <Divider />
         <Row label="Import from export" sub="Replaces current data after a preview" onClick={() => fileRef.current?.click()} />
@@ -340,7 +343,7 @@ export function SettingsScreen() {
               {state.customPacks.map((p) => (
                 <Chip key={p.meta.id} tone="accent">
                   {p.meta.name} ({p.items.length})
-                  <button className="ml-1 opacity-70 hover:opacity-100" aria-label={`Remove pack ${p.meta.name}`} onClick={() => dispatch({ type: 'remove-pack', id: p.meta.id })}>
+                  <button type="button" className="ml-1 opacity-70 hover:opacity-100 min-h-11 min-w-11" aria-label={`Remove pack ${p.meta.name}`} onClick={() => dispatch({ type: 'remove-pack', id: p.meta.id })}>
                     ×
                   </button>
                 </Chip>
@@ -490,10 +493,13 @@ export function SettingsScreen() {
 
 function AddDeadline({ open, onClose, onAdd }: { open: boolean; onClose: () => void; onAdd: (d: Deadline) => void }) {
   const [title, setTitle] = useState('')
-  const [dateISO, setDateISO] = useState(() => new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10))
+  const [dateISO, setDateISO] = useState(() => addLocalDaysISO(Date.now(), 7))
   const [bucket, setBucket] = useState<BucketId | null>('math')
+  const [skillIds, setSkillIds] = useState<string[]>([])
+  const [dailyMinutes, setDailyMinutes] = useState<10 | 20 | 25 | 30 | 45>(30)
+  const skills = SKILLS.filter((s) => s.bucket === bucket).sort((a, b) => a.gradeBand - b.gradeBand || a.name.localeCompare(b.name))
   return (
-    <Modal open={open} onClose={onClose} title="Add a test or deadline">
+    <Modal open={open} onClose={onClose} title="Create a learning mission" wide>
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value.slice(0, 80))}
@@ -510,28 +516,70 @@ function AddDeadline({ open, onClose, onAdd }: { open: boolean; onClose: () => v
         />
       </label>
       <div className="mt-3">
-        <span className="text-[13px] text-muted font-medium">Subject (steers the plan)</span>
+        <span className="text-[13px] text-muted font-medium">Subject</span>
         <div className="flex flex-wrap gap-1.5 mt-1.5">
           {BUCKETS.filter((b) => ['math', 'physics', 'coding', 'science'].includes(b.id)).map((b) => (
-            <button key={b.id} onClick={() => setBucket(bucket === b.id ? null : b.id)} aria-pressed={bucket === b.id}>
+            <button type="button" className="min-h-11" key={b.id} onClick={() => { setBucket(b.id); setSkillIds([]) }} aria-pressed={bucket === b.id}>
               <Chip tone={bucket === b.id ? 'accent' : 'neutral'} className="cursor-pointer !py-1.5">
                 {b.short}
               </Chip>
             </button>
           ))}
-          <button onClick={() => setBucket(null)} aria-pressed={bucket === null}>
+          <button type="button" className="min-h-11" onClick={() => { setBucket(null); setSkillIds([]) }} aria-pressed={bucket === null}>
             <Chip tone={bucket === null ? 'accent' : 'neutral'} className="cursor-pointer !py-1.5">
               Other
             </Chip>
           </button>
         </div>
       </div>
+      {bucket ? (
+        <div className="mt-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[13px] text-muted font-medium">Target skills</span>
+            <span className="text-[11px] text-faint">Choose what the goal actually covers</span>
+          </div>
+          <div className="mt-2 max-h-56 overflow-y-auto scroll-thin grid sm:grid-cols-2 gap-1.5 pr-1">
+            {skills.map((s) => {
+              const selected = skillIds.includes(s.id)
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setSkillIds(selected ? skillIds.filter((id) => id !== s.id) : [...skillIds, s.id])}
+                  className={`min-h-11 text-left rounded-lg border px-3 py-2 ${selected ? 'border-accent bg-accent-soft text-ink' : 'border-line bg-surface2 text-muted'}`}
+                >
+                  <span className="block text-[13px] font-medium">{s.name}</span>
+                  <span className="block text-[11px] text-faint">Grade {s.gradeBand} · {s.blurb}</span>
+                </button>
+              )
+            })}
+          </div>
+          {!skillIds.length ? <p className="text-[12px] text-warn mt-1.5">Select at least one skill so the plan can be precise.</p> : null}
+        </div>
+      ) : null}
+      <div className="mt-4">
+        <span className="text-[13px] text-muted font-medium">Daily focused dose</span>
+        <div className="mt-1.5">
+          <Segmented
+            ariaLabel="Mission daily minutes"
+            value={String(dailyMinutes) as '30'}
+            onChange={(v) => setDailyMinutes(Number(v) as 10 | 20 | 25 | 30 | 45)}
+            options={[
+              { value: '20', label: '20m' },
+              { value: '30', label: '30m' },
+              { value: '45', label: '45m' },
+            ]}
+          />
+        </div>
+        <p className="text-[11px] text-faint mt-1.5">30 minutes is the program default, not a magic threshold. The check-in can still shorten a hard day.</p>
+      </div>
       <Button
         className="w-full mt-4"
-        disabled={title.trim().length < 3 || !/^\d{4}-\d{2}-\d{2}$/.test(dateISO)}
-        onClick={() => onAdd({ id: uid('dl'), title: title.trim(), dateISO, bucket, note: '' })}
+        disabled={title.trim().length < 3 || !/^\d{4}-\d{2}-\d{2}$/.test(dateISO) || (bucket !== null && skillIds.length === 0)}
+        onClick={() => onAdd({ id: uid('dl'), title: title.trim(), dateISO, bucket, note: '', skillIds, dailyMinutes })}
       >
-        Add deadline
+        Create mission
       </Button>
     </Modal>
   )

@@ -1,23 +1,34 @@
-import { Component, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useStore } from './store/store'
 import { NavProvider, useNav, type Tab } from './ui/nav'
-import { IconCoach, IconPath, IconPractice, IconProgress, IconSettings, IconToday } from './ui/icons'
+import { IconCoach, IconPath, IconPractice, IconProgress, IconToday } from './ui/icons'
 import { Button } from './ui/components'
 import { exportState } from './engine/exportImport'
-import { Onboarding } from './ui/screens/Onboarding'
 import { maybeNotifyReviews } from './ui/notify'
 import { dueReviews } from './engine/scheduler'
 import { deriveEvidence } from './engine/mastery'
-import { Today } from './ui/screens/Today'
-import { PathScreen } from './ui/screens/Path'
-import { CoachScreen } from './ui/screens/CoachScreen'
-import { Practice } from './ui/screens/Practice'
-import { ProgressScreen } from './ui/screens/ProgressScreen'
-import { SettingsScreen } from './ui/screens/SettingsScreen'
-import { SessionScreen } from './ui/session/SessionScreen'
-import { PlacementScreen } from './ui/screens/PlacementScreen'
-import { ExamScreen } from './ui/session/ExamScreen'
+
+// Screens are loaded when entered. This keeps the initial shell quick while
+// retaining every screen in the offline precache after installation.
+const Onboarding = lazy(() => import('./ui/screens/Onboarding').then((m) => ({ default: m.Onboarding })))
+const Today = lazy(() => import('./ui/screens/Today').then((m) => ({ default: m.Today })))
+const PathScreen = lazy(() => import('./ui/screens/Path').then((m) => ({ default: m.PathScreen })))
+const CoachScreen = lazy(() => import('./ui/screens/CoachScreen').then((m) => ({ default: m.CoachScreen })))
+const Practice = lazy(() => import('./ui/screens/Practice').then((m) => ({ default: m.Practice })))
+const ProgressScreen = lazy(() => import('./ui/screens/ProgressScreen').then((m) => ({ default: m.ProgressScreen })))
+const SettingsScreen = lazy(() => import('./ui/screens/SettingsScreen').then((m) => ({ default: m.SettingsScreen })))
+const SessionScreen = lazy(() => import('./ui/session/SessionScreen').then((m) => ({ default: m.SessionScreen })))
+const PlacementScreen = lazy(() => import('./ui/screens/PlacementScreen').then((m) => ({ default: m.PlacementScreen })))
+const ExamScreen = lazy(() => import('./ui/session/ExamScreen').then((m) => ({ default: m.ExamScreen })))
+
+function ScreenFallback() {
+  return (
+    <div className="min-h-[45dvh] grid place-items-center" role="status" aria-live="polite">
+      <span className="font-display text-xs tracking-[0.22em] text-faint">PREPARING YOUR LAB</span>
+    </div>
+  )
+}
 
 /** Render-error safety net: never a white screen; data export stays reachable. */
 class Boundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -32,9 +43,12 @@ class Boundary extends Component<{ children: ReactNode }, { error: Error | null 
           <div className="max-w-sm text-center">
             <h1 className="font-display text-xl font-semibold">Something broke.</h1>
             <p className="text-muted mt-2 text-sm">
-              Your data is safe on this device. Reload to continue — if this repeats, export your data from Settings and report the issue.
+              Your data is safe on this device. Reload to continue. If this repeats, export from Settings after the app opens and report the issue.
             </p>
-            <pre className="text-xs text-faint mt-3 overflow-x-auto">{String(this.state.error)}</pre>
+            <details className="text-left mt-3 rounded-xl border border-line bg-surface px-3 py-2">
+              <summary className="text-xs text-muted cursor-pointer">Technical details</summary>
+              <pre className="text-xs text-faint mt-2 overflow-x-auto whitespace-pre-wrap">{String(this.state.error)}</pre>
+            </details>
             <Button className="mt-4 w-full" onClick={() => location.reload()}>
               Reload
             </Button>
@@ -71,6 +85,7 @@ function Shell() {
   const { state, ready, exitSample } = useStore()
   const { view, go } = useNav()
   const [offline, setOffline] = useState(!navigator.onLine)
+  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null)
   const inSession = view.name === 'session' || view.name === 'placement' || view.name === 'exam'
 
   const {
@@ -78,20 +93,28 @@ function Shell() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegisterError: () => undefined,
-    // Installed-app update coverage: phones rarely "navigate", so besides the
-    // launch-time check we re-check when the app resumes from background,
-    // when the network comes back, and hourly while running. The banner (and
-    // the never-mid-session rule) handles the rest identically to a tab.
     onRegisteredSW: (_url, registration) => {
-      if (!registration) return
-      const check = () => void registration.update().catch(() => undefined)
-      setInterval(check, 60 * 60 * 1000)
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') check()
-      })
-      window.addEventListener('online', check)
+      setSwRegistration(registration ?? null)
     },
   })
+
+  // Installed-app update coverage with cleanup: phones rarely navigate, so
+  // re-check on resume, reconnection, and hourly without leaking listeners.
+  useEffect(() => {
+    if (!swRegistration) return
+    const check = () => void swRegistration.update().catch(() => undefined)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') check()
+    }
+    const interval = window.setInterval(check, 60 * 60 * 1000)
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', check)
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', check)
+    }
+  }, [swRegistration])
 
   useEffect(() => {
     const on = () => setOffline(false)
@@ -106,6 +129,11 @@ function Shell() {
 
   useEffect(() => {
     applyTheme(state.settings.theme, state.settings.textSpacing)
+    if (state.settings.theme !== 'system') return
+    const preference = matchMedia('(prefers-color-scheme: dark)')
+    const onChange = () => applyTheme('system', state.settings.textSpacing)
+    preference.addEventListener('change', onChange)
+    return () => preference.removeEventListener('change', onChange)
   }, [state.settings.theme, state.settings.textSpacing])
 
   // Opt-in review reminder: on launch/resume, at most once per day.
@@ -152,11 +180,11 @@ function Shell() {
     )
   }
   if (!state.onboarded) {
-    return <Onboarding />
+    return <Suspense fallback={<ScreenFallback />}><Onboarding /></Suspense>
   }
 
   return (
-    <div className="min-h-dvh bg-bg text-ink flex flex-col">
+    <div className="app-backdrop min-h-dvh bg-bg text-ink flex flex-col">
       {offline ? (
         <div className="bg-surface2 border-b border-line text-center text-xs text-muted py-1.5 pt-safe" role="status">
           Offline — everything here works without a connection.
@@ -165,7 +193,7 @@ function Shell() {
       {state.sampleMode ? (
         <div className="bg-warn-soft border-b border-warn/30 text-warn text-xs py-1.5 px-4 flex items-center justify-between gap-2 pt-safe" role="status">
           <span className="font-medium">Sample data — this is a demo profile.</span>
-          <button className="underline font-semibold" onClick={() => void exitSample()}>
+          <button type="button" className="underline font-semibold min-h-11 -my-2 px-2" onClick={() => void exitSample()}>
             Exit
           </button>
         </div>
@@ -175,36 +203,37 @@ function Shell() {
         <div className="bg-accent-soft border-b border-accent/30 text-accent text-[13px] py-2 px-4 flex items-center justify-between gap-3" role="status">
           <span>A new version is ready.</span>
           <span className="flex gap-3 shrink-0">
-            <button className="underline font-semibold" onClick={() => void updateServiceWorker(true)}>
+            <button type="button" className="underline font-semibold min-h-11 -my-2" onClick={() => void updateServiceWorker(true)}>
               Update now
             </button>
-            <button className="opacity-80" onClick={() => setNeedRefresh(false)}>
+            <button type="button" className="opacity-80 min-h-11 -my-2 px-1" onClick={() => setNeedRefresh(false)}>
               Later
             </button>
           </span>
         </div>
       ) : null}
 
-      <main className={`flex-1 w-full mx-auto ${inSession ? 'max-w-2xl' : 'max-w-2xl lg:max-w-5xl'} px-4 ${inSession ? '' : 'pb-24'}`}>
-        {screen}
+      <main className={`flex-1 w-full mx-auto ${inSession ? 'max-w-2xl' : 'max-w-2xl lg:max-w-5xl'} px-4 sm:px-5 ${inSession ? '' : 'pb-24 sm:pb-28'}`}>
+        <Suspense fallback={<ScreenFallback />}>{screen}</Suspense>
       </main>
 
       {!inSession ? (
         <nav
           aria-label="Main"
-          className="fixed bottom-0 inset-x-0 bg-surface/95 backdrop-blur border-t border-line pb-safe z-40"
+          className="fixed bottom-0 inset-x-0 bg-surface/95 backdrop-blur-xl border-t border-line pb-safe z-40 sm:bottom-4 sm:inset-x-4 sm:max-w-2xl sm:mx-auto sm:rounded-2xl sm:border sm:pb-0 sm:shadow-modal"
         >
-          <div className="max-w-2xl lg:max-w-5xl mx-auto flex">
+          <div className="mx-auto flex sm:p-1">
             {TABS.map((t) => {
               const active = view.name === t.id
               const Icon = t.icon
               return (
                 <button
+                  type="button"
                   key={t.id}
                   onClick={() => go({ name: t.id })}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex-1 min-h-14 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${
-                    active ? 'text-accent' : 'text-faint hover:text-muted'
+                  className={`flex-1 min-h-14 flex flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-medium transition-colors ${
+                    active ? 'text-accent bg-accent-soft' : 'text-faint hover:text-muted hover:bg-surface2'
                   }`}
                 >
                   <Icon size={22} />
@@ -216,30 +245,6 @@ function Shell() {
         </nav>
       ) : null}
     </div>
-  )
-}
-
-/** Small helper other screens use for the header settings button. */
-export function HeaderBar({ title, subtitle }: { title: string; subtitle?: string }) {
-  const { go, view } = useNav()
-  return (
-    <header className="pt-safe">
-      <div className="flex items-start justify-between pt-5 pb-1">
-        <div>
-          <h1 className="font-display text-[24px] font-bold leading-tight">{title}</h1>
-          {subtitle ? <p className="text-muted text-sm mt-0.5">{subtitle}</p> : null}
-        </div>
-        {view.name !== 'settings' ? (
-          <button
-            aria-label="Settings"
-            onClick={() => go({ name: 'settings' })}
-            className="h-10 w-10 grid place-items-center rounded-full text-muted hover:text-ink hover:bg-surface2 transition-colors mt-1"
-          >
-            <IconSettings size={21} />
-          </button>
-        ) : null}
-      </div>
-    </header>
   )
 }
 

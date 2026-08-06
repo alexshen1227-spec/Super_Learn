@@ -11,6 +11,22 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.6',
+    date: '2026-08-06',
+    title: 'Mission Control & Quality Pass',
+    points: [
+      'Learning Missions turn a test or real-world goal into an exact skill target: choose the date, curriculum skills, and daily focused dose. The planner prioritizes both the targets and any unmet prerequisites, and says so in every session plan.',
+      'Today now shows mission readiness from real evidence: targets independent, retained, needing repair, and the next prerequisite or skill the session will pursue.',
+      'The default program is 30 focused minutes every day. Progress reports the 28-day dose separately from actual outcome evidence, and refuses to call time-on-task learning unless skills cross independent, retained, or transferred thresholds.',
+      'Curriculum expansion: variability and distributions, exponential growth and decay, waves and sound, algorithmic complexity, and rigorous experimental design — ten new generated activities with transfer prompts and misconception feedback.',
+      'Existing daily sessions now fill the time you selected with fresh generated forms instead of stopping after a fixed handful of activities; a 30-minute plan is tested to schedule roughly 24–33 minutes of focused work without duplicate forms.',
+      'Error Clinic now repairs up to three open errors in priority order, distinguishes confidence traps, revisits the failed problem family, then requires fresh reproof instead of drilling only the first error.',
+      'Progress adds spaced-review and transfer success rates plus a like-for-like trend that compares only activity families seen in both halves of the month, reducing curriculum-mix distortion.',
+      'Interface quality pass: consistent 44px controls, accurate screen-reader progress, safer dialogs and back navigation, equal-height practice cards, clearer time labels, live system-theme changes, and a polished responsive navigation dock.',
+      'Reliability and speed: date-only deadlines now use local calendar math everywhere, service-worker update listeners clean up correctly, and screen/curriculum bundles are split into stable cache groups for much faster startup parsing.',
+    ],
+  },
+  {
     version: '1.5',
     date: '2026-08-06',
     title: 'The Proving Grounds',

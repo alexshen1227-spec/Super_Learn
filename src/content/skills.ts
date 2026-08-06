@@ -51,6 +51,7 @@ const mathFoundations = defineCourse(
       name: 'Data & probability',
       skills: [
         { id: 'm-stats', name: 'Descriptive statistics', bucket: 'math', prereqs: ['m-decimals'], gradeBand: 6, blurb: 'Mean, median, mode, range, and what each summary hides.' },
+        { id: 'm-variability', name: 'Variability & distributions', bucket: 'math', prereqs: ['m-stats'], gradeBand: 8, blurb: 'Spread, quartiles, IQR, and why equal averages can hide very different data.' },
         { id: 'm-data', name: 'Data interpretation', bucket: 'math', prereqs: ['m-stats'], gradeBand: 7, blurb: 'Read and question tables, bar charts, line graphs, and scatter plots.' },
         { id: 'm-counting', name: 'Counting principles', bucket: 'math', prereqs: ['m-integers'], gradeBand: 7, blurb: 'Systematic counting, the multiplication principle, simple arrangements.' },
         { id: 'm-prob', name: 'Probability', bucket: 'math', prereqs: ['m-fractions', 'm-counting'], gradeBand: 7, blurb: 'Single and compound events, complements, and sample spaces.' },
@@ -91,6 +92,7 @@ const algebra = defineCourse(
       skills: [
         { id: 'm-polys', name: 'Polynomials & factoring', bucket: 'math', prereqs: ['m-expressions', 'm-exponents'], gradeBand: 9, blurb: 'Multiply binomials, factor simple quadratics.' },
         { id: 'm-quadratic', name: 'Intro quadratics', bucket: 'math', prereqs: ['m-functions', 'm-roots', 'm-polys'], gradeBand: 9, blurb: 'Solve by factoring and square roots; parabola basics.' },
+        { id: 'm-exponential', name: 'Exponential growth & decay', bucket: 'math', prereqs: ['m-functions', 'm-exponents', 'm-percent'], gradeBand: 10, blurb: 'Repeated multiplication, growth factors, half-lives, and linear-vs-exponential models.' },
       ],
     },
   ],
@@ -158,6 +160,7 @@ const physics = defineCourse(
         { id: 'p-density', name: 'Density & pressure', bucket: 'physics', prereqs: ['p-measure', 'm-proportion'], gradeBand: 8, blurb: 'ρ = m/V, pressure as force over area, and floating/sinking.' },
         { id: 'p-circuits', name: 'Simple circuits', bucket: 'physics', prereqs: ['p-measure'], gradeBand: 9, blurb: 'Current, voltage, resistance, and Ohm’s law in series circuits.' },
         { id: 'p-estimate', name: 'Estimation & orders of magnitude', bucket: 'physics', prereqs: ['m-exponents'], gradeBand: 8, blurb: 'Sanity-check the world with powers of ten.' },
+        { id: 'p-waves', name: 'Waves & sound', bucket: 'physics', prereqs: ['p-motion', 'm-proportion'], gradeBand: 9, blurb: 'Frequency, wavelength, amplitude, and the relationship v = fλ.' },
       ],
     },
   ],
@@ -184,6 +187,7 @@ const coding = defineCourse(
         { id: 'c-trace', name: 'Tracing & debugging', bucket: 'coding', prereqs: ['c-loops', 'c-funcs'], gradeBand: 8, blurb: 'Predict output, find the bug, and reason about state tables.' },
         { id: 'c-algo', name: 'Search & sort concepts', bucket: 'coding', prereqs: ['c-arrays'], gradeBand: 9, blurb: 'Linear vs binary search, sorting ideas, and why steps matter.' },
         { id: 'c-decomp', name: 'Decomposition & invariants', bucket: 'coding', prereqs: ['c-funcs'], gradeBand: 9, blurb: 'Break problems down; find what stays true while code runs.' },
+        { id: 'c-complexity', name: 'Algorithmic complexity', bucket: 'coding', prereqs: ['c-algo', 'c-decomp'], gradeBand: 10, blurb: 'Compare how algorithms scale; distinguish constant, logarithmic, linear, and quadratic work.' },
       ],
     },
   ],
@@ -199,6 +203,7 @@ const science = defineCourse(
         { id: 's-hypo', name: 'Hypotheses & controls', bucket: 'science', prereqs: [], gradeBand: 7, blurb: 'Testable claims, variables, and what a control is for.' },
         { id: 's-measure', name: 'Measurement error & reliability', bucket: 'science', prereqs: ['m-stats'], gradeBand: 8, blurb: 'Noise, repeatability, and why one measurement is never enough.' },
         { id: 's-corr', name: 'Correlation vs causation', bucket: 'science', prereqs: ['s-hypo'], gradeBand: 8, blurb: 'Confounds, reverse causation, and what would settle it.' },
+        { id: 's-design', name: 'Experimental design', bucket: 'science', prereqs: ['s-hypo', 's-measure', 's-corr'], gradeBand: 9, blurb: 'Random assignment, blinding, replication, and designs that support causal conclusions.' },
       ],
     },
     {

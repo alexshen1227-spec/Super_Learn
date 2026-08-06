@@ -24,6 +24,7 @@ import type {
   Profile,
   SessionRecord,
 } from '../domain/types'
+import { localDateISO } from '../engine/time'
 import {
   BUCKETS,
   DEFAULT_ALLOCATIONS,
@@ -210,7 +211,7 @@ function sanitizeForecast(raw: unknown): Forecast | null {
     createdAt: num(f.createdAt, 0, 4102444800000, Date.now()),
     question,
     probability: num(f.probability, 0.01, 0.99, 0.5),
-    dueISO: str(f.dueISO, new Date().toISOString().slice(0, 10), 10),
+    dueISO: str(f.dueISO, localDateISO(), 10),
     resolved:
       typeof res === 'object' && res !== null
         ? {
@@ -242,6 +243,10 @@ function sanitizeDeadline(raw: unknown): Deadline | null {
     dateISO,
     bucket: BUCKET_IDS.has(d.bucket as string) ? (d.bucket as BucketId) : null,
     note: str(d.note, '', 300),
+    skillIds: strArray(d.skillIds, 30, 60),
+    dailyMinutes: SESSION_MINUTES.has(d.dailyMinutes as number)
+      ? (d.dailyMinutes as Deadline['dailyMinutes'])
+      : 30,
   }
 }
 

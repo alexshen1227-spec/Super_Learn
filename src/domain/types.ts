@@ -518,6 +518,11 @@ export interface Deadline {
   dateISO: string
   bucket: BucketId | null
   note: string
+  /** Exact curriculum targets for a learning mission. Empty/absent keeps
+   * legacy broad-subject deadline behavior. */
+  skillIds?: string[]
+  /** Intended focused dose. A session can still be shortened at check-in. */
+  dailyMinutes?: 10 | 20 | 25 | 30 | 45
 }
 
 export interface AppSettings {
@@ -633,8 +638,8 @@ export function defaultProfile(): Profile {
     weakAreas: [],
     chessExperience: 'none',
     coachTone: 'balanced',
-    sessionMinutes: 25,
-    activeDays: [1, 2, 3, 4, 5],
+    sessionMinutes: 30,
+    activeDays: [0, 1, 2, 3, 4, 5, 6],
   }
 }
 

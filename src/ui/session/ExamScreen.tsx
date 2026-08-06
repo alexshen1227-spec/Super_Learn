@@ -242,7 +242,7 @@ export function ExamScreen() {
       <div className="pt-safe min-h-dvh flex flex-col max-w-xl mx-auto w-full">
         <div className="sticky top-0 z-30 bg-bg/95 backdrop-blur pt-2 pb-2 -mx-4 px-4 border-b border-line">
           <div className="flex items-center gap-3">
-            <button aria-label="Leave exam" onClick={() => setLeaveOpen(true)} className="h-9 w-9 grid place-items-center rounded-full text-muted hover:bg-surface2 shrink-0">
+            <button type="button" aria-label="Leave exam" onClick={() => setLeaveOpen(true)} className="h-11 w-11 grid place-items-center rounded-full text-muted hover:bg-surface2 shrink-0">
               ✕
             </button>
             <div className="flex-1">
@@ -252,7 +252,14 @@ export function ExamScreen() {
                   {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')} / ~{suggestedMinutes}m
                 </span>
               </div>
-              <div className="mt-1 h-1 rounded-full bg-surface3 overflow-hidden">
+              <div
+                className="mt-1 h-1 rounded-full bg-surface3 overflow-hidden"
+                role="progressbar"
+                aria-label="Exam progress"
+                aria-valuemin={1}
+                aria-valuemax={items.length}
+                aria-valuenow={idx + 1}
+              >
                 <div className="h-full bg-accent rounded-full transition-[width]" style={{ width: `${((idx + 1) / items.length) * 100}%` }} />
               </div>
             </div>
@@ -351,7 +358,7 @@ function PostMortemItem({ n, g, onTag }: { n: number; g: GradedItem; onTag: (t: 
   const [open, setOpen] = useState(!g.correct)
   return (
     <Card className={`overflow-hidden ${g.correct ? '' : 'border-warn/40'}`}>
-      <button className="w-full text-left px-4 py-3 flex items-center gap-3" onClick={() => setOpen(!open)} aria-expanded={open}>
+      <button type="button" className="w-full min-h-12 text-left px-4 py-3 flex items-center gap-3" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span className={`h-6 w-6 rounded-full grid place-items-center text-[12px] font-bold shrink-0 ${g.correct ? 'bg-good-soft text-good' : 'bg-warn-soft text-warn'}`}>
           {g.correct ? '✓' : '✗'}
         </span>
@@ -383,7 +390,7 @@ function PostMortemItem({ n, g, onTag }: { n: number; g: GradedItem; onTag: (t: 
               <p className="text-[12px] font-medium text-muted mb-1.5">What kind of error?</p>
               <div className="flex flex-wrap gap-1.5">
                 {ERROR_TAGS.filter((t) => ['concept', 'strategy', 'slip', 'misread', 'unknown'].includes(t.id)).map((t) => (
-                  <button key={t.id} onClick={() => onTag(t.id)} aria-pressed={g.tag === t.id} title={t.hint}>
+                  <button type="button" className="min-h-11" key={t.id} onClick={() => onTag(t.id)} aria-pressed={g.tag === t.id} title={t.hint}>
                     <Chip tone={g.tag === t.id ? 'warn' : 'neutral'} className="cursor-pointer !py-1.5">
                       {t.name}
                     </Chip>

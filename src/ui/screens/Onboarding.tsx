@@ -100,6 +100,7 @@ export function Onboarding() {
         <div className="flex gap-2 mt-1.5 flex-wrap">
           {[6, 7, 8, 9, 10, 11].map((g) => (
             <button
+              type="button"
               key={g}
               onClick={() => set({ gradeLevel: g })}
               aria-pressed={profile.gradeLevel === g}
@@ -116,7 +117,7 @@ export function Onboarding() {
         <span className="text-sm font-medium text-muted">Current courses (tap any that apply)</span>
         <div className="flex gap-2 mt-1.5 flex-wrap">
           {COURSE_PRESETS.map((c) => (
-            <button key={c} onClick={() => set({ courses: toggle(profile.courses, c) })} aria-pressed={profile.courses.includes(c)}>
+            <button type="button" className="min-h-11" key={c} onClick={() => set({ courses: toggle(profile.courses, c) })} aria-pressed={profile.courses.includes(c)}>
               <Chip tone={profile.courses.includes(c) ? 'accent' : 'neutral'} className="!py-2 !px-3 !text-sm cursor-pointer">
                 {c}
               </Chip>
@@ -128,7 +129,7 @@ export function Onboarding() {
         <span className="text-sm font-medium text-muted">Goals (pick any)</span>
         <div className="flex gap-2 mt-1.5 flex-wrap">
           {GOAL_PRESETS.map((g) => (
-            <button key={g} onClick={() => set({ goals: toggle(profile.goals, g) })} aria-pressed={profile.goals.includes(g)}>
+            <button type="button" className="min-h-11" key={g} onClick={() => set({ goals: toggle(profile.goals, g) })} aria-pressed={profile.goals.includes(g)}>
               <Chip tone={profile.goals.includes(g) ? 'good' : 'neutral'} className="!py-2 !px-3 !text-sm cursor-pointer">
                 {g}
               </Chip>
@@ -164,6 +165,7 @@ export function Onboarding() {
         <div className="flex gap-1.5 mt-1.5">
           {DAYS.map((d, i) => (
             <button
+              type="button"
               key={d}
               onClick={() => set({ activeDays: profile.activeDays.includes(i) ? profile.activeDays.filter((x) => x !== i) : [...profile.activeDays, i] })}
               aria-pressed={profile.activeDays.includes(i)}
@@ -230,7 +232,14 @@ export function Onboarding() {
   return (
     <div className="min-h-dvh bg-bg text-ink">
       <div className="max-w-md mx-auto px-5 pt-safe pb-8">
-        <div className="flex gap-1.5 pt-6 mb-6" aria-label={`Step ${step + 1} of ${steps.length}`}>
+        <div
+          className="flex gap-1.5 pt-6 mb-6"
+          role="progressbar"
+          aria-label="Onboarding progress"
+          aria-valuemin={1}
+          aria-valuemax={steps.length}
+          aria-valuenow={step + 1}
+        >
           {steps.map((_, i) => (
             <div key={i} className={`h-1 flex-1 rounded-full ${i <= step ? 'bg-accent' : 'bg-surface3'}`} />
           ))}

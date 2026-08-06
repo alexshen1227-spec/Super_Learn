@@ -207,11 +207,18 @@ export function PlacementScreen() {
           <span className="text-[13px] text-muted font-medium">
             Placement · question {probeCount + 1}
           </span>
-          <button className="text-[13px] text-faint underline" onClick={() => finish(progress)}>
+          <button type="button" className="text-[13px] text-faint underline min-h-11" onClick={() => finish(progress)}>
             finish early
           </button>
         </div>
-        <div className="mt-1.5 h-1 rounded-full bg-surface3 overflow-hidden">
+        <div
+          className="mt-1.5 h-1 rounded-full bg-surface3 overflow-hidden"
+          role="progressbar"
+          aria-label="Placement progress"
+          aria-valuemin={0}
+          aria-valuemax={PLACEMENT_MAX_ITEMS}
+          aria-valuenow={probeCount}
+        >
           <div className="h-full bg-accent rounded-full transition-[width]" style={{ width: `${Math.min(100, (probeCount / PLACEMENT_MAX_ITEMS) * 100)}%` }} />
         </div>
       </div>
@@ -246,11 +253,12 @@ export function PlacementScreen() {
             <div className="flex gap-1.5 mt-1.5" role="radiogroup" aria-label="Confidence">
               {[20, 40, 60, 80, 95].map((c) => (
                 <button
+                  type="button"
                   key={c}
                   role="radio"
                   aria-checked={confidence === c}
                   onClick={() => setConfidence(c)}
-                  className={`flex-1 min-h-10 rounded-lg border text-[13px] font-medium ${confidence === c ? 'bg-accent-soft border-accent/50 text-accent' : 'bg-surface border-line text-faint'}`}
+                  className={`flex-1 min-h-11 rounded-lg border text-[13px] font-medium ${confidence === c ? 'bg-accent-soft border-accent/50 text-accent' : 'bg-surface border-line text-faint'}`}
                 >
                   {c}%
                 </button>

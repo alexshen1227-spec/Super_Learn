@@ -252,6 +252,7 @@ export function ItemPlayer({
         <span className="flex items-center">
           {'speechSynthesis' in window ? (
             <button
+              type="button"
               aria-label="Read the problem aloud"
               title="Read aloud"
               onClick={() => {
@@ -261,12 +262,12 @@ export function ItemPlayer({
                 speechSynthesis.cancel()
                 speechSynthesis.speak(new SpeechSynthesisUtterance(text))
               }}
-              className="text-faint hover:text-muted p-2 text-[15px] leading-none"
+              className="h-11 w-11 grid place-items-center rounded-full text-faint hover:text-muted hover:bg-surface2 text-[15px] leading-none"
             >
               🔊
             </button>
           ) : null}
-          <button aria-label="Report a problem with this item" onClick={() => setReportOpen(true)} className="text-faint hover:text-muted p-2">
+          <button type="button" aria-label="Report a problem with this item" onClick={() => setReportOpen(true)} className="h-11 w-11 grid place-items-center rounded-full text-faint hover:text-muted hover:bg-surface2">
             <IconFlag size={16} />
           </button>
         </span>
@@ -328,11 +329,12 @@ export function ItemPlayer({
                       <div className="flex gap-1.5 mt-1.5" role="radiogroup" aria-label="Confidence">
                         {[20, 40, 60, 80, 95].map((c) => (
                           <button
+                            type="button"
                             key={c}
                             role="radio"
                             aria-checked={confidence === c}
                             onClick={() => setConfidence(c)}
-                            className={`flex-1 min-h-10 rounded-lg border text-[13px] font-medium transition-colors ${
+                            className={`flex-1 min-h-11 rounded-lg border text-[13px] font-medium transition-colors ${
                               confidence === c ? 'bg-accent-soft border-accent/50 text-accent' : 'bg-surface border-line text-faint'
                             }`}
                           >
@@ -466,7 +468,7 @@ export function ItemPlayer({
       {/* scratchpad */}
       {['math', 'physics', 'coding', 'science'].includes(template.bucket) && !parts ? (
         <div className="mt-4">
-          <button className="text-[13px] text-faint hover:text-muted underline" onClick={() => setScratchOpen(!scratchOpen)}>
+          <button type="button" className="text-[13px] text-faint hover:text-muted underline min-h-11" onClick={() => setScratchOpen(!scratchOpen)}>
             {scratchOpen ? 'Hide scratchpad' : 'Open scratchpad'}
           </button>
           {scratchOpen ? (
@@ -575,6 +577,7 @@ export function AnswerInput({
         <div className="space-y-2" role="radiogroup" aria-label="Choices">
           {spec.options.map((o, i) => (
             <button
+              type="button"
               key={i}
               role="radio"
               aria-checked={value === String(i)}
@@ -600,6 +603,7 @@ export function AnswerInput({
           <p className="text-[12px] text-muted">Select every answer that applies.</p>
           {spec.options.map((o, i) => (
             <button
+              type="button"
               key={i}
               aria-pressed={picked.includes(i)}
               onClick={() => toggle(i)}
@@ -630,8 +634,9 @@ export function AnswerInput({
             {chosen.map((i, pos) => (
               <li key={i}>
                 <button
+                  type="button"
                   onClick={() => emit(chosenNow().filter((x) => x !== i).join(','))}
-                  className="w-full text-left px-3 py-2.5 rounded-lg bg-accent-soft border border-accent/40 text-[14px] flex gap-2"
+                  className="w-full min-h-11 text-left px-3 py-2.5 rounded-lg bg-accent-soft border border-accent/40 text-[14px] flex gap-2"
                 >
                   <span className="font-mono text-accent shrink-0">{pos + 1}.</span> {spec.options[i]}
                 </button>
@@ -641,9 +646,10 @@ export function AnswerInput({
           <div className="space-y-1.5">
             {remaining.map((i) => (
               <button
+                type="button"
                 key={i}
                 onClick={() => emit([...chosenNow(), i].join(','))}
-                className="w-full text-left px-3 py-2.5 rounded-lg bg-surface border border-line hover:border-line-strong text-[14px]"
+                className="w-full min-h-11 text-left px-3 py-2.5 rounded-lg bg-surface border border-line hover:border-line-strong text-[14px]"
               >
                 {spec.options[i]}
               </button>
@@ -668,11 +674,12 @@ export function AnswerInput({
               <div className="flex gap-1.5 flex-wrap" role="radiogroup" aria-label={`Category for: ${s.text}`}>
                 {spec.categories.map((c, ci) => (
                   <button
+                    type="button"
                     key={ci}
                     role="radio"
                     aria-checked={picks[si] === ci}
                     onClick={() => setPick(si, ci)}
-                    className={`min-h-9 px-3 rounded-lg border text-[13px] font-medium transition-colors ${
+                    className={`min-h-11 px-3 rounded-lg border text-[13px] font-medium transition-colors ${
                       picks[si] === ci ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'
                     }`}
                   >
@@ -736,10 +743,11 @@ function RubricInput({
         <div className="space-y-2">
           {spec.criteria.map((c, i) => (
             <button
+              type="button"
               key={i}
               aria-pressed={checked.includes(i)}
               onClick={() => setChecked(checked.includes(i) ? checked.filter((x) => x !== i) : [...checked, i])}
-              className={`w-full text-left px-3 py-2.5 rounded-lg border text-[14px] leading-snug flex items-start gap-2.5 transition-colors ${
+              className={`w-full min-h-11 text-left px-3 py-2.5 rounded-lg border text-[14px] leading-snug flex items-start gap-2.5 transition-colors ${
                 checked.includes(i) ? 'bg-good-soft border-good/40' : 'bg-surface border-line'
               }`}
             >
@@ -831,7 +839,7 @@ function FinalFeedback({
           <p className="text-[13px] font-medium text-muted mb-2">What kind of error was it? (your call — this steers the Error Clinic)</p>
           <div className="flex flex-wrap gap-1.5">
             {ERROR_TAGS.filter((t) => ['concept', 'strategy', 'slip', 'misread', 'representation', 'unknown'].includes(t.id)).map((t) => (
-              <button key={t.id} onClick={() => setErrorTag(t.id)} aria-pressed={errorTag === t.id} title={t.hint}>
+              <button type="button" className="min-h-11" key={t.id} onClick={() => setErrorTag(t.id)} aria-pressed={errorTag === t.id} title={t.hint}>
                 <Chip tone={errorTag === t.id ? 'warn' : 'neutral'} className="cursor-pointer !py-1.5">
                   {t.name}
                 </Chip>

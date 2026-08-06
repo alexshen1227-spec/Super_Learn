@@ -213,6 +213,7 @@ export function ChessPlayer({
               const isTarget = legalTargets.includes(sq)
               return (
                 <button
+                  type="button"
                   key={sq}
                   role="gridcell"
                   aria-label={`${sq}${cell ? ` ${cell.color === 'w' ? 'white' : 'black'} ${cell.type}` : ''}`}

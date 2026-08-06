@@ -233,6 +233,7 @@ export function PolyominoPlayer({
             const piece = spec.pieces.find((pc) => pc.id === id)!
             return occupiedCells(piece.cells, p).map((c) => (
               <button
+                type="button"
                 key={`${id}-${cellKey(c)}`}
                 aria-label={`Piece ${id} at ${cellKey(c)} — tap to lift`}
                 onClick={() => lift(id)}
@@ -274,7 +275,7 @@ export function PolyominoPlayer({
           <div className="flex items-center justify-between mt-4 mb-1 px-1">
             <p className="text-[13px] text-muted font-medium">Tray — drag a piece onto the board, or tap to select</p>
             {spec.allowRotation ? (
-              <Button kind="secondary" onClick={rotateSelected} disabled={!selectedPiece} className="!min-h-9 !px-3 !text-[13px]" ariaLabel="Rotate selected piece (R)">
+              <Button kind="secondary" onClick={rotateSelected} disabled={!selectedPiece} className="!px-3 !text-[13px]" ariaLabel="Rotate selected piece (R)">
                 <IconRotate size={15} /> Rotate
               </Button>
             ) : null}
@@ -289,6 +290,7 @@ export function PolyominoPlayer({
               const isSel = selectedPiece === piece.id
               return (
                 <button
+                  type="button"
                   key={piece.id}
                   aria-label={`Piece ${piece.id}${isSel ? ' (selected)' : ''}`}
                   aria-pressed={isSel}
@@ -301,7 +303,7 @@ export function PolyominoPlayer({
                     setDrag({ id: piece.id, px: e.clientX, py: e.clientY })
                   }}
                   className={`relative p-1.5 rounded-xl border transition-colors touch-none ${isSel ? 'border-accent bg-accent-soft' : 'border-line bg-surface2'}`}
-                  style={{ width: w * mini + 12, height: h * mini + 12 }}
+                  style={{ width: Math.max(44, w * mini + 12), height: Math.max(44, h * mini + 12) }}
                 >
                   {cells.map((c) => (
                     <span

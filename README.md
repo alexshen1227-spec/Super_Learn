@@ -39,6 +39,10 @@ ships, a banner offers a refresh; it never interrupts an active session.
 - **A coach that shows its work.** Deterministic planner; every selection
   carries a plain-language "why", its evidence, its confidence, and what would
   change it. With sparse data it says "I don't know much about you yet."
+- **Thirty-minute learning missions.** Pick a real date and exact curriculum
+  skills. The plan teaches missing prerequisites, schedules retention, and
+  reports time-on-task separately from independent, retained, and transferred
+  outcomes.
 - **Audited content.** `npm test` re-renders every template across seeds,
   validates the computed answer through the real validator, proves every chess
   tactic by exhaustive search, every logic grid unique by brute force, and

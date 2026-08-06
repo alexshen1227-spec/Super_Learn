@@ -5,6 +5,7 @@
  * at most one reminder per day, and the copy never shames.
  */
 import type { AppSettings } from '../domain/types'
+import { localDateISO } from '../engine/time'
 
 const LAST_KEY = 'axiomlab.lastNotified'
 
@@ -35,7 +36,7 @@ export function maybeNotifyReviews(settings: AppSettings, dueCount: number): voi
   if (!notificationsSupported() || Notification.permission !== 'granted') return
   if (inQuietHours(settings.quietHours, new Date())) return
   try {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = localDateISO()
     if (localStorage.getItem(LAST_KEY) === today) return
     localStorage.setItem(LAST_KEY, today)
     new Notification('Axiom Lab', {

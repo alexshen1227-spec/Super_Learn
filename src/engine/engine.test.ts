@@ -5,7 +5,7 @@ import { initialState } from '../domain/types'
 import { allocationReport, relativeDebt } from './allocation'
 import { brierScore, calibrationBands, calibrationGap, highConfidenceErrors } from './calibration'
 import { deriveEvidence } from './mastery'
-import { buildChallengePlan, buildFocusPlan, buildMixedReviewPlan, buildSessionPlan, prereqsMet, scoreSkills } from './planner'
+import { buildChallengePlan, buildFocusPlan, buildMixedReviewPlan, buildSessionPlan, estimatedPlanMinutes, prereqsMet, scoreSkills } from './planner'
 import { applyProbe, nextProbe, PLACEMENT_MAX_ITEMS, startPlacement, summarizePlacement, MATH_LADDER } from './placement'
 import { activityIntake, coachBeliefs, findBottleneck, todayInsight, weeklyObjective } from './coach'
 import { assignmentCorrect, countSolutions, puzzleValid } from './logicGrid'
@@ -172,6 +172,24 @@ describe('planner', () => {
       checkIn: { minutes: 10, energy: 'ok', focus: null },
     })
     expect(plan.blocks.some((b) => b.kind === 'rotation')).toBe(false)
+  })
+
+  it('fills a 30-minute session with a realistic amount of planned work and no duplicate forms', () => {
+    const s = stateWith([])
+    const plan = buildSessionPlan({
+      index: DEFAULT_INDEX,
+      evidence: deriveEvidence([], NOW),
+      state: s,
+      now: NOW,
+      checkIn: { minutes: 30, energy: 'ok', focus: null },
+    })
+    expect(estimatedPlanMinutes(plan)).toBeGreaterThanOrEqual(24)
+    expect(estimatedPlanMinutes(plan)).toBeLessThanOrEqual(33)
+    const forms = plan.blocks.flatMap((block) => block.activities.map((activity) => {
+      const template = DEFAULT_INDEX.templates.get(activity.templateId)!
+      return `${activity.templateId}:${activity.seed % template.variants}`
+    }))
+    expect(new Set(forms).size).toBe(forms.length)
   })
 
   it('honors an explicit lab focus request', () => {
@@ -527,7 +545,7 @@ describe('export / import / sanitize', () => {
       expect(evil.state.events.length).toBe(1)
       expect(evil.state.sessions.length).toBe(0)
       expect(evil.state.profile.name).toBe('')
-      expect(evil.state.profile.sessionMinutes).toBe(25)
+      expect(evil.state.profile.sessionMinutes).toBe(30)
       expect(evil.state.settings.allocations.math).toBe(initialState().settings.allocations.math)
       expect('bogus' in evil.state.settings.allocations).toBe(false)
     }

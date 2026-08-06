@@ -17,6 +17,7 @@ import { mulberry32, shuffle } from '../../engine/rng'
 import { MATH_NUMBER_TEMPLATES } from './mathNumber'
 import { MATH_ALGEBRA_TEMPLATES } from './mathAlgebra'
 import { PHYSICS_TEMPLATES } from './physics'
+import { ADVANCED_CURRICULUM_TEMPLATES } from './advancedCurriculum'
 import { SKILLS } from '../skills'
 import { KB_BY_SKILL } from '../kb'
 import { stateRank } from '../../engine/mastery'
@@ -34,6 +35,7 @@ export const STRATEGY_LABELS: Record<string, string> = {
   'm-percent': 'Percent of a base (identify the base first)',
   'm-units': 'Unit conversion (multiply by a factor equal to 1)',
   'm-stats': 'Mean / median summaries (total ÷ count, or middle position)',
+  'm-variability': 'Compare distributions by center AND spread (IQR / range)',
   'm-counting': 'Multiplication principle (choices multiply)',
   'm-prob': 'Probability = favorable ÷ total (complements for “not”)',
   'm-ev': 'Expected value (payoff × probability, summed)',
@@ -48,6 +50,7 @@ export const STRATEGY_LABELS: Record<string, string> = {
   'm-systems': 'Two equations, two unknowns (substitute or eliminate)',
   'm-polys': 'Factor: product-and-sum pair (or expand every term)',
   'm-quadratic': 'Set to zero; factor and use the zero product',
+  'm-exponential': 'Repeated multiplication (initial × growth factor^time)',
   'm-angles': 'Angle facts (180° line, triangle sum, vertical pairs)',
   'm-triangles': 'Pythagorean theorem (right angle → a² + b² = c²)',
   'm-area': 'Area decomposition (split or subtract shapes)',
@@ -59,10 +62,13 @@ export const STRATEGY_LABELS: Record<string, string> = {
   'p-energy': 'Work/energy accounting (W = F·d, KE = ½mv²)',
   'p-density': 'Density = mass ÷ volume',
   'p-circuits': 'Ohm’s law (V = IR)',
+  'p-waves': 'Wave equation v = fλ (track what stays fixed)',
+  'c-complexity': 'Count how work scales as input grows',
+  's-design': 'Experimental design (randomize, blind, replicate)',
 }
 
 /** Stems: labeled, single-answer academic templates only (audit-checked). */
-const STEM_POOL: ItemTemplate[] = [...MATH_NUMBER_TEMPLATES, ...MATH_ALGEBRA_TEMPLATES, ...PHYSICS_TEMPLATES].filter(
+const STEM_POOL: ItemTemplate[] = [...MATH_NUMBER_TEMPLATES, ...MATH_ALGEBRA_TEMPLATES, ...PHYSICS_TEMPLATES, ...ADVANCED_CURRICULUM_TEMPLATES].filter(
   (t) => t.kind === 'single' && t.skillIds.some((s) => STRATEGY_LABELS[s]),
 )
 

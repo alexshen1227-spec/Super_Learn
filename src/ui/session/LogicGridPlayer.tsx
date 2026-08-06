@@ -127,12 +127,13 @@ export function LogicGridPlayer({
           {spec.clues.map((c, i) => (
             <li key={i}>
               <button
+                type="button"
                 onClick={() => {
                   const next = struck.includes(i) ? struck.filter((x) => x !== i) : [...struck, i]
                   setStruck(next)
                   persist({ struck: next })
                 }}
-                className={`text-left text-[14px] leading-snug w-full px-2 py-1 rounded transition-colors ${
+                className={`text-left text-[14px] leading-snug w-full min-h-11 px-2 py-2 rounded transition-colors ${
                   struck.includes(i) ? 'line-through text-faint' : 'text-ink hover:bg-surface2'
                 }`}
               >

@@ -10,6 +10,7 @@ import { initialState } from '../domain/types'
 import { mulberry32, pick, rint } from '../engine/rng'
 import { correctResponse, validate, validatorName, wrongResponse } from '../engine/validate'
 import { BUILTIN_TEMPLATES } from './registry'
+import { addLocalDaysISO } from '../engine/time'
 
 const DAY = 86_400_000
 
@@ -50,7 +51,7 @@ export function buildSampleState(): AppState {
     {
       id: 'dl-sample-1',
       title: 'Math unit test',
-      dateISO: new Date(now + 6 * DAY).toISOString().slice(0, 10),
+      dateISO: addLocalDaysISO(now, 6),
       bucket: 'math',
       note: 'Linear equations & graphs',
     },
@@ -204,7 +205,7 @@ export function buildSampleState(): AppState {
       createdAt: start + 5 * DAY,
       question: 'I will score 85%+ on the math unit test',
       probability: 0.7,
-      dueISO: new Date(now + 6 * DAY).toISOString().slice(0, 10),
+      dueISO: addLocalDaysISO(now, 6),
       resolved: null,
       revisions: [{ t: start + 12 * DAY, probability: 0.75 }],
     },
@@ -213,7 +214,7 @@ export function buildSampleState(): AppState {
       createdAt: start + 2 * DAY,
       question: 'I will finish the science project by Friday',
       probability: 0.8,
-      dueISO: new Date(start + 9 * DAY).toISOString().slice(0, 10),
+      dueISO: addLocalDaysISO(start, 9),
       resolved: { outcome: false, resolvedAt: start + 10 * DAY, note: 'Underestimated the write-up — classic planning fallacy.' },
       revisions: [],
     },
@@ -222,7 +223,7 @@ export function buildSampleState(): AppState {
       createdAt: start + 8 * DAY,
       question: 'I will beat my friend in our weekend chess game',
       probability: 0.55,
-      dueISO: new Date(start + 13 * DAY).toISOString().slice(0, 10),
+      dueISO: addLocalDaysISO(start, 13),
       resolved: { outcome: true, resolvedAt: start + 13 * DAY, note: 'Back-rank tactic from practice actually appeared!' },
       revisions: [],
     },

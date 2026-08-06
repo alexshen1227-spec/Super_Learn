@@ -5,16 +5,16 @@
  */
 import { useMemo, useState } from 'react'
 import { useEvidence, useStore } from '../../store/store'
-import { HeaderBar } from '../../App'
 import { buildContentIndex } from '../../content/registry'
 import { activityIntake, coachBeliefs, findBottleneck, weeklyObjective } from '../../engine/coach'
 import { brierScore } from '../../engine/calibration'
 import { searchKb, type KbCard } from '../../content/kb'
 import { uid } from '../../engine/rng'
 import type { CoachTone, Forecast } from '../../domain/types'
-import { Button, Card, Chip, EmptyState, Modal, SectionTitle, Segmented } from '../components'
+import { Button, Card, Chip, EmptyState, HeaderBar, Modal, SectionTitle, Segmented } from '../components'
 import { Rich } from '../richtext'
 import { useNav } from '../nav'
+import { addLocalDaysISO, calendarDaysUntil } from '../../engine/time'
 
 export function CoachScreen() {
   const { state, dispatch } = useStore()
@@ -40,7 +40,7 @@ export function CoachScreen() {
 
       <Card className="mt-3 p-4 border-accent/30">
         <p className="text-[12px] font-semibold text-accent uppercase tracking-wide">This week</p>
-        <p className="text-[15px] font-medium mt-1 leading-relaxed">{objective}</p>
+        <p className="text-[15px] font-medium mt-1 leading-relaxed">{objective.replace(/^This week:\s*/i, '')}</p>
         {bottleneck ? (
           <p className="text-[13px] text-muted mt-2">
             <span className="font-semibold text-ink">Bottleneck:</span> {bottleneck.why}
@@ -111,7 +111,7 @@ export function CoachScreen() {
 
       <SectionTitle
         right={
-          <button className="text-[13px] text-accent underline" onClick={() => setLogOpen(true)}>
+          <button type="button" className="text-[13px] text-accent underline min-h-11 -my-2 px-1" onClick={() => setLogOpen(true)}>
             full log
           </button>
         }
@@ -141,7 +141,7 @@ export function CoachScreen() {
 
       <SectionTitle
         right={
-          <button className="text-[13px] text-accent underline" onClick={() => setForecastOpen(true)}>
+          <button type="button" className="text-[13px] text-accent underline min-h-11 -my-2 px-1" onClick={() => setForecastOpen(true)}>
             new forecast
           </button>
         }
@@ -180,6 +180,8 @@ export function CoachScreen() {
       <SectionTitle>Ask the knowledge base</SectionTitle>
       <Card className="p-4 mb-2">
         <input
+          type="search"
+          autoComplete="off"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search concepts — slope, base rates, pre-mortem…"
@@ -220,7 +222,7 @@ export function CoachScreen() {
 }
 
 function ForecastRow({ f, onResolve }: { f: Forecast; onResolve: (outcome: boolean) => void }) {
-  const overdue = !f.resolved && Date.parse(f.dueISO) < Date.now()
+  const overdue = !f.resolved && calendarDaysUntil(f.dueISO, Date.now()) < 0
   return (
     <div className="border border-line rounded-xl p-3">
       <div className="flex items-start justify-between gap-2">
@@ -236,10 +238,10 @@ function ForecastRow({ f, onResolve }: { f: Forecast; onResolve: (outcome: boole
         </p>
       ) : (
         <div className="flex gap-2 mt-2">
-          <button className="text-[13px] text-good underline" onClick={() => onResolve(true)}>
+          <button type="button" className="text-[13px] text-good underline min-h-11" onClick={() => onResolve(true)}>
             It happened
           </button>
-          <button className="text-[13px] text-bad underline" onClick={() => onResolve(false)}>
+          <button type="button" className="text-[13px] text-bad underline min-h-11" onClick={() => onResolve(false)}>
             It didn't
           </button>
           <span className="text-[12px] text-faint ml-auto">due {f.dueISO}</span>
@@ -253,14 +255,14 @@ function KbResult({ card, onPractice }: { card: KbCard; onPractice: () => void }
   const [open, setOpen] = useState(false)
   return (
     <div className="border border-line rounded-xl overflow-hidden">
-      <button className="w-full text-left px-3.5 py-2.5 flex items-center justify-between" onClick={() => setOpen(!open)} aria-expanded={open}>
+      <button type="button" className="w-full min-h-11 text-left px-3.5 py-2.5 flex items-center justify-between" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span className="font-medium text-[14px]">{card.title}</span>
         <span className={`text-faint transition-transform ${open ? 'rotate-90' : ''}`} aria-hidden>›</span>
       </button>
       {open ? (
         <div className="px-3.5 pb-3 border-t border-line pt-2.5">
           <Rich text={card.card} className="text-[14px]" />
-          <button className="text-[13px] text-accent underline mt-2" onClick={onPractice}>
+          <button type="button" className="text-[13px] text-accent underline mt-2 min-h-11" onClick={onPractice}>
             Practice this skill
           </button>
         </div>
@@ -273,7 +275,7 @@ function NewForecast({ open, onClose }: { open: boolean; onClose: () => void }) 
   const { dispatch } = useStore()
   const [question, setQuestion] = useState('')
   const [prob, setProb] = useState(70)
-  const [due, setDue] = useState(() => new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10))
+  const [due, setDue] = useState(() => addLocalDaysISO(Date.now(), 7))
   return (
     <Modal open={open} onClose={onClose} title="New forecast">
       <p className="text-[13px] text-muted">

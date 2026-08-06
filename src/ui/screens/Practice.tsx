@@ -5,13 +5,13 @@
 import { useMemo, useState } from 'react'
 import { useEvidence, useStore } from '../../store/store'
 import { useNav } from '../nav'
-import { HeaderBar } from '../../App'
 import { buildContentIndex } from '../../content/registry'
 import { dueReviews } from '../../engine/scheduler'
 import type { BucketId, ItemTemplate } from '../../domain/types'
 import { BUCKET_BY_ID } from '../../domain/types'
-import { Button, Card, Chip, EmptyState, Modal, SectionTitle } from '../components'
+import { Button, Card, Chip, EmptyState, HeaderBar, Modal, SectionTitle } from '../components'
 import { KB_BY_SKILL } from '../../content/kb'
+import { openRepairTargets } from '../../engine/errors'
 
 const LAB_ORDER: BucketId[] = ['observer', 'investigator', 'strategist', 'puzzle', 'insight', 'meta']
 const ACADEMIC_ORDER: BucketId[] = ['math', 'physics', 'coding', 'science']
@@ -36,10 +36,8 @@ export function Practice() {
       .slice(0, 8)
   }, [query, index])
   const due = useMemo(() => dueReviews(evidence, Date.now()), [evidence])
-  const errorCount = useMemo(() => {
-    const cutoff = Date.now() - 14 * 86_400_000
-    return new Set(state.events.filter((e) => e.errorTags.length && e.t > cutoff).flatMap((e) => e.skillIds)).size
-  }, [state.events])
+  const repairs = useMemo(() => openRepairTargets(state, evidence, Date.now()), [state, evidence])
+  const confidentRepairs = repairs.filter((r) => r.blockedByMisconception).length
   const caseReady = state.sessions.length >= 3
 
   const caseFiles = useMemo(() => [...index.templates.values()].filter((t) => t.id.startsWith('case-')), [index])
@@ -49,6 +47,8 @@ export function Practice() {
       <HeaderBar title="Practice" subtitle="Choose your arena" />
 
       <input
+        type="search"
+        autoComplete="off"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search activities — slope, fork, pre-mortem…"
@@ -59,6 +59,7 @@ export function Practice() {
         <div className="mt-2 space-y-1.5">
           {searchResults.map((t) => (
             <button
+              type="button"
               key={t.id}
               className="w-full text-left bg-surface border border-line rounded-xl px-3.5 py-2.5 hover:border-line-strong transition-colors flex items-center justify-between gap-2"
               onClick={() => go({ name: 'session', launch: { kind: 'single', templateId: t.id } })}
@@ -73,14 +74,14 @@ export function Practice() {
       ) : null}
 
       <SectionTitle>Modes</SectionTitle>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 auto-rows-fr">
         <ModeCard title="Coach chooses" sub="The full adaptive session" onClick={() => go({ name: 'session', launch: { kind: 'daily' } })} accent />
         <ModeCard title="Mixed review" sub={due.length ? `${due.length} due now` : 'Interleaved retrieval'} onClick={() => go({ name: 'session', launch: { kind: 'mixed' } })} />
         <ModeCard title="Challenge" sub="Non-routine, near your ceiling" onClick={() => go({ name: 'session', launch: { kind: 'challenge' } })} />
         <ModeCard title="Exam simulator" sub="Blind, timed, cumulative — like the real thing" onClick={() => go({ name: 'exam' })} accent />
         <ModeCard
           title="Error Clinic"
-          sub={errorCount ? `${errorCount} skill${errorCount === 1 ? '' : 's'} with open errors` : 'Nothing to repair — clean slate'}
+          sub={repairs.length ? `${repairs.length} open repair${repairs.length === 1 ? '' : 's'}${confidentRepairs ? ` · ${confidentRepairs} confidence trap${confidentRepairs === 1 ? '' : 's'}` : ''}` : 'Nothing to repair — clean slate'}
           onClick={() => go({ name: 'session', launch: { kind: 'error-clinic' } })}
         />
         <ModeCard title="Homework support" sub="A coach, not an answer machine" onClick={() => setHomework(true)} />
@@ -88,18 +89,19 @@ export function Practice() {
           title="Weekly Case File"
           sub={caseReady ? 'Cross-domain capstone' : `Unlocks after 3 sessions (${state.sessions.length}/3)`}
           onClick={caseReady ? () => setCaseOpen(true) : undefined}
+          className="col-span-2 sm:col-span-1"
         />
       </div>
 
       <SectionTitle>Academic core</SectionTitle>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 auto-rows-fr">
         {ACADEMIC_ORDER.map((b) => (
           <BucketCard key={b} bucket={b} onClick={() => setBrowse(b)} />
         ))}
       </div>
 
       <SectionTitle>Thinking labs</SectionTitle>
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-6 auto-rows-fr">
         {LAB_ORDER.map((b) => (
           <BucketCard key={b} bucket={b} onClick={() => setBrowse(b)} />
         ))}
@@ -121,9 +123,9 @@ export function Practice() {
   )
 }
 
-function ModeCard({ title, sub, onClick, accent }: { title: string; sub: string; onClick?: () => void; accent?: boolean }) {
+function ModeCard({ title, sub, onClick, accent, className = '' }: { title: string; sub: string; onClick?: () => void; accent?: boolean; className?: string }) {
   return (
-    <Card className={`p-4 ${accent ? 'border-accent/40' : ''} ${onClick ? '' : 'opacity-60'}`} onClick={onClick}>
+    <Card className={`p-4 h-full ${accent ? 'border-accent/40' : ''} ${onClick ? '' : 'opacity-60'} ${className}`} onClick={onClick}>
       <p className="font-semibold text-[15px]">{title}</p>
       <p className="text-[12px] text-muted mt-0.5 leading-snug">{sub}</p>
     </Card>
@@ -133,7 +135,7 @@ function ModeCard({ title, sub, onClick, accent }: { title: string; sub: string;
 function BucketCard({ bucket, onClick }: { bucket: BucketId; onClick: () => void }) {
   const meta = BUCKET_BY_ID[bucket]
   return (
-    <Card className="p-4" onClick={onClick}>
+    <Card className="p-4 h-full" onClick={onClick}>
       <p className="font-semibold text-[15px]">{meta.name}</p>
       <p className="text-[12px] text-muted mt-0.5 leading-snug">{meta.blurb}</p>
     </Card>
@@ -154,10 +156,11 @@ function BrowseSheet({ bucket, onClose }: { bucket: BucketId | null; onClose: ()
       <div className="flex gap-1.5 mb-3 flex-wrap">
         {([0, 1, 2, 3, 4, 5] as const).map((d) => (
           <button
+            type="button"
             key={d}
             onClick={() => setDiff(d)}
             aria-pressed={diff === d}
-            className={`min-h-9 px-3 rounded-full border text-[13px] font-medium ${diff === d ? 'bg-ink text-bg border-ink' : 'bg-surface border-line text-muted'}`}
+            className={`min-h-11 px-3 rounded-full border text-[13px] font-medium ${diff === d ? 'bg-ink text-bg border-ink' : 'bg-surface border-line text-muted'}`}
           >
             {d === 0 ? 'All' : '●'.repeat(d)}
           </button>
@@ -166,6 +169,7 @@ function BrowseSheet({ bucket, onClose }: { bucket: BucketId | null; onClose: ()
       <div className="space-y-2">
         {templates.map((t) => (
           <button
+            type="button"
             key={t.id}
             className="w-full text-left border border-line rounded-xl px-3.5 py-3 hover:border-line-strong transition-colors"
             onClick={() => {
@@ -289,7 +293,9 @@ function HomeworkSheet({ open, onClose }: { open: boolean; onClose: () => void }
               <div className="flex flex-wrap gap-1.5">
                 {results.map((r) => (
                   <button
+                    type="button"
                     key={r.skillId}
+                    className="min-h-11"
                     onClick={() => {
                       reset()
                       onClose()
@@ -321,7 +327,7 @@ function ScaffoldStep({ n, title, body }: { n: number; title: string; body: stri
   const [open, setOpen] = useState(n === 1)
   return (
     <div className="border border-line rounded-xl overflow-hidden">
-      <button className="w-full text-left px-3.5 py-2.5 flex items-center gap-2.5" onClick={() => setOpen(!open)} aria-expanded={open}>
+      <button type="button" className="w-full min-h-11 text-left px-3.5 py-2.5 flex items-center gap-2.5" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span className="h-6 w-6 rounded-full bg-accent-soft text-accent grid place-items-center text-[12px] font-bold shrink-0">{n}</span>
         <span className="font-medium text-[14px]">{title}</span>
       </button>
@@ -374,7 +380,7 @@ function CaseChooser({ cases, onPick, onClose }: { cases: ItemTemplate[]; onPick
       ) : (
         <div className="space-y-2">
           {cases.map((c) => (
-            <button key={c.id} className="w-full text-left border border-line rounded-xl px-4 py-3 hover:border-line-strong" onClick={() => onPick(c.id)}>
+            <button type="button" key={c.id} className="w-full min-h-11 text-left border border-line rounded-xl px-4 py-3 hover:border-line-strong" onClick={() => onPick(c.id)}>
               <p className="font-medium text-[15px]">{c.name.replace('Case File: ', '')}</p>
               <p className="text-[12px] text-faint mt-0.5">~{Math.round(c.minutes)} min · {c.skillIds.length} skills woven together</p>
             </button>

@@ -5,7 +5,6 @@
  */
 import { useMemo } from 'react'
 import { useEvidence, useStore } from '../../store/store'
-import { HeaderBar } from '../../App'
 import { buildContentIndex } from '../../content/registry'
 import { effectiveAllocation } from '../../engine/allocationPlus'
 import { brierScore, calibrationBands, calibrationGap, highConfidenceErrors } from '../../engine/calibration'
@@ -13,12 +12,20 @@ import { reviewBurden } from '../../engine/scheduler'
 import { findBottleneck } from '../../engine/coach'
 import { stateRank } from '../../engine/mastery'
 import { ERROR_TAGS, BUCKETS } from '../../domain/types'
-import { Button, Card, Chip, EmptyState, SectionTitle } from '../components'
+import { Button, Card, Chip, EmptyState, HeaderBar, SectionTitle } from '../components'
 import { BarPair, CalibrationChart, TrendColumns } from '../charts'
 import { WeekReviewModal } from '../WeekReview'
 import { useState } from 'react'
+import { learningQualityReport, outcomeReport } from '../../engine/outcomes'
 
 const DAY = 86_400_000
+
+function compactMinutes(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  return rest ? `${hours}h ${rest}m` : `${hours}h`
+}
 
 export function ProgressScreen() {
   const { state } = useStore()
@@ -64,6 +71,8 @@ export function ProgressScreen() {
   const burden = useMemo(() => reviewBurden(evidence, now, 7), [evidence, now])
   const bottleneck = useMemo(() => findBottleneck(index, evidence, state), [index, evidence, state])
   const brier = brierScore(state.forecasts)
+  const outcome = useMemo(() => outcomeReport(state, now), [state, now])
+  const quality = useMemo(() => learningQualityReport(events, now), [events, now])
 
   const errorPattern = useMemo(() => {
     const cutoff = now - 28 * DAY
@@ -106,6 +115,30 @@ export function ProgressScreen() {
         </p>
       ) : null}
 
+      <SectionTitle>30-minute training signal · 28 days</SectionTitle>
+      <Card className="p-4">
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Practice days', value: outcome.daysPracticed, sub: 'of 28', tone: 'text-accent' },
+            { label: 'Focused dose', value: compactMinutes(outcome.focusedMinutes), sub: `${outcome.dosePercent}% of 30m/day`, tone: 'text-accent' },
+            { label: 'Durable gains', value: outcome.newRetained + outcome.newTransferred, sub: 'retained/transfer', tone: 'text-good' },
+          ].map((m) => (
+            <div key={m.label} className="text-center">
+              <p className={`font-display text-xl font-bold ${m.tone}`}>{m.value}</p>
+              <p className="text-[11px] text-muted font-medium mt-0.5">{m.label}</p>
+              <p className="text-[10px] text-faint">{m.sub}</p>
+            </div>
+          ))}
+        </div>
+        <div className="h-2 rounded bg-surface2 overflow-hidden mt-3" aria-label={`${outcome.dosePercent}% of the 30 minute daily practice target`}>
+          <div className="h-full rounded bg-accent" style={{ width: `${Math.min(100, outcome.dosePercent)}%` }} />
+        </div>
+        <p className={`text-[13px] mt-3 ${outcome.enoughEvidence ? 'text-muted' : 'text-faint'}`}>{outcome.verdict}</p>
+        <p className="text-[11px] text-faint mt-1.5">
+          Outcome = unaided independence, delayed retention, and novel-context transfer. This is evidence of specific learning—not an IQ score or a causal claim from screen time alone.
+        </p>
+      </Card>
+
       <SectionTitle>What's holding you back</SectionTitle>
       <Card className="p-4">
         {bottleneck ? (
@@ -133,6 +166,28 @@ export function ProgressScreen() {
             summary={`Hint use trend: ${weekly.map((w) => `${w.label} ${w.hinted}%`).join(', ')}`}
           />
         </div>
+        <div className="mt-3 pt-3 border-t border-line grid grid-cols-2 gap-3">
+          {[
+            { label: 'Spaced review', signal: quality.review },
+            { label: 'Transfer probes', signal: quality.transfer },
+          ].map(({ label, signal }) => (
+            <div key={label}>
+              <p className="text-[11px] uppercase tracking-wide text-faint font-medium">{label}</p>
+              <p className="text-[15px] font-semibold mt-0.5">
+                {signal.rate === null ? `${signal.n}/3 checks` : `${Math.round(signal.rate * 100)}% unaided`}
+              </p>
+              <p className="text-[10px] text-faint">{signal.rate === null ? 'rate appears at 3' : `${signal.n} checks · first try`}</p>
+            </div>
+          ))}
+        </div>
+        {quality.matched ? (
+          <p className="text-[12px] text-muted mt-3 pt-3 border-t border-line">
+            Like-for-like practice: <span className="font-medium text-ink">{Math.round(quality.matched.early.rate! * 100)}%</span> unaided first-try accuracy in days 15–28 versus{' '}
+            <span className="font-medium text-ink">{Math.round(quality.matched.recent.rate! * 100)}%</span> in the last 14 days, across {quality.matched.templateCount} repeated activity families.
+          </p>
+        ) : (
+          <p className="text-[11px] text-faint mt-3 pt-3 border-t border-line">Like-for-like trend appears after at least 5 attempts in each half across 2 repeated activity families.</p>
+        )}
       </Card>
 
       <SectionTitle>Confidence calibration</SectionTitle>

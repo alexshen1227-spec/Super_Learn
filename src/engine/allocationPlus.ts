@@ -19,6 +19,7 @@ import { BUCKETS, BUCKET_BY_ID } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { allocationReport, type AllocationReport } from './allocation'
 import { dueReviews } from './scheduler'
+import { calendarDaysUntil } from './time'
 
 const FLOOR = 3 // percent points
 const DEADLINE_BOOST = 8
@@ -47,14 +48,14 @@ export function tuneTargets(
 
   // Deadline pressure: nearest upcoming subject deadline within 14 days.
   const deadline = state.deadlines
-    .map((d) => ({ ...d, days: (Date.parse(d.dateISO) - now) / 86_400_000 }))
+    .map((d) => ({ ...d, days: calendarDaysUntil(d.dateISO, now) }))
     .filter((d) => d.bucket !== null && d.days >= 0 && d.days <= 14)
     .sort((a, b) => a.days - b.days)[0]
   if (deadline && deadline.bucket) {
     const boost = deadline.days <= 5 ? DEADLINE_BOOST : DEADLINE_BOOST / 2
     targets[deadline.bucket] += boost
     notes.push(
-      `${BUCKET_BY_ID[deadline.bucket].name} +${boost} points while “${deadline.title}” is ${Math.max(0, Math.round(deadline.days))} day${Math.round(deadline.days) === 1 ? '' : 's'} out.`,
+      `${BUCKET_BY_ID[deadline.bucket].name} +${boost} points while “${deadline.title}” is ${deadline.days} day${deadline.days === 1 ? '' : 's'} out.`,
     )
   }
 

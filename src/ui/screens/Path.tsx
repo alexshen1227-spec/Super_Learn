@@ -5,7 +5,6 @@
 import { useMemo, useState } from 'react'
 import { useEvidence, useStore } from '../../store/store'
 import { useNav } from '../nav'
-import { HeaderBar } from '../../App'
 import { COURSES } from '../../content/skills'
 import { buildContentIndex } from '../../content/registry'
 import { KB_BY_SKILL } from '../../content/kb'
@@ -13,7 +12,7 @@ import { evidenceFor, stateRank, STATE_LABEL } from '../../engine/mastery'
 import { prereqsMet } from '../../engine/planner'
 import type { BucketId, SkillNode } from '../../domain/types'
 import { BUCKET_BY_ID } from '../../domain/types'
-import { Button, Card, Chip, Divider, Modal, ProgressBar, Row, StateBadge } from '../components'
+import { Button, Card, Chip, Divider, HeaderBar, Modal, ProgressBar, Row, StateBadge } from '../components'
 import { Rich } from '../richtext'
 import { PATHS, pathProgress, type PathDef } from '../../content/paths'
 import { resourcesFor } from '../../content/resources'
@@ -46,10 +45,11 @@ export function PathScreen() {
       <div className="flex gap-1.5 mt-2">
         {FILTERS.map((f) => (
           <button
+            type="button"
             key={f.id}
             onClick={() => setFilter(f.id)}
             aria-pressed={filter === f.id}
-            className={`min-h-9 px-3.5 rounded-full border text-[13px] font-medium transition-colors ${
+            className={`min-h-11 px-3.5 rounded-full border text-[13px] font-medium transition-colors ${
               filter === f.id ? 'bg-ink text-bg border-ink' : 'bg-surface border-line text-muted'
             }`}
           >
@@ -89,7 +89,7 @@ export function PathScreen() {
           const open = openCourse === course.id
           return (
             <Card key={course.id} className="overflow-hidden">
-              <button className="w-full text-left px-4 py-3.5 flex items-center gap-3" onClick={() => setOpenCourse(open ? null : course.id)} aria-expanded={open}>
+              <button type="button" className="w-full min-h-14 text-left px-4 py-3.5 flex items-center gap-3" onClick={() => setOpenCourse(open ? null : course.id)} aria-expanded={open}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-display font-semibold text-[16px]">{course.name}</h3>
@@ -292,7 +292,7 @@ function PathDetailSheet({
             if (!skill) return null
             const ev = evidence.get(id)
             return (
-              <button key={id} className="w-full flex items-center justify-between gap-2 px-2 py-2 rounded-lg hover:bg-surface2 text-left" onClick={() => onSkill(skill)}>
+              <button type="button" key={id} className="w-full min-h-11 flex items-center justify-between gap-2 px-2 py-2 rounded-lg hover:bg-surface2 text-left" onClick={() => onSkill(skill)}>
                 <span className="text-[14px] font-medium">{skill.name}</span>
                 <StateBadge state={ev?.state ?? 'unseen'} needsReview={ev?.needsReview} />
               </button>

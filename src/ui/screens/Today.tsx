@@ -5,7 +5,6 @@
 import { useMemo } from 'react'
 import { useEvidence, useStore } from '../../store/store'
 import { useNav } from '../nav'
-import { HeaderBar } from '../../App'
 import { buildContentIndex } from '../../content/registry'
 import { dueReviews, nextReviewAt } from '../../engine/scheduler'
 import { effectiveAllocation } from '../../engine/allocationPlus'
@@ -13,10 +12,12 @@ import { todayInsight, weeklyObjective } from '../../engine/coach'
 import { scoreSkills } from '../../engine/planner'
 import { clearDraft, loadDraftSync } from '../../store/draft'
 import { ACADEMIC_BUCKETS, BUCKET_BY_ID, BUCKETS } from '../../domain/types'
-import { Button, Card, Chip, SectionTitle, StateBadge } from '../components'
+import { Button, Card, Chip, HeaderBar, SectionTitle, StateBadge } from '../components'
 import { evidenceFor } from '../../engine/mastery'
 import { WeekReviewModal } from '../WeekReview'
 import { useState } from 'react'
+import { activeMission, missionReadiness } from '../../engine/mission'
+import { calendarDaysUntil } from '../../engine/time'
 
 function greeting(name: string): string {
   const h = new Date().getHours()
@@ -38,20 +39,22 @@ export function Today() {
   const report = alloc.report
   const objective = useMemo(() => weeklyObjective(index, evidence, state, now), [index, evidence, state, now])
   const insight = useMemo(() => todayInsight(index, evidence, state, now), [index, evidence, state, now])
+  const mission = activeMission(state, now)
+  const readiness = mission?.skillIds?.length ? missionReadiness(mission, state, index, evidence, now) : null
 
   const frontier = useMemo(() => {
-    const ctx = { index, evidence, state, now, checkIn: { minutes: 25, energy: 'ok' as const, focus: null } }
+    const ctx = { index, evidence, state, now, checkIn: { minutes: mission?.dailyMinutes ?? state.profile.sessionMinutes, energy: 'ok' as const, focus: null } }
+    let top: ReturnType<typeof scoreSkills>[number] | null = null
     for (const b of ACADEMIC_BUCKETS) {
       const scored = scoreSkills(b, ctx, report)
-      if (scored.length) return scored[0].skill
+      if (scored.length && (!top || scored[0].score > top.score)) top = scored[0]
     }
-    return null
-  }, [index, evidence, state, now, report])
+    return top?.skill ?? null
+  }, [index, evidence, state, now, report, mission])
 
-  const deadline = state.deadlines
-    .map((d) => ({ ...d, days: Math.ceil((Date.parse(d.dateISO) - now) / 86_400_000) }))
-    .filter((d) => d.days >= 0)
-    .sort((a, b) => a.days - b.days)[0]
+  const deadline = mission
+    ? { ...mission, days: Math.max(0, calendarDaysUntil(mission.dateISO, now)) }
+    : null
 
   const nextDue = nextReviewAt(evidence, now)
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
@@ -112,7 +115,7 @@ export function Today() {
       </Card>
 
       <div className="grid grid-cols-2 gap-3 mt-3">
-        <Card className="p-4" onClick={() => go({ name: 'practice' })}>
+        <Card className="p-4" onClick={() => go(due.length ? { name: 'session', launch: { kind: 'mixed' } } : { name: 'practice' })}>
           <p className="text-[12px] text-muted font-medium uppercase tracking-wide">Reviews due</p>
           <p className="font-display text-2xl font-bold mt-1">{due.length}</p>
           <p className="text-[12px] text-faint mt-0.5">
@@ -142,12 +145,36 @@ export function Today() {
 
       {deadline ? (
         <Card className="mt-3 p-4 border-warn/40">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
               <p className="text-[13px] font-semibold text-warn">
-                {deadline.title} · {deadline.days === 0 ? 'today' : `in ${deadline.days} day${deadline.days === 1 ? '' : 's'}`}
+                Mission · {deadline.title} · {deadline.days === 0 ? 'today' : `${deadline.days} day${deadline.days === 1 ? '' : 's'} left`}
               </p>
-              <p className="text-[12px] text-muted mt-0.5">Sessions lean toward it until it passes — openly, not silently.</p>
+              {readiness && readiness.targetIds.length ? (
+                <>
+                  <p className="text-[12px] text-muted mt-1">
+                    {readiness.retained}/{readiness.targetIds.length} targets retained · {readiness.independent} independent · {deadline.dailyMinutes ?? 30} min/day
+                  </p>
+                  <div
+                    className="h-1.5 rounded bg-surface2 overflow-hidden mt-2"
+                    role="progressbar"
+                    aria-label="Mission skills retained"
+                    aria-valuemin={0}
+                    aria-valuemax={readiness.targetIds.length}
+                    aria-valuenow={readiness.retained}
+                  >
+                    <div className="h-full rounded bg-good" style={{ width: `${readiness.targetIds.length ? (readiness.retained / readiness.targetIds.length) * 100 : 0}%` }} />
+                  </div>
+                  <p className="text-[11px] text-faint mt-1.5">
+                    {readiness.nextSkillIds.length
+                      ? `Next evidence: ${readiness.nextSkillIds.map((id) => index.skills.get(id)?.name ?? id).join(', ')}.`
+                      : 'All selected skills are retained; sessions will rehearse transfer and keep them available.'}
+                    {' '}{readiness.sessionsAvailable} planned practice day{readiness.sessionsAvailable === 1 ? '' : 's'} remain.
+                  </p>
+                </>
+              ) : (
+                <p className="text-[12px] text-muted mt-0.5">Sessions lean toward this subject until it passes — openly, not silently.</p>
+              )}
             </div>
             {deadline.bucket ? <Chip tone="warn">{BUCKET_BY_ID[deadline.bucket].short}</Chip> : null}
           </div>
@@ -201,12 +228,12 @@ export function Today() {
       ) : null}
 
       <SectionTitle>Quick starts</SectionTitle>
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <Card className="p-4" onClick={() => go({ name: 'session', launch: { kind: 'mixed' } })}>
+      <div className="grid grid-cols-2 gap-3 mb-6 auto-rows-fr">
+        <Card className="p-4 h-full" onClick={() => go({ name: 'session', launch: { kind: 'mixed' } })}>
           <p className="font-semibold text-[15px]">Mixed review</p>
           <p className="text-[12px] text-muted mt-0.5">Interleaved retrieval across everything you own</p>
         </Card>
-        <Card className="p-4" onClick={() => go({ name: 'exam' })}>
+        <Card className="p-4 h-full" onClick={() => go({ name: 'exam' })}>
           <p className="font-semibold text-[15px]">Exam simulator</p>
           <p className="text-[12px] text-muted mt-0.5">Blind, timed, cumulative — like the real thing</p>
         </Card>

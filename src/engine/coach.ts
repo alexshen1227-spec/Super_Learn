@@ -17,6 +17,7 @@ import { effectiveAllocation } from './allocationPlus'
 import { calibrationGap, highConfidenceErrors } from './calibration'
 import { dueReviews } from './scheduler'
 import { prereqLeverage, prereqsMet, scoreSkills } from './planner'
+import { calendarDaysUntil } from './time'
 
 function recentEvents(events: AttemptEvent[], now: number, days: number): AttemptEvent[] {
   const cutoff = now - days * 86_400_000
@@ -247,10 +248,10 @@ export function weeklyObjective(
   }
   if (due.length) parts.push(`clear ${Math.min(due.length, 9)} due review${due.length > 1 ? 's' : ''}`)
   const deadline = state.deadlines
-    .map((d) => ({ d, days: (Date.parse(d.dateISO) - now) / 86_400_000 }))
+    .map((d) => ({ d, days: calendarDaysUntil(d.dateISO, now) }))
     .filter((x) => x.days >= 0 && x.days <= 10)
     .sort((a, b) => a.days - b.days)[0]
-  if (deadline) parts.push(`prepare for ${deadline.d.title} (${Math.max(0, Math.round(deadline.days))}d)`)
+  if (deadline) parts.push(`prepare for ${deadline.d.title} (${deadline.days}d)`)
   if (!parts.length) return 'Build first evidence: a placement or a first session will set the map.'
   return `This week: ${parts.join(' · ')}.`
 }

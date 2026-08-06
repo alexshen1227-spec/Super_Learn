@@ -33,6 +33,7 @@ html.light {
   --c-red-soft: #b91c1c14;
   --c-overlay: #1c243370;
   --shadow-card: 0 1px 2px #1c243310, 0 2px 8px #1c24330a;
+  --shadow-modal: 0 18px 50px #1c243326, 0 4px 12px #1c243318;
 }
 html.dark {
   --c-bg: #0d1420;
@@ -55,6 +56,7 @@ html.dark {
   --c-red-soft: #f871711a;
   --c-overlay: #05080ea8;
   --shadow-card: 0 1px 2px #00000040, 0 2px 10px #00000030;
+  --shadow-modal: 0 20px 56px #00000070, 0 5px 16px #00000048;
 }
 
 @theme inline {
@@ -81,6 +83,7 @@ html.dark {
   --font-display: 'Space Grotesk Variable', 'Inter Variable', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Mono', monospace;
   --shadow-card: var(--shadow-card);
+  --shadow-modal: var(--shadow-modal);
 }
 
 html {
@@ -100,6 +103,30 @@ body {
   background: var(--c-bg);
   overscroll-behavior-y: none;
   text-rendering: optimizeLegibility;
+}
+
+.app-backdrop {
+  background-image:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--c-accent) 5%, transparent) 0, transparent 28rem),
+    radial-gradient(circle at 92% 36%, color-mix(in srgb, var(--c-green) 3%, transparent) 0, transparent 25rem);
+  background-attachment: fixed;
+}
+
+::selection {
+  color: var(--c-ink);
+  background: color-mix(in srgb, var(--c-accent) 24%, transparent);
+}
+
+.interactive-card {
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .interactive-card:hover {
+    border-color: var(--c-border-strong);
+    box-shadow: var(--shadow-modal);
+    transform: translateY(-1px);
+  }
 }
 
 /* Readability option: extra letter/word/line spacing (a preference, not a cure). */
