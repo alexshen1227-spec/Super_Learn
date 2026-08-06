@@ -26,6 +26,8 @@ import { METHOD_DRILL_TEMPLATES } from './items/methodDrills'
 import { ADVANCED_CURRICULUM_TEMPLATES } from './items/advancedCurriculum'
 import { PATH_QUESTION_TEMPLATES } from './items/pathQuestionExpansion'
 import { PATH_DEPTH_TEMPLATES } from './items/pathQuestionDepth'
+import { AUTHENTIC_WORK_TEMPLATES } from './items/authenticWork'
+import { REAL_WORLD_TEMPLATES } from './items/realWorldPractice'
 
 export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...MATH_NUMBER_TEMPLATES,
@@ -48,6 +50,8 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...ADVANCED_CURRICULUM_TEMPLATES,
   ...PATH_QUESTION_TEMPLATES,
   ...PATH_DEPTH_TEMPLATES,
+  ...AUTHENTIC_WORK_TEMPLATES,
+  ...REAL_WORLD_TEMPLATES,
 ]
 
 export function packItemToTemplate(pack: ContentPackJson, i: number): ItemTemplate {

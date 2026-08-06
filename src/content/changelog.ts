@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.9',
+    date: '2026-08-06',
+    title: 'Authentic Work, Not Worksheet Theater',
+    points: [
+      'Authentic Work upgrades the existing Case File mode into a studio for projects, evidence writing, program building, experiments, original-book seminars, expert office hours, field investigations, real-life decisions, and difficult Guardian conversations.',
+      'Nine long-form studios provide 70 generated scenarios and more than 400 staged checkpoints. Each preserves a real workflow—brief, evidence, objective decisions, substantial artifact, critique, and revision—while stating exactly what the offline simulation cannot reproduce.',
+      'Eighteen new real-world question families add 272 automatically graded variants across receipts, unit prices, travel time, energy use, automations, bug reports, household experiments, source claims, schedules, subscriptions, privacy, boundaries, incident response, and project triage.',
+      'Serious drafts now require meaningful word counts, provide deliverable-specific prompts, and compare against explicit models and criteria. Self-assessed artifacts remain separated from verified mastery evidence.',
+      'Long multi-stage work now resumes at the exact checkpoint after a reload—including the unfinished draft and rubric state—and the daily planner no longer squeezes a 20-minute project into a short practice block.',
+    ],
+  },
+  {
     version: '1.8',
     date: '2026-08-06',
     title: 'A Real Difficulty Ladder',

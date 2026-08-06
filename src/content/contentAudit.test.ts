@@ -51,13 +51,28 @@ function checkAnswer(spec: AnswerSpec, where: string) {
   if (spec.type === 'numeric') {
     expect(Number.isFinite(spec.answer), `${where}: numeric answer must be finite`).toBe(true)
   }
+  if (spec.type === 'rubric') {
+    expect(spec.criteria.length, `${where}: rubric needs concrete criteria`).toBeGreaterThanOrEqual(3)
+    expect(spec.model.length, `${where}: rubric needs a substantive model`).toBeGreaterThan(40)
+    if (spec.minWords !== undefined) {
+      expect(spec.minWords, `${where}: minimum draft length must be meaningful`).toBeGreaterThanOrEqual(3)
+      expect(spec.minWords, `${where}: minimum draft length must remain phone-usable`).toBeLessThanOrEqual(300)
+    }
+  }
 }
 
 function checkRendered(item: RenderedItem, where: string) {
   expect(item.prompt.length, `${where}: prompt required`).toBeGreaterThan(8)
   expect(item.hints.length, `${where}: hint ladder required`).toBeGreaterThanOrEqual(2)
   expect(item.explanation.length, `${where}: explanation required`).toBeGreaterThan(20)
-  const allText = [item.prompt, item.explanation, ...item.hints, item.title].join(' ')
+  const partText = (item.parts ?? []).flatMap((part) => [
+    part.stage ?? '',
+    part.study ?? '',
+    part.prompt,
+    part.explanation,
+    ...(part.answer.type === 'rubric' ? [part.answer.model, ...part.answer.criteria] : []),
+  ])
+  const allText = [item.prompt, item.explanation, ...item.hints, item.title, ...partText].join(' ')
   expect(UNSAFE.test(allText), `${where}: unsafe markup`).toBe(false)
   if (item.kind === 'single') {
     expect(item.answer, `${where}: single item needs answer`).toBeTruthy()
@@ -136,6 +151,12 @@ describe('template registry', () => {
       for (const s of t.skillIds) expect(SKILL_BY_ID.has(s), `${t.id}: unknown skill ${s}`).toBe(true)
       const skillBuckets = t.skillIds.map((s) => SKILL_BY_ID.get(s)!.bucket)
       expect(skillBuckets, `${t.id}: primary skill bucket must match template bucket`).toContain(t.bucket)
+      if (t.authentic) {
+        expect(t.kind, `${t.id}: authentic work must preserve staged structure`).toBe('multi')
+        expect(t.minutes, `${t.id}: authentic work must have an honest time budget`).toBeGreaterThanOrEqual(10)
+        expect(t.authentic.deliverable.length, `${t.id}: authentic work needs a deliverable`).toBeGreaterThan(12)
+        expect(t.authentic.simulationNote.length, `${t.id}: simulation limits must be explicit`).toBeGreaterThan(30)
+      }
     }
     expect(BUILTIN_TEMPLATES.length).toBeGreaterThanOrEqual(100)
   })

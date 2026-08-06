@@ -124,6 +124,10 @@ function pickTemplates(
   const pool = candidates
     .filter((t) => (opts.transferOnly ? t.transfer : true))
     .filter((t) => !(opts.excludeKinds ?? []).includes(t.kind))
+    // Long-form simulations have their own Practice mode. Quietly squeezing a
+    // 20-minute project into a 7-minute daily block breaks both the plan and
+    // the realism of the work.
+    .filter((t) => !t.authentic)
   const scored = pool
     .map((t) => ({
       t,

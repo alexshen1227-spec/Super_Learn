@@ -27,6 +27,7 @@ export interface TplOpts {
   kind?: ItemKind
   transfer?: boolean
   calibration?: boolean
+  authentic?: ItemTemplate['authentic']
   provenance?: string
   version?: number
 }
@@ -48,6 +49,7 @@ export function tpl(opts: TplOpts, gen: (rng: Rng, seed: number) => SingleBody):
     minutes: opts.minutes,
     ...(opts.transfer ? { transfer: true } : {}),
     ...(opts.calibration ? { calibration: true } : {}),
+    ...(opts.authentic ? { authentic: opts.authentic } : {}),
     provenance: opts.provenance ?? PROV,
     generate: (seed: number): RenderedItem => {
       // Variant-fold the seed so equal variants render identically (novelty

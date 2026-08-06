@@ -74,6 +74,33 @@ describe('session drafts', () => {
     expect(back!.records['0:0'].firstResponse).toBe('5')
     expect(back!.phase).toBe('item')
   })
+  it('round-trips an exact multi-stage work checkpoint and draft', () => {
+    const draft = baseDraft()
+    draft.records['0:0'].extra = {
+      kind: 'item-player-v1',
+      partIndex: 4,
+      partOutcomes: [
+        { firstCorrect: true, score: 1 },
+        { firstCorrect: false, score: 0 },
+        { firstCorrect: true, score: 1 },
+        { firstCorrect: true, score: 1 },
+      ],
+      phase: 'answer',
+      response: 'My unfinished evidence brief keeps its exact draft.',
+      rubricSelfChecked: [],
+      rubricStage: 'attempt',
+      firstResponse: '0',
+      retryVerdictOk: null,
+      confidence: null,
+    }
+    saveDraft(draft)
+    const back = loadDraftSync()
+    expect(back?.records['0:0'].extra).toMatchObject({
+      kind: 'item-player-v1',
+      partIndex: 4,
+      response: 'My unfinished evidence brief keeps its exact draft.',
+    })
+  })
   it('never resumes a finished session (ghost-draft regression)', () => {
     saveDraft(baseDraft({ phase: 'summary' }))
     expect(loadDraftSync()).toBeNull()

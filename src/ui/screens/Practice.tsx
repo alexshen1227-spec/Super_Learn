@@ -7,7 +7,7 @@ import { useEvidence, useStore } from '../../store/store'
 import { useNav } from '../nav'
 import { buildContentIndex } from '../../content/registry'
 import { dueReviews } from '../../engine/scheduler'
-import type { BucketId, ItemTemplate } from '../../domain/types'
+import type { AuthenticFormat, BucketId, ItemTemplate } from '../../domain/types'
 import { BUCKET_BY_ID } from '../../domain/types'
 import { Button, Card, Chip, DifficultyBadge, DifficultyGuide, EmptyState, HeaderBar, Modal, SectionTitle } from '../components'
 import { DIFFICULTY_INFO } from '../../content/difficulty'
@@ -16,6 +16,16 @@ import { openRepairTargets } from '../../engine/errors'
 
 const LAB_ORDER: BucketId[] = ['observer', 'investigator', 'strategist', 'puzzle', 'insight', 'meta']
 const ACADEMIC_ORDER: BucketId[] = ['math', 'physics', 'coding', 'science']
+const FORMAT_LABEL: Record<AuthenticFormat, string> = {
+  project: 'Projects',
+  writing: 'Writing',
+  program: 'Programs',
+  experiment: 'Experiments',
+  book: 'Books',
+  dialogue: 'Expert dialogue',
+  fieldwork: 'Fieldwork',
+  decision: 'Decisions',
+}
 
 export function Practice() {
   const { state } = useStore()
@@ -24,14 +34,14 @@ export function Practice() {
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
   const [browse, setBrowse] = useState<BucketId | null>(null)
   const [homework, setHomework] = useState(false)
-  const [caseOpen, setCaseOpen] = useState(false)
+  const [workOpen, setWorkOpen] = useState(false)
   const [query, setQuery] = useState('')
   const searchResults = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (q.length < 2) return []
     return [...index.templates.values()]
       .filter((t) => {
-        const hay = (t.name + ' ' + t.skillIds.map((s) => index.skills.get(s)?.name ?? '').join(' ')).toLowerCase()
+        const hay = (t.name + ' ' + (t.authentic ? `${t.authentic.format} ${t.authentic.deliverable}` : '') + ' ' + t.skillIds.map((s) => index.skills.get(s)?.name ?? '').join(' ')).toLowerCase()
         return hay.includes(q)
       })
       .slice(0, 8)
@@ -39,9 +49,10 @@ export function Practice() {
   const due = useMemo(() => dueReviews(evidence, Date.now()), [evidence])
   const repairs = useMemo(() => openRepairTargets(state, evidence, Date.now()), [state, evidence])
   const confidentRepairs = repairs.filter((r) => r.blockedByMisconception).length
-  const caseReady = state.sessions.length >= 3
-
-  const caseFiles = useMemo(() => [...index.templates.values()].filter((t) => t.id.startsWith('case-')), [index])
+  const authenticWork = useMemo(
+    () => [...index.templates.values()].filter((t) => t.authentic).sort((a, b) => b.minutes - a.minutes || a.name.localeCompare(b.name)),
+    [index],
+  )
 
   return (
     <div>
@@ -87,10 +98,11 @@ export function Practice() {
         />
         <ModeCard title="Homework support" sub="A coach, not an answer machine" onClick={() => setHomework(true)} />
         <ModeCard
-          title="Weekly Case File"
-          sub={caseReady ? 'Cross-domain capstone' : `Unlocks after 3 sessions (${state.sessions.length}/3)`}
-          onClick={caseReady ? () => setCaseOpen(true) : undefined}
+          title="Authentic Work"
+          sub="Projects, writing, programs, experiments, books & dialogue"
+          onClick={() => setWorkOpen(true)}
           className="col-span-2 sm:col-span-1"
+          accent
         />
       </div>
 
@@ -110,12 +122,12 @@ export function Practice() {
 
       <BrowseSheet bucket={browse} onClose={() => setBrowse(null)} />
       <HomeworkSheet open={homework} onClose={() => setHomework(false)} />
-      {caseOpen ? (
-        <CaseChooser
-          cases={caseFiles}
-          onClose={() => setCaseOpen(false)}
+      {workOpen ? (
+        <WorkChooser
+          work={authenticWork}
+          onClose={() => setWorkOpen(false)}
           onPick={(id) => {
-            setCaseOpen(false)
+            setWorkOpen(false)
             go({ name: 'session', launch: { kind: 'single', templateId: id } })
           }}
         />
@@ -196,6 +208,7 @@ function BrowseSheet({ bucket, onClose }: { bucket: BucketId | null; onClose: ()
                 .join(' · ')}
               {t.variants > 1 ? ` · ${t.variants} variants` : ''}
             </p>
+            {t.authentic ? <p className="text-[12px] text-accent mt-1">{FORMAT_LABEL[t.authentic.format]} · {t.authentic.deliverable}</p> : null}
           </button>
         ))}
         {templates.length === 0 ? <p className="text-muted text-sm py-4 text-center">Nothing at this difficulty.</p> : null}
@@ -374,22 +387,38 @@ function searchMatchingSkills(problem: string): { skillId: string; title: string
     .map(({ skillId, title }) => ({ skillId, title }))
 }
 
-function CaseChooser({ cases, onPick, onClose }: { cases: ItemTemplate[]; onPick: (id: string) => void; onClose: () => void }) {
+function WorkChooser({ work, onPick, onClose }: { work: ItemTemplate[]; onPick: (id: string) => void; onClose: () => void }) {
+  const [format, setFormat] = useState<AuthenticFormat | 'all'>('all')
+  const visible = format === 'all' ? work : work.filter((item) => item.authentic?.format === format)
+  const formats = [...new Set(work.map((item) => item.authentic?.format).filter(Boolean))] as AuthenticFormat[]
   return (
-    <Modal open onClose={onClose} title="Weekly Case File" wide>
-      <p className="text-muted text-sm mb-3">
-        One coherent situation, several disciplines. Expect ~12 minutes of connected thinking.
+    <Modal open onClose={onClose} title="Authentic Work" wide>
+      <p className="text-muted text-sm leading-relaxed">
+        Compressed, realistic workflows with a clear brief, checkable decisions, a substantial artifact, critique, and revision. Objective checkpoints are graded; open writing and code are honestly self-assessed against models.
       </p>
-      {cases.length === 0 ? (
-        <EmptyState title="No case files" body="Case files ship with the app — if you see this, content failed to load." />
+      <div className="flex gap-1.5 mt-3 mb-3 overflow-x-auto pb-1 scroll-thin">
+        <button type="button" onClick={() => setFormat('all')} aria-pressed={format === 'all'} className={`min-h-11 px-3 rounded-full border text-[13px] font-medium shrink-0 ${format === 'all' ? 'bg-ink text-bg border-ink' : 'bg-surface border-line text-muted'}`}>All</button>
+        {formats.map((value) => (
+          <button type="button" key={value} onClick={() => setFormat(value)} aria-pressed={format === value} className={`min-h-11 px-3 rounded-full border text-[13px] font-medium shrink-0 ${format === value ? 'bg-ink text-bg border-ink' : 'bg-surface border-line text-muted'}`}>
+            {FORMAT_LABEL[value]}
+          </button>
+        ))}
+      </div>
+      {work.length === 0 ? (
+        <EmptyState title="No authentic work" body="Work simulations ship with the app — if you see this, content failed to load." />
       ) : (
         <div className="space-y-2">
-          {cases.map((c) => (
+          {visible.map((c) => (
             <button type="button" key={c.id} className="w-full min-h-11 text-left border border-line rounded-xl px-4 py-3 hover:border-line-strong" onClick={() => onPick(c.id)}>
-              <p className="font-medium text-[15px]">{c.name.replace('Case File: ', '')}</p>
-              <p className="text-[12px] text-faint mt-0.5">~{Math.round(c.minutes)} min · {c.skillIds.length} skills woven together</p>
+              <div className="flex items-start justify-between gap-3">
+                <p className="font-medium text-[15px]">{c.name.replace('Case File: ', '')}</p>
+                <DifficultyBadge difficulty={c.difficulty} />
+              </div>
+              <p className="text-[12px] text-accent mt-1">{c.authentic ? FORMAT_LABEL[c.authentic.format] : 'Case'} · {c.authentic?.deliverable ?? 'cross-domain recommendation'}</p>
+              <p className="text-[12px] text-faint mt-0.5">~{Math.round(c.minutes)} min · {c.generate(0).parts?.length ?? 1} checkpoints · {c.variants} scenario{c.variants === 1 ? '' : 's'}</p>
             </button>
           ))}
+          {visible.length === 0 ? <p className="text-muted text-sm py-5 text-center">No work simulations in this format yet.</p> : null}
         </div>
       )}
     </Modal>

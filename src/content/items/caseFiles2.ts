@@ -27,6 +27,11 @@ function mk(
     variants: def.variants,
     minutes: def.minutes,
     transfer: true,
+    authentic: {
+      format: 'decision',
+      deliverable: 'a checked analysis and defensible recommendation',
+      simulationNote: 'The scenario is compressed and fictional; the calculations, tradeoffs, and reporting standards match real work.',
+    },
     provenance:
       def.variants > 1
         ? 'Original parameterized case for Axiom Lab; every numeric answer computed from the generated values.'

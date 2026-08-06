@@ -60,12 +60,15 @@ export default defineConfig({
       output: {
         // Stable cache boundaries: the UI shell changes more often than the
         // curriculum, while React and chess.js are third-party foundations.
-        // Keeping them separate lowers startup parse cost and makes routine
-        // releases download less code without changing offline availability.
+        // Authentic-work simulations are their own cache boundary: they are
+        // substantial and evolve independently from the short item bank.
+        // Keeping these separate makes routine releases download less code
+        // without changing offline availability.
         manualChunks(id) {
           const path = id.replace(/\\/g, '/')
           if (path.includes('/node_modules/react/') || path.includes('/node_modules/react-dom/') || path.includes('/node_modules/scheduler/')) return 'react-vendor'
           if (path.includes('/node_modules/chess.js/')) return 'chess-vendor'
+          if (path.endsWith('/src/content/items/authenticWork.ts') || path.endsWith('/src/content/items/realWorldPractice.ts')) return 'authentic-work-items'
           if (path.includes('/src/content/items/')) return 'learning-items'
         },
       },

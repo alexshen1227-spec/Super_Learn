@@ -26,6 +26,26 @@ interface PartOutcome {
   score: number
 }
 
+interface SavedItemPlayerState {
+  kind: 'item-player-v1'
+  partIndex: number
+  partOutcomes: PartOutcome[]
+  phase: Phase
+  response: string
+  rubricSelfChecked: number[]
+  rubricStage: 'attempt' | 'compare'
+  firstResponse: string | null
+  retryVerdictOk: boolean | null
+  confidence: number | null
+}
+
+function savedItemPlayerState(extra: unknown): SavedItemPlayerState | null {
+  if (!extra || typeof extra !== 'object') return null
+  const candidate = extra as Partial<SavedItemPlayerState>
+  if (candidate.kind !== 'item-player-v1' || typeof candidate.partIndex !== 'number') return null
+  return candidate as SavedItemPlayerState
+}
+
 export function ItemPlayer({
   item,
   template,
@@ -52,23 +72,25 @@ export function ItemPlayer({
   kbIndex: ContentIndex
 }) {
   const parts = item.kind === 'multi' ? item.parts! : null
-  const [partIndex, setPartIndex] = useState(0)
+  const saved = savedItemPlayerState(record.extra)
+  const initialPartIndex = parts ? Math.max(0, Math.min(parts.length - 1, saved?.partIndex ?? 0)) : 0
+  const [partIndex, setPartIndex] = useState(initialPartIndex)
   const spec: AnswerSpec = parts ? parts[partIndex].answer : item.answer!
   const hasStudy = parts ? Boolean(parts[partIndex].study) : false
 
-  const [phase, setPhase] = useState<Phase>(hasStudy ? 'study' : 'answer')
-  const [response, setResponse] = useState('')
+  const [phase, setPhase] = useState<Phase>(() => saved?.phase ?? (hasStudy ? 'study' : 'answer'))
+  const [response, setResponse] = useState(saved?.response ?? '')
   const [hintsShown, setHintsShown] = useState(record.hintsUsed ?? 0)
   const [hintOpen, setHintOpen] = useState(false)
-  const [confidence, setConfidence] = useState<number | null>(record.confidence)
-  const [firstResponse, setFirstResponse] = useState<string | null>(record.firstResponse)
+  const [confidence, setConfidence] = useState<number | null>(saved?.confidence ?? record.confidence)
+  const [firstResponse, setFirstResponse] = useState<string | null>(saved?.firstResponse ?? record.firstResponse)
   const [twinSeed, setTwinSeed] = useState<number | null>(null)
-  const [retryVerdictOk, setRetryVerdictOk] = useState<boolean | null>(null)
+  const [retryVerdictOk, setRetryVerdictOk] = useState<boolean | null>(saved?.retryVerdictOk ?? null)
   const [errorTag, setErrorTag] = useState<ErrorTag | null>(null)
   const [formatError, setFormatError] = useState<string | null>(null)
-  const [partOutcomes, setPartOutcomes] = useState<PartOutcome[]>([])
-  const [rubricSelfChecked, setRubricSelfChecked] = useState<number[]>([])
-  const [rubricStage, setRubricStage] = useState<'attempt' | 'compare'>('attempt')
+  const [partOutcomes, setPartOutcomes] = useState<PartOutcome[]>(saved?.partOutcomes ?? [])
+  const [rubricSelfChecked, setRubricSelfChecked] = useState<number[]>(saved?.rubricSelfChecked ?? [])
+  const [rubricStage, setRubricStage] = useState<'attempt' | 'compare'>(saved?.rubricStage ?? 'attempt')
   const [scratchOpen, setScratchOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const finished = useRef(false)
@@ -81,6 +103,26 @@ export function ItemPlayer({
     }, 1000)
     return () => clearInterval(id)
   }, [])
+
+  // Multi-stage work can take most of a session. Preserve the exact
+  // checkpoint, draft, and rubric comparison state if a phone backgrounds or
+  // reloads the app midway through the artifact.
+  useEffect(() => {
+    if (!parts) return
+    const extra: SavedItemPlayerState = {
+      kind: 'item-player-v1',
+      partIndex,
+      partOutcomes,
+      phase,
+      response,
+      rubricSelfChecked,
+      rubricStage,
+      firstResponse,
+      retryVerdictOk,
+      confidence,
+    }
+    onSnapshot({ extra, hintsUsed: hintsShown, firstResponse })
+  }, [parts, partIndex, partOutcomes, phase, response, rubricSelfChecked, rubricStage, firstResponse, retryVerdictOk, confidence, hintsShown, onSnapshot])
 
   // Twin item after a reveal: same template, different variant.
   const twinItem = useMemo(
@@ -246,7 +288,7 @@ export function ItemPlayer({
         <div className="flex items-center gap-2 flex-wrap">
           <Chip tone="neutral">{item.title}</Chip>
           <DifficultyBadge difficulty={template.difficulty} showName />
-          {parts ? <Chip tone="accent">part {partIndex + 1}/{parts.length}</Chip> : null}
+          {parts ? <Chip tone="accent">{parts[partIndex].stage ? `${parts[partIndex].stage} · ` : ''}{partIndex + 1}/{parts.length}</Chip> : null}
           {mode === 'review' ? <Chip tone="warn">review</Chip> : mode === 'transfer' ? <Chip tone="good">transfer</Chip> : null}
           {twinItem ? <Chip tone="accent">twin problem</Chip> : null}
         </div>
@@ -273,6 +315,24 @@ export function ItemPlayer({
           </button>
         </span>
       </div>
+
+      {template.authentic && parts ? (
+        <Card className="p-4 mb-3 border-accent/30 bg-accent-soft/30">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-accent uppercase tracking-wide">{template.authentic.format} simulation</p>
+              <p className="text-[14px] font-medium mt-0.5">Deliverable: {template.authentic.deliverable}</p>
+            </div>
+            <span className="text-[12px] text-faint shrink-0">~{Math.round(template.minutes)}m</span>
+          </div>
+          <div className="grid gap-1 mt-3" style={{ gridTemplateColumns: `repeat(${parts.length}, minmax(0, 1fr))` }} aria-label={`Checkpoint ${partIndex + 1} of ${parts.length}`}>
+            {parts.map((part, i) => (
+              <div key={`${part.stage ?? 'part'}-${i}`} className={`h-1.5 rounded-full ${i < partIndex ? 'bg-good' : i === partIndex ? 'bg-accent' : 'bg-surface3'}`} title={part.stage ?? `Part ${i + 1}`} />
+            ))}
+          </div>
+          {partIndex === 0 ? <p className="text-[12px] text-muted mt-2 leading-snug">{template.authentic.simulationNote} Objective checkpoints are auto-checked; the final artifact is compared with an explicit model and rubric.</p> : null}
+        </Card>
+      ) : null}
 
       {showConcept && kbCard && partIndex === 0 && !twinItem ? (
         <Card className="p-4 mb-3 border-accent/30">
@@ -447,7 +507,9 @@ export function ItemPlayer({
               }
               parts={Boolean(parts)}
               ok={parts ? retryVerdictOk : retryVerdictOk === null ? true : retryVerdictOk}
-              firstTry={retryVerdictOk === null && firstResponse === response}
+              firstTry={parts
+                ? partOutcomes[partOutcomes.length - 1]?.firstCorrect === true
+                : retryVerdictOk === null && firstResponse === response}
               hintsUsed={hintsShown}
               spec={spec.type === 'rubric' ? null : activeSpec}
               explanation={currentExplanation}
@@ -467,7 +529,7 @@ export function ItemPlayer({
       )}
 
       {/* scratchpad */}
-      {['math', 'physics', 'coding', 'science'].includes(template.bucket) && !parts ? (
+      {(['math', 'physics', 'coding', 'science'].includes(template.bucket) && !parts) || Boolean(template.authentic) ? (
         <div className="mt-4">
           <button type="button" className="text-[13px] text-faint hover:text-muted underline min-h-11" onClick={() => setScratchOpen(!scratchOpen)}>
             {scratchOpen ? 'Hide scratchpad' : 'Open scratchpad'}
@@ -717,17 +779,23 @@ function RubricInput({
   setChecked: (c: number[]) => void
   onDone: () => void
 }) {
+  const wordCount = attempt.trim() ? attempt.trim().split(/\s+/).length : 0
+  const minWords = Math.max(3, spec.minWords ?? 3)
   if (stage === 'attempt') {
     return (
       <div>
         <textarea
           value={attempt}
-          onChange={(e) => setAttempt(e.target.value.slice(0, 2000))}
-          rows={5}
-          placeholder="Write your answer here — the honest attempt is what makes the comparison work."
+          onChange={(e) => setAttempt(e.target.value.slice(0, 6000))}
+          rows={spec.minWords && spec.minWords >= 80 ? 9 : 5}
+          placeholder={spec.placeholder ?? 'Write your answer here — the honest attempt is what makes the comparison work.'}
           className="w-full bg-surface border border-line rounded-xl px-4 py-3 text-[15px] outline-none focus:border-accent resize-y"
         />
-        <Button className="w-full mt-3" onClick={() => setStage('compare')} disabled={attempt.trim().length < 10}>
+        <div className="flex items-center justify-between gap-3 mt-1.5 px-1 text-[12px] text-faint">
+          <span>{wordCount} word{wordCount === 1 ? '' : 's'}</span>
+          <span>{wordCount >= minWords ? 'Ready to compare' : `${minWords - wordCount} more for a complete attempt`}</span>
+        </div>
+        <Button className="w-full mt-3" onClick={() => setStage('compare')} disabled={wordCount < minWords}>
           Compare with the model answer
         </Button>
       </div>

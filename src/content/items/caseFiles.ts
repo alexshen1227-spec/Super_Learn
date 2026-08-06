@@ -253,6 +253,11 @@ export const CASEFILE_TEMPLATES: ItemTemplate[] = CASES.map((c) => ({
   variants: 1,
   minutes: c.minutes,
   transfer: true,
+  authentic: {
+    format: 'fieldwork',
+    deliverable: 'an evidence-backed case recommendation',
+    simulationNote: 'The situation and records are fictional, but the evidence limits and decision constraints are realistic.',
+  },
   provenance: 'Original fictional case composed for Axiom Lab; deterministic parts solved during authoring.',
   generate: (seed: number): RenderedItem => ({
     templateId: c.id,

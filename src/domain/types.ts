@@ -177,13 +177,34 @@ export interface RubricAnswer {
   criteria: string[]
   /** A model answer shown AFTER the attempt for comparison. */
   model: string
+  /** Minimum honest draft length before comparison is allowed. */
+  minWords?: number
+  /** Deliverable-specific prompt for the drafting area. */
+  placeholder?: string
 }
 
 // ---------------------------------------------------------------- items
 
+export type AuthenticFormat = 'project' | 'writing' | 'program' | 'experiment' | 'book' | 'dialogue' | 'fieldwork' | 'decision'
+
+/**
+ * Marks a compressed simulation of authentic work. These activities retain
+ * real workflow structure (brief -> evidence -> artifact -> critique ->
+ * revision) while being honest that the people, sources, and data are
+ * simulated inside an offline app.
+ */
+export interface AuthenticWorkSpec {
+  format: AuthenticFormat
+  deliverable: string
+  /** What is compressed or simulated rather than literally present. */
+  simulationNote: string
+}
+
 export type ItemKind = 'single' | 'multi' | 'chess' | 'polyomino' | 'logicgrid'
 
 export interface ItemPart {
+  /** Authentic-work checkpoint label, e.g. Brief, Test, Draft, Revise. */
+  stage?: string
   /** Optional study phase (scene text, data table) shown before the prompt. */
   study?: string
   /** Suggested study seconds (user-adjustable, never a hard cutoff). */
@@ -312,6 +333,8 @@ export interface ItemTemplate {
   calibration?: boolean
   /** Approximate minutes a focused attempt takes. */
   minutes: number
+  /** Present only for deliberate, multi-stage authentic-work simulations. */
+  authentic?: AuthenticWorkSpec
 }
 
 // ---------------------------------------------------------------- attempts
