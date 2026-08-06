@@ -5,7 +5,7 @@
  */
 import type { ItemTemplate } from '../../domain/types'
 import { pick, rint } from '../../engine/rng'
-import { mcq, numeric, round, tpl } from '../lib'
+import { mcq, mcqNoted, numeric, round, tpl } from '../lib'
 
 const measureUnits = tpl(
   { id: 'p-si-units', name: 'SI units', skillIds: ['p-measure'], bucket: 'physics', difficulty: 1, variants: 8, minutes: 1.5 },
@@ -235,14 +235,16 @@ const balancedForces = tpl(
   { id: 'p-balanced', name: 'Balanced forces', skillIds: ['p-forces'], bucket: 'physics', difficulty: 2, variants: 6, minutes: 2 },
   (rng) => {
     const v = pick(rng, [3, 5, 8])
+    const noted = mcqNoted(rng, '0 N — balanced forces', [
+      [`${v} N in the direction of motion`, '"Motion needs force" — the pre-Newtonian intuition. Force changes motion; steady motion needs zero NET force.'],
+      ['A small forward force, or it would stop', 'It would only stop because of FRICTION — a real force the drive force cancels. The net is still zero.'],
+      ['Cannot tell without its mass', 'Mass matters for F = ma only when a ≠ 0 — constant velocity means a = 0 regardless of mass.'],
+    ])
     return {
       title: 'Constant velocity',
       prompt: `A delivery robot moves in a straight line at a constant **${v} m/s**. What is the net force on it?`,
-      answer: mcq(rng, '0 N — balanced forces', [
-        `${v} N in the direction of motion`,
-        'A small forward force, or it would stop',
-        'Cannot tell without its mass',
-      ]),
+      answer: noted.answer,
+      distractorNotes: noted.distractorNotes,
       hints: [
         'Does constant velocity require a push? What does F = ma say when velocity is not changing?',
         'a = 0 here. So F_net = m × 0.',

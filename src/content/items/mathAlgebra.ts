@@ -4,7 +4,7 @@
  */
 import type { ItemTemplate } from '../../domain/types'
 import { pick, rint, rnz } from '../../engine/rng'
-import { fixed, fracStr, mcq, numeric, round, simplify, tpl } from '../lib'
+import { fixed, fracStr, mcq, mcqNoted, numeric, round, simplify, tpl } from '../lib'
 
 // ---------------------------------------------------------------- expressions
 
@@ -223,14 +223,16 @@ const ineqSolve = tpl(
     const resultDir = neg ? (dir === '<' ? '>' : '<') : dir
     const correct = `x ${resultDir} ${x}`
     const bStr = b >= 0 ? `+ ${b}` : `− ${-b}`
+    const noted = mcqNoted(rng, correct, [
+      [`x ${resultDir === '<' ? '>' : '<'} ${x}`, neg ? 'The forgotten flip — dividing by a negative reverses the direction (multiply 2 < 3 by −1: −2 > −3).' : 'The phantom flip — the direction only reverses for NEGATIVE multipliers, and this divisor is positive.'],
+      [`x ${resultDir} ${x + (a > 0 ? b : -b)}`, 'The constant never moved — solve the inequality exactly like the equation first, sign logic second.'],
+      [`x ${resultDir === '<' ? '>' : '<'} ${-x === x ? x + 1 : -x}`, 'Sign confusion on the value itself — the flip changes the DIRECTION symbol, never the number.'],
+    ])
     return {
       title: 'Solve the inequality',
       prompt: `Solve: **${a}x ${bStr} ${dir} ${c}**`,
-      answer: mcq(rng, correct, [
-        `x ${resultDir === '<' ? '>' : '<'} ${x}`,
-        `x ${resultDir} ${x + (a > 0 ? b : -b)}`,
-        `x ${resultDir === '<' ? '>' : '<'} ${-x === x ? x + 1 : -x}`,
-      ]),
+      answer: noted.answer,
+      distractorNotes: noted.distractorNotes,
       hints: [
         'Solve like an equation — but watch what division does to the direction.',
         `${a}x ${dir} ${c - b}. Now divide by ${a}${neg ? ' — a NEGATIVE' : ''}.`,
@@ -550,13 +552,19 @@ const polyMultiply = tpl(
     const correct = `x² ${term(sum, 'x')}${term(prod, '')}`.trim().replace(/^\+ /, '')
     const wrong1 = `x² ${term(prod, 'x')}${term(sum, '')}`.trim()
     const wrong2 = `x² ${term(a * b, '')}`.trim()
-    const wrong3 = `x² ${term(sum, 'x')}${term(Math.abs(prod) === Math.abs(prod) ? -prod : prod, '')}`.trim()
+    const wrong3 = `x² ${term(sum, 'x')}${term(-prod, '')}`.trim()
     const aStr = a >= 0 ? `+ ${a}` : `− ${-a}`
     const bStr = b >= 0 ? `+ ${b}` : `− ${-b}`
+    const noted = mcqNoted(rng, correct, [
+      [wrong1, 'Sum and product swapped — the MIDDLE term carries the sum of the constants; the LAST carries their product.'],
+      [wrong2, 'The missing middle — x·(inner) and (outer)·x were skipped; every term must multiply every term.'],
+      [wrong3, 'Sign slip on the product — multiply the constants WITH their signs.'],
+    ])
     return {
       title: 'Expand',
       prompt: `Expand: **(x ${aStr})(x ${bStr})**`,
-      answer: mcq(rng, correct, [wrong1, wrong2, wrong3]),
+      answer: noted.answer,
+      distractorNotes: noted.distractorNotes,
       hints: [
         'Every term in the first factor multiplies every term in the second.',
         `Four products: x·x, x·(${b}), (${a})·x, (${a})(${b}).`,

@@ -14,6 +14,8 @@ import { uid } from '../../engine/rng'
 import { Button, Card, Chip, Confirm, Divider, Modal, Row, SectionTitle, Segmented, Toggle } from '../components'
 import { IconBack } from '../icons'
 import { CHANGELOG } from '../../content/changelog'
+import { requestNotificationPermission } from '../notify'
+import { PackAuthor } from '../PackAuthor'
 
 export function SettingsScreen() {
   const { state, dispatch, enterSample, exitSample, resetAll } = useStore()
@@ -25,6 +27,7 @@ export function SettingsScreen() {
   const [pendingImport, setPendingImport] = useState<ReturnType<typeof importState> | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [deadlineOpen, setDeadlineOpen] = useState(false)
+  const [authorOpen, setAuthorOpen] = useState(false)
   const [storage, setStorage] = useState<StorageInfo | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const packRef = useRef<HTMLInputElement>(null)
@@ -251,6 +254,65 @@ export function SettingsScreen() {
               ]}
             />
           </div>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[14px] font-medium">Review reminders</p>
+              <p className="text-[12px] text-muted leading-snug">
+                At most one gentle local notification a day when reviews are due — fired by the app itself, no server,
+                no shame copy. Honors quiet hours below.
+              </p>
+            </div>
+            <Toggle
+              checked={state.settings.notifications}
+              onChange={(v) => {
+                if (v) {
+                  void requestNotificationPermission().then((granted) => {
+                    dispatch({ type: 'update-settings', settings: { notifications: granted } })
+                    if (!granted) setImportMsg('Notifications stay off — the browser did not grant permission.')
+                  })
+                } else {
+                  dispatch({ type: 'update-settings', settings: { notifications: false } })
+                }
+              }}
+              label="Review reminders"
+            />
+          </div>
+          {state.settings.notifications ? (
+            <div className="flex items-center gap-2 text-[13px]">
+              <span className="text-muted font-medium">Quiet hours</span>
+              <select
+                aria-label="Quiet hours start"
+                value={state.settings.quietHours?.start ?? 21}
+                onChange={(e) =>
+                  dispatch({
+                    type: 'update-settings',
+                    settings: { quietHours: { start: Number(e.target.value), end: state.settings.quietHours?.end ?? 7 } },
+                  })
+                }
+                className="bg-surface2 border border-line rounded-lg px-2 py-1.5"
+              >
+                {Array.from({ length: 24 }, (_, h) => (
+                  <option key={h} value={h}>{h}:00</option>
+                ))}
+              </select>
+              <span className="text-faint">to</span>
+              <select
+                aria-label="Quiet hours end"
+                value={state.settings.quietHours?.end ?? 7}
+                onChange={(e) =>
+                  dispatch({
+                    type: 'update-settings',
+                    settings: { quietHours: { start: state.settings.quietHours?.start ?? 21, end: Number(e.target.value) } },
+                  })
+                }
+                className="bg-surface2 border border-line rounded-lg px-2 py-1.5"
+              >
+                {Array.from({ length: 24 }, (_, h) => (
+                  <option key={h} value={h}>{h}:00</option>
+                ))}
+              </select>
+            </div>
+          ) : null}
           <p className="text-[12px] text-faint">
             Reduced motion follows your system setting automatically. Timers in activities are suggestions, never
             cutoffs — speed is trained last, after accuracy, retention, and transfer.
@@ -269,6 +331,8 @@ export function SettingsScreen() {
         <Row label="Import from export" sub="Replaces current data after a preview" onClick={() => fileRef.current?.click()} />
         <Divider />
         <Row label="Import a content pack" sub="Validated JSON items — never code" onClick={() => packRef.current?.click()} />
+        <Divider />
+        <Row label="Pack author" sub="Build, validate, export, and install your own items" onClick={() => setAuthorOpen(true)} />
         {state.customPacks.length ? (
           <>
             <Divider />
@@ -411,6 +475,7 @@ export function SettingsScreen() {
         />
       ) : null}
       <AboutSheet open={aboutOpen} onClose={() => setAboutOpen(false)} />
+      {authorOpen ? <PackAuthor open={authorOpen} onClose={() => setAuthorOpen(false)} /> : null}
       <AddDeadline
         open={deadlineOpen}
         onClose={() => setDeadlineOpen(false)}

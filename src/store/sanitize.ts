@@ -35,7 +35,7 @@ import {
 import { validatePack } from '../engine/contentSchema'
 
 const BUCKET_IDS = new Set<string>(BUCKETS.map((b) => b.id))
-const MODES = new Set<AttemptMode>(['guided', 'independent', 'review', 'transfer', 'placement'])
+const MODES = new Set<AttemptMode>(['guided', 'independent', 'review', 'transfer', 'placement', 'exam'])
 const TONES = new Set<CoachTone>(['concise', 'socratic', 'challenging', 'supportive', 'balanced'])
 const AGE_BANDS = new Set<AgeBand>(['under13', '13-17', '18plus', 'unspecified'])
 const ERROR_TAG_SET = new Set<ErrorTag>([
@@ -93,6 +93,7 @@ function sanitizeSettings(raw: unknown): AppSettings {
     textSpacing: bool(s.textSpacing, d.textSpacing),
     allocations,
     coachManagedAllocations: bool(s.coachManagedAllocations, d.coachManagedAllocations),
+    notifications: bool(s.notifications, d.notifications),
     confidencePrompts: ['normal', 'minimal'].includes(s.confidencePrompts as string)
       ? (s.confidencePrompts as AppSettings['confidencePrompts'])
       : d.confidencePrompts,
@@ -113,6 +114,7 @@ function sanitizeEvent(raw: unknown): AttemptEvent | null {
   if (Number.isNaN(t)) return null
   const skillIds = strArray(e.skillIds, 8, 60)
   if (!skillIds.length) return null
+  const aboutSkillIds = strArray(e.aboutSkillIds, 4, 60)
   const correct = typeof e.correct === 'boolean' ? e.correct : null
   const firstCorrect = typeof e.firstCorrect === 'boolean' ? e.firstCorrect : null
   return {
@@ -123,6 +125,7 @@ function sanitizeEvent(raw: unknown): AttemptEvent | null {
     itemVersion: num(e.itemVersion, 0, 9999, 1),
     seed: num(e.seed, 0, 0x7fffffff, 0),
     skillIds,
+    ...(aboutSkillIds.length ? { aboutSkillIds } : {}),
     bucket: bucket as BucketId,
     mode: MODES.has(e.mode as AttemptMode) ? (e.mode as AttemptMode) : 'independent',
     firstResponse: str(e.firstResponse, '', 2000),

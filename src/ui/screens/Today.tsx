@@ -15,6 +15,8 @@ import { clearDraft, loadDraftSync } from '../../store/draft'
 import { ACADEMIC_BUCKETS, BUCKET_BY_ID, BUCKETS } from '../../domain/types'
 import { Button, Card, Chip, SectionTitle, StateBadge } from '../components'
 import { evidenceFor } from '../../engine/mastery'
+import { WeekReviewModal } from '../WeekReview'
+import { useState } from 'react'
 
 function greeting(name: string): string {
   const h = new Date().getHours()
@@ -54,6 +56,9 @@ export function Today() {
   const nextDue = nextReviewAt(evidence, now)
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
   const noPlacement = !state.placement && state.sessions.length === 0
+  const [weekOpen, setWeekOpen] = useState(false)
+  const isWeekend = [0, 6].includes(new Date().getDay())
+  const hasWeekData = state.events.some((e) => e.t > now - 7 * 86_400_000 && e.mode !== 'placement')
 
   return (
     <div>
@@ -188,17 +193,25 @@ export function Today() {
         )}
       </Card>
 
+      {isWeekend && hasWeekData ? (
+        <Card className="mt-3 p-4 border-accent/30" onClick={() => setWeekOpen(true)}>
+          <p className="font-semibold text-[15px]">Week in review</p>
+          <p className="text-[12px] text-muted mt-0.5">What moved up, what's asking for review, and where the minutes went.</p>
+        </Card>
+      ) : null}
+
       <SectionTitle>Quick starts</SectionTitle>
       <div className="grid grid-cols-2 gap-3 mb-6">
         <Card className="p-4" onClick={() => go({ name: 'session', launch: { kind: 'mixed' } })}>
           <p className="font-semibold text-[15px]">Mixed review</p>
           <p className="text-[12px] text-muted mt-0.5">Interleaved retrieval across everything you own</p>
         </Card>
-        <Card className="p-4" onClick={() => go({ name: 'session', launch: { kind: 'challenge' } })}>
-          <p className="font-semibold text-[15px]">Challenge</p>
-          <p className="text-[12px] text-muted mt-0.5">Hard probes on independent skills</p>
+        <Card className="p-4" onClick={() => go({ name: 'exam' })}>
+          <p className="font-semibold text-[15px]">Exam simulator</p>
+          <p className="text-[12px] text-muted mt-0.5">Blind, timed, cumulative — like the real thing</p>
         </Card>
       </div>
+      <WeekReviewModal open={weekOpen} onClose={() => setWeekOpen(false)} />
     </div>
   )
 }

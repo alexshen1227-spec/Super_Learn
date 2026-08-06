@@ -13,6 +13,7 @@ import {
   summarizePlacement,
   type PlacementProgress,
   PLACEMENT_MAX_ITEMS,
+  MATH_LADDER,
 } from '../../engine/placement'
 import { validate, validatorName } from '../../engine/validate'
 import { uid } from '../../engine/rng'
@@ -32,22 +33,28 @@ export function PlacementScreen() {
   const [response, setResponse] = useState('')
   const [confidence, setConfidence] = useState<number | null>(null)
   const [probeCount, setProbeCount] = useState(0)
+  /** Wrong on the math ladder → one easier constructed follow-up (slip vs gap). */
+  const [followUp, setFollowUp] = useState<{ skillId: string } | null>(null)
   const events = useRef<AttemptEvent[]>([])
   const itemStart = useRef(Date.now())
 
-  const skillId = phase === 'probe' ? nextProbe(progress, index) : null
+  const skillId = phase === 'probe' ? (followUp ? followUp.skillId : nextProbe(progress, index)) : null
   const template: ItemTemplate | null = useMemo(() => {
     if (!skillId) return null
-    const pool = (index.bySkill.get(skillId) ?? [])
-      .filter((t) => t.kind === 'single' && t.difficulty <= 2)
-      .sort((a, b) => a.difficulty - b.difficulty)
-    return pool[0] ?? (index.bySkill.get(skillId) ?? []).filter((t) => t.kind === 'single')[0] ?? null
-  }, [skillId, index])
+    const singles = (index.bySkill.get(skillId) ?? []).filter((t) => t.kind === 'single')
+    if (followUp) {
+      // Easier form, different template when possible.
+      const pool = [...singles].sort((a, b) => a.difficulty - b.difficulty)
+      return pool[0] ?? null
+    }
+    const pool = singles.filter((t) => t.difficulty <= 2).sort((a, b) => b.difficulty - a.difficulty)
+    return pool[0] ?? singles[0] ?? null
+  }, [skillId, index, followUp])
   const item = useMemo(
-    () => (template ? template.generate((probeCount + 1) * 7919) : null),
-    [template, probeCount],
+    () => (template ? template.generate((probeCount + 1) * 7919 + (followUp ? 13 : 0)) : null),
+    [template, probeCount, followUp],
   )
-  const askConf = probeCount % 3 === 1 && item?.answer?.type !== 'rubric'
+  const askConf = probeCount % 3 === 1 && !followUp && item?.answer?.type !== 'rubric'
 
   const submit = (skipped: boolean) => {
     if (!skillId || !template || !item || !item.answer) return
@@ -83,7 +90,20 @@ export function PlacementScreen() {
         difficulty: template.difficulty,
       })
     }
-    const next = applyProbe(progress, skillId, { correct, skipped, confidence })
+    // Wrong on a math-ladder skill → one easier follow-up before routing:
+    // a pass there means "slip on the harder form, concept present".
+    if (!followUp && correct === false && MATH_LADDER.includes(skillId) && progress.phase === 'math') {
+      setFollowUp({ skillId })
+      setResponse('')
+      setConfidence(null)
+      setProbeCount((c) => c + 1)
+      itemStart.current = Date.now()
+      return
+    }
+    const heldLevel = followUp !== null && correct === true
+    const outcomeCorrect = followUp !== null && correct === false ? false : correct
+    const next = applyProbe(progress, skillId, { correct: outcomeCorrect, skipped, confidence, heldLevel })
+    setFollowUp(null)
     setProgress(next)
     setResponse('')
     setConfidence(null)
@@ -198,7 +218,13 @@ export function PlacementScreen() {
       <div className="anim-in" key={probeCount}>
         <div className="flex gap-2 mt-4 mb-2">
           <Chip tone="neutral">{skill?.name}</Chip>
+          {followUp ? <Chip tone="warn">quick check — simpler form</Chip> : null}
         </div>
+        {followUp ? (
+          <p className="text-[13px] text-muted mb-2 px-1">
+            Same idea, easier version. A pass here means the concept is in place and the harder form just slipped.
+          </p>
+        ) : null}
         <Card className="p-4">
           <Rich text={item.prompt} className="text-[16px]" />
         </Card>

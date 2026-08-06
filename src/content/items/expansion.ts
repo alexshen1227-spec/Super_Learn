@@ -5,7 +5,7 @@
  */
 import type { ItemTemplate } from '../../domain/types'
 import { pick, rint, rnz } from '../../engine/rng'
-import { fixed, mcq, numeric, round, tpl } from '../lib'
+import { fixed, mcq, mcqNoted, numeric, round, tpl } from '../lib'
 
 // ---------------------------------------------------------------- game theory
 
@@ -139,10 +139,23 @@ const negExponents = tpl(
     const kind = pick(rng, ['zero', 'neg'] as const)
     const n = rint(rng, 1, base === 10 ? 3 : 2)
     const correct = kind === 'zero' ? '1' : `1/${base ** n}`
+    const noted =
+      kind === 'zero'
+        ? mcqNoted(rng, '1', [
+            ['0', '"Zero exponent = zero" — but the dividing ladder shows each step divides by the base, and it lands on 1.'],
+            [String(base), 'x⁰ read as x¹ — the exponent counts factors, and zero factors multiplied is the empty product, 1.'],
+            [`1/${base}`, 'One reciprocal step too far — that is x⁻¹; x⁰ sits exactly at 1.'],
+          ])
+        : mcqNoted(rng, correct, [
+            [`-${base ** n}`, 'Negative exponent read as negative VALUE — the minus means reciprocal, so the result is small, never negative.'],
+            [`-${base * n}`, 'Two mix-ups at once: the minus is a reciprocal, and the exponent multiplies factors, not the base.'],
+            [String(base ** n), 'The minus vanished — the reciprocal step is the whole point of a negative exponent.'],
+          ])
     return {
       title: 'Below zero exponents',
       prompt: `Evaluate: **${base}^${kind === 'zero' ? 0 : -n}**`,
-      answer: kind === 'zero' ? mcq(rng, '1', ['0', String(base), `1/${base}`]) : mcq(rng, correct, [`-${base ** n}`, `-${base * n}`, String(base ** n)]),
+      answer: noted.answer,
+      distractorNotes: noted.distractorNotes,
       hints: [
         `Follow the pattern downward: ${base}³, ${base}², ${base}¹ — each step DIVIDES by ${base}. Keep going past ${base}¹.`,
         `${base}¹ = ${base}, so ${base}⁰ = ${base}/${base} = 1, and each negative step divides again.`,

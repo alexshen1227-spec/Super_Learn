@@ -20,7 +20,9 @@ import { CHESS_TEMPLATES } from './items/chessTactics'
 import { POLYOMINO_TEMPLATES } from './items/polyominoPuzzles'
 import { LOGIC_TEMPLATES } from './items/logicPuzzles'
 import { CASEFILE_TEMPLATES } from './items/caseFiles'
+import { CASEFILE2_TEMPLATES } from './items/caseFiles2'
 import { EXPANSION_TEMPLATES } from './items/expansion'
+import { METHOD_DRILL_TEMPLATES } from './items/methodDrills'
 
 export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...MATH_NUMBER_TEMPLATES,
@@ -37,7 +39,9 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...POLYOMINO_TEMPLATES,
   ...LOGIC_TEMPLATES,
   ...CASEFILE_TEMPLATES,
+  ...CASEFILE2_TEMPLATES,
   ...EXPANSION_TEMPLATES,
+  ...METHOD_DRILL_TEMPLATES,
 ]
 
 export function packItemToTemplate(pack: ContentPackJson, i: number): ItemTemplate {

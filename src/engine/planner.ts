@@ -26,6 +26,7 @@ import { dueReviews } from './scheduler'
 import { relativeDebt, type AllocationReport } from './allocation'
 import { effectiveAllocation } from './allocationPlus'
 import { uid } from './rng'
+import { explainSeedFor, pickExplainTarget } from '../content/items/methodDrills'
 
 export interface PlannerContext {
   index: ContentIndex
@@ -383,8 +384,24 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     }
   }
 
-  // ---- 4. Exit ticket: one more unaided retrieval on the core skill.
-  const coreSkillId = coreChoice?.skill.id
+  // ---- 4. Exit: every third session, explain a retained skill back from
+  // memory (self-explanation, scheduled); otherwise one unaided retrieval on
+  // today's core skill.
+  const explainTarget = state.sessions.length % 3 === 2 ? pickExplainTarget(evidence) : null
+  const explainSeed = explainTarget !== null ? explainSeedFor(explainTarget) : null
+  if (explainTarget !== null && explainSeed !== null && index.templates.has('x-explain-back')) {
+    blocks.push({
+      id: uid('b'),
+      kind: 'exit',
+      bucket: 'meta',
+      label: 'Explain it back',
+      minutes: 4,
+      activities: [{ templateId: 'x-explain-back', seed: explainSeed, mode: 'independent' }],
+      why: `${index.skills.get(explainTarget)?.name ?? explainTarget} is your oldest retained skill — explaining it from memory is the strongest cheap test of whether it is still truly yours.`,
+    })
+    rationale.push(`Exit: explain ${index.skills.get(explainTarget)?.name ?? explainTarget} back from memory (retention check by self-explanation).`)
+  }
+  const coreSkillId = explainTarget === null || explainSeed === null ? coreChoice?.skill.id : undefined
   if (coreSkillId) {
     const usedInCore = new Set(blocks.flatMap((b) => b.activities.map((a) => a.templateId)))
     const exitPick = pickTemplates(

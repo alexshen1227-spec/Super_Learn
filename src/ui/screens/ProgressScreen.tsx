@@ -13,8 +13,10 @@ import { reviewBurden } from '../../engine/scheduler'
 import { findBottleneck } from '../../engine/coach'
 import { stateRank } from '../../engine/mastery'
 import { ERROR_TAGS, BUCKETS } from '../../domain/types'
-import { Card, Chip, EmptyState, SectionTitle } from '../components'
+import { Button, Card, Chip, EmptyState, SectionTitle } from '../components'
 import { BarPair, CalibrationChart, TrendColumns } from '../charts'
+import { WeekReviewModal } from '../WeekReview'
+import { useState } from 'react'
 
 const DAY = 86_400_000
 
@@ -222,6 +224,8 @@ export function ProgressScreen() {
         </>
       ) : null}
 
+      <WeekReviewLauncher />
+
       <SectionTitle>Session history</SectionTitle>
       <div className="space-y-2 mb-6">
         {[...state.sessions]
@@ -243,6 +247,18 @@ export function ProgressScreen() {
           ))}
         {state.sessions.length === 0 ? <p className="text-[13px] text-faint px-1">No completed sessions yet.</p> : null}
       </div>
+    </div>
+  )
+}
+
+function WeekReviewLauncher() {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="mt-6">
+      <Button kind="secondary" className="w-full" onClick={() => setOpen(true)}>
+        Open the week in review
+      </Button>
+      <WeekReviewModal open={open} onClose={() => setOpen(false)} />
     </div>
   )
 }

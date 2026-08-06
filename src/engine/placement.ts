@@ -46,6 +46,8 @@ export interface ProbeResult {
   skipped: boolean
   confidence: number | null
   aboveStart: boolean
+  /** Passed only the easier follow-up: concept intact, harder form slipped. */
+  viaFollowUp?: boolean
 }
 
 export interface PlacementProgress {
@@ -97,7 +99,7 @@ export function nextProbe(p: PlacementProgress, index: ContentIndex): string | n
 export function applyProbe(
   p: PlacementProgress,
   skillId: string,
-  outcome: { correct: boolean | null; skipped: boolean; confidence: number | null },
+  outcome: { correct: boolean | null; skipped: boolean; confidence: number | null; heldLevel?: boolean },
 ): PlacementProgress {
   const startIdx = MATH_LADDER.indexOf(skillId)
   const result: ProbeResult = {
@@ -106,10 +108,20 @@ export function applyProbe(
     skipped: outcome.skipped,
     confidence: outcome.confidence,
     aboveStart: false,
+    ...(outcome.heldLevel ? { viaFollowUp: true } : {}),
   }
   const next: PlacementProgress = { ...p, results: [...p.results, result] }
 
   if (p.phase === 'math' && startIdx >= 0) {
+    if (outcome.correct === true && outcome.heldLevel) {
+      // Passed the easier follow-up after missing the harder form: the
+      // concept is present, so mark 'ok' — but the frontier is HERE, so stop
+      // climbing and move to breadth.
+      next.highestOk = Math.max(next.highestOk ?? -1, startIdx)
+      next.phase = 'breadth'
+      if (next.results.length >= PLACEMENT_MAX_ITEMS) next.phase = 'done'
+      return next
+    }
     if (outcome.correct === true) {
       next.highestOk = Math.max(next.highestOk ?? -1, startIdx)
       // climb until the top; a correct answer above the start marks 'strong'
@@ -152,13 +164,17 @@ export function summarizePlacement(
   const signals: PlacementSkillSignal[] = []
   const strengths: string[] = []
   const gaps: string[] = []
+  const heldNames: string[] = []
   for (const r of p.results) {
     const name = index.skills.get(r.skillId)?.name ?? r.skillId
+    // A follow-up pass supersedes the earlier miss on the same skill.
+    if (r.correct === false && p.results.some((o) => o.skillId === r.skillId && o.viaFollowUp)) continue
     if (r.skipped || r.correct === null) {
       signals.push({ skillId: r.skillId, signal: 'skipped', fromManual: false })
     } else if (r.correct) {
       signals.push({ skillId: r.skillId, signal: r.aboveStart ? 'strong' : 'ok', fromManual: false })
       if (r.aboveStart) strengths.push(name)
+      if (r.viaFollowUp) heldNames.push(name)
     } else {
       signals.push({ skillId: r.skillId, signal: 'gap', fromManual: false })
       gaps.push(name)
@@ -183,6 +199,10 @@ export function summarizePlacement(
   )
   if (gaps.length) summary.push(`Prerequisite gaps to close first: ${gaps.join(', ')}.`)
   else summary.push('No prerequisite gaps surfaced in the probed range.')
+  if (heldNames.length)
+    summary.push(
+      `Held after a follow-up: ${heldNames.join(', ')} — the harder form slipped but an easier check passed, so the concept counts as present and this marks your working frontier.`,
+    )
   if (strengths.length) summary.push(`Above-level strengths: ${strengths.join(', ')}.`)
   if (inferred.length)
     summary.push(`Assumed solid for routing (not measured): ${inferred.join(', ')}. These get verified the first time they appear in practice.`)

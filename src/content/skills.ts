@@ -287,6 +287,7 @@ const meta = defineCourse(
       name: 'Learning how to learn',
       skills: [
         { id: 'x-learn', name: 'Study science', bucket: 'meta', prereqs: [], gradeBand: 7, blurb: 'Retrieval beats rereading; spacing beats cramming — and why.' },
+        { id: 'x-method', name: 'Strategy recognition', bucket: 'meta', prereqs: [], gradeBand: 8, blurb: 'See a problem and name the method it calls for — before solving anything.' },
         { id: 'x-calib', name: 'Self-calibration', bucket: 'meta', prereqs: [], gradeBand: 8, blurb: 'Match confidence to evidence; make “I don’t know” a power move.' },
         { id: 'x-explain', name: 'Explanation & compression', bucket: 'meta', prereqs: [], gradeBand: 8, blurb: 'Compress ideas into one sentence, one example, one trap.' },
         { id: 'x-focus', name: 'Focus & error diagnosis', bucket: 'meta', prereqs: [], gradeBand: 7, blurb: 'Plan deep work; sort your errors by cause, not by topic.' },

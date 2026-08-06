@@ -283,6 +283,37 @@ export const TACTICS: TacticDef[] = [
     explanation:
       'Ne7+ forks king and queen — and the b4-bishop guards e7, so the king cannot simply take. Forks are geometry plus PROTECTION: an unguarded forking square is just a piece hanging. The bishop\'s quiet support is what turns the pattern into a win.',
   },
+  // ---------------- pawn endgames (escort technique) ----------------
+  {
+    id: 'chess-end-escort1',
+    fen: '5k2/8/4KP2/8/8/8/8/8 w - - 0 1',
+    goal: 'line',
+    line: ['f7', 'Kg7', 'Ke7', 'Kg6', 'f8=Q'],
+    theme: 'Pawn escort',
+    difficulty: 3,
+    explanation:
+      'The king escorts, the pawn walks. f7 (the king already guards f7\'s path) forces the defender aside; Ke7 then OWNS f8, and the promotion cannot be stopped. The whole technique in one line: put your king in front of or beside the pawn where it controls the promotion square, and only then push. Kings are fighting pieces in endgames — the pawn is just the passenger.',
+  },
+  {
+    id: 'chess-end-escort2',
+    fen: '1k6/8/1K6/2P5/8/8/8/8 w - - 0 1',
+    goal: 'line',
+    line: ['c6', 'Kc8', 'c7', 'Kd7', 'Kb7', 'Kd6', 'c8=Q'],
+    theme: 'Pawn escort',
+    difficulty: 4,
+    explanation:
+      'c6, c7 — and then the move that wins isn\'t a push: **Kb7** seizes c8 (and b8) so the promotion next move cannot be prevented. Pushing c8=Q immediately would never happen — the black king sat on the square\'s doorstep. The endgame law on display: the KING must control the promotion square before the pawn claims it. (Beware the cousin trap: with a rook-pawn, this whole plan is often only a draw — corners create stalemates.)',
+  },
+  {
+    id: 'chess-end-clear-path',
+    fen: '4k3/8/4K3/3P4/8/8/8/8 w - - 0 1',
+    goal: 'line',
+    line: ['d6', 'Kd8', 'd7', 'Kc7', 'Ke7', 'Kb7', 'd8=Q'],
+    theme: 'King clears the path',
+    difficulty: 4,
+    explanation:
+      'With the kings facing off, the pawn advances under escort: d6, d7 (never with check — a check would let the king slide in front!), then **Ke7** takes d8 under white\'s control and the queen appears. The quiet detail that decides these endings: d7 was played WITHOUT check, so the black king had to step aside rather than blockade. Opposition and tempo, not speed, win king-and-pawn endings.',
+  },
   {
     id: 'chess-line-pin-combo',
     fen: 'r3k3/1p6/2n5/1B6/3N4/8/8/6K1 w - - 0 1',

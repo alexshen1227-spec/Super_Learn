@@ -269,6 +269,17 @@ export interface RenderedItem {
   explanation: string
   /** Misconception notes keyed by error tag. */
   commonErrors?: Partial<Record<ErrorTag, string>>
+  /**
+   * NAMED misconceptions per MCQ distractor (option index → "name — why").
+   * Lets feedback say which trap a wrong pick represents.
+   */
+  distractorNotes?: Record<number, string>
+  /**
+   * Per-VARIANT context skills (e.g. the explain-back target). Carried on the
+   * event as `aboutSkillIds` — visible context, NEVER mastery evidence, so a
+   * self-scored explanation can't fake independence on an academic skill.
+   */
+  extraSkillIds?: string[]
   /** Transfer-bridge prompt shown after completion for selected items. */
   transferBridge?: string
 }
@@ -299,7 +310,7 @@ export interface ItemTemplate {
 
 // ---------------------------------------------------------------- attempts
 
-export type AttemptMode = 'guided' | 'independent' | 'review' | 'transfer' | 'placement'
+export type AttemptMode = 'guided' | 'independent' | 'review' | 'transfer' | 'placement' | 'exam'
 
 export type ErrorTag =
   | 'concept'
@@ -334,6 +345,9 @@ export interface AttemptEvent {
   itemVersion: number
   seed: number
   skillIds: string[]
+  /** Context-only skill references (e.g. explain-back targets) — the mastery
+   *  replay ignores these entirely. */
+  aboutSkillIds?: string[]
   bucket: BucketId
   mode: AttemptMode
   /** First submitted response (serialized), before any retry. */
@@ -518,7 +532,12 @@ export interface AppSettings {
    */
   coachManagedAllocations: boolean
   confidencePrompts: 'normal' | 'minimal'
-  /** Suppress any nudges between these local hours. Informational only in V1. */
+  /**
+   * Opt-in local review reminders (zero-server: fired by the app itself while
+   * open or backgrounded). Quiet hours below are honored when set.
+   */
+  notifications: boolean
+  /** Suppress any nudges between these local hours. */
   quietHours: { start: number; end: number } | null
 }
 
@@ -626,6 +645,7 @@ export function defaultSettings(): AppSettings {
     allocations: { ...DEFAULT_ALLOCATIONS },
     coachManagedAllocations: true,
     confidencePrompts: 'normal',
+    notifications: false,
     quietHours: null,
   }
 }

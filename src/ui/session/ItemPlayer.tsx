@@ -249,9 +249,27 @@ export function ItemPlayer({
           {mode === 'review' ? <Chip tone="warn">review</Chip> : mode === 'transfer' ? <Chip tone="good">transfer</Chip> : null}
           {twinItem ? <Chip tone="accent">twin problem</Chip> : null}
         </div>
-        <button aria-label="Report a problem with this item" onClick={() => setReportOpen(true)} className="text-faint hover:text-muted p-2">
-          <IconFlag size={16} />
-        </button>
+        <span className="flex items-center">
+          {'speechSynthesis' in window ? (
+            <button
+              aria-label="Read the problem aloud"
+              title="Read aloud"
+              onClick={() => {
+                const text = (parts ? (parts[partIndex].study ? parts[partIndex].study + '. ' : '') + parts[partIndex].prompt : currentPrompt)
+                  .replace(/[*`>#|]/g, ' ')
+                  .replace(/\s+/g, ' ')
+                speechSynthesis.cancel()
+                speechSynthesis.speak(new SpeechSynthesisUtterance(text))
+              }}
+              className="text-faint hover:text-muted p-2 text-[15px] leading-none"
+            >
+              🔊
+            </button>
+          ) : null}
+          <button aria-label="Report a problem with this item" onClick={() => setReportOpen(true)} className="text-faint hover:text-muted p-2">
+            <IconFlag size={16} />
+          </button>
+        </span>
       </div>
 
       {showConcept && kbCard && partIndex === 0 && !twinItem ? (
@@ -419,6 +437,11 @@ export function ItemPlayer({
           {/* ---------- final feedback ---------- */}
           {phase === 'final' && (
             <FinalFeedback
+              misconceptionNote={
+                firstResponse !== null && activeSpec.type === 'mcq'
+                  ? ((twinItem ?? item).distractorNotes?.[Number(firstResponse)] ?? null)
+                  : null
+              }
               parts={Boolean(parts)}
               ok={parts ? retryVerdictOk : retryVerdictOk === null ? true : retryVerdictOk}
               firstTry={retryVerdictOk === null && firstResponse === response}
@@ -743,6 +766,7 @@ function FinalFeedback({
   spec,
   explanation,
   commonErrors,
+  misconceptionNote,
   wasWrongFirst,
   errorTag,
   setErrorTag,
@@ -757,6 +781,7 @@ function FinalFeedback({
   spec: AnswerSpec | null
   explanation: string
   commonErrors?: Partial<Record<ErrorTag, string>>
+  misconceptionNote?: string | null
   wasWrongFirst: boolean
   errorTag: ErrorTag | null
   setErrorTag: (t: ErrorTag) => void
@@ -789,7 +814,12 @@ function FinalFeedback({
             </p>
           ) : null}
         </div>
-        {wasWrongFirst && commonErrors && suggested && commonErrors[suggested] ? (
+        {wasWrongFirst && misconceptionNote ? (
+          <div className="mt-3 bg-warn-soft border border-warn/30 rounded-lg px-3 py-2">
+            <p className="text-[11px] font-semibold text-warn uppercase tracking-wide mb-0.5">Named trap</p>
+            <p className="text-[13px] text-warn leading-snug">{misconceptionNote}</p>
+          </div>
+        ) : wasWrongFirst && commonErrors && suggested && commonErrors[suggested] ? (
           <div className="mt-3 bg-warn-soft border border-warn/30 rounded-lg px-3 py-2">
             <p className="text-[13px] text-warn leading-snug">{commonErrors[suggested]}</p>
           </div>

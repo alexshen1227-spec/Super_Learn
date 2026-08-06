@@ -77,6 +77,7 @@ export function Practice() {
         <ModeCard title="Coach chooses" sub="The full adaptive session" onClick={() => go({ name: 'session', launch: { kind: 'daily' } })} accent />
         <ModeCard title="Mixed review" sub={due.length ? `${due.length} due now` : 'Interleaved retrieval'} onClick={() => go({ name: 'session', launch: { kind: 'mixed' } })} />
         <ModeCard title="Challenge" sub="Non-routine, near your ceiling" onClick={() => go({ name: 'session', launch: { kind: 'challenge' } })} />
+        <ModeCard title="Exam simulator" sub="Blind, timed, cumulative — like the real thing" onClick={() => go({ name: 'exam' })} accent />
         <ModeCard
           title="Error Clinic"
           sub={errorCount ? `${errorCount} skill${errorCount === 1 ? '' : 's'} with open errors` : 'Nothing to repair — clean slate'}

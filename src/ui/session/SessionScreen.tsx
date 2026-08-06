@@ -314,6 +314,7 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
         itemVersion: template.version,
         seed: activity.seed,
         skillIds: template.skillIds,
+        ...(item?.extraSkillIds?.length ? { aboutSkillIds: item.extraSkillIds.slice(0, 4) } : {}),
         bucket: template.bucket,
         mode,
         firstResponse: result.firstResponse.slice(0, 2000),

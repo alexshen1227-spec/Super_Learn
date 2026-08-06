@@ -96,6 +96,12 @@ describe('text/mcq/multi/order/classify/rubric', () => {
       expect(validate(s, wrongResponse(s)).ok).toBe(false)
     }
   })
+  it('a blank response never grades as option 0 (exam-blank regression)', () => {
+    const s: AnswerSpec = { type: 'mcq', options: ['right', 'wrong'], correct: 0 }
+    expect(validate(s, '').ok).toBe(false)
+    expect(validate(s, '  ').ok).toBe(false)
+    expect(validate(s, '0').ok).toBe(true)
+  })
   it('multi ignores order and duplicates', () => {
     const s: AnswerSpec = { type: 'multi', options: ['a', 'b', 'c'], correct: [2, 0] }
     expect(validate(s, '0,2').ok).toBe(true)

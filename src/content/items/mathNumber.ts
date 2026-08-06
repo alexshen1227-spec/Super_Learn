@@ -4,7 +4,7 @@
  */
 import type { ItemTemplate } from '../../domain/types'
 import { pick, rint, type Rng } from '../../engine/rng'
-import { fracStr, fraction, gcd, mcq, money, numeric, round, tpl } from '../lib'
+import { fracStr, fraction, gcd, mcq, mcqNoted, money, numeric, round, tpl } from '../lib'
 
 // ---------------------------------------------------------------- integers
 
@@ -402,16 +402,29 @@ const expRules = tpl(
     const correct = kind === 'product' ? `x^${a + b}` : kind === 'quotient' ? `x^${b}` : `x^${a * b}`
     const promptExpr =
       kind === 'product' ? `x^${a} · x^${b}` : kind === 'quotient' ? `x^${big} ÷ x^${a}` : `(x^${a})^${b}`
-    const distract =
+    const noted =
       kind === 'product'
-        ? [`x^${a * b}`, `x^${Math.abs(a - b)}`, `2x^${a + b}`]
+        ? mcqNoted(rng, correct, [
+            [`x^${a * b}`, 'Rule mix-up — multiplying the exponents is the POWER-of-a-power rule; multiplying same-base powers ADDS the factor counts.'],
+            [`x^${Math.abs(a - b)}`, 'Subtracting belongs to DIVISION of powers, not multiplication.'],
+            [`2x^${a + b}`, 'Phantom coefficient — combining powers never invents a 2; only counting factors happens here.'],
+          ])
         : kind === 'quotient'
-          ? [`x^${big + a}`, `x^${Math.round(big / a)}`, `1/x^${b}`]
-          : [`x^${a + b}`, `x^${a ** b > 999 ? a + b + 1 : a ** b}`, `${b}x^${a}`]
+          ? mcqNoted(rng, correct, [
+              [`x^${big + a}`, 'Adding belongs to MULTIPLYING powers; division cancels factors, so counts subtract.'],
+              [`x^${Math.round(big / a)}`, 'Dividing the exponents — but the exponents count factors; cancellation subtracts them.'],
+              [`1/x^${b}`, 'Reciprocal reflex — the larger power is on top here, so the result stays above the line.'],
+            ])
+          : mcqNoted(rng, correct, [
+              [`x^${a + b}`, 'Adding belongs to multiplying two powers; a power OF a power repeats whole groups, so counts multiply.'],
+              [`x^${a ** b > 999 ? a + b + 1 : a ** b}`, 'Exponentiating the exponents — the group of factors repeats, it does not tower.'],
+              [`${b}x^${a}`, 'The outer exponent became a coefficient — it repeats the whole group, it never multiplies out front.'],
+            ])
     return {
       title: 'Simplify with exponent rules',
       prompt: `Simplify: **${promptExpr}** (x ≠ 0)`,
-      answer: mcq(rng, correct, distract),
+      answer: noted.answer,
+      distractorNotes: noted.distractorNotes,
       hints: [
         'Write a tiny example out in full — x·x·x style — and count the factors.',
         kind === 'product'
@@ -702,14 +715,16 @@ const propIdentify = tpl(
     const propTable = xs.map((x) => `(${x}, ${k * x})`).join(', ')
     const addTable = xs.map((x) => `(${x}, ${k * x + shift})`).join(', ')
     const correct = `${propTable}`
+    const noted = mcqNoted(rng, correct, [
+      [addTable, `Additive ≠ proportional — adding ${shift} keeps a constant DIFFERENCE, but proportionality needs a constant RATIO through (0, 0).`],
+      [xs.map((x) => `(${x}, ${x * x})`).join(', '), 'Squaring — the ratio y/x changes every row, so no single scale factor exists.'],
+      [xs.map((x) => `(${x}, ${k * x + (x === 1 ? 0 : 1)})`).join(', '), 'Almost-proportional — one broken row breaks it; proportionality is an every-row property.'],
+    ])
     return {
       title: 'Spot the proportional table',
       prompt: `Which table shows y **proportional** to x?`,
-      answer: mcq(rng, correct, [
-        addTable,
-        xs.map((x) => `(${x}, ${x * x})`).join(', '),
-        xs.map((x) => `(${x}, ${k * x + (x === 1 ? 0 : 1)})`).join(', '),
-      ]),
+      answer: noted.answer,
+      distractorNotes: noted.distractorNotes,
       hints: [
         'Proportional means y ÷ x is the SAME for every row (and (0,0) would fit the pattern).',
         `Check y/x row by row — the proportional table gives ${k} every time.`,

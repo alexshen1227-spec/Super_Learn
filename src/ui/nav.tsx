@@ -19,6 +19,7 @@ export type View =
   | { name: 'settings' }
   | { name: 'session'; launch: SessionLaunch }
   | { name: 'placement' }
+  | { name: 'exam' }
 
 interface Nav {
   view: View

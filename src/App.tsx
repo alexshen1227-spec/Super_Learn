@@ -6,6 +6,9 @@ import { IconCoach, IconPath, IconPractice, IconProgress, IconSettings, IconToda
 import { Button } from './ui/components'
 import { exportState } from './engine/exportImport'
 import { Onboarding } from './ui/screens/Onboarding'
+import { maybeNotifyReviews } from './ui/notify'
+import { dueReviews } from './engine/scheduler'
+import { deriveEvidence } from './engine/mastery'
 import { Today } from './ui/screens/Today'
 import { PathScreen } from './ui/screens/Path'
 import { CoachScreen } from './ui/screens/CoachScreen'
@@ -14,6 +17,7 @@ import { ProgressScreen } from './ui/screens/ProgressScreen'
 import { SettingsScreen } from './ui/screens/SettingsScreen'
 import { SessionScreen } from './ui/session/SessionScreen'
 import { PlacementScreen } from './ui/screens/PlacementScreen'
+import { ExamScreen } from './ui/session/ExamScreen'
 
 /** Render-error safety net: never a white screen; data export stays reachable. */
 class Boundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -67,7 +71,7 @@ function Shell() {
   const { state, ready, exitSample } = useStore()
   const { view, go } = useNav()
   const [offline, setOffline] = useState(!navigator.onLine)
-  const inSession = view.name === 'session' || view.name === 'placement'
+  const inSession = view.name === 'session' || view.name === 'placement' || view.name === 'exam'
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -104,6 +108,21 @@ function Shell() {
     applyTheme(state.settings.theme, state.settings.textSpacing)
   }, [state.settings.theme, state.settings.textSpacing])
 
+  // Opt-in review reminder: on launch/resume, at most once per day.
+  useEffect(() => {
+    if (!ready || !state.onboarded || state.sampleMode) return
+    const check = () => {
+      const due = dueReviews(deriveEvidence(state.events, Date.now()), Date.now())
+      maybeNotifyReviews(state.settings, due.length)
+    }
+    check()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') check()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [ready, state.onboarded, state.sampleMode, state.events, state.settings])
+
   const screen = useMemo(() => {
     switch (view.name) {
       case 'today':
@@ -122,6 +141,8 @@ function Shell() {
         return <SessionScreen launch={view.launch} />
       case 'placement':
         return <PlacementScreen />
+      case 'exam':
+        return <ExamScreen />
     }
   }, [view])
 

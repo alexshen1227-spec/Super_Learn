@@ -220,6 +220,73 @@ describe('planner', () => {
   })
 })
 
+describe('exam builder', () => {
+  it('refuses honestly below the eligibility floor', async () => {
+    const { buildExam } = await import('./exam')
+    const result = buildExam(stateWith([]), deriveEvidence([], NOW), DEFAULT_INDEX, 'standard', 42)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.reason).toContain('practiced skills')
+  })
+  it('builds a mixed, one-item-per-skill blind exam from practiced skills', async () => {
+    const { buildExam } = await import('./exam')
+    const skills = ['m-lineq1', 'm-percent', 'm-fractions', 'm-integers', 'm-prob', 'm-stats', 'p-motion']
+    const events = skills.flatMap((sk, i) => [
+      attempt(sk.startsWith('p') ? 'physics' : 'math', sk, { seed: i * 2, t: NOW - 5 * DAY }),
+      attempt(sk.startsWith('p') ? 'physics' : 'math', sk, { seed: i * 2 + 1, t: NOW - 5 * DAY + 3_600_000 }),
+    ])
+    const s = stateWith(events)
+    const result = buildExam(s, deriveEvidence(events, NOW), DEFAULT_INDEX, 'short', 42)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.plan.items.length).toBeGreaterThanOrEqual(5)
+      // one template max once; every template exists and is single-kind
+      const ids = result.plan.items.map((i) => i.templateId)
+      expect(new Set(ids).size).toBe(ids.length)
+      for (const it of result.plan.items) {
+        const t = DEFAULT_INDEX.templates.get(it.templateId)!
+        expect(t.kind).toBe('single')
+      }
+      expect(result.plan.suggestedMinutes).toBeGreaterThan(0)
+      // deterministic per seed
+      const again = buildExam(s, deriveEvidence(events, NOW), DEFAULT_INDEX, 'short', 42)
+      expect(again.ok && JSON.stringify(again.plan.items)).toBe(JSON.stringify(result.plan.items))
+    }
+  })
+})
+
+describe('personal forgetting curves', () => {
+  it('stretches intervals after review successes and shrinks after lapses', async () => {
+    const { stabilityFactor } = await import('./mastery')
+    expect(stabilityFactor(0, 0)).toBe(1)
+    expect(stabilityFactor(4, 0)).toBeCloseTo(1.6)
+    expect(stabilityFactor(0, 2)).toBeCloseTo(0.5) // floored
+    expect(stabilityFactor(20, 0)).toBe(2) // capped
+    // integration: third unaided success schedules 7d × 1.15
+    const events = [
+      attempt('math', 'sk-fc', { seed: 1, t: NOW - 10 * DAY }),
+      attempt('math', 'sk-fc', { seed: 2, t: NOW - 9 * DAY }),
+      attempt('math', 'sk-fc', { seed: 3, t: NOW - 5 * DAY }),
+    ]
+    const ev = deriveEvidence(events, NOW).get('sk-fc')!
+    const expected = events[2].t + 7 * 1.15 * DAY
+    expect(ev.review!.due).toBeCloseTo(expected, -4)
+  })
+})
+
+describe('placement follow-ups', () => {
+  it('a held-level pass marks ok, stops climbing, and supersedes the miss', () => {
+    let p = startPlacement({ ...initialState().profile, gradeLevel: 8 }, NOW)
+    const skill = nextProbe(p, DEFAULT_INDEX)!
+    // hard form missed → UI runs follow-up → easier form passed:
+    p = applyProbe(p, skill, { correct: true, skipped: false, confidence: null, heldLevel: true })
+    expect(p.phase).toBe('breadth')
+    const summary = summarizePlacement(p, DEFAULT_INDEX, NOW)
+    const sig = summary.signals.find((s) => s.skillId === skill)!
+    expect(sig.signal).toBe('ok')
+    expect(summary.summary.join(' ')).toContain('follow-up')
+  })
+})
+
 describe('coach-tuned allocations', () => {
   it('boosts a deadline bucket, floors everything at 3%, and discloses', async () => {
     const { tuneTargets } = await import('./allocationPlus')

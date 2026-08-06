@@ -74,6 +74,28 @@ export function mcq(rng: Rng, correct: string, distractors: string[]): McqAnswer
   return { type: 'mcq', options, correct: options.indexOf(correct) }
 }
 
+/**
+ * MCQ whose distractors carry NAMED misconceptions. Notes survive the
+ * shuffle: the result maps final option index → "name — why it tempts".
+ */
+export function mcqNoted(
+  rng: Rng,
+  correct: string,
+  distractors: [text: string, note: string | null][],
+): { answer: McqAnswer; distractorNotes: Record<number, string> } {
+  const uniq: [string, string | null][] = []
+  for (const [d, n] of distractors) {
+    if (d !== correct && !uniq.some(([u]) => u === d)) uniq.push([d, n])
+  }
+  const entries: [string, string | null][] = shuffle(rng, [[correct, null] as [string, string | null], ...uniq.slice(0, 4)])
+  const options = entries.map(([t]) => t)
+  const distractorNotes: Record<number, string> = {}
+  entries.forEach(([, n], i) => {
+    if (n) distractorNotes[i] = n
+  })
+  return { answer: { type: 'mcq', options, correct: options.indexOf(correct) }, distractorNotes }
+}
+
 export function gcd(a: number, b: number): number {
   a = Math.abs(a)
   b = Math.abs(b)

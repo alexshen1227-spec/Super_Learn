@@ -17,6 +17,7 @@ import { Button, Card, Chip, Divider, Modal, ProgressBar, Row, StateBadge } from
 import { Rich } from '../richtext'
 import { PATHS, pathProgress, type PathDef } from '../../content/paths'
 import { resourcesFor } from '../../content/resources'
+import { TACTICS } from '../../content/items/chessTactics'
 
 const FILTERS: { id: 'all' | 'academic' | 'labs'; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -154,6 +155,43 @@ export function PathScreen() {
           setDetail(s)
         }}
       />
+    </div>
+  )
+}
+
+function ChessThemeStats() {
+  const { state } = useStore()
+  const stats = useMemo(() => {
+    const themeOf = new Map(TACTICS.map((t) => [t.id, t.theme]))
+    const byTheme = new Map<string, { tries: number; clean: number }>()
+    for (const e of state.events) {
+      const theme = themeOf.get(e.templateId)
+      if (!theme || e.firstCorrect === null) continue
+      const s = byTheme.get(theme) ?? { tries: 0, clean: 0 }
+      s.tries++
+      if (e.firstCorrect && e.hintLevel === 0) s.clean++
+      byTheme.set(theme, s)
+    }
+    return [...byTheme.entries()].sort((a, b) => b[1].tries - a[1].tries)
+  }, [state.events])
+  if (!stats.length) return null
+  return (
+    <div className="mt-4">
+      <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-1.5">By theme</p>
+      <div className="space-y-1.5">
+        {stats.map(([theme, s]) => (
+          <div key={theme} className="flex items-center gap-2.5">
+            <span className="text-[13px] w-40 shrink-0 truncate">{theme}</span>
+            <div className="flex-1 h-2 rounded bg-surface2 overflow-hidden">
+              <div className="h-full bg-good/80 rounded" style={{ width: `${(s.clean / s.tries) * 100}%` }} />
+            </div>
+            <span className="text-[11px] font-mono text-faint w-12 text-right shrink-0">
+              {s.clean}/{s.tries}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-faint mt-1.5">Clean solves (first try, no hints) per theme — your tactical fingerprint.</p>
     </div>
   )
 }
@@ -339,6 +377,8 @@ function SkillDetail({ skill, onClose, onPractice }: { skill: SkillNode | null; 
           a later success ≥48h after the previous → Retained; success on a novel-context item → Transferred.
         </p>
       </div>
+
+      {skill.id === 'z-chess' ? <ChessThemeStats /> : null}
 
       {resourcesFor(skill).length ? (
         <div className="mt-4">

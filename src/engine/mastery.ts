@@ -61,6 +61,10 @@ interface Tracker {
   reviewIndex: number
   reviewDue: number | null
   attempts: number
+  /** Unaided successes AFTER independence (successful spaced retrievals). */
+  reviewSuccesses: number
+  /** First-attempt misses AFTER independence (lapses). */
+  lapses: number
 }
 
 function newTracker(skillId: string): Tracker {
@@ -81,7 +85,20 @@ function newTracker(skillId: string): Tracker {
     reviewIndex: 0,
     reviewDue: null,
     attempts: 0,
+    reviewSuccesses: 0,
+    lapses: 0,
   }
+}
+
+/**
+ * Personal forgetting-curve factor (HEURISTIC, labeled in the UI): once a
+ * skill has real review history, its intervals stretch with successful spaced
+ * retrievals and shrink with lapses. Bounded so one streak or one bad day
+ * can never run away with the schedule.
+ */
+export function stabilityFactor(reviewSuccesses: number, lapses: number): number {
+  const f = 1 + 0.15 * reviewSuccesses - 0.35 * lapses
+  return Math.min(2, Math.max(0.5, f))
 }
 
 /**
@@ -120,6 +137,7 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
 
   if (firstSuccess) {
     tr.recentMisses = 0
+    if (tr.independentForms.size >= 2 && e.mode !== 'placement') tr.reviewSuccesses++
     // Placement gives at most one form of credit; it routes, it does not prove.
     const formKey = e.mode === 'placement' ? 'placement' : `${e.templateId}:${e.seed}`
     // Retention: a later unaided success ≥48h after the previous success.
@@ -139,9 +157,11 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
     tr.lastCorrectAt = e.t
     // Review ladder advances on unaided success (placement does not schedule).
     // First success schedules ladder[0] = 1 day; each further success climbs.
+    // The base interval is scaled by the skill's personal stability factor.
     if (e.mode !== 'placement') {
       tr.reviewIndex = Math.min(tr.reviewIndex + 1, REVIEW_LADDER_DAYS.length)
-      tr.reviewDue = e.t + REVIEW_LADDER_DAYS[Math.min(tr.reviewIndex - 1, REVIEW_LADDER_DAYS.length - 1)] * DAY
+      const baseDays = REVIEW_LADDER_DAYS[Math.min(tr.reviewIndex - 1, REVIEW_LADDER_DAYS.length - 1)]
+      tr.reviewDue = e.t + baseDays * stabilityFactor(tr.reviewSuccesses, tr.lapses) * DAY
     }
   } else if (eventualSuccess) {
     // Solved with hints or on retry: guided evidence.
@@ -153,6 +173,7 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
     }
   } else {
     tr.recentMisses++
+    if (tr.independentForms.size >= 2 && e.mode !== 'placement') tr.lapses++
     if (e.mode !== 'placement') {
       // Errors shorten the interval; a confident error shortens it most.
       tr.reviewIndex = Math.max(0, tr.reviewIndex - 2)

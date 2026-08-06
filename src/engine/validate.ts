@@ -118,6 +118,8 @@ export function validate(spec: AnswerSpec, raw: string): Verdict {
       return spec.accept.some((a) => normalizeText(a) === norm) ? { ok: true, score: 1 } : WRONG
     }
     case 'mcq': {
+      // Number('') is 0 — a blank must never grade as "picked option 0".
+      if (raw.trim() === '') return WRONG
       const i = Number(raw)
       if (!Number.isInteger(i) || i < 0 || i >= spec.options.length) return WRONG
       return i === spec.correct ? { ok: true, score: 1 } : WRONG
