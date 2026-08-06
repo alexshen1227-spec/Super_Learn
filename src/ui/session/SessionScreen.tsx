@@ -88,13 +88,18 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
   const activeSec = useRef(0)
   const evidenceBefore = useRef<typeof evidence | null>(null)
 
+  const [overTime, setOverTime] = useState(false)
   // active-time ticker (pauses when hidden)
   useEffect(() => {
     const id = setInterval(() => {
-      if (document.visibilityState === 'visible') activeSec.current += 1
+      if (document.visibilityState === 'visible') {
+        activeSec.current += 1
+        // A gentle nudge well past the planned time — a clean stop beats a blur.
+        if (checkIn && activeSec.current > (checkIn.minutes + 12) * 60) setOverTime(true)
+      }
     }, 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [checkIn])
 
   // ---------- resume or build ----------
   useEffect(() => {
@@ -533,6 +538,14 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
         onLeave={() => setShowLeave(true)}
         onPark={() => setParkOpen(true)}
       />
+      {overTime ? (
+        <div className="bg-warn-soft border-b border-warn/30 text-warn text-[13px] px-4 py-2 flex items-center justify-between gap-3 -mx-4" role="status">
+          <span>Well past your planned {checkIn.minutes} min — a clean stop beats a long blur.</span>
+          <button className="underline font-semibold shrink-0" onClick={() => setPhase('exit-reflect')}>
+            Wrap up
+          </button>
+        </div>
+      ) : null}
       <div className="flex-1 pb-8">
         {item.kind === 'chess' ? (
           <ChessPlayer key={actKey} {...commonProps} />

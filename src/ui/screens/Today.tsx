@@ -28,7 +28,9 @@ export function Today() {
   const { go } = useNav()
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
   const now = Date.now()
-  const draft = loadDraftSync()
+  // The draft store lives outside AppState, so a real-profile session must
+  // not surface (or be resumable) inside the sample profile.
+  const draft = state.sampleMode ? null : loadDraftSync()
   const due = useMemo(() => dueReviews(evidence, now), [evidence, now])
   const report = useMemo(() => allocationReport(state.events, state.settings, now), [state.events, state.settings, now])
   const objective = useMemo(() => weeklyObjective(index, evidence, state, now), [index, evidence, state, now])
