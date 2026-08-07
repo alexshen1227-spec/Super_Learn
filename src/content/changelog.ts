@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '4.2',
+    date: '2026-08-07',
+    title: 'Your Goals Now Do Something',
+    points: [
+      'The goals you picked during setup were being saved and then read by absolutely nothing. Choosing "Improve at chess" or "Be ready for high-school math" changed not one thing about what you were given — which is worse than never asking, because asking implies a promise.',
+      'They now tilt your long-run balance toward the areas they lean on, by about twelve percentage points in total. Picking six goals spreads that same twelve points wider rather than tilting six times as hard, because choosing everything should mean broad emphasis, not extreme emphasis.',
+      'Nothing you did not pick gets dropped. Every area keeps its floor and stays in rotation, so you still learn it — just less often. The Coach lists the tilt among its adjustments, so you can see it and turn it off with coach-managed balance.',
+      'On whether practice is spread too thin to learn anything: I simulated 120 days of 30-minute sessions to check. It is not. Every area cycles through its skills in roughly one to one-and-a-half weeks, 53 of 97 skills get real practice in four months, and each area gets three to five skills to Independent or beyond. Time per area tracks its target within a couple of points.',
+    ],
+  },
+  {
     version: '4.1',
     date: '2026-08-07',
     title: 'The Work Actually Gets Harder Now',

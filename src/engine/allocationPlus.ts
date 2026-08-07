@@ -21,6 +21,7 @@ import { allocationReport, type AllocationReport } from './allocation'
 import { dueReviews } from './scheduler'
 import { calendarDaysUntil } from './time'
 import { normalizeAllocationPercentages, rebalanceAllocationPercentage } from './allocationTargets'
+import { goalTilt } from './goals'
 
 const DEADLINE_BOOST = 8
 const REVIEW_BOOST_PER_2 = 2
@@ -43,8 +44,20 @@ export function tuneTargets(
   if (!state.settings.coachManagedAllocations) {
     return { targets: base, tuned: false, notes: [] }
   }
-  const targets = { ...base }
+  let targets = { ...base }
   const notes: string[] = []
+
+  // Goals chosen at onboarding. A bounded tilt applied FIRST, so the
+  // situational nudges below (deadlines, review pressure) still layer on top
+  // and still win when something is actually urgent. Every rebalance keeps the
+  // per-bucket floor, so nothing a goal points away from can starve.
+  const tilt = goalTilt(state.profile.goals)
+  if (tilt.note) {
+    for (const [bucket, delta] of Object.entries(tilt.deltas) as [BucketId, number][]) {
+      targets = rebalanceAllocationPercentage(targets, bucket, Math.round(targets[bucket] + delta))
+    }
+    notes.push(tilt.note)
+  }
 
   // Deadline pressure: nearest upcoming subject deadline within 14 days.
   const deadline = state.deadlines
