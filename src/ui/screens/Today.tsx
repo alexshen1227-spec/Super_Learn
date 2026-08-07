@@ -222,9 +222,6 @@ export function Today() {
       >
         Practice balance{alloc.tuned ? ' · coach-tuned' : ''}
       </SectionTitle>
-      {alloc.tuned && alloc.notes.length ? (
-        <p className="text-[12px] text-warn px-1 mb-1.5 leading-snug">{alloc.notes[0]}</p>
-      ) : null}
       <Card className="p-4">
         {report.totalMinutes < 10 ? (
           <p className="text-[13px] text-muted">
@@ -250,6 +247,22 @@ export function Today() {
             ))}
           </div>
         )}
+        {/* Adjustments belong WITH the chart they explain, and in the quiet
+            palette. Sitting above the card in warning orange, a routine note
+            about goals read as something being wrong. */}
+        {alloc.tuned && alloc.notes.length ? (
+          <div className="mt-3 pt-3 border-t border-line">
+            <p className="text-[11px] font-semibold text-muted uppercase tracking-wide">Adjusted this week</p>
+            <ul className="mt-1 space-y-0.5">
+              {alloc.notes.map((note, i) => (
+                <li key={i} className="text-[12px] text-faint leading-snug flex gap-1.5">
+                  <span className="text-accent shrink-0" aria-hidden>·</span>
+                  <span>{note}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </Card>
 
       {isWeekend && hasWeekData ? (

@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '4.3',
+    date: '2026-08-07',
+    title: 'Ten-Minute Sessions Were a Different App',
+    points: [
+      'A short session — ten minutes or under — was skipping the thinking-lab block entirely. Simulated across a full year at ten minutes a day, that meant 73% of practice went to mathematics, only 19 skills were ever touched against 42 to 58 for every other pattern, and the four Paths were never scheduled once. If you practised in short bursts you were quietly using a narrower app.',
+      'Short sessions now include one lab item, paid for out of the core block so the session stays the length you asked for. It alternates on its own, because a lab day clears that area\'s shortfall and the next day goes back to academic work. After the fix the same ten-minute learner reaches 43 skills instead of 19, with mathematics at a normal 36%.',
+      'The balance adjustments moved. They used to sit above the chart in warning orange, so a routine note about your goals read like something had gone wrong; they now sit inside the card under "Adjusted this week", in the quiet palette, with every adjustment listed instead of only the first.',
+      'This came out of running a simulated year across ten different learners — daily and three-times-a-week, ten to forty-five minutes, strong, average, struggling, plateaued, low-energy, and several goal combinations. Nine of the ten were healthy: difficulty climbing from about 2.1 to between 2.7 and 3.2, accuracy settling at 80–93%, review backlogs staying manageable. The ten-minute learner was the one that was broken.',
+    ],
+  },
+  {
     version: '4.2',
     date: '2026-08-07',
     title: 'Your Goals Now Do Something',

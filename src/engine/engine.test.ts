@@ -164,7 +164,16 @@ describe('planner', () => {
     expect(warmSkills).toContain('m-lineq1')
   })
 
-  it('short sessions skip the rotation block', () => {
+  /**
+   * Short sessions used to skip the rotation entirely. Simulated over a year at
+   * 10 minutes a day that meant 73% mathematics, 19 skills touched against
+   * 42-58 for every other pattern, and the four Paths never scheduled once — a
+   * short-session learner was quietly enrolled in a narrower product.
+   *
+   * They now get at most ONE lab item, which `coreBudget` pays for out of core
+   * time, so the session stays the length that was asked for.
+   */
+  it('short sessions get a single lab item, not a full rotation and not nothing', () => {
     const s = stateWith([])
     const plan = buildSessionPlan({
       index: DEFAULT_INDEX,
@@ -173,7 +182,11 @@ describe('planner', () => {
       now: NOW,
       checkIn: { minutes: 10, energy: 'ok', focus: null },
     })
-    expect(plan.blocks.some((b) => b.kind === 'rotation')).toBe(false)
+    const rotation = plan.blocks.find((b) => b.kind === 'rotation')
+    expect(rotation, 'a short session should still reach the Paths').toBeTruthy()
+    expect(rotation!.activities.length).toBe(1)
+    // And the session must not balloon past what was asked for.
+    expect(plan.blocks.reduce((sum, b) => sum + b.minutes, 0)).toBeLessThanOrEqual(14)
   })
 
   it('fills a 30-minute session with a realistic amount of planned work and no duplicate forms', () => {

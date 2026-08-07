@@ -593,7 +593,20 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   const total = checkIn.minutes
   const short = total <= 12
   const exitBudget = short ? 2 : total >= 25 ? 3 : 2
-  const labBudget = short ? 0 : Math.max(5, Math.round(total * 0.25))
+  /*
+   * Short sessions used to get NO lab block at all — `labBudget` was 0 and the
+   * rotation was skipped outright. Simulated over a year at 10 minutes a day
+   * that produced 73% mathematics, 19 skills touched (against 42-58 for every
+   * other pattern), and the four Paths never scheduled once. A ten-minute
+   * learner was quietly enrolled in a different, narrower product.
+   *
+   * A short session cannot hold a full rotation, but it can hold ONE item, and
+   * `coreBudget` already subtracts this — so the slot displaces core time
+   * rather than making the session longer than asked for. Debt ordering makes
+   * it alternate on its own: a lab day clears that bucket's shortfall, so the
+   * next day goes back to academic work.
+   */
+  const labBudget = short ? 4 : Math.max(5, Math.round(total * 0.25))
 
   // ---- 1. Retrieval warm-up
   const due = dueReviews(evidence, now)
@@ -785,8 +798,8 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     }
   }
 
-  // ---- 3. Rotating lab block
-  if (!short) {
+  // ---- 3. Rotating lab block (one item on a short day, a full block otherwise)
+  {
     const labOrder = report.underserved.filter((b) => !ACADEMIC_BUCKETS.includes(b))
     let labBucket = labOrder[0] ?? 'observer'
     if (checkIn.focus && !ACADEMIC_BUCKETS.includes(checkIn.focus)) labBucket = checkIn.focus
@@ -805,7 +818,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
           targetDifficulty(evidenceFor(evidence, labSkill.skill.id), checkIn.energy, conservative, placementSignal(state, labSkill.skill.id), stretch.adjust),
           labBudget,
           templateUse,
-          { maxCount: total >= 40 ? 4 : 3, minCount: 1 },
+          { maxCount: short ? 1 : total >= 40 ? 4 : 3, minCount: 1 },
         ),
       )
     } else {
@@ -824,7 +837,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
         kind: 'rotation',
         bucket: labBucket,
         label: BUCKET_BY_ID[labBucket].name,
-        minutes: Math.min(Math.max(5, minutesOf(labTemplates)), labBudget),
+        minutes: Math.min(short ? minutesOf(labTemplates) : Math.max(5, minutesOf(labTemplates)), labBudget),
         activities: labTemplates.map((t) => {
           const ev0 = evidenceFor(evidence, t.skillIds[0])
           return act(t, stateRank(ev0.state) >= stateRank('independent') ? 'independent' : 'guided', used)

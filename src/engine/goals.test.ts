@@ -76,7 +76,8 @@ describe('unchosen areas are still taught', () => {
     const tuned = tune(['Improve at chess'])
     expect(tuned.tuned).toBe(true)
     expect(tuned.notes.join(' ')).toMatch(/goals/i)
-    expect(tuned.notes.join(' ')).toMatch(/still learn it/i)
+    // The promise that matters: choosing a goal does not delete anything else.
+    expect(tuned.notes.join(' ')).toMatch(/nothing else is dropped|keeps its floor/i)
   })
 
   it('is inert when the learner turns coach management off', () => {

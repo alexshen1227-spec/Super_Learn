@@ -68,6 +68,8 @@ export function goalTilt(goals: string[]): GoalTilt {
   }
   return {
     deltas,
-    note: `Your goals (${known.join(', ')}) tilt the balance by about ${GOAL_BUDGET} points toward the areas they lean on. Everything else keeps its floor and stays in rotation — you still learn it, just less often.`,
+    // Kept short on purpose: this shows in a list of adjustments, and a
+    // paragraph there reads as an error message rather than an explanation.
+    note: `Your goals tilt the balance ~${GOAL_BUDGET} points. Nothing else is dropped — every area keeps its floor.`,
   }
 }
