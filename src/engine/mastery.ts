@@ -69,6 +69,12 @@ interface Tracker {
   reviewSuccesses: number
   /** First-attempt misses AFTER independence (lapses). */
   lapses: number
+  /**
+   * Every template family this skill has been practiced on. Transfer requires
+   * a NOVEL family, so novelty is measured against the learner's own history
+   * rather than trusted to an authoring flag.
+   */
+  practicedTemplates: Set<string>
 }
 
 function newTracker(skillId: string): Tracker {
@@ -91,6 +97,7 @@ function newTracker(skillId: string): Tracker {
     attempts: 0,
     reviewSuccesses: 0,
     lapses: 0,
+    practicedTemplates: new Set(),
   }
 }
 
@@ -167,7 +174,13 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
     }
     tr.independentForms.add(formKey)
     if (tr.independentForms.size >= 2 && tr.independentAt === null) tr.independentAt = e.t
-    if (e.mode === 'transfer' && tr.independentAt !== null && tr.transferredAt === null) {
+    // TRANSFER IS MEASURED, NOT DECLARED. It used to fire on any success in
+    // transfer mode, which meant an authoring flag decided the top rung. Now
+    // the item must come from a template family this skill has never been
+    // practiced on — novelty checked against the learner's own history — so
+    // "Transferred" means the principle survived leaving its familiar form.
+    const novelFamily = !tr.practicedTemplates.has(e.templateId)
+    if (e.mode === 'transfer' && tr.independentAt !== null && tr.transferredAt === null && novelFamily) {
       tr.transferredAt = e.t
     }
     tr.lastCorrectAt = e.t
@@ -196,6 +209,11 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
       tr.reviewDue = e.t + (confidentMiss ? 0.5 : 1) * DAY
     }
   }
+
+  // Recorded LAST, so the transfer test above compared this attempt against
+  // the families seen strictly before it. Placement routes rather than
+  // teaches, so it must not make a family look already-practiced.
+  if (e.mode !== 'placement') tr.practicedTemplates.add(e.templateId)
 }
 
 function finalize(tr: Tracker, now: number): SkillEvidence {
@@ -244,8 +262,38 @@ function finalize(tr: Tracker, now: number): SkillEvidence {
   }
 }
 
-/** Replay all events into per-skill evidence. Events must be time-ordered. */
+/**
+ * Memoized replay. A single submitted item used to trigger about five full
+ * replays of the whole log (twice while diffing for promotions, plus the
+ * evidence hook, the review check, and session completion), each sorting a
+ * fresh copy. Cost was O(n) per attempt with no reuse.
+ *
+ * The cache keys on the events ARRAY IDENTITY — the reducer is append-only and
+ * never mutates in place, so a new array means new evidence — plus `now`
+ * bucketed to the minute, since review dues only move at minute resolution.
+ */
+const replayCache = new WeakMap<AttemptEvent[], Map<number, Map<string, SkillEvidence>>>()
+const MINUTE = 60_000
+
 export function deriveEvidence(events: AttemptEvent[], now: number): Map<string, SkillEvidence> {
+  const bucket = Math.floor(now / MINUTE)
+  let perArray = replayCache.get(events)
+  if (!perArray) {
+    perArray = new Map()
+    replayCache.set(events, perArray)
+  }
+  const hit = perArray.get(bucket)
+  if (hit) return hit
+  const fresh = replayEvidence(events, now)
+  // Only the newest bucket is worth keeping; older ones will never be asked for
+  // again and would pin memory for the lifetime of the events array.
+  perArray.clear()
+  perArray.set(bucket, fresh)
+  return fresh
+}
+
+/** Uncached replay. Events must be time-ordered. */
+function replayEvidence(events: AttemptEvent[], now: number): Map<string, SkillEvidence> {
   const trackers = new Map<string, Tracker>()
   const sorted = [...events].sort((a, b) => a.t - b.t)
   for (const e of sorted) {

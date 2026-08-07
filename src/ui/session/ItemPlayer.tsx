@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AnswerSpec, AttemptMode, ErrorTag, ItemTemplate, RenderedItem } from '../../domain/types'
 import { ERROR_TAGS } from '../../domain/types'
-import { describeAnswer, describeResponse, validate, validatorName } from '../../engine/validate'
+import { describeAnswer, describeResponse, firstFailedStep, validate, validatorName } from '../../engine/validate'
 import type { ContentIndex } from '../../engine/content-index'
 import { KB_BY_SKILL } from '../../content/kb'
 import type { ActivityRecord } from '../../store/draft'
@@ -174,6 +174,17 @@ export function ItemPlayer({
     )
   }
 
+  /**
+   * For a worked chain, the FIRST broken link names the misconception — so the
+   * error tag is derived from the work itself instead of asking the learner to
+   * diagnose their own mistake (which is self-assessment by another name).
+   */
+  const diagnoseFrom = (submitted: string): ErrorTag | null => {
+    if (activeSpec.type !== 'steps') return null
+    const i = firstFailedStep(activeSpec, submitted)
+    return i === null ? null : activeSpec.steps[i].diagnoses
+  }
+
   // ----- submit handlers -----
   const submitFirst = () => {
     const verdict = validate(activeSpec, response)
@@ -189,6 +200,11 @@ export function ItemPlayer({
       setRetryVerdictOk(null)
       finishSingle({ firstOk: true, eventualOk: true, score: verdict.score, finalResp: response })
     } else {
+      const derived = diagnoseFrom(response)
+      if (derived) {
+        setErrorTag(derived)
+        onSnapshot({ errorTag: derived })
+      }
       setPhase('wrong')
     }
   }
@@ -267,6 +283,11 @@ export function ItemPlayer({
     // WRONG on the first look at this checkpoint: enter the repair fork rather
     // than revealing the answer and moving on. The corrected attempt is the
     // part of the loop that the evidence actually supports (RESEARCH.md §5).
+    const derived = diagnoseFrom(response)
+    if (derived) {
+      setErrorTag(derived)
+      onSnapshot({ errorTag: derived })
+    }
     setPartWasWrongFirst(true)
     setPhase('wrong')
   }
@@ -473,13 +494,32 @@ export function ItemPlayer({
           {phase === 'wrong' && (
             <Card className="mt-4 p-4 border-warn/40 bg-warn-soft">
               <p className="font-semibold text-[15px]">Not yet.</p>
-              <p className="text-muted text-[14px] mt-1">
-                Your answer:{' '}
-                <span className="font-medium text-ink">
-                  {describeResponse(activeSpec, (parts ? partFirstResponse : firstResponse) ?? '')}
-                </span>
-                . The attempt is the valuable part — now find the first place it went off.
-              </p>
+              {activeSpec.type === 'steps' ? (
+                (() => {
+                  // Point straight at the broken link. Everything after the
+                  // first failure is downstream of it, so that is the only
+                  // step worth re-examining.
+                  const submitted = (parts ? partFirstResponse : firstResponse) ?? ''
+                  const i = firstFailedStep(activeSpec, submitted)
+                  if (i === null) return null
+                  const step = activeSpec.steps[i]
+                  return (
+                    <p className="text-muted text-[14px] mt-1">
+                      Steps 1–{i} check out. It breaks at{' '}
+                      <span className="font-medium text-ink">step {i + 1}, {step.label}</span> — everything after that
+                      follows from it, so this is the only line worth redoing.
+                    </p>
+                  )
+                })()
+              ) : (
+                <p className="text-muted text-[14px] mt-1">
+                  Your answer:{' '}
+                  <span className="font-medium text-ink">
+                    {describeResponse(activeSpec, (parts ? partFirstResponse : firstResponse) ?? '')}
+                  </span>
+                  . The attempt is the valuable part — now find the first place it went off.
+                </p>
+              )}
               <div className="flex flex-col gap-2 mt-4">
                 <Button
                   onClick={() => {
@@ -811,6 +851,69 @@ export function AnswerInput({
               </div>
             </div>
           ))}
+        </div>
+      )
+    }
+    case 'steps': {
+      // A worked chain. Every intermediate value is its own checked box, so a
+      // wrong final answer can be traced to the link that actually broke.
+      const given: string[] = (() => {
+        try {
+          const v = JSON.parse(value)
+          return Array.isArray(v) ? (v as string[]) : spec.steps.map(() => '')
+        } catch {
+          return spec.steps.map(() => '')
+        }
+      })()
+      const setStep = (i: number, v: string) => {
+        const next = spec.steps.map((_, k) => given[k] ?? '')
+        next[i] = v
+        onChange(JSON.stringify(next))
+      }
+      return (
+        <div className="space-y-3">
+          {spec.steps.map((step, i) => (
+            <div key={step.label}>
+              <label className="text-[13px] font-medium text-muted flex items-center gap-2" htmlFor={`step-${i}`}>
+                <span className="h-5 w-5 shrink-0 rounded-full bg-surface2 border border-line grid place-items-center text-[11px] font-mono">
+                  {i + 1}
+                </span>
+                {step.label}
+              </label>
+              {step.answer.type === 'mcq' ? (
+                <div className="flex flex-wrap gap-2 mt-1.5">
+                  {step.answer.options.map((opt, oi) => (
+                    <button
+                      type="button"
+                      key={opt}
+                      aria-pressed={given[i] === String(oi)}
+                      onClick={() => setStep(i, String(oi))}
+                      className={`min-h-11 px-3 rounded-lg border text-[14px] text-left transition-colors ${
+                        given[i] === String(oi) ? 'bg-accent-soft border-accent/50 text-accent' : 'bg-surface border-line text-muted'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <input
+                  id={`step-${i}`}
+                  value={given[i] ?? ''}
+                  onChange={(e) => setStep(i, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && onSubmit) onSubmit()
+                  }}
+                  inputMode={step.answer.type === 'text' ? 'text' : 'decimal'}
+                  autoComplete="off"
+                  className="mt-1.5 w-full bg-surface border border-line rounded-xl px-4 py-3 text-[16px] outline-none focus:border-accent"
+                />
+              )}
+            </div>
+          ))}
+          <p className="text-[12px] text-faint leading-snug">
+            Every line is checked. If the final answer is wrong, this shows which step it came from.
+          </p>
         </div>
       )
     }

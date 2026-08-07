@@ -143,12 +143,55 @@ export function validate(spec: AnswerSpec, raw: string): Verdict {
       const score = right / spec.statements.length
       return { ok: score === 1, score }
     }
+    case 'steps': {
+      const given = parseSteps(raw)
+      if (!given) return { ...WRONG, formatError: 'Fill in every step before submitting.' }
+      let right = 0
+      for (const [i, step] of spec.steps.entries()) {
+        if (validate(step.answer, given[i] ?? '').ok) right++
+      }
+      const score = right / spec.steps.length
+      // All-or-nothing for `ok`: a chain with a broken link did not reach the
+      // answer, however many early steps were right. `score` carries the
+      // partial credit for display and diagnosis only.
+      return { ok: right === spec.steps.length, score }
+    }
     case 'draft':
       // A draft is never graded. `ok` here means "accepted, move on" — callers
       // must log it as correct: null / score: null so the mastery replay sees
       // exposure and nothing more.
       return { ok: true, score: 0 }
   }
+}
+
+/**
+ * Step responses travel as a JSON string array so a learner's own text can
+ * never collide with a separator character.
+ */
+export function serializeSteps(values: string[]): string {
+  return JSON.stringify(values)
+}
+
+function parseSteps(raw: string): string[] | null {
+  try {
+    const v = JSON.parse(raw)
+    return Array.isArray(v) && v.every((x) => typeof x === 'string') ? v : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Index of the FIRST broken link, or null if the chain holds. This is what
+ * turns a wrong answer into a diagnosis: the earliest failure is the one that
+ * explains everything after it.
+ */
+export function firstFailedStep(spec: Extract<AnswerSpec, { type: 'steps' }>, raw: string): number | null {
+  const given = parseSteps(raw) ?? []
+  for (const [i, step] of spec.steps.entries()) {
+    if (!validate(step.answer, given[i] ?? '').ok) return i
+  }
+  return null
 }
 
 /** Human-readable form of the correct answer, for repair screens. */
@@ -168,6 +211,8 @@ export function describeAnswer(spec: AnswerSpec): string {
       return spec.correct.map((i) => spec.options[i]).join(' → ')
     case 'classify':
       return spec.statements.map((s) => `${s.text} → ${spec.categories[s.category]}`).join('; ')
+    case 'steps':
+      return spec.steps.map((st) => `${st.label}: ${describeAnswer(st.answer)}`).join('  →  ')
     case 'draft':
       return spec.model
   }
@@ -201,6 +246,11 @@ export function describeResponse(spec: AnswerSpec, raw: string): string {
         .map((c, i) => `${spec.statements[i]?.text ?? `#${i + 1}`} → ${spec.categories[c] ?? '?'}`)
         .join('; ')
     }
+    case 'steps': {
+      const given = parseSteps(raw)
+      if (!given) return raw
+      return spec.steps.map((st, i) => `${st.label}: ${given[i] ?? '—'}`).join('; ')
+    }
     default:
       return raw
   }
@@ -231,6 +281,8 @@ export function correctResponse(spec: AnswerSpec): string {
       return spec.correct.join(',')
     case 'classify':
       return spec.statements.map((s) => s.category).join(',')
+    case 'steps':
+      return serializeSteps(spec.steps.map((st) => correctResponse(st.answer)))
     case 'draft':
       // A draft has no "correct" text. The audit treats drafts as ungraded and
       // never asserts a verdict on them; this keeps the function total.
@@ -261,6 +313,10 @@ export function wrongResponse(spec: AnswerSpec): string {
     }
     case 'classify':
       return spec.statements.map((s) => (s.category + 1) % spec.categories.length).join(',')
+    case 'steps':
+      // Break the FIRST link only: the rest stay correct, which is exactly the
+      // partial-chain shape the diagnosis has to handle.
+      return serializeSteps(spec.steps.map((st, i) => (i === 0 ? wrongResponse(st.answer) : correctResponse(st.answer))))
     case 'draft':
       return '' // a draft cannot be wrong; the audit skips the negative case
   }

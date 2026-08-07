@@ -11,6 +11,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '3.0',
+    date: '2026-08-06',
+    title: 'Show Your Work — and the App Reads It',
+    points: [
+      'Some problems now ask for the middle values, not just the answer. Each line is checked on its own, so when the final number is wrong the app tells you exactly which step broke — and everything after it follows from that one line, so it is the only one worth redoing.',
+      'That kills the last piece of self-assessment in the app. You used to be asked to classify your own mistake afterwards, which is guesswork dressed as data. Now the broken step names it: a wrong base in a percent problem is a concept gap, right base with wrong multiplication is a slip, and those need completely different repairs. The tag comes from your work, not your opinion of it.',
+      '"Transferred" now means something measured. It used to fire whenever an item an author had tagged as a transfer item was solved — so a label decided the top rung. It now also requires the problem to come from a question family you have never practiced that skill on, checked against your own history. Some skills may drop back from Transferred to Retained, because that rung had not actually been earned.',
+      'The daily session interleaves once a skill is yours. Below independence it stays blocked on one skill, which is right for learning something new. Above it, the core block mixes in neighbouring skills — because on a real test the hard part is recognising which method applies, and blocked practice never trains that.',
+      'Sessions now adapt as they go. Two misses in a row and the next problem steps back a level; three clean and it steps up. It says so when it happens rather than adjusting behind your back, and it never changes what an attempt is worth.',
+      'Confidence ratings finally do something. When your stated confidence is running well ahead of or behind your accuracy, the session favours items that ask you to rate it, and the coach says why.',
+      'The app got faster where it was quietly getting slower. Every submitted item used to replay your entire history about five times over; that is now cached. The Today screen was recomputing its four most expensive figures on every single render because of a stray timestamp.',
+    ],
+  },
+  {
     version: '2.2',
     date: '2026-08-06',
     title: 'More Questions, and Harder Ones That Are Honest',

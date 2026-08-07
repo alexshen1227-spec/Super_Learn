@@ -92,6 +92,8 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
   const activeSec = useRef(0)
   const evidenceBefore = useRef<typeof evidence | null>(null)
 
+  /** Set when the session re-picked the next item; shown once, then cleared. */
+  const [adaptNote, setAdaptNote] = useState<'eased' | 'stepped-up' | null>(null)
   const [overTime, setOverTime] = useState(false)
   // active-time ticker (pauses when hidden)
   useEffect(() => {
@@ -320,19 +322,87 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
     [template, activity, block, plan, records, actKey, dispatch, updateRecord],
   )
 
+  /**
+   * WITHIN-SESSION ADAPTATION.
+   *
+   * Difficulty used to be fixed when the plan was built, so a session could
+   * not respond to how it was actually going: a learner drowning at minute
+   * four kept getting the same level until tomorrow. This re-picks the NEXT
+   * activity from the same skill when the recent run says the level is wrong.
+   *
+   * Deliberately conservative — it only swaps the upcoming item, never
+   * rewrites the plan, and it never changes what an attempt is worth. The
+   * evidence rules are untouched; only the choice of next problem moves.
+   */
+  const adaptNext = useCallback(
+    (nextBlockIndex: number, nextActIndex: number) => {
+      if (!plan) return
+      const target = plan.blocks[nextBlockIndex]?.activities[nextActIndex]
+      if (!target) return
+      const current = index.templates.get(target.templateId)
+      if (!current) return
+
+      // Read the last three graded outcomes of this session, most recent first.
+      const outcomes: boolean[] = []
+      for (let bi = plan.blocks.length - 1; bi >= 0 && outcomes.length < 3; bi--) {
+        const b = plan.blocks[bi]
+        for (let ai = b.activities.length - 1; ai >= 0 && outcomes.length < 3; ai--) {
+          const rec = records[`${bi}:${ai}`]
+          if (rec?.eventLogged && rec.firstCorrect !== null) outcomes.push(rec.firstCorrect === true)
+        }
+      }
+      if (outcomes.length < 2) return
+      const struggling = outcomes.slice(0, 2).every((ok) => !ok)
+      const cruising = outcomes.length >= 3 && outcomes.every((ok) => ok)
+      if (!struggling && !cruising) return
+
+      const wanted = Math.max(1, Math.min(5, current.difficulty + (struggling ? -1 : 1)))
+      if (wanted === current.difficulty) return
+      const siblings = (index.bySkill.get(current.skillIds[0]) ?? []).filter(
+        (t) => !t.authentic && t.kind === current.kind && t.id !== current.id,
+      )
+      if (!siblings.length) return
+      const swap = siblings
+        .map((t) => ({ t, d: Math.abs(t.difficulty - wanted) }))
+        .sort((a, b) => a.d - b.d)[0]
+      // Only swap if it actually moves toward the level we want.
+      if (!swap || Math.abs(swap.t.difficulty - wanted) >= Math.abs(current.difficulty - wanted)) return
+
+      setPlan((prev) => {
+        if (!prev) return prev
+        const blocks = prev.blocks.map((b, bi) =>
+          bi !== nextBlockIndex
+            ? b
+            : {
+                ...b,
+                activities: b.activities.map((a, ai) =>
+                  ai !== nextActIndex ? a : { ...a, templateId: swap.t.id, seed: pickSeed(swap.t, new Set()) },
+                ),
+              },
+        )
+        return { ...prev, blocks }
+      })
+      setAdaptNote(struggling ? 'eased' : 'stepped-up')
+    },
+    [plan, index, records],
+  )
+
   const advance = useCallback(() => {
     if (!plan || !block) return
+    setAdaptNote(null)
     if (actIndex + 1 < block.activities.length) {
+      adaptNext(blockIndex, actIndex + 1)
       setActIndex(actIndex + 1)
       setPhase('item')
     } else if (blockIndex + 1 < plan.blocks.length) {
+      adaptNext(blockIndex + 1, 0)
       setBlockIndex(blockIndex + 1)
       setActIndex(0)
       setPhase('interstitial')
     } else {
       setPhase('exit-reflect')
     }
-  }, [plan, block, actIndex, blockIndex])
+  }, [plan, block, actIndex, blockIndex, adaptNext])
 
   const finishSession = useCallback(
     (interrupted: boolean) => {
@@ -546,6 +616,21 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
         onLeave={() => setShowLeave(true)}
         onPark={() => setParkOpen(true)}
       />
+      {adaptNote ? (
+        <div
+          className="bg-accent-soft border-b border-accent/30 text-accent text-[13px] px-4 py-2 flex items-center justify-between gap-3 -mx-4"
+          role="status"
+        >
+          <span>
+            {adaptNote === 'eased'
+              ? 'Two misses in a row — the next problem steps back a level. That is the plan working, not you failing.'
+              : 'Three clean in a row — the next problem steps up a level.'}
+          </span>
+          <button type="button" className="underline shrink-0 min-h-11" onClick={() => setAdaptNote(null)}>
+            Got it
+          </button>
+        </div>
+      ) : null}
       {overTime ? (
         <div className="bg-warn-soft border-b border-warn/30 text-warn text-[13px] px-4 py-2 flex items-center justify-between gap-3 -mx-4" role="status">
           <span>Well past your planned {checkIn.minutes} min — a clean stop beats a long blur.</span>

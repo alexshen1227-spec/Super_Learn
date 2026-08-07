@@ -63,6 +63,12 @@ others are cited from their stable published records.
 - **Product behavior**: once a skill leaves the guided state, mixed-review
   blocks interleave neighboring skills and ask strategy-identification
   contrast questions ("what feature of this problem picks the method?").
+- **Coverage correction (2026-08-06)**: this previously described the
+  mixed-review MODE only — the daily core block stayed blocked practice on a
+  single skill however well the learner knew it. The core block now interleaves
+  up to two neighbouring skills from the same bucket once the target skill
+  reaches independence, and stays blocked below that, which is the direction
+  the evidence actually supports.
 - **Limitations**: blocked practice is still used at first exposure — the
   literature supports interleaving *after* initial acquisition.
 
@@ -102,6 +108,15 @@ others are cited from their stable published records.
   the template would swap every other checkpoint), so the repair is
   consolidated by the shortened review interval instead — which is the
   delayed re-testing half of the finding rather than the immediate half.
+- **Diagnosis, not self-report (2026-08-06)**: feedback can only target an
+  error it can identify. Where the interesting failure is WHERE reasoning broke,
+  items now ask for the intermediate values (`steps` answers) and the first
+  broken link supplies the error tag. This replaces asking the learner to
+  classify their own mistake — self-diagnosis is self-assessment, which the
+  evidence model refuses everywhere else, and novices are known to be poor at
+  it (Chi et al. 1994 on self-explanation quality varying widely by learner).
+  The step→tag mapping is authored and therefore a HEURISTIC; what is not
+  heuristic is that the tag now comes from observed work rather than opinion.
 - **Evidence rule**: a repaired checkpoint yields GUIDED evidence only.
   `firstCorrect` is fixed at the first submission and a hint anywhere in the
   activity disqualifies independent evidence (`engine/activity.ts`, tested in
@@ -212,6 +227,13 @@ than "reading" people.
   **product heuristics**, labeled as such in the UI. They implement the
   direction of §§1–2 and the mastery-learning tradition (Bloom 1968; modern
   implementations in Khan Academy mastery systems) without claiming precision.
+- **Transfer is now measured (2026-08-06)**: "Transferred" previously fired on
+  any success in transfer mode, which meant an authoring flag decided the top
+  rung. It now additionally requires the item to come from a template family
+  the learner has never practiced that skill on — novelty checked against their
+  own event history at replay time. This is a narrower and more defensible
+  reading of Barnett & Ceci's "different context" dimension; it still does not
+  claim far transfer, and the app makes no such claim.
 - Append-only evidence with derived state ensures deleting/editing history
   recomputes progress honestly.
 

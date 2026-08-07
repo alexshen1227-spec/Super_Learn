@@ -2,7 +2,7 @@
  * Today: one dominant action, honest context around it. No feed, no streaks —
  * a deliberate daily entry point that explains itself.
  */
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useEvidence, useStore } from '../../store/store'
 import { useNav } from '../nav'
 import { buildContentIndex } from '../../content/registry'
@@ -30,7 +30,11 @@ export function Today() {
   const evidence = useEvidence()
   const { go } = useNav()
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
-  const now = Date.now()
+  // Bucketed to the minute. A raw Date.now() is a new value on every render, so
+  // passing it into the dependency arrays below meant this screen's four most
+  // expensive computations re-ran every single time — the memos never hit.
+  // Nothing here is finer-grained than a minute anyway.
+  const now = useMinuteClock()
   // The draft store lives outside AppState, so a real-profile session must
   // not surface (or be resumable) inside the sample profile.
   const draft = state.sampleMode ? null : loadDraftSync()
@@ -241,4 +245,18 @@ export function Today() {
       <WeekReviewModal open={weekOpen} onClose={() => setWeekOpen(false)} />
     </div>
   )
+}
+
+/**
+ * A clock that only changes once a minute, so it can be used as a memo
+ * dependency. Review dues, deadlines, and coach lines all move at minute
+ * resolution at best; a per-render timestamp just defeats memoization.
+ */
+function useMinuteClock(): number {
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 60_000) * 60_000)
+  useEffect(() => {
+    const id = setInterval(() => setNow(Math.floor(Date.now() / 60_000) * 60_000), 30_000)
+    return () => clearInterval(id)
+  }, [])
+  return now
 }

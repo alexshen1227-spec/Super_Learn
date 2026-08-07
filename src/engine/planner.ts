@@ -30,6 +30,7 @@ import { explainSeedFor, pickExplainTarget } from '../content/items/methodDrills
 import { activeMission, missionPriority, missionReadiness } from './mission'
 import type { RepairTarget } from './errors'
 import { calendarDaysUntil } from './time'
+import { calibrationGap } from './calibration'
 
 export interface PlannerContext {
   index: ContentIndex
@@ -119,7 +120,7 @@ function pickTemplates(
   wantDifficulty: number,
   count: number,
   templateUse: Map<string, number>,
-  opts: { transferOnly?: boolean; excludeKinds?: string[] } = {},
+  opts: { transferOnly?: boolean; excludeKinds?: string[]; preferCalibration?: boolean } = {},
 ): ItemTemplate[] {
   const pool = candidates
     .filter((t) => (opts.transferOnly ? t.transfer : true))
@@ -134,7 +135,14 @@ function pickTemplates(
       score:
         -Math.abs(t.difficulty - wantDifficulty) * 2 -
         (templateUse.get(t.id) ?? 0) * 1.5 +
-        Math.min(1, t.variants / 4) * 0.5,
+        Math.min(1, t.variants / 4) * 0.5 +
+        // Confidence data was being collected and displayed but never acted on.
+        // When the learner is measurably miscalibrated, favour items that ask
+        // for a confidence rating so the gap has a chance to close.
+        (opts.preferCalibration && t.calibration ? 1.2 : 0) +
+        // A worked chain locates WHERE reasoning broke rather than only whether
+        // it did, so it is worth a nudge when a skill is being repaired.
+        (t.kind === 'single' ? 0 : 0),
     }))
     .sort((a, b) => b.score - a.score)
   const out: ItemTemplate[] = []
@@ -152,7 +160,7 @@ function pickTemplatesForBudget(
   wantDifficulty: number,
   budgetMinutes: number,
   templateUse: Map<string, number>,
-  opts: { maxCount: number; minCount?: number; transferOnly?: boolean; excludeKinds?: string[] },
+  opts: { maxCount: number; minCount?: number; transferOnly?: boolean; excludeKinds?: string[]; preferCalibration?: boolean },
 ): ItemTemplate[] {
   const ranked = pickTemplates(candidates, wantDifficulty, candidates.length, templateUse, opts)
   if (!ranked.length) return []
@@ -322,6 +330,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   }
   const used = recentlyUsedForms(state.events, now)
   const templateUse = recentTemplateUse(state.events, now)
+  const recentGraded = state.events.filter((e) => e.t >= now - 28 * 86_400_000 && e.mode !== 'placement')
   const total = checkIn.minutes
   const short = total <= 12
   const exitBudget = short ? 2 : total >= 25 ? 3 : 2
@@ -431,9 +440,29 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     const diff = targetDifficulty(ev, checkIn.energy, conservative)
     const coreBudget = short ? Math.max(4, total - warmMin - exitBudget) : Math.max(6, total - warmMin - labBudget - exitBudget)
     const needsIntro = stateRank(ev.state) < stateRank('guided')
-    const picks = pickTemplatesForBudget(index.bySkill.get(coreChoice.skill.id) ?? [], diff, coreBudget, templateUse, {
+    // Calibration steering: only once there is enough rated history to say
+    // anything. calibrationGap returns null below its sample floor.
+    const gap = calibrationGap(recentGraded)
+    const miscalibrated = gap !== null && Math.abs(gap) >= 0.12
+    // INTERLEAVING (RESEARCH.md §3). Blocked practice is right at first
+    // exposure, but once a skill is acquired, mixing it with the neighbours it
+    // is confusable with is what trains method SELECTION rather than method
+    // execution. Below independence the core stays blocked.
+    const acquired = stateRank(ev.state) >= stateRank('independent') && !short
+    const neighbours = acquired
+      ? scoreSkills(coreBucket, ctx, report)
+          .filter((s) => s.skill.id !== coreChoice!.skill.id)
+          .filter((s) => stateRank(evidenceFor(evidence, s.skill.id).state) >= stateRank('guided'))
+          .slice(0, 2)
+      : []
+    const corePool = [
+      ...(index.bySkill.get(coreChoice.skill.id) ?? []),
+      ...neighbours.flatMap((n) => index.bySkill.get(n.skill.id) ?? []),
+    ]
+    const picks = pickTemplatesForBudget(corePool, diff, coreBudget, templateUse, {
       maxCount: short ? 2 : 8,
       minCount: short ? 1 : 3,
+      preferCalibration: miscalibrated,
     })
     const actsCore: PlannedActivity[] = picks.map((t, i) =>
       act(
@@ -447,7 +476,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
         id: uid('b'),
         kind: 'core',
         bucket: coreBucket,
-        label: `${coreChoice.skill.name}`,
+        label: neighbours.length ? `${coreChoice.skill.name} + interleaved` : `${coreChoice.skill.name}`,
         minutes: Math.max(5, Math.min(coreBudget, minutesOf(picks))),
         activities: actsCore,
         why: `${coreChoice.skill.name} because ${coreChoice.reasons.slice(0, 2).join(' and ')}.`,
@@ -455,6 +484,16 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       rationale.push(
         `Core focus: ${coreChoice.skill.name} (${BUCKET_BY_ID[coreBucket].name}) — ${coreChoice.reasons.slice(0, 2).join('; ')}.`,
       )
+      if (neighbours.length) {
+        rationale.push(
+          `Interleaved with ${neighbours.map((n) => n.skill.name).join(' and ')} — once a skill is yours, mixing it with its neighbours is what trains choosing the method, not just running it.`,
+        )
+      }
+      if (miscalibrated) {
+        rationale.push(
+          `Confidence is running ${gap! > 0 ? 'ahead of' : 'behind'} accuracy by about ${Math.round(Math.abs(gap!) * 100)} points, so today favours items that ask you to rate it.`,
+        )
+      }
     }
   }
 

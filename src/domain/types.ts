@@ -116,6 +116,7 @@ export type AnswerSpec =
   | MultiAnswer
   | OrderAnswer
   | ClassifyAnswer
+  | StepsAnswer
   | DraftAnswer
 
 export interface NumericAnswer {
@@ -169,6 +170,34 @@ export interface ClassifyAnswer {
   type: 'classify'
   categories: string[]
   statements: { text: string; category: number }[]
+}
+
+/** A single link in a worked chain. Deliberately simple, non-recursive types. */
+export type StepAnswerSpec = NumericAnswer | FractionAnswer | TextAnswer | McqAnswer
+
+/**
+ * A worked chain: show your intermediate values, each machine-checked.
+ *
+ * One answer box can only tell the app WHETHER you were right. A chain tells it
+ * WHERE the reasoning broke — and because each step carries the misconception a
+ * miss there implies, the error tag becomes DERIVED rather than self-reported.
+ * That matters: self-tagging your own mistake is exactly the kind of
+ * self-assessment the evidence model refuses everywhere else.
+ *
+ * Evidence: `firstCorrect` requires every step right on the first submission.
+ * Partial chains earn partial `score` for display only — never a rung.
+ */
+export interface StepsAnswer {
+  type: 'steps'
+  steps: {
+    /** What this box is asking for, e.g. "Net force (N)". */
+    label: string
+    answer: StepAnswerSpec
+    /** The misconception a miss HERE implies. Becomes the event's error tag. */
+    diagnoses: ErrorTag
+    /** One line shown after the attempt explaining this link. */
+    why: string
+  }[]
 }
 
 /**

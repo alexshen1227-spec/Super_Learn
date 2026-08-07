@@ -6,10 +6,15 @@
  */
 import type {
   AnswerSpec,
+  ErrorTag,
+  FractionAnswer,
   ItemKind,
   ItemTemplate,
   McqAnswer,
+  NumericAnswer,
   RenderedItem,
+  StepAnswerSpec,
+  TextAnswer,
 } from '../domain/types'
 import { mulberry32, shuffle, type Rng } from '../engine/rng'
 
@@ -127,18 +132,18 @@ export function round(v: number, places = 2): number {
   return Math.round(v * f) / f
 }
 
-export const numeric = (answer: number, extras: Partial<Extract<AnswerSpec, { type: 'numeric' }>> = {}): AnswerSpec => ({
+export const numeric = (answer: number, extras: Partial<NumericAnswer> = {}): NumericAnswer => ({
   type: 'numeric',
   answer,
   ...extras,
 })
 
-export const fraction = (n: number, d: number): AnswerSpec => {
+export const fraction = (n: number, d: number): FractionAnswer => {
   const [sn, sd] = simplify(n, d)
   return { type: 'fraction', n: sn, d: sd }
 }
 
-export const text = (accept: string[], placeholder?: string): AnswerSpec => ({
+export const text = (accept: string[], placeholder?: string): TextAnswer => ({
   type: 'text',
   accept,
   ...(placeholder ? { placeholder } : {}),
@@ -189,4 +194,15 @@ export function draft(opts: {
     ...(opts.minWords !== undefined ? { minWords: opts.minWords } : {}),
     ...(opts.placeholder ? { placeholder: opts.placeholder } : {}),
   }
+}
+
+/**
+ * A worked chain: each intermediate value is checked on its own, and the first
+ * broken link names the misconception. Use this wherever the interesting
+ * failure is WHERE the reasoning went wrong, not merely whether it did.
+ */
+export function steps(
+  chain: { label: string; answer: StepAnswerSpec; diagnoses: ErrorTag; why: string }[],
+): AnswerSpec {
+  return { type: 'steps', steps: chain }
 }

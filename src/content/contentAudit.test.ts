@@ -17,7 +17,7 @@ import { Chess } from 'chess.js'
 import { BUILTIN_TEMPLATES, DEFAULT_INDEX } from './registry'
 import { COURSES, SKILLS, SKILL_BY_ID } from './skills'
 import { KB_BY_SKILL } from './kb'
-import { correctResponse, validate, wrongResponse } from '../engine/validate'
+import { correctResponse, firstFailedStep, serializeSteps, validate, wrongResponse } from '../engine/validate'
 import { matingMoves, movesKeepingMate } from '../engine/chessTools'
 import { puzzleValid } from '../engine/logicGrid'
 import { solutionValid } from '../engine/polyomino'
@@ -634,6 +634,53 @@ describe('items are answerable and fair', () => {
       strategy,
       `"always pick the longest" scores ${(strategy * 100).toFixed(1)}% against a ${(baseline * 100).toFixed(1)}% baseline — rebalance distractor lengths`,
     ).toBeLessThan(0.45)
+  })
+
+  it('worked chains diagnose the step that broke', () => {
+    // A chain exists to locate the failure, so every link needs a distinct
+    // diagnosis and an explanation of its own. Without those the item is just
+    // a longer answer box.
+    let chains = 0
+    for (const { t, seed, item } of renders) {
+      for (const spec of specsOf(item)) {
+        if (spec.type !== 'steps') continue
+        chains++
+        expect(spec.steps.length, `${t.id}@${seed}: a chain needs 2+ links`).toBeGreaterThanOrEqual(2)
+        for (const [i, step] of spec.steps.entries()) {
+          expect(step.label.trim().length, `${t.id}@${seed} step ${i}: needs a label`).toBeGreaterThan(3)
+          expect(step.why.trim().length, `${t.id}@${seed} step ${i}: needs its own explanation`).toBeGreaterThan(15)
+          // Each link must be independently checkable, or the diagnosis lies.
+          const good = validate(step.answer, correctResponse(step.answer))
+          expect(good.ok, `${t.id}@${seed} step ${i}: must accept its own key`).toBe(true)
+          const bad = validate(step.answer, wrongResponse(step.answer))
+          expect(bad.ok, `${t.id}@${seed} step ${i}: must reject a wrong value`).toBe(false)
+        }
+        // A chain whose links all blame the same thing cannot separate anything.
+        const tags = new Set(spec.steps.map((st) => st.diagnoses))
+        expect(tags.size, `${t.id}@${seed}: links must diagnose different errors`).toBeGreaterThan(1)
+      }
+    }
+    expect(chains, 'the worked-chain mechanism should be in use').toBeGreaterThan(0)
+  })
+
+  it('a broken link is located at the right index', () => {
+    for (const { t, seed, item } of renders) {
+      for (const spec of specsOf(item)) {
+        if (spec.type !== 'steps') continue
+        // Break exactly one link at a time and confirm the diagnosis points there.
+        for (let broken = 0; broken < spec.steps.length; broken++) {
+          const submitted = serializeSteps(
+            spec.steps.map((st, i) => (i === broken ? wrongResponse(st.answer) : correctResponse(st.answer))),
+          )
+          expect(
+            firstFailedStep(spec, submitted),
+            `${t.id}@${seed}: breaking step ${broken} should be reported at ${broken}`,
+          ).toBe(broken)
+        }
+        const clean = serializeSteps(spec.steps.map((st) => correctResponse(st.answer)))
+        expect(firstFailedStep(spec, clean), `${t.id}@${seed}: a correct chain reports no failure`).toBeNull()
+      }
+    }
   })
 
   it('multiple choice offers a real choice', () => {

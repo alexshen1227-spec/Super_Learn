@@ -165,6 +165,54 @@ describe('review scheduling', () => {
 })
 
 /**
+ * Transfer is the app's strongest claim, so it is the one most worth pinning
+ * down. It used to fire on ANY success in transfer mode, which meant an
+ * authoring flag decided the top rung. Novelty is now measured against the
+ * learner's own history.
+ */
+describe('transferred is measured, not declared', () => {
+  const independent = () => [ev({ seed: 1, templateId: 'fam-a' }), ev({ seed: 2, templateId: 'fam-a' })]
+
+  it('a transfer attempt on an ALREADY PRACTICED family does not count', () => {
+    const events = [...independent(), ev({ seed: 3, templateId: 'fam-a', mode: 'transfer' })]
+    const state = evidenceFor(deriveEvidence(events, T0 + 10 * 60_000), 'sk1')
+    expect(state.transferredAt).toBeNull()
+    expect(state.state).toBe('independent')
+  })
+
+  it('a transfer attempt on a NOVEL family does count', () => {
+    const events = [...independent(), ev({ seed: 3, templateId: 'fam-b', mode: 'transfer' })]
+    const state = evidenceFor(deriveEvidence(events, T0 + 10 * 60_000), 'sk1')
+    expect(state.transferredAt).not.toBeNull()
+    expect(state.state).toBe('transferred')
+  })
+
+  it('transfer still requires independence first', () => {
+    // One novel-family transfer success, but the skill was never independent.
+    const events = [ev({ seed: 1, templateId: 'fam-b', mode: 'transfer' })]
+    const state = evidenceFor(deriveEvidence(events, T0 + 60_000), 'sk1')
+    expect(state.transferredAt).toBeNull()
+  })
+
+  it('a hinted transfer on a novel family does not count', () => {
+    const events = [...independent(), ev({ seed: 3, templateId: 'fam-b', mode: 'transfer', hintLevel: 2 })]
+    const state = evidenceFor(deriveEvidence(events, T0 + 10 * 60_000), 'sk1')
+    expect(state.transferredAt).toBeNull()
+  })
+
+  it('placement exposure does not make a family look already-practiced', () => {
+    // Placement routes; it must not burn a family's novelty for transfer.
+    const events = [
+      ev({ seed: 9, templateId: 'fam-b', mode: 'placement' }),
+      ...independent(),
+      ev({ seed: 3, templateId: 'fam-b', mode: 'transfer' }),
+    ]
+    const state = evidenceFor(deriveEvidence(events, T0 + 10 * 60_000), 'sk1')
+    expect(state.transferredAt).not.toBeNull()
+  })
+})
+
+/**
  * The no-self-grading law, enforced at the point it actually matters: replay.
  * Written work is exposure. It must never promote, never demote, and never
  * touch the review schedule.
