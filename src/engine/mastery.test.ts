@@ -13,7 +13,7 @@ function ev(over: Partial<AttemptEvent>): AttemptEvent {
     id: `e${counter}`,
     t: T0 + counter * 60_000,
     sessionId: 's1',
-    templateId: 'tpl-a',
+    templateId: `tpl-${counter}`,
     itemVersion: 1,
     seed: counter,
     skillIds: ['sk1'],
@@ -47,11 +47,31 @@ describe('evidence ladder', () => {
     const oneSuccess = [ev({})]
     expect(deriveEvidence(oneSuccess, T0 + DAY).get('sk1')!.state).toBe('guided')
 
-    const sameForm = [ev({ seed: 7 }), ev({ seed: 7 })]
+    const sameForm = [ev({ seed: 7, templateId: 'same' }), ev({ seed: 7, templateId: 'same' })]
     expect(deriveEvidence(sameForm, T0 + DAY).get('sk1')!.state).toBe('guided') // same form twice ≠ independent
 
-    const twoForms = [ev({ seed: 1 }), ev({ seed: 2 })]
+    // A FAMILY is the unit of independence, not a variant. Two randomisations
+    // of one generator are the same question with different numbers; they used
+    // to satisfy the rung, which was the most generous thing in the ladder.
+    const twoVariantsOneFamily = [ev({ seed: 1, templateId: 'fam' }), ev({ seed: 2, templateId: 'fam' })]
+    expect(deriveEvidence(twoVariantsOneFamily, T0 + 0.5 * DAY).get('sk1')!.state).toBe('guided')
+
+    const twoForms = [ev({ seed: 1, templateId: 'fam-1' }), ev({ seed: 2, templateId: 'fam-2' })]
     expect(deriveEvidence(twoForms, T0 + 0.5 * DAY).get('sk1')!.state).toBe('independent')
+  })
+
+  it('the four Paths need a third question family before Independent', () => {
+    // Judgment skills are the easiest to fake by recognising a question shape,
+    // so observation/logic/strategy/influence-defence carry a stricter rung.
+    const two = (bucket: 'math' | 'observer') => [
+      ev({ seed: 1, templateId: 'p-1', bucket }),
+      ev({ seed: 2, templateId: 'p-2', bucket }),
+    ]
+    expect(deriveEvidence(two('math'), T0 + DAY).get('sk1')!.state).toBe('independent')
+    expect(deriveEvidence(two('observer'), T0 + DAY).get('sk1')!.state).toBe('guided')
+
+    const three = [...two('observer'), ev({ seed: 3, templateId: 'p-3', bucket: 'observer' })]
+    expect(deriveEvidence(three, T0 + DAY).get('sk1')!.state).toBe('independent')
   })
 
   it('hinted success never counts as independent evidence', () => {
@@ -62,10 +82,13 @@ describe('evidence ladder', () => {
   })
 
   it('retained requires a ≥48h gap after independence', () => {
+    // Timestamps are pinned: the shared `ev` counter drives `t` by default, so
+    // adding a test elsewhere in this file would otherwise move these events
+    // and quietly change what the gap is measured from.
     const events = [
-      ev({ seed: 1 }),
-      ev({ seed: 2 }),
-      ev({ seed: 3, t: T0 + 10 * 60_000 }), // too soon
+      ev({ seed: 1, t: T0 + 1 * 60_000, templateId: 'r-1' }),
+      ev({ seed: 2, t: T0 + 2 * 60_000, templateId: 'r-2' }),
+      ev({ seed: 3, t: T0 + 10 * 60_000, templateId: 'r-3' }), // too soon
     ]
     expect(deriveEvidence(events, T0 + DAY).get('sk1')!.state).toBe('independent')
 
@@ -171,7 +194,8 @@ describe('review scheduling', () => {
  * learner's own history.
  */
 describe('transferred is measured, not declared', () => {
-  const independent = () => [ev({ seed: 1, templateId: 'fam-a' }), ev({ seed: 2, templateId: 'fam-a' })]
+  // Independence now needs two distinct FAMILIES, not two variants of one.
+  const independent = () => [ev({ seed: 1, templateId: 'fam-a' }), ev({ seed: 2, templateId: 'fam-a2' })]
 
   it('a transfer attempt on an ALREADY PRACTICED family does not count', () => {
     const events = [...independent(), ev({ seed: 3, templateId: 'fam-a', mode: 'transfer' })]

@@ -11,7 +11,9 @@ function success(skillId: string, seed: number, t: number): AttemptEvent {
     id: `p${skillId}${seed}`,
     t,
     sessionId: 's',
-    templateId: 'tpl',
+    // One family per seed: independence counts distinct question FAMILIES, so
+    // a fixed templateId here would only ever prove one form.
+    templateId: `tpl-${seed}`,
     itemVersion: 1,
     seed,
     skillIds: [skillId],
@@ -49,10 +51,13 @@ describe('paths', () => {
     const empty = pathProgress(observer, deriveEvidence([], T0))
     expect(empty.rankIndex).toBe(0)
     expect(empty.progress).toBe(0)
-    // make every observer skill independent (2 distinct successes each)
+    // Make every observer skill independent. The Paths need THREE distinct
+    // question families, not two — judgment skills are the easiest to fake by
+    // recognising a familiar question shape.
     const events = observer.skillIds.flatMap((id, i) => [
       success(id, 1, T0 + i * 1000),
       success(id, 2, T0 + i * 1000 + 500),
+      success(id, 3, T0 + i * 1000 + 800),
     ])
     const full = pathProgress(observer, deriveEvidence(events, T0 + 86_400_000))
     expect(full.rankIndex).toBeGreaterThanOrEqual(2)

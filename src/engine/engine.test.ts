@@ -27,7 +27,9 @@ function attempt(bucket: BucketId, skillId: string, over: Partial<AttemptEvent> 
     id: `a${n}`,
     t: NOW - 10 * DAY + n * 3_600_000,
     sessionId: 's',
-    templateId: `t-${skillId}`,
+    // A distinct family per attempt: independence is measured across question
+    // FAMILIES, so a single templateId per skill would only ever prove one.
+    templateId: `t-${skillId}-${n}`,
     itemVersion: 1,
     seed: n,
     skillIds: [skillId],
@@ -372,10 +374,13 @@ describe('coach-tuned allocations', () => {
   })
   it('boosts buckets with piled-up due reviews', async () => {
     const { tuneTargets } = await import('./allocationPlus')
-    // Two observer skills independent 10 days ago → both overdue.
+    // Two observer skills independent 10 days ago → both overdue. Three
+    // attempts each, because the Paths require three distinct question
+    // families before independence.
     const events = ['o-obsinf', 'o-recall'].flatMap((sk, i) => [
       attempt('observer', sk, { t: NOW - 10 * DAY, seed: 100 + i }),
       attempt('observer', sk, { t: NOW - 10 * DAY + 3_600_000, seed: 200 + i }),
+      attempt('observer', sk, { t: NOW - 10 * DAY + 7_200_000, seed: 300 + i }),
     ])
     const s = stateWith(events)
     const tuned = tuneTargets(s, deriveEvidence(events, NOW), DEFAULT_INDEX, NOW)

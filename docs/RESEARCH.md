@@ -326,6 +326,15 @@ user-opted fluency drills.
   the mastery-points economy (50/80/100), because a parallel score would
   compete with the evidence ladder and would reintroduce a number that means
   less than the rung it sits beside.
+  **Coverage correction, 2026-08-07:** "distinct forms" was implemented as
+  distinct `templateId:seed` pairs, so two randomisations of ONE generator
+  satisfied it — the same question with different numbers, counted as two
+  forms. A form is now the template FAMILY, and the four Paths require three
+  families rather than two, because judgment skills are the easiest to pass by
+  recognising a question shape. Both numbers remain HEURISTIC: no study fixes
+  them. The change came from the learner asking that mastery mean something
+  usable in real life, and it demotes some previously-earned rungs on replay —
+  which is the append-only evidence model working as intended.
 - **AoPS Alcumus** (already cited below) — its adaptive selection and
   "problems seen recently are less likely to reappear" behaviour informed the
   planner's novelty tracking and within-session difficulty adaptation.

@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '3.5',
+    date: '2026-08-07',
+    title: 'Harder, Longer, and Honest About Mastery',
+    points: [
+      'Mastery got substantially harder to reach, because it should mean you can actually use the thing. "Independent" used to accept two versions of the SAME question generator — the same problem with different numbers, counted as two. It now requires two genuinely different question families, and the four Paths require three, since observation, logic, strategy and influence-defence are the easiest skills to pass by recognising a familiar question shape rather than thinking. Some skills will drop a rung when this recalculates. Nothing was lost; the old rung was not earned under the stricter rule.',
+      'A session no longer ends early. Planned minutes are only estimates, so a "30 minute" session could finish in twelve real ones. It now tops itself up with fresh work until it is within five minutes of the length you chose, always stopping at a block boundary rather than mid-problem, and never starting something that would run it long. A minute counter sits in the session header — counting up, not down, because a countdown turns thinking time into time pressure.',
+      'Your phone stays awake during a session, placement, or exam. Thinking time is not idle time, and the screen locking mid-problem was interrupting the one thing this app is for.',
+      'Fixed: the same problem could appear twice in a row. When the session stepped difficulty up or down it picked the replacement from the same skill — without checking what you had already been given, so it could hand back the question you had just answered. Reported from real use, reproduced, and now covered by a test that fails against the old behaviour.',
+      'First sessions after the diagnostic start much closer to your actual level. Every skill previously began at the easiest difficulty regardless of what placement had just watched you do, and the planner kept parking on foundational material because "other skills depend on it" — even when placement had already cleared it. Measured across a full plan, mean difficulty rose from 2.0 to 2.5 with no bottom-rung items at all.',
+      'No block can be filled with clones of one question family any more. A skill with only one question type was quietly repeating it up to seven times in a single block; the cap is now two, and the session fills the rest from elsewhere.',
+    ],
+  },
+  {
     version: '3.4',
     date: '2026-08-06',
     title: 'First Day of Real Use',

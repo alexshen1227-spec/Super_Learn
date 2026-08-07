@@ -21,6 +21,7 @@ import type { AttemptEvent, ItemTemplate } from '../../domain/types'
 import { Button, Card, Chip } from '../components'
 import { Rich } from '../richtext'
 import { AnswerInput } from '../session/ItemPlayer'
+import { useWakeLock } from '../useWakeLock'
 
 type Phase = 'intro' | 'probe' | 'report'
 
@@ -31,6 +32,9 @@ export function PlacementScreen() {
   const [progress, setProgress] = useState<PlacementProgress>(() => startPlacement(state.profile, Date.now()))
   const [phase, setPhase] = useState<Phase>('intro')
   const [response, setResponse] = useState('')
+  // Placement runs 12-18 minutes of unfamiliar problems; a lock-out mid-probe
+  // would cost routing accuracy on the one pass that sets the starting point.
+  useWakeLock(phase === 'probe')
   const [confidence, setConfidence] = useState<number | null>(null)
   const [probeCount, setProbeCount] = useState(0)
   /** Wrong on the math ladder → one easier constructed follow-up (slip vs gap). */

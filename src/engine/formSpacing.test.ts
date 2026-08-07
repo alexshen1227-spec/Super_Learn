@@ -39,10 +39,15 @@ const at = (days: number, tpl: string, ok: boolean, over: Partial<AttemptEvent> 
  * they actually failed went untested.
  */
 describe('a strong question family cannot hide a weak one', () => {
-  // Owns "easy"; keeps failing "hard".
+  // Owns "easy" and "easy2"; keeps failing "hard".
+  //
+  // Two DIFFERENT families are needed to earn independence now — two variants
+  // of one generator no longer count. That tightening removes the crudest
+  // version of this trap, but not the trap itself: a learner can legitimately
+  // own two families and still coast on them while a third stays broken.
   const events = [
     at(0, 'easy', true),
-    at(1, 'easy', true),
+    at(1, 'easy2', true),
     at(2, 'hard', false),
     at(3, 'easy', true),
     at(6, 'easy', true),

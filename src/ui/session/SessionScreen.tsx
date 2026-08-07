@@ -19,8 +19,10 @@ import { useNav, type SessionLaunch } from '../nav'
 import { buildContentIndex } from '../../content/registry'
 import {
   buildChallengePlan,
+  adaptiveSwap,
   buildCheckpointPlan,
   buildErrorClinicPlan,
+  buildExtensionBlock,
   buildFocusPlan,
   buildMixedReviewPlan,
   buildSessionPlan,
@@ -30,6 +32,7 @@ import { deriveEvidence, STATE_LABEL, stateRank } from '../../engine/mastery'
 import { nextReviewAt } from '../../engine/scheduler'
 import { uid } from '../../engine/rng'
 import { clearDraft, loadDraftSync, saveDraft, type ActivityRecord, type SessionDraft, type SessionPhase } from '../../store/draft'
+import { useWakeLock } from '../useWakeLock'
 import { Button, Card, Chip, Confirm, Modal, Segmented } from '../components'
 import { ItemPlayer } from './ItemPlayer'
 import { ChessPlayer } from './ChessPlayer'
@@ -93,14 +96,24 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
   const activeSec = useRef(0)
   const evidenceBefore = useRef<typeof evidence | null>(null)
 
+  // Keep the screen on while working — thinking time is not idle time. Not
+  // held on the summary screen, where reading is done and the phone may as
+  // well behave normally again.
+  useWakeLock(phase !== 'summary')
+
   /** Set when the session re-picked the next item; shown once, then cleared. */
   const [adaptNote, setAdaptNote] = useState<'eased' | 'stepped-up' | null>(null)
   const [overTime, setOverTime] = useState(false)
+  /** Whole minutes of active work — drives the header clock, so it is state
+   *  rather than only a ref. Ticking per minute keeps re-renders to 1/60th of
+   *  what a seconds display would cost during a session. */
+  const [activeMin, setActiveMin] = useState(0)
   // active-time ticker (pauses when hidden)
   useEffect(() => {
     const id = setInterval(() => {
       if (document.visibilityState === 'visible') {
         activeSec.current += 1
+        setActiveMin((m) => (Math.floor(activeSec.current / 60) === m ? m : Math.floor(activeSec.current / 60)))
         // A gentle nudge well past the planned time — a clean stop beats a blur.
         if (checkIn && activeSec.current > (checkIn.minutes + 12) * 60) setOverTime(true)
       }
@@ -341,10 +354,6 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
   const adaptNext = useCallback(
     (nextBlockIndex: number, nextActIndex: number) => {
       if (!plan) return
-      const target = plan.blocks[nextBlockIndex]?.activities[nextActIndex]
-      if (!target) return
-      const current = index.templates.get(target.templateId)
-      if (!current) return
 
       // Read the last three graded outcomes of this session, most recent first.
       const outcomes: boolean[] = []
@@ -355,22 +364,12 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
           if (rec?.eventLogged && rec.firstCorrect !== null) outcomes.push(rec.firstCorrect === true)
         }
       }
-      if (outcomes.length < 2) return
-      const struggling = outcomes.slice(0, 2).every((ok) => !ok)
-      const cruising = outcomes.length >= 3 && outcomes.every((ok) => ok)
-      if (!struggling && !cruising) return
 
-      const wanted = Math.max(1, Math.min(5, current.difficulty + (struggling ? -1 : 1)))
-      if (wanted === current.difficulty) return
-      const siblings = (index.bySkill.get(current.skillIds[0]) ?? []).filter(
-        (t) => !t.authentic && t.kind === current.kind && t.id !== current.id,
-      )
-      if (!siblings.length) return
-      const swap = siblings
-        .map((t) => ({ t, d: Math.abs(t.difficulty - wanted) }))
-        .sort((a, b) => a.d - b.d)[0]
-      // Only swap if it actually moves toward the level we want.
-      if (!swap || Math.abs(swap.t.difficulty - wanted) >= Math.abs(current.difficulty - wanted)) return
+      // The decision itself lives in the engine so it can be tested without a
+      // DOM — including the rule that a swap must never re-serve something
+      // this session already used.
+      const swap = adaptiveSwap(plan, index, { block: nextBlockIndex, act: nextActIndex }, outcomes)
+      if (!swap) return
 
       setPlan((prev) => {
         if (!prev) return prev
@@ -380,13 +379,13 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
             : {
                 ...b,
                 activities: b.activities.map((a, ai) =>
-                  ai !== nextActIndex ? a : { ...a, templateId: swap.t.id, seed: pickSeed(swap.t, new Set()) },
+                  ai !== nextActIndex ? a : { ...a, templateId: swap.templateId, seed: swap.seed },
                 ),
               },
         )
         return { ...prev, blocks }
       })
-      setAdaptNote(struggling ? 'eased' : 'stepped-up')
+      setAdaptNote(swap.direction)
     },
     [plan, index, records],
   )
@@ -404,9 +403,28 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
       setActIndex(0)
       setPhase('interstitial')
     } else {
+      // The plan is out of work — but planned minutes are only estimates, and
+      // finishing a "30 minute" session in twelve real ones is not the dose
+      // that was chosen. Top it up until we are inside the grace window, at a
+      // block boundary so the session still ends somewhere deliberate.
+      const elapsedMin = activeSec.current / 60
+      const extra = checkIn
+        ? buildExtensionBlock(
+            { index, evidence, state, now: Date.now(), checkIn },
+            plan,
+            elapsedMin,
+          )
+        : null
+      if (extra) {
+        setPlan((prev) => (prev ? { ...prev, blocks: [...prev.blocks, extra] } : prev))
+        setBlockIndex(plan.blocks.length)
+        setActIndex(0)
+        setPhase('interstitial')
+        return
+      }
       setPhase('exit-reflect')
     }
-  }, [plan, block, actIndex, blockIndex, adaptNext])
+  }, [plan, block, actIndex, blockIndex, adaptNext, checkIn, index, evidence, state])
 
   const finishSession = useCallback(
     (interrupted: boolean) => {
@@ -552,6 +570,8 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
           label={`Block ${blockIndex + 1} of ${plan.blocks.length}`}
           done={doneActs}
           total={totalActs}
+          elapsedMin={activeMin}
+          targetMin={checkIn ? checkIn.minutes : null}
           onLeave={() => setShowLeave(true)}
           onPark={() => setParkOpen(true)}
         />
@@ -617,6 +637,8 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
         label={`${block.label} · ${actIndex + 1}/${block.activities.length}`}
         done={doneActs}
         total={totalActs}
+        elapsedMin={activeMin}
+        targetMin={checkIn ? checkIn.minutes : null}
         onLeave={() => setShowLeave(true)}
         onPark={() => setParkOpen(true)}
       />
@@ -669,7 +691,27 @@ function describeWhen(t: number): string {
   return `in ${days} day${days === 1 ? '' : 's'}`
 }
 
-function SessionHeader({ label, done, total, onLeave, onPark }: { label: string; done: number; total: number; onLeave: () => void; onPark: () => void }) {
+function SessionHeader({
+  label,
+  done,
+  total,
+  elapsedMin,
+  targetMin,
+  onLeave,
+  onPark,
+}: {
+  label: string
+  done: number
+  total: number
+  elapsedMin: number
+  targetMin: number | null
+  onLeave: () => void
+  onPark: () => void
+}) {
+  // Minutes only, and counting UP. A ticking countdown turns thinking time
+  // into time pressure, which is the opposite of what this app rewards.
+  const clock = targetMin ? `${Math.floor(elapsedMin)}/${targetMin}m` : `${Math.floor(elapsedMin)}m`
+  const past = targetMin !== null && elapsedMin >= targetMin
   return (
     <div className="sticky top-0 z-30 bg-bg/95 backdrop-blur pt-2 pb-2 -mx-4 px-4 border-b border-line">
       <div className="flex items-center gap-3">
@@ -677,7 +719,15 @@ function SessionHeader({ label, done, total, onLeave, onPark }: { label: string;
           ✕
         </button>
         <div className="flex-1 min-w-0">
-          <div className="text-[13px] font-medium truncate">{label}</div>
+          <div className="flex items-baseline gap-2">
+            <div className="text-[13px] font-medium truncate flex-1 min-w-0">{label}</div>
+            <span
+              className={`text-[12px] font-mono shrink-0 ${past ? 'text-good' : 'text-faint'}`}
+              aria-label={`${Math.floor(elapsedMin)} minutes of focused work${targetMin ? ` out of ${targetMin}` : ''}`}
+            >
+              {clock}
+            </span>
+          </div>
           <div
             className="mt-1 h-1 rounded-full bg-surface3 overflow-hidden"
             role="progressbar"

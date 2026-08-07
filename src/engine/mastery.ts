@@ -9,7 +9,10 @@
  * carry a skill up a rung. Anything that advances a skill was machine-graded.
  *
  * Promotion thresholds are PRODUCT HEURISTICS (labeled as such in the UI):
- *  - independent: ≥2 first-attempt unaided successes on distinct item forms
+ *  - independent: first-attempt unaided successes on ≥2 distinct question
+ *    FAMILIES (≥3 for the four Paths). A family is a template, not a variant:
+ *    two randomisations of one generator are the same question with different
+ *    numbers. See `formsRequired`.
  *  - retained: a later unaided first-attempt success ≥48h after the previous
  *    success on that skill
  *  - transferred: unaided first-attempt success in transfer mode
@@ -71,8 +74,33 @@ interface FormTracker {
   lastOutcomeCorrect: boolean | null
 }
 
+/**
+ * Distinct question FAMILIES required before a skill counts as Independent.
+ *
+ * Two rules live here, both tightened after the learner said mastery should
+ * mean "you can actually use it in real life".
+ *
+ * 1. A form is a template family, not a variant. Answering two randomisations
+ *    of one generator is one skill shown twice, and counting it as two was the
+ *    single most generous thing in the ladder.
+ * 2. The four Paths need THREE families rather than two. Observation, logic,
+ *    strategy and influence-defence are judgment skills, and judgment is the
+ *    easiest thing to fake by pattern-matching a familiar question shape. A
+ *    third framing is not proof of real-world use — only the Transferred rung
+ *    goes near that claim — but it is a materially harder thing to fake.
+ *
+ * HEURISTIC, not evidence: no study fixes these numbers. They are deliberately
+ * strict because the cost of overclaiming mastery falls on the learner.
+ */
+const PATH_BUCKETS: ReadonlySet<string> = new Set(['observer', 'investigator', 'strategist', 'insight'])
+export function formsRequired(bucket: string | null): number {
+  return bucket !== null && PATH_BUCKETS.has(bucket) ? 3 : 2
+}
+
 interface Tracker {
   skillId: string
+  /** Bucket of the first event seen — sets how strict this skill's ladder is. */
+  bucket: string | null
   exposure: number
   guidedSuccesses: number
   independentForms: Set<string>
@@ -106,6 +134,7 @@ interface Tracker {
 function newTracker(skillId: string): Tracker {
   return {
     skillId,
+    bucket: null,
     exposure: 0,
     guidedSuccesses: 0,
     independentForms: new Set(),
@@ -204,6 +233,8 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
   tr.attempts++
   tr.exposure++
   tr.lastAttemptAt = e.t
+  if (tr.bucket === null) tr.bucket = e.bucket
+  const required = formsRequired(tr.bucket)
   if (isUngraded(e)) return
   const firstSuccess = isFirstUnaidedSuccess(e)
   const eventualSuccess = isEventualSuccess(e)
@@ -220,12 +251,18 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
 
   if (firstSuccess) {
     tr.recentMisses = 0
-    if (tr.independentForms.size >= 2 && e.mode !== 'placement') tr.reviewSuccesses++
+    if (tr.independentForms.size >= required && e.mode !== 'placement') tr.reviewSuccesses++
     // Placement gives at most one form of credit; it routes, it does not prove.
-    const formKey = e.mode === 'placement' ? 'placement' : `${e.templateId}:${e.seed}`
+    //
+    // A form is the FAMILY, not the variant. This used to key on
+    // `templateId:seed`, so two randomisations of one generator satisfied
+    // "distinct item forms" — the same question twice with different numbers,
+    // counted as independence. Independence should mean the idea survived a
+    // change of question, not a change of digits.
+    const formKey = e.mode === 'placement' ? 'placement' : e.templateId
     // Retention: a later unaided success ≥48h after the previous success.
     if (
-      tr.independentForms.size >= 2 &&
+      tr.independentForms.size >= required &&
       tr.lastCorrectAt !== null &&
       e.t - tr.lastCorrectAt >= RETENTION_GAP_MS &&
       tr.retainedAt === null
@@ -233,7 +270,7 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
       tr.retainedAt = e.t
     }
     tr.independentForms.add(formKey)
-    if (tr.independentForms.size >= 2 && tr.independentAt === null) tr.independentAt = e.t
+    if (tr.independentForms.size >= required && tr.independentAt === null) tr.independentAt = e.t
     // TRANSFER IS MEASURED, NOT DECLARED. It used to fire on any success in
     // transfer mode, which meant an authoring flag decided the top rung. Now
     // the item must come from a template family this skill has never been
@@ -262,7 +299,7 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
     }
   } else {
     tr.recentMisses++
-    if (tr.independentForms.size >= 2 && e.mode !== 'placement') tr.lapses++
+    if (tr.independentForms.size >= required && e.mode !== 'placement') tr.lapses++
     if (e.mode !== 'placement') {
       // Errors shorten the interval; a confident error shortens it most.
       tr.reviewIndex = Math.max(0, tr.reviewIndex - 2)
@@ -289,12 +326,13 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
 
 function finalize(tr: Tracker, now: number): SkillEvidence {
   const blocked = tr.misconceptionAt !== null
+  const required = formsRequired(tr.bucket)
   const rungIgnoringBlock: SkillState =
     tr.transferredAt !== null
       ? 'transferred'
       : tr.retainedAt !== null
         ? 'retained'
-        : tr.independentForms.size >= 2
+        : tr.independentForms.size >= required
           ? 'independent'
           : tr.guidedSuccesses >= 1 || tr.independentForms.size >= 1
             ? 'guided'

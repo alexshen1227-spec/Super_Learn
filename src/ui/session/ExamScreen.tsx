@@ -16,6 +16,7 @@ import { ERROR_TAGS } from '../../domain/types'
 import { Button, Card, Chip, Confirm } from '../components'
 import { Rich } from '../richtext'
 import { AnswerInput } from './ItemPlayer'
+import { useWakeLock } from '../useWakeLock'
 
 const DRAFT_KEY = 'axiomlab.exam'
 
@@ -70,6 +71,9 @@ export function ExamScreen() {
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
   const [phase, setPhase] = useState<Phase>('setup')
   const [items, setItems] = useState<ExamItem[]>([])
+  // A timed cumulative exam is the worst possible moment for the screen to
+  // lock: the clock keeps running while you unlock the phone.
+  useWakeLock(phase === 'run' || phase === 'postmortem')
   const [responses, setResponses] = useState<string[]>([])
   const [idx, setIdx] = useState(0)
   const [suggestedMinutes, setSuggestedMinutes] = useState(15)

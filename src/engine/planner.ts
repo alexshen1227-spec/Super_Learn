@@ -98,9 +98,25 @@ export function pickSeed(template: ItemTemplate, used: Set<string>): number {
   return Math.floor(Math.random() * 0x7fffffff)
 }
 
-/** Target item difficulty for a skill's current evidence. */
-export function targetDifficulty(ev: SkillEvidence, energy: CheckIn['energy'], conservative: boolean): number {
-  const base =
+/**
+ * Target item difficulty for a skill's current evidence.
+ *
+ * `placement` is the routing signal for this skill, and it matters most in the
+ * first sessions. Without it every skill starts at 1.5 because it has no
+ * practice evidence yet — which is exactly right for material the learner has
+ * never met, and exactly wrong straight after a diagnostic that just watched
+ * them handle it. Reported from real use as "the sessions are too easy".
+ *
+ * The signal only sets a FLOOR, and only until real evidence exists: practice
+ * always outranks the interview.
+ */
+export function targetDifficulty(
+  ev: SkillEvidence,
+  energy: CheckIn['energy'],
+  conservative: boolean,
+  placement?: 'gap' | 'ok' | 'strong' | 'skipped',
+): number {
+  const fromEvidence =
     ev.state === 'transferred'
       ? 5
       : ev.state === 'retained'
@@ -110,9 +126,21 @@ export function targetDifficulty(ev: SkillEvidence, energy: CheckIn['energy'], c
           : ev.state === 'guided'
             ? 2
             : 1.5
+  // A placement floor applies only where practice has not yet spoken.
+  const placementFloor = stateRank(ev.state) >= stateRank('independent') ? 0 : placement === 'strong' ? 3 : placement === 'ok' ? 2.5 : 0
+  const base = Math.max(fromEvidence, placementFloor)
   const adjusted =
     base + (energy === 'high' && !conservative ? 0.5 : 0) - (energy === 'low' ? 0.5 : 0) - (ev.recentMisses >= 2 ? 1 : 0)
-  return Math.max(1, Math.min(conservative ? 3 : 5, adjusted))
+  // The early-sessions cap exists so a cold planner does not overreach. It
+  // lifts when placement actually saw the skill go well — capping a strong
+  // placement at 3 is what made the first real sessions feel like review.
+  const ceiling = conservative ? (placement === 'strong' ? 4 : 3) : 5
+  return Math.max(1, Math.min(ceiling, adjusted))
+}
+
+/** The placement's routing signal for a skill, if it has one. */
+export function placementSignal(state: AppState, skillId: string): 'gap' | 'ok' | 'strong' | 'skipped' | undefined {
+  return state.placement?.signals.find((s) => s.skillId === skillId)?.signal
 }
 
 function pickTemplates(
@@ -160,23 +188,44 @@ function pickTemplatesForBudget(
   wantDifficulty: number,
   budgetMinutes: number,
   templateUse: Map<string, number>,
-  opts: { maxCount: number; minCount?: number; transferOnly?: boolean; excludeKinds?: string[]; preferCalibration?: boolean },
+  opts: {
+    maxCount: number
+    minCount?: number
+    transferOnly?: boolean
+    excludeKinds?: string[]
+    preferCalibration?: boolean
+    maxPerTemplate?: number
+  },
 ): ItemTemplate[] {
   const ranked = pickTemplates(candidates, wantDifficulty, candidates.length, templateUse, opts)
   if (!ranked.length) return []
   const reusable = ranked.filter((t) => t.variants > 1)
   const out: ItemTemplate[] = []
+  const timesUsed = new Map<string, number>()
   let minutes = 0
   let cursor = 0
   const minCount = opts.minCount ?? 1
+  // A skill with a single template used to fill an entire block with clones of
+  // itself — measured at seven copies of one family in one core block. Fresh
+  // VARIANTS are legitimate practice, but a block that is all one family is
+  // monotonous and narrow. Cap the repeats and return short instead; the
+  // session tops itself up from elsewhere (see buildExtensionBlock).
+  const maxPerTemplate = opts.maxPerTemplate ?? 2
   while (out.length < opts.maxCount) {
     const template = cursor < ranked.length ? ranked[cursor] : reusable.length ? reusable[(cursor - ranked.length) % reusable.length] : null
     if (!template) break
+    cursor++
+    const seen = timesUsed.get(template.id) ?? 0
+    if (seen >= maxPerTemplate) {
+      // Nothing left to rotate through — every candidate is exhausted.
+      if (cursor > ranked.length + reusable.length * maxPerTemplate) break
+      continue
+    }
     const next = minutes + template.minutes
     if (out.length >= minCount && next > budgetMinutes * 1.15) break
     out.push(template)
+    timesUsed.set(template.id, seen + 1)
     minutes = next
-    cursor++
     if (out.length >= minCount && minutes >= budgetMinutes * 0.9) break
   }
   return out
@@ -241,15 +290,35 @@ export function scoreSkills(
       score += 3
       reasons.push(ev.blockedByMisconception ? 'has an unrepaired confident error' : 'is due for review')
     }
+    const sig = state.placement?.signals.find((s) => s.skillId === skill.id)
+    // Placement saw this go well and practice has not contradicted it yet.
+    const alreadyCapable = sig?.signal === 'strong' && stateRank(ev.state) < stateRank('independent')
     const lev = prereqLeverage(skill.id, index, evidence)
-    if (lev > 0) {
+    // Leverage says "things are waiting on this". That argument dies when the
+    // learner is already capable here, because `prereqsMet` treats a strong
+    // placement as satisfying the prerequisite — the dependents are ALREADY
+    // unlocked, so counting the leverage again just pins the plan to the
+    // easiest foundational skill in the tree.
+    if (lev > 0 && !alreadyCapable) {
       score += Math.min(2.5, lev * 0.8)
       reasons.push(`${lev} skill${lev > 1 ? 's are' : ' is'} waiting on it`)
     }
-    const sig = state.placement?.signals.find((s) => s.skillId === skill.id)
     if (sig?.signal === 'gap') {
       score += 2
       reasons.push('placement flagged a gap here')
+    }
+    if (alreadyCapable) {
+      // Reported from real use: the first sessions after a diagnostic read as
+      // too easy. This was why — the frontier stayed parked on material the
+      // placement had already watched the learner handle.
+      score -= 2
+      reasons.push('placement already saw this go well, so the next gain is further on')
+      // When placement judged EVERYTHING strong, the penalty above is uniform
+      // and something still has to be picked. Break that tie upward: prefer
+      // the most advanced material the learner is cleared for, capped just
+      // above their stated grade so "start high" never becomes "start lost".
+      const reach = Math.min(skill.gradeBand, (state.profile.gradeLevel ?? 8) + 1)
+      score += Math.max(0, reach - 6) * 0.5
     }
     if (ev.recentMisses > 0) {
       score += 1
@@ -300,6 +369,150 @@ function act(t: ItemTemplate, mode: AttemptMode, used: Set<string>): PlannedActi
 
 export function estimatedPlanMinutes(plan: SessionPlan): number {
   return plan.blocks.reduce((sum, block) => sum + block.minutes, 0)
+}
+
+/**
+ * How close to the chosen length a session has to land before it may end.
+ *
+ * Planned minutes are ESTIMATES per item; a learner who works quickly can
+ * exhaust a "30 minute" plan in twelve real minutes, which quietly turns a
+ * deliberate dose into whatever the estimates happened to add up to. So the
+ * session tops itself up until it is inside this window, and never starts work
+ * that would carry it past the far edge.
+ *
+ * The window is symmetric on purpose: stopping early undertrains, and running
+ * long breaks the promise that a session has a deliberate endpoint.
+ */
+export const SESSION_GRACE_MIN = 5
+
+/**
+ * Extra work to fill a session that ran short, or null when it should end.
+ *
+ * Deliberately NOT more of whatever came last: it prefers skills already
+ * touched this session (consolidating beats scattering) and excludes every
+ * form already served, so an extension can never repeat a question.
+ */
+export function buildExtensionBlock(
+  ctx: PlannerContext,
+  plan: SessionPlan,
+  elapsedMinutes: number,
+): PlannedBlock | null {
+  const target = ctx.checkIn.minutes
+  const remaining = target - elapsedMinutes
+  if (remaining <= SESSION_GRACE_MIN) return null
+
+  const used = new Set<string>()
+  const seenTemplates = new Set<string>()
+  const seenSkills: string[] = []
+  for (const b of plan.blocks) {
+    for (const a of b.activities) {
+      used.add(`${a.templateId}:${a.seed}`)
+      const t = ctx.index.templates.get(a.templateId)
+      if (!t) continue
+      used.add(`${a.templateId}:${a.seed % Math.max(1, t.variants)}`)
+      seenTemplates.add(a.templateId)
+      for (const s of t.skillIds) if (!seenSkills.includes(s)) seenSkills.push(s)
+    }
+  }
+
+  // Skills already worked this session first, then anything else the learner
+  // has at least been introduced to. Never brand-new material: an extension is
+  // for using the remaining minutes well, not for opening a new front at the
+  // end of a session when attention is lowest.
+  const pool: ItemTemplate[] = []
+  const push = (t: ItemTemplate) => {
+    if (t.authentic || seenTemplates.has(t.id) || pool.includes(t)) return
+    pool.push(t)
+  }
+  for (const skillId of seenSkills) for (const t of ctx.index.bySkill.get(skillId) ?? []) push(t)
+  for (const [skillId, ev] of ctx.evidence) {
+    if (stateRank(ev.state) < stateRank('guided')) continue
+    for (const t of ctx.index.bySkill.get(skillId) ?? []) push(t)
+  }
+  if (!pool.length) return null
+
+  const templateUse = recentTemplateUse(ctx.state.events, ctx.now)
+  const activities: PlannedActivity[] = []
+  let minutes = 0
+  for (const t of pickTemplates(pool, 3, pool.length, templateUse, {})) {
+    if (activities.length >= 4) break
+    // Never overshoot the far edge of the window.
+    if (minutes + t.minutes > remaining + SESSION_GRACE_MIN) continue
+    activities.push(act(t, 'independent', used))
+    minutes += t.minutes
+    if (minutes >= remaining) break
+  }
+  if (!activities.length) return null
+
+  return {
+    id: uid('b'),
+    kind: 'core',
+    bucket: ctx.index.templates.get(activities[0].templateId)?.bucket ?? 'math',
+    label: 'Time remaining · extra practice',
+    minutes,
+    why: `You chose ${target} minutes and there ${remaining === 1 ? 'is' : 'are'} about ${Math.round(remaining)} left, so the session keeps going rather than ending early on the estimates.`,
+    activities,
+  }
+}
+
+/**
+ * Within-session difficulty adjustment: pick a replacement for the activity at
+ * `at`, one difficulty rung above or below, based on the session's recent
+ * graded outcomes (most recent first).
+ *
+ * Lives here rather than in the player because it is selection logic and needs
+ * to be testable without a DOM. It also has a trap worth naming: candidates
+ * come from the SAME skill as the activity being replaced, so anything already
+ * planned or answered this session must be excluded. Skipping that shipped a
+ * real bug — two proportional-reasoning families swapped places and handed the
+ * learner the same problem twice in a row.
+ *
+ * Returns null when no adjustment is warranted or no clean candidate exists.
+ */
+export function adaptiveSwap(
+  plan: SessionPlan,
+  index: ContentIndex,
+  at: { block: number; act: number },
+  outcomes: boolean[],
+): { templateId: string; seed: number; direction: 'eased' | 'stepped-up' } | null {
+  const target = plan.blocks[at.block]?.activities[at.act]
+  if (!target) return null
+  const current = index.templates.get(target.templateId)
+  if (!current) return null
+
+  if (outcomes.length < 2) return null
+  const struggling = outcomes.slice(0, 2).every((ok) => !ok)
+  const cruising = outcomes.length >= 3 && outcomes.slice(0, 3).every((ok) => ok)
+  if (!struggling && !cruising) return null
+
+  const wanted = Math.max(1, Math.min(5, current.difficulty + (struggling ? -1 : 1)))
+  if (wanted === current.difficulty) return null
+
+  const usedForms = new Set<string>()
+  const usedTemplates = new Set<string>()
+  plan.blocks.forEach((b, bi) =>
+    b.activities.forEach((a, ai) => {
+      if (bi === at.block && ai === at.act) return
+      usedTemplates.add(a.templateId)
+      usedForms.add(`${a.templateId}:${a.seed}`)
+      const t = index.templates.get(a.templateId)
+      if (t) usedForms.add(`${a.templateId}:${a.seed % Math.max(1, t.variants)}`)
+    }),
+  )
+
+  const siblings = (index.bySkill.get(current.skillIds[0]) ?? []).filter(
+    (t) => !t.authentic && t.kind === current.kind && t.id !== current.id && !usedTemplates.has(t.id),
+  )
+  if (!siblings.length) return null
+  const best = siblings.map((t) => ({ t, d: Math.abs(t.difficulty - wanted) })).sort((a, b) => a.d - b.d)[0]
+  // Only swap when it actually moves toward the level we want.
+  if (!best || Math.abs(best.t.difficulty - wanted) >= Math.abs(current.difficulty - wanted)) return null
+
+  return {
+    templateId: best.t.id,
+    seed: pickSeed(best.t, usedForms),
+    direction: struggling ? 'eased' : 'stepped-up',
+  }
 }
 
 /**
@@ -370,7 +583,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     const ev = evidenceFor(evidence, d.skillId)
     const picks = pickTemplates(
       index.bySkill.get(d.skillId) ?? [],
-      Math.min(3, targetDifficulty(ev, checkIn.energy, conservative)),
+      Math.min(3, targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, d.skillId))),
       1,
       templateUse,
     )
@@ -466,7 +679,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   }
   if (coreChoice) {
     const ev = evidenceFor(evidence, coreChoice.skill.id)
-    const diff = targetDifficulty(ev, checkIn.energy, conservative)
+    const diff = targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, coreChoice.skill.id))
     const coreBudget = short ? Math.max(4, total - warmMin - exitBudget) : Math.max(6, total - warmMin - labBudget - exitBudget)
     const needsIntro = stateRank(ev.state) < stateRank('guided')
     // Calibration steering: only once there is enough rated history to say
@@ -543,7 +756,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       labTemplates.push(
         ...pickTemplatesForBudget(
           index.bySkill.get(labSkill.skill.id) ?? [],
-          targetDifficulty(evidenceFor(evidence, labSkill.skill.id), checkIn.energy, conservative),
+          targetDifficulty(evidenceFor(evidence, labSkill.skill.id), checkIn.energy, conservative, placementSignal(state, labSkill.skill.id)),
           labBudget,
           templateUse,
           { maxCount: total >= 40 ? 4 : 3, minCount: 1 },
@@ -641,7 +854,7 @@ export function buildFocusPlan(ctx: PlannerContext, skillId: string): SessionPla
   const ev = evidenceFor(evidence, skillId)
   const used = recentlyUsedForms(state.events, ctx.now)
   const templateUse = recentTemplateUse(state.events, ctx.now)
-  const diff = targetDifficulty(ev, checkIn.energy, false)
+  const diff = targetDifficulty(ev, checkIn.energy, false, placementSignal(state, skillId))
   const picks = pickTemplatesForBudget(index.bySkill.get(skillId) ?? [], diff, checkIn.minutes, templateUse, {
     maxCount: Math.max(3, Math.min(10, Math.ceil(checkIn.minutes / 2))),
     minCount: 2,
@@ -690,7 +903,7 @@ export function buildErrorClinicPlan(ctx: PlannerContext, targets: RepairTarget[
       : candidates
     const repairUse = new Map(templateUse)
     if (failedTemplate) repairUse.set(failedTemplate.id, -100)
-    const picks = pickTemplatesForBudget(preferred, Math.max(1, targetDifficulty(ev, checkIn.energy, false) - 0.5), perTargetBudget, repairUse, {
+    const picks = pickTemplatesForBudget(preferred, Math.max(1, targetDifficulty(ev, checkIn.energy, false, placementSignal(state, target.skillId)) - 0.5), perTargetBudget, repairUse, {
       maxCount: Math.min(6, Math.max(2, Math.ceil(perTargetBudget / 2))),
       minCount: Math.min(2, preferred.length),
     })
