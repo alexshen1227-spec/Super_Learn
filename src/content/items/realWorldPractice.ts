@@ -5,14 +5,14 @@
  * is authored or computed and passes through the normal content audit.
  */
 import type { ItemTemplate } from '../../domain/types'
-import { mcq, money, round, tpl } from '../lib'
+import { cycle, mcq, money, round, tpl} from '../lib'
 import { pick, rint } from '../../engine/rng'
 
 const receipt = tpl(
   { id: 'real-receipt-check', name: 'Real Life: Check the Receipt', skillIds: ['m-percent'], bucket: 'math', difficulty: 2, variants: 20, minutes: 2.5, transfer: true },
-  (rng) => {
+  (rng, seed) => {
     const subtotal = rint(rng, 8, 32)
-    const rate = pick(rng, [10, 15, 20] as const)
+    const rate = cycle(seed, [10, 15, 20] as const)
     const tip = round((subtotal * rate) / 100, 2)
     return {
       title: 'Receipt check',
@@ -52,9 +52,9 @@ const unitPrice = tpl(
 
 const commute = tpl(
   { id: 'real-commute-time', name: 'Real Life: Travel-Time Check', skillIds: ['p-motion'], bucket: 'physics', difficulty: 2, variants: 11, minutes: 2.5, transfer: true },
-  (rng) => {
+  (rng, seed) => {
     const distance = rint(rng, 3, 12)
-    const speed = pick(rng, [3, 4, 6] as const)
+    const speed = cycle(seed, [3, 4, 6] as const)
     const minutes = (distance / speed) * 60
     return {
       title: 'Can the travel claim be true?',
@@ -69,8 +69,8 @@ const commute = tpl(
 
 const energyLabel = tpl(
   { id: 'real-energy-label', name: 'Real Life: Appliance Energy', skillIds: ['p-energy'], bucket: 'physics', difficulty: 3, variants: 18, minutes: 3, transfer: true },
-  (rng) => {
-    const watts = pick(rng, [40, 60, 80, 100] as const)
+  (rng, seed) => {
+    const watts = cycle(seed, [40, 60, 80, 100] as const)
     const hours = rint(rng, 2, 6)
     const days = rint(rng, 20, 30)
     const kwh = round((watts * hours * days) / 1000, 2)
@@ -86,9 +86,9 @@ const energyLabel = tpl(
 )
 
 const bugReport = tpl(
-  { id: 'real-bug-report', name: 'Real Life: Write a Reproducible Bug Report', skillIds: ['c-trace'], bucket: 'coding', difficulty: 3, variants: 8, minutes: 3, transfer: true },
-  (rng) => {
-    const feature = pick(rng, ['Save button', 'search filter', 'dark-mode toggle', 'assignment sorter'] as const)
+  { id: 'real-bug-report', name: 'Real Life: Write a Reproducible Bug Report', skillIds: ['c-trace'], bucket: 'coding', difficulty: 3, variants: 4, minutes: 3, transfer: true },
+  (rng, seed) => {
+    const feature = cycle(seed, ['Save button', 'search filter', 'dark-mode toggle', 'assignment sorter'] as const)
     return {
       title: 'Bug triage',
       prompt: `Someone reports: “The **${feature}** is broken sometimes.” Which follow-up creates the most useful bug report?`,
@@ -106,9 +106,9 @@ const bugReport = tpl(
 
 const notificationLoop = tpl(
   { id: 'real-notification-loop', name: 'Real Life: Trace an Automation', skillIds: ['c-loops', 'c-bool'], bucket: 'coding', difficulty: 3, variants: 20, minutes: 3, transfer: true },
-  (rng) => {
+  (rng, seed) => {
     const days = Array.from({ length: 6 }, () => rint(rng, 0, 3))
-    const threshold = pick(rng, [1, 2] as const)
+    const threshold = cycle(seed, [1, 2] as const)
     const count = days.filter((x) => x >= threshold).length
     return {
       title: 'Notification rule',
@@ -123,9 +123,9 @@ const notificationLoop = tpl(
 
 const headlineClaim = tpl(
   { id: 'real-headline-claim', name: 'Real Life: Audit a Headline', skillIds: ['s-sources', 's-corr'], bucket: 'science', difficulty: 3, variants: 16, minutes: 3.5, transfer: true, calibration: true },
-  (rng) => {
-    const group = pick(rng, ['students who sleep more', 'people who walk to work', 'teens who eat breakfast', 'players who practice daily'] as const)
-    const outcome = pick(rng, ['report higher grades', 'report lower stress', 'miss fewer days', 'win more matches'] as const)
+  (rng, seed) => {
+    const group = cycle(seed, ['students who sleep more', 'people who walk to work', 'teens who eat breakfast', 'players who practice daily'] as const)
+    const outcome = cycle(Math.floor(seed / 4), ['report higher grades', 'report lower stress', 'miss fewer days', 'win more matches'] as const)
     return {
       title: 'Headline versus study',
       prompt: `Headline: “New study proves the habit causes success.” Study detail: a one-time survey finds **${group} ${outcome}**. Which rewrite matches the design?`,
@@ -142,9 +142,9 @@ const headlineClaim = tpl(
 )
 
 const householdExperiment = tpl(
-  { id: 'real-household-experiment', name: 'Real Life: Improve a Household Test', skillIds: ['s-design'], bucket: 'science', difficulty: 4, variants: 8, minutes: 4, transfer: true },
-  (rng) => {
-    const claim = pick(rng, ['one towel brand absorbs more', 'one battery lasts longer', 'one insulation material slows cooling', 'one soil mix retains more water'] as const)
+  { id: 'real-household-experiment', name: 'Real Life: Improve a Household Test', skillIds: ['s-design'], bucket: 'science', difficulty: 4, variants: 4, minutes: 4, transfer: true },
+  (rng, seed) => {
+    const claim = cycle(seed, ['one towel brand absorbs more', 'one battery lasts longer', 'one insulation material slows cooling', 'one soil mix retains more water'] as const)
     return {
       title: 'From demonstration to experiment',
       prompt: `You want to test whether **${claim}**. Which plan produces the most interpretable comparison?`,
@@ -161,7 +161,7 @@ const householdExperiment = tpl(
 )
 
 const meetingParaphrase = tpl(
-  { id: 'real-meeting-paraphrase', name: 'Real Life: Paraphrase a Request', skillIds: ['o-listen'], bucket: 'observer', difficulty: 2, variants: 8, minutes: 2.5, transfer: true },
+  { id: 'real-meeting-paraphrase', name: 'Real Life: Paraphrase a Request', skillIds: ['o-listen'], bucket: 'observer', difficulty: 2, variants: 1, minutes: 2.5, transfer: true },
   (rng) => {
     const msg = pick(rng, [
       { text: 'I can finish the slides tonight, but I need the final numbers by six.', para: 'You will finish tonight if the final numbers arrive by 6 pm.' },
@@ -186,8 +186,8 @@ const meetingParaphrase = tpl(
 
 const witnessNotes = tpl(
   { id: 'real-witness-notes', name: 'Real Life: Clean Up Eyewitness Notes', skillIds: ['o-obsinf'], bucket: 'observer', difficulty: 3, variants: 1, minutes: 3, transfer: true },
-  (rng) => {
-    const place = pick(rng, ['hallway', 'bus stop', 'library desk', 'practice room'] as const)
+  (_rng, seed) => {
+    const place = cycle(seed, ['hallway', 'bus stop', 'library desk', 'practice room'] as const)
     return {
       title: 'Observation log',
       prompt: `At the ${place}, classify each note before sharing it.`,
@@ -209,7 +209,7 @@ const witnessNotes = tpl(
 )
 
 const repairTest = tpl(
-  { id: 'real-repair-test', name: 'Real Life: Separate Competing Causes', skillIds: ['i-hypo'], bucket: 'investigator', difficulty: 4, variants: 10, minutes: 4, transfer: true },
+  { id: 'real-repair-test', name: 'Real Life: Separate Competing Causes', skillIds: ['i-hypo'], bucket: 'investigator', difficulty: 4, variants: 1, minutes: 4, transfer: true },
   (rng) => {
     const issue = pick(rng, [
       { symptom: 'a laptop disconnects only at one desk', a: 'the laptop Wi-Fi is failing', b: 'that desk has weak signal', test: 'Use the same laptop at another desk and a second device at the problem desk.' },
@@ -234,11 +234,11 @@ const repairTest = tpl(
 
 const baseRateMessage = tpl(
   { id: 'real-base-rate-message', name: 'Real Life: Size an Alarming Message', skillIds: ['i-bayes'], bucket: 'investigator', difficulty: 4, variants: 4, minutes: 4, transfer: true, calibration: true },
-  (rng) => {
+  (_rng, seed) => {
     const total = 100
-    const real = pick(rng, [2, 4, 5, 10] as const)
+    const real = cycle(seed, [2, 4, 5, 10] as const)
     const hitsReal = Math.max(1, Math.round(real * 0.8))
-    const hitsFalse = pick(rng, [8, 12, 16] as const)
+    const hitsFalse = cycle(Math.floor(seed / 4), [8, 12, 16] as const)
     const posterior = round((100 * hitsReal) / (hitsReal + hitsFalse), 1)
     return {
       title: 'Alarm versus base rate',
@@ -291,9 +291,9 @@ const sunkCost = tpl(
 )
 
 const boundaryText = tpl(
-  { id: 'real-boundary-text', name: 'Real Life: Send a Clear Boundary', skillIds: ['h-boundary'], bucket: 'insight', difficulty: 2, variants: 8, minutes: 3, transfer: true },
-  (rng) => {
-    const ask = pick(rng, ['share your account password', 'send your homework answers', 'join a late-night call', 'lend an item you cannot replace'] as const)
+  { id: 'real-boundary-text', name: 'Real Life: Send a Clear Boundary', skillIds: ['h-boundary'], bucket: 'insight', difficulty: 2, variants: 4, minutes: 3, transfer: true },
+  (rng, seed) => {
+    const ask = cycle(seed, ['share your account password', 'send your homework answers', 'join a late-night call', 'lend an item you cannot replace'] as const)
     return {
       title: 'Clear, calm, complete',
       prompt: `A peer repeatedly asks you to **${ask}** after you already hesitated. Which message is clearest?`,
@@ -310,9 +310,9 @@ const boundaryText = tpl(
 )
 
 const permissionChoice = tpl(
-  { id: 'real-permission-choice', name: 'Real Life: Check Consent and Privacy', skillIds: ['h-influence', 'h-boundary'], bucket: 'insight', difficulty: 3, variants: 8, minutes: 3.5, transfer: true },
-  (rng) => {
-    const scenario = pick(rng, ['upload a group photo', 'add contacts to a club mailing list', 'share a private chat screenshot', 'install an app that reads location history'] as const)
+  { id: 'real-permission-choice', name: 'Real Life: Check Consent and Privacy', skillIds: ['h-influence', 'h-boundary'], bucket: 'insight', difficulty: 3, variants: 4, minutes: 3.5, transfer: true },
+  (rng, seed) => {
+    const scenario = cycle(seed, ['upload a group photo', 'add contacts to a club mailing list', 'share a private chat screenshot', 'install an app that reads location history'] as const)
     return {
       title: 'Permission is specific',
       prompt: `Before you **${scenario}**, which action best respects other people’s agency?`,
@@ -329,9 +329,9 @@ const permissionChoice = tpl(
 )
 
 const communityAlert = tpl(
-  { id: 'real-community-alert', name: 'Real Life: Handle an Unverified Safety Alert', skillIds: ['i-hypo', 'h-influence'], bucket: 'investigator', difficulty: 5, variants: 6, minutes: 5, transfer: true, calibration: true },
-  (rng) => {
-    const place = pick(rng, ['school entrance', 'community center', 'bus station', 'sports venue'] as const)
+  { id: 'real-community-alert', name: 'Real Life: Handle an Unverified Safety Alert', skillIds: ['i-hypo', 'h-influence'], bucket: 'investigator', difficulty: 5, variants: 4, minutes: 5, transfer: true, calibration: true },
+  (rng, seed) => {
+    const place = cycle(seed, ['school entrance', 'community center', 'bus station', 'sports venue'] as const)
     return {
       title: 'Accuracy under urgency',
       prompt: `A forwarded post claims an unspecified danger at the **${place}**, urges everyone to repost immediately, and gives no time, source, or official notice. What response best balances safety, uncertainty, and harm?`,
@@ -367,9 +367,9 @@ const projectTriage = tpl(
 )
 
 const packingConstraints = tpl(
-  { id: 'real-packing-constraints', name: 'Real Life: Pack Under Constraints', skillIds: ['z-deduce'], bucket: 'puzzle', difficulty: 4, variants: 8, minutes: 4, transfer: true },
-  (rng) => {
-    const setting = pick(rng, ['equipment shelf', 'delivery cart', 'storage locker', 'stage supply rack'] as const)
+  { id: 'real-packing-constraints', name: 'Real Life: Pack Under Constraints', skillIds: ['z-deduce'], bucket: 'puzzle', difficulty: 4, variants: 4, minutes: 4, transfer: true },
+  (rng, seed) => {
+    const setting = cycle(seed, ['equipment shelf', 'delivery cart', 'storage locker', 'stage supply rack'] as const)
     return {
       title: 'Constraint-safe packing',
       prompt: `Four labeled cases must go left-to-right on one **${setting}**: **C**amera, **T**oolbox, **B**attery, and **F**irst-aid kit. The toolbox must be immediately left of the battery; first aid must be at an end; and first aid cannot touch the camera. Which loading order satisfies every constraint?`,

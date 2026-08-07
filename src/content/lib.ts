@@ -66,6 +66,20 @@ export function tpl(opts: TplOpts, gen: (rng: Rng, seed: number) => SingleBody):
   }
 }
 
+/**
+ * Deterministic case rotation for templates built from a list of scenarios.
+ *
+ * `pick(rng, cases)` draws independently, so a bank of N cases needs far more
+ * than N seeds to show all N (coupon-collector): the learner meets repeats
+ * before novelty, and the declared variant count overstates what the template
+ * really produces. Indexing by the already-variant-folded seed guarantees
+ * every case appears exactly once per cycle, which also makes the planner's
+ * `seed % variants` novelty tracking line up with actual case identity.
+ */
+export function cycle<T>(seed: number, cases: readonly T[]): T {
+  return cases[((seed % cases.length) + cases.length) % cases.length]
+}
+
 /** Fixed (non-parameterized) item. */
 export function fixed(opts: Omit<TplOpts, 'variants'>, body: SingleBody): ItemTemplate {
   return tpl({ ...opts, variants: 1, provenance: opts.provenance ?? PROV_FIXED }, () => body)

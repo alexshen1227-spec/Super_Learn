@@ -53,6 +53,7 @@ const mathFoundations = defineCourse(
         { id: 'm-stats', name: 'Descriptive statistics', bucket: 'math', prereqs: ['m-decimals'], gradeBand: 6, blurb: 'Mean, median, mode, range, and what each summary hides.' },
         { id: 'm-variability', name: 'Variability & distributions', bucket: 'math', prereqs: ['m-stats'], gradeBand: 8, blurb: 'Spread, quartiles, IQR, and why equal averages can hide very different data.' },
         { id: 'm-data', name: 'Data interpretation', bucket: 'math', prereqs: ['m-stats'], gradeBand: 7, blurb: 'Read and question tables, bar charts, line graphs, and scatter plots.' },
+        { id: 'm-bestfit', name: 'Scatter plots & trend lines', bucket: 'math', prereqs: ['m-data', 'm-linear'], gradeBand: 8, blurb: 'Read association from a scatter plot and use a trend line without overclaiming it.' },
         { id: 'm-counting', name: 'Counting principles', bucket: 'math', prereqs: ['m-integers'], gradeBand: 7, blurb: 'Systematic counting, the multiplication principle, simple arrangements.' },
         { id: 'm-prob', name: 'Probability', bucket: 'math', prereqs: ['m-fractions', 'm-counting'], gradeBand: 7, blurb: 'Single and compound events, complements, and sample spaces.' },
         { id: 'm-ev', name: 'Expected value', bucket: 'math', prereqs: ['m-prob'], gradeBand: 9, blurb: 'Average long-run outcomes; when a bet or plan is worth it.' },
@@ -72,6 +73,7 @@ const algebra = defineCourse(
         { id: 'm-lineq1', name: 'One & two-step equations', bucket: 'math', prereqs: ['m-expressions'], gradeBand: 7, blurb: 'Solve ax + b = c and friends, with inverse operations.' },
         { id: 'm-lineqmulti', name: 'Multi-step equations', bucket: 'math', prereqs: ['m-lineq1', 'm-fractions'], gradeBand: 8, blurb: 'Variables on both sides, distribution, and fraction coefficients.' },
         { id: 'm-inequal', name: 'Inequalities', bucket: 'math', prereqs: ['m-lineq1'], gradeBand: 8, blurb: 'Solve and graph inequalities; the sign-flip rule and why it works.' },
+        { id: 'm-absolute', name: 'Absolute value', bucket: 'math', prereqs: ['m-integers', 'm-inequal'], gradeBand: 8, blurb: 'Distance from zero: equations and inequalities that split into two cases.' },
         { id: 'm-wordeq', name: 'Situations → equations', bucket: 'math', prereqs: ['m-lineqmulti'], gradeBand: 8, blurb: 'Choose the equation that models a story, then solve it.' },
       ],
     },
@@ -92,6 +94,7 @@ const algebra = defineCourse(
       skills: [
         { id: 'm-polys', name: 'Polynomials & factoring', bucket: 'math', prereqs: ['m-expressions', 'm-exponents'], gradeBand: 9, blurb: 'Multiply binomials, factor simple quadratics.' },
         { id: 'm-quadratic', name: 'Intro quadratics', bucket: 'math', prereqs: ['m-functions', 'm-roots', 'm-polys'], gradeBand: 9, blurb: 'Solve by factoring and square roots; parabola basics.' },
+        { id: 'm-sequences', name: 'Sequences & patterns', bucket: 'math', prereqs: ['m-linear'], gradeBand: 9, blurb: 'Arithmetic and geometric sequences; find the rule, then the nth term.' },
         { id: 'm-exponential', name: 'Exponential growth & decay', bucket: 'math', prereqs: ['m-functions', 'm-exponents', 'm-percent'], gradeBand: 10, blurb: 'Repeated multiplication, growth factors, half-lives, and linear-vs-exponential models.' },
       ],
     },
@@ -107,6 +110,7 @@ const geometry = defineCourse(
       skills: [
         { id: 'm-angles', name: 'Angles & parallel lines', bucket: 'math', prereqs: [], gradeBand: 7, blurb: 'Angle pairs, triangle angle sum, parallel-line angle rules.' },
         { id: 'm-triangles', name: 'Triangles & Pythagorean theorem', bucket: 'math', prereqs: ['m-angles', 'm-roots'], gradeBand: 8, blurb: 'Right-triangle relationships and distance applications.' },
+        { id: 'm-trig', name: 'Right-triangle trigonometry', bucket: 'math', prereqs: ['m-triangles'], gradeBand: 10, blurb: 'Sine, cosine, tangent as side ratios — the gateway into the high-school sequence.' },
         { id: 'm-transform', name: 'Transformations & similarity', bucket: 'math', prereqs: ['m-coord', 'm-proportion'], gradeBand: 8, blurb: 'Translations, reflections, rotations, dilations, and similar figures.' },
       ],
     },

@@ -17,6 +17,7 @@ import { evidenceFor } from '../../engine/mastery'
 import { WeekReviewModal } from '../WeekReview'
 import { useState } from 'react'
 import { activeMission, missionReadiness } from '../../engine/mission'
+import { checkpointAvailable, checkpointSkills } from '../../engine/checkpoint'
 import { calendarDaysUntil } from '../../engine/time'
 
 function greeting(name: string): string {
@@ -60,6 +61,10 @@ export function Today() {
     ? { ...mission, days: Math.max(0, calendarDaysUntil(mission.dateISO, now)) }
     : null
 
+  const checkpoint = useMemo(
+    () => checkpointAvailable(state, index, evidence, now),
+    [state, index, evidence, now],
+  )
   const nextDue = nextReviewAt(evidence, now)
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
   const noPlacement = !state.placement && state.sessions.length === 0
@@ -146,6 +151,29 @@ export function Today() {
           )}
         </Card>
       </div>
+
+      {checkpoint ? (
+        <Card
+          className="mt-3 p-4 border-good/40"
+          onClick={() =>
+            go({
+              name: 'session',
+              launch: {
+                kind: 'checkpoint',
+                skillIds: checkpointSkills(checkpoint),
+                unitName: checkpoint.unitName,
+              },
+            })
+          }
+        >
+          <p className="text-[12px] font-semibold text-good uppercase tracking-wide">Unit checkpoint ready</p>
+          <p className="text-[15px] font-medium mt-1">{checkpoint.unitName}</p>
+          <p className="text-[12px] text-muted mt-1 leading-snug">
+            You own {checkpoint.ownedSkillIds.length} skills here and {checkpoint.dueSkillIds.length} have come due.
+            Two questions each — enough that a lucky guess cannot carry it.
+          </p>
+        </Card>
+      ) : null}
 
       {deadline ? (
         <Card className="mt-3 p-4 border-warn/40">

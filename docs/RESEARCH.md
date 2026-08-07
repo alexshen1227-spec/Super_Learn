@@ -306,6 +306,30 @@ user-opted fluency drills.
 
 ## 18. Design-inspiration provenance (not evidence)
 
+- **Yale ECON 159, *Game Theory* (Ben Polak), Open Yale Courses** —
+  https://oyc.yale.edu/economics/econ-159 and lecture 1, "Introduction: five
+  first lessons". Two things taken as DESIGN, not content: (a) the course's
+  signature sequence of **playing a game before formalising it**, which the app
+  implements as a commitment step preceding the payoff table (`gt-play-first`);
+  and (b) the observation that identical structures with different payoffs are
+  different games — "you can't get what you want till you know what you want" —
+  which the strand was missing entirely and which is now `gt-payoffs-matter`.
+  No lecture text, examples, or numbers were reproduced; the scenarios and all
+  payoffs are original and generated.
+- **Khan Academy Mastery Challenges** —
+  https://support.khanacademy.org/hc/en-us/articles/360037127892 . Taken: the
+  **two-questions-per-skill** rule, because one question cannot separate a
+  lucky guess from retained knowledge, and it mirrors this app's existing "two
+  unaided successes on distinct forms" rule for independence. Also the idea of
+  a periodic cumulative check spread across previously practised skills
+  (implemented unit-scoped, in `engine/checkpoint.ts`). Deliberately NOT taken:
+  the mastery-points economy (50/80/100), because a parallel score would
+  compete with the evidence ladder and would reintroduce a number that means
+  less than the rung it sits beside.
+- **AoPS Alcumus** (already cited below) — its adaptive selection and
+  "problems seen recently are less likely to reappear" behaviour informed the
+  planner's novelty tracking and within-session difficulty adaptation.
+
 - Alcumus design notes (difficulty near the frontier, mixed current + review):
   https://artofproblemsolving.com/blog/articles/alcumus-a-peek-under-the-hood-of-our-adaptive-learning-tool
 - Khan Academy mastery system (course→unit→skill, mastery challenges):

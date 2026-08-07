@@ -11,6 +11,7 @@ export type SessionLaunch =
   | { kind: 'challenge' }
   | { kind: 'single'; templateId: string; mode?: AttemptMode }
   | { kind: 'error-clinic' }
+  | { kind: 'checkpoint'; skillIds: string[]; unitName: string }
 
 export type Tab = 'today' | 'path' | 'coach' | 'practice' | 'progress'
 

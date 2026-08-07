@@ -4,7 +4,7 @@
  */
 import type { ItemTemplate } from '../../domain/types'
 import { pick, rint, rnz } from '../../engine/rng'
-import { fixed, fracStr, mcq, mcqNoted, numeric, round, simplify, tpl } from '../lib'
+import { cycle, fixed, fracStr, mcq, mcqNoted, numeric, round, simplify, tpl} from '../lib'
 
 // ---------------------------------------------------------------- expressions
 
@@ -61,7 +61,7 @@ const exprSimplify = tpl(
 )
 
 const exprTranslate = tpl(
-  { id: 'expr-translate', name: 'Words → expression', skillIds: ['m-expressions'], bucket: 'math', difficulty: 2, variants: 10, minutes: 2 },
+  { id: 'expr-translate', name: 'Words → expression', skillIds: ['m-expressions'], bucket: 'math', difficulty: 2, variants: 4, minutes: 2 },
   (rng) => {
     const n = rint(rng, 2, 9)
     const m = rint(rng, 2, 9)
@@ -517,7 +517,7 @@ const funcEval = tpl(
 )
 
 const funcConcept = tpl(
-  { id: 'func-concept', name: 'What makes a function', skillIds: ['m-functions'], bucket: 'math', difficulty: 2, variants: 6, minutes: 2 },
+  { id: 'func-concept', name: 'What makes a function', skillIds: ['m-functions'], bucket: 'math', difficulty: 2, variants: 4, minutes: 2 },
   (rng) => {
     const x = rint(rng, 2, 7)
     const correct = `Each input has exactly one output`
@@ -995,8 +995,8 @@ const volCylinder = tpl(
 // ---------------------------------------------------------------- modeling, proof, non-routine
 
 const modelChoose = tpl(
-  { id: 'model-choose', name: 'Choose the model', skillIds: ['m-model'], bucket: 'math', difficulty: 3, variants: 6, minutes: 2.5 },
-  (rng) => {
+  { id: 'model-choose', name: 'Choose the model', skillIds: ['m-model'], bucket: 'math', difficulty: 3, variants: 4, minutes: 2.5 },
+  (rng, seed) => {
     const cases = [
       {
         s: 'A phone battery starts full and loses the same percent of its CURRENT charge every hour.',
@@ -1019,7 +1019,7 @@ const modelChoose = tpl(
         why: 'area scales with the SQUARE of side length.',
       },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'Model selection',
       prompt: `${c.s}\n\nWhich model fits best?`,
@@ -1056,8 +1056,8 @@ const modelBudget = tpl(
 )
 
 const proofCounterexample = tpl(
-  { id: 'proof-counterexample', name: 'Find the counterexample', skillIds: ['m-proof'], bucket: 'math', difficulty: 3, variants: 6, minutes: 2.5, calibration: true },
-  (rng) => {
+  { id: 'proof-counterexample', name: 'Find the counterexample', skillIds: ['m-proof'], bucket: 'math', difficulty: 3, variants: 4, minutes: 2.5, calibration: true },
+  (rng, seed) => {
     const claims = [
       // Every option carries the same parallel clause. When only the correct
       // option spells out its consequence, its length gives it away and the
@@ -1103,7 +1103,7 @@ const proofCounterexample = tpl(
         why: 'for small fractions, products shrink fast — sums usually win.',
       },
     ]
-    const c = pick(rng, claims)
+    const c = cycle(seed, claims)
     return {
       title: 'One counterexample kills a claim',
       prompt: `Claim: ${c.claim}\n\nWhich choice is a **counterexample**?`,
@@ -1119,15 +1119,15 @@ const proofCounterexample = tpl(
 )
 
 const proofAlways = tpl(
-  { id: 'proof-always', name: 'Always, sometimes, never', skillIds: ['m-proof'], bucket: 'math', difficulty: 3, variants: 6, minutes: 2.5 },
-  (rng) => {
+  { id: 'proof-always', name: 'Always, sometimes, never', skillIds: ['m-proof'], bucket: 'math', difficulty: 3, variants: 4, minutes: 2.5 },
+  (rng, seed) => {
     const cases = [
       { s: 'The sum of two odd numbers is even.', a: 'Always true', why: '(2a+1)+(2b+1) = 2(a+b+1), which is even for every choice.' },
       { s: 'A number is smaller than its square.', a: 'Sometimes true', why: 'true for 3 (9), false for 1/2 (1/4) and for 1 (equal).' },
       { s: 'The perimeter of a square equals its area.', a: 'Sometimes true', why: 'only at side 4 (both 16); false elsewhere.' },
       { s: 'An even number plus an odd number is even.', a: 'Never true', why: '2a + (2b+1) = 2(a+b)+1 is odd for every choice.' },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'Always / sometimes / never',
       prompt: `**${c.s}**\n\nIs this always, sometimes, or never true?`,

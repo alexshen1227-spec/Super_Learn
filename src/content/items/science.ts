@@ -4,12 +4,12 @@
  * explanation that names why the others fall short.
  */
 import type { ItemTemplate } from '../../domain/types'
-import { pick, rint } from '../../engine/rng'
-import { fixed, mcq, numeric, round, tpl } from '../lib'
+import { rint } from '../../engine/rng'
+import { cycle, fixed, mcq, numeric, round, tpl } from '../lib'
 
 const hypoControl = tpl(
-  { id: 's-control-var', name: 'Control the variable', skillIds: ['s-hypo'], bucket: 'science', difficulty: 2, variants: 4, minutes: 2.5 },
-  (rng) => {
+  { id: 's-control-var', name: 'Control the variable', skillIds: ['s-hypo'], bucket: 'science', difficulty: 2, variants: 3, minutes: 2.5 },
+  (rng, seed) => {
     const cases = [
       {
         setup: 'Mia thinks plants grow taller with classical music. She puts one plant by a sunny window with music and one in a dark closet without music.',
@@ -45,7 +45,7 @@ const hypoControl = tpl(
         why: 'Expensive products select for wealthier families — a classic lurking variable behind food-and-grades claims.',
       },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'One variable at a time',
       prompt: `${c.setup}\n\n${c.q}`,
@@ -86,8 +86,8 @@ const measureReliability = tpl(
 )
 
 const corrCause = tpl(
-  { id: 's-corr-cause', name: 'Correlation ≠ causation', skillIds: ['s-corr'], bucket: 'science', difficulty: 3, variants: 6, minutes: 3, calibration: true },
-  (rng) => {
+  { id: 's-corr-cause', name: 'Correlation ≠ causation', skillIds: ['s-corr'], bucket: 'science', difficulty: 3, variants: 4, minutes: 3, calibration: true },
+  (rng, seed) => {
     const cases = [
       {
         obs: 'Cities with more ice-cream sales have more swimming-pool accidents.',
@@ -114,7 +114,7 @@ const corrCause = tpl(
         test: 'Account for the bedtime condition of each sleeper; the shoe-headache link should fade.',
       },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'What explains the link?',
       prompt: `Observed: **${c.obs}**\n\nWhat is the most plausible explanation?`,
@@ -130,8 +130,8 @@ const corrCause = tpl(
 )
 
 const graphClaim = tpl(
-  { id: 's-graph-claim', name: 'Does the chart back the claim?', skillIds: ['s-graphs'], bucket: 'science', difficulty: 3, variants: 4, minutes: 3 },
-  (rng) => {
+  { id: 's-graph-claim', name: 'Does the chart back the claim?', skillIds: ['s-graphs'], bucket: 'science', difficulty: 3, variants: 2, minutes: 3 },
+  (rng, seed) => {
     const cases = [
       {
         data: 'A bar chart of "app downloads" has its vertical axis running from **90,000 to 100,000**. Bar A (Month 1) = 91,000; Bar B (Month 2) = 99,000.',
@@ -156,7 +156,7 @@ const graphClaim = tpl(
         why: 'A trend claim needs the whole series. 71 → 74 → 69 → 75 is fluctuation, not a steady climb.',
       },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'Chart vs claim',
       prompt: `${c.data}\n\n${c.claim}\n\nWhat is the right verdict?`,
@@ -172,8 +172,8 @@ const graphClaim = tpl(
 )
 
 const fermi = tpl(
-  { id: 's-fermi', name: 'Fermi estimate', skillIds: ['s-fermi'], bucket: 'science', difficulty: 3, variants: 1, minutes: 3.5, transfer: true, calibration: true },
-  (rng) => {
+  { id: 's-fermi', name: 'Fermi estimate', skillIds: ['s-fermi'], bucket: 'science', difficulty: 3, variants: 8, minutes: 3.5, transfer: true, calibration: true },
+  (_rng, seed) => {
     const cases = [
       {
         q: 'Roughly how many minutes does a typical student spend in class per school year? (US: ~180 days, ~6 hours of class per day)',
@@ -196,8 +196,43 @@ const fermi = tpl(
         tolerance: 40000,
         unit: 'words',
       },
+      {
+        q: 'Roughly how many heartbeats has a 14-year-old had? (Estimate ~75 beats per minute)',
+        decomp: '75 × 60 min × 24 h × 365 days × 14 years',
+        answer: 552000000,
+        tolerance: 250000000,
+        unit: 'beats',
+      },
+      {
+        q: 'A school has 900 students. Roughly how many sheets of paper does it use in a year? (Estimate ~5 sheets per student per school day, ~180 days)',
+        decomp: '900 students × 5 sheets × 180 days',
+        answer: 810000,
+        tolerance: 400000,
+        unit: 'sheets',
+      },
+      {
+        q: 'Roughly how many seconds are there in a typical human lifetime? (Use ~75 years)',
+        decomp: '75 years × 365 days × 24 h × 3600 s',
+        answer: 2400000000,
+        tolerance: 900000000,
+        unit: 'seconds',
+      },
+      {
+        q: 'Roughly how many text messages does a busy teenager send in a year? (Estimate ~60 per day)',
+        decomp: '60 messages × 365 days',
+        answer: 21900,
+        tolerance: 9000,
+        unit: 'messages',
+      },
+      {
+        q: 'A standard classroom is about 9 m × 7 m × 3 m. Roughly how many basketballs (~0.007 m³ each) would fill it?',
+        decomp: '(9 × 7 × 3) m³ ÷ 0.007 m³',
+        answer: 27000,
+        tolerance: 12000,
+        unit: 'basketballs',
+      },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'Estimate, then own the roughness',
       prompt: `${c.q}\n\nGive your estimate — within the right ballpark counts as correct.`,
@@ -212,9 +247,101 @@ const fermi = tpl(
   },
 )
 
+/**
+ * The OTHER half of estimation: auditing an estimate you did not make. Same
+ * skill, deliberately different form — producing a number and interrogating
+ * one exercise different muscles, and a second family is what makes the
+ * Transferred rung reachable for s-fermi at all.
+ */
+const fermiAudit = tpl(
+  { id: 's-fermi-audit', name: 'Audit an estimate', skillIds: ['s-fermi'], bucket: 'science', difficulty: 3, variants: 6, minutes: 3, transfer: true },
+  (rng, seed) => {
+    const cases = [
+      {
+        setup: 'A classmate estimates the number of pizza slices eaten in your 900-student school each year as: 900 students × 2 slices × 180 days ≈ 324,000.',
+        q: 'Which factor should you challenge FIRST?',
+        correct: 'The 2 slices per student per day — it assumes every student eats pizza daily',
+        wrong: [
+          'The 900 students — school sizes are impossible to know',
+          'The 180 days — the school year is a well-known number',
+          'The multiplication — the arithmetic is what usually fails',
+        ],
+        why: 'Attack the factor with the widest plausible range, not the one that is easiest to look up. Student count and school days are both known within a few percent; daily pizza consumption could be off by 10×.',
+      },
+      {
+        setup: 'An estimate claims a city of 500,000 people needs about 50 dentists.',
+        q: 'What is the fastest sanity check?',
+        correct: 'That is 10,000 people per dentist — ask whether one dentist can serve 10,000 patients',
+        wrong: [
+          'Look up the exact number of dentists in that city',
+          'Nothing — 50 is a reasonable-sounding number',
+          'Check whether 500,000 is the correct population',
+        ],
+        why: 'Invert the estimate into a per-unit rate. A rate you have intuition about (patients per dentist) exposes an error that the raw total hides — real ratios are closer to 1,500-2,000 people per dentist, so 50 is roughly 5× too low.',
+      },
+      {
+        setup: 'Someone estimates that a smartphone battery stores enough energy to lift a car one meter.',
+        q: 'What should you do before believing or rejecting it?',
+        correct: 'Convert both to the same units and compare orders of magnitude',
+        wrong: [
+          'Reject it — batteries obviously cannot lift cars',
+          'Accept it — phone batteries are surprisingly powerful',
+          'Search for someone who has tried the experiment',
+        ],
+        why: 'Surprising claims are not automatically false. A phone battery holds ~40,000 J; lifting a 1,500 kg car one meter takes ~15,000 J. The claim survives the check — which is exactly why you run the check instead of trusting your reaction.',
+      },
+      {
+        setup: 'A report estimates 4 million people in a country of 60 million are professional musicians.',
+        q: 'Which check kills this estimate fastest?',
+        correct: 'That is 1 in 15 people — compare it to a job you know is common, like teaching',
+        wrong: [
+          'Musicians are hard to count, so the number cannot be checked',
+          'Divide by the number of concert venues in the country',
+          'The number is too round to be a real measurement',
+        ],
+        why: 'Convert to a share of the population and compare against an anchor you already have. Teachers are around 1 in 50; "more musicians than teachers by 3×" fails instantly without any research.',
+      },
+      {
+        setup: 'You estimate a road trip: 600 miles ÷ 60 mph = 10 hours.',
+        q: 'What is the most likely reason your estimate comes in LOW?',
+        correct: 'It ignores stops — fuel, food, and traffic are real hours the formula omits',
+        wrong: [
+          'The division is wrong',
+          '60 mph is far too slow for highway driving',
+          'Distances on maps are always underestimates',
+        ],
+        why: 'Most estimation errors are omitted factors, not bad arithmetic. Before refining a number you have, ask what the model leaves out entirely — a missing term beats a mis-estimated one every time.',
+      },
+      {
+        setup: 'Two estimates of the same quantity: yours says 8,000, a friend\'s says 500,000.',
+        q: 'What does a 60× disagreement usually mean?',
+        correct: 'One of you has a factor the other is missing, or you are estimating different things',
+        wrong: [
+          'The average, about 254,000, is the best answer',
+          'The larger estimate is safer, so use it',
+          'Estimation does not work for this quantity',
+        ],
+        why: 'Averaging hides the error instead of finding it. Gaps that large come from a structural difference — a missing factor or a different definition of the quantity — so compare the decompositions term by term rather than splitting the difference.',
+      },
+    ]
+    const c = cycle(seed, cases)
+    return {
+      title: 'Audit an estimate',
+      prompt: `${c.setup}\n\n${c.q}`,
+      answer: mcq(rng, c.correct, c.wrong),
+      hints: [
+        'Ask which factor has the widest range of plausible values.',
+        'Convert the estimate into a rate or share you already have intuition about.',
+        `Worked path: **${c.correct}**.`,
+      ],
+      explanation: `**${c.correct}**. ${c.why}`,
+    }
+  },
+)
+
 const statsTrap = tpl(
-  { id: 's-stats-trap', name: 'Statistics traps', skillIds: ['s-sources'], bucket: 'science', difficulty: 3, variants: 6, minutes: 3 },
-  (rng) => {
+  { id: 's-stats-trap', name: 'Statistics traps', skillIds: ['s-sources'], bucket: 'science', difficulty: 3, variants: 4, minutes: 3 },
+  (rng, seed) => {
     const cases = [
       {
         q: 'A headline: "Risk DOUBLES for people who skip breakfast!" The study shows the risk went from 1 in 10,000 to 2 in 10,000. What is the fair takeaway?',
@@ -257,7 +384,7 @@ const statsTrap = tpl(
         why: 'Survivorship bias: the data set silently excludes the planes that were lost — the missing data IS the message.',
       },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'Read numbers like a skeptic',
       prompt: c.q,
@@ -330,6 +457,7 @@ export const SCIENCE_TEMPLATES: ItemTemplate[] = [
   corrCause,
   graphClaim,
   fermi,
+  fermiAudit,
   statsTrap,
   sourceQuality,
   claimEvidence,

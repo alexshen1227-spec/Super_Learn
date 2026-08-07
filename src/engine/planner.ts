@@ -774,6 +774,67 @@ export function buildMixedReviewPlan(ctx: PlannerContext): SessionPlan {
   }
 }
 
+/**
+ * Unit checkpoint: a cumulative check across one unit, TWO items per skill.
+ *
+ * Two is the point. One question decides nothing — a lucky guess or a careless
+ * slip would move a rung on its own — whereas a pair asks the same skill twice
+ * in different clothes. It is the same reasoning behind this app's "two unaided
+ * successes on distinct forms" rule for independence, applied to re-testing.
+ */
+export function buildCheckpointPlan(ctx: PlannerContext, skillIds: string[], unitName: string): SessionPlan {
+  const { index, evidence, state } = ctx
+  const used = recentlyUsedForms(state.events, ctx.now)
+  const templateUse = recentTemplateUse(state.events, ctx.now)
+  const activities: PlannedActivity[] = []
+  const covered: string[] = []
+  for (const skillId of skillIds) {
+    const ev = evidenceFor(evidence, skillId)
+    const pool = (index.bySkill.get(skillId) ?? []).filter((t) => !t.authentic)
+    // Prefer a family whose retrieval is actually due, then a different one —
+    // two questions on the same family would test the family, not the skill.
+    const dueFamilies = new Set(
+      ev.forms.filter((f) => f.due !== null && f.due <= ctx.now).map((f) => f.templateId),
+    )
+    const ranked = [
+      ...pool.filter((t) => dueFamilies.has(t.id)),
+      ...pickTemplates(pool.filter((t) => !dueFamilies.has(t.id)), 3, 99, templateUse),
+    ]
+    const picks = ranked.slice(0, 2)
+    if (!picks.length) continue
+    covered.push(index.skills.get(skillId)?.name ?? skillId)
+    for (const t of picks) activities.push(act(t, 'review', used))
+    // If only one family exists, ask it twice with different seeds rather than
+    // silently testing the skill once.
+    if (picks.length === 1) activities.push(act(picks[0], 'review', used))
+  }
+  const blocks: PlannedBlock[] = activities.length
+    ? [
+        {
+          id: uid('b'),
+          kind: 'core',
+          bucket: index.skills.get(skillIds[0])?.bucket ?? 'math',
+          label: `${unitName} checkpoint`,
+          minutes: Math.max(5, activities.length * 2),
+          activities,
+          why: `Two questions on each of ${covered.length} skills from ${unitName}. Two rather than one because a single question cannot tell a lucky guess from something you actually still own.`,
+        },
+      ]
+    : []
+  return {
+    id: uid('s'),
+    createdAt: ctx.now,
+    targetMinutes: ctx.checkIn.minutes,
+    blocks,
+    rationale: activities.length
+      ? [
+          `Unit checkpoint: ${unitName} — ${covered.join(', ')}.`,
+          'These are skills you already own whose retrieval has come due. The point is whether the unit still holds together, not whether you can learn something new today.',
+        ]
+      : ['Nothing in that unit is ready for a cumulative check yet.'],
+  }
+}
+
 /** Challenge: harder probes near the frontier (never below difficulty 3). */
 export function buildChallengePlan(ctx: PlannerContext): SessionPlan {
   const { index, evidence, checkIn, state } = ctx

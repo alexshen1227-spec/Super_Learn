@@ -19,6 +19,7 @@ import { useNav, type SessionLaunch } from '../nav'
 import { buildContentIndex } from '../../content/registry'
 import {
   buildChallengePlan,
+  buildCheckpointPlan,
   buildErrorClinicPlan,
   buildFocusPlan,
   buildMixedReviewPlan,
@@ -177,6 +178,9 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
           break
         case 'challenge':
           p = buildChallengePlan(ctx)
+          break
+        case 'checkpoint':
+          p = buildCheckpointPlan(ctx, launch.skillIds, launch.unitName)
           break
         case 'error-clinic': {
           const repairs = openRepairTargets(state, evidence, Date.now())

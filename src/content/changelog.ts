@@ -11,6 +11,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '3.2',
+    date: '2026-08-06',
+    title: 'The Bridge to High School, and an Honest Count',
+    points: [
+      'Four topics the app talked around without ever teaching are now covered: absolute value, arithmetic and geometric sequences, right-triangle trigonometry, and reading a trend line off a scatter plot. These are the first things the high-school sequence assumes you already have.',
+      'Game theory gained the two ideas a course opens with rather than ends with: that you should play the game before analysing it, and that changing what the outcomes are worth changes what a rational player does. Both are checkable questions, not lectures.',
+      'Unit checkpoints arrive on Today once you own enough of a unit and enough of it has gone cold — a short cumulative pass across the whole unit instead of one skill at a time. It appears when the evidence says it is due and stays away otherwise.',
+      'Fermi estimation was a single question wearing a variant count. It now has eight estimates and a second family that asks you to audit somebody else\'s estimate — find the factor with the widest range, convert a total into a rate you have intuition about, and resist averaging two answers that disagree by 60×.',
+      'The variant audit had a hole: it treated a reshuffled option list as a brand-new question, so a template with three real questions could claim thirty-six. Forty-four templates were overstating themselves. Every count now matches what the generator actually produces, and the honest total for the whole app is about 216 hours of distinct material rather than 231.',
+      'Nothing was deleted to achieve that. Where a question bank existed but random selection kept missing it, the app now cycles through every case before repeating any — several families gained real questions that were always there and rarely shown. The right-triangle template went from three real questions to thirty-six.',
+      'A new release check refuses to ship a skill whose evidence ladder cannot be climbed — too few question forms to ever reach Independent, or a single question family so Transferred is unreachable by construction. It found one on its first run.',
+    ],
+  },
+  {
     version: '3.1',
     date: '2026-08-06',
     title: 'You Can No Longer Guess by Reading the Options',

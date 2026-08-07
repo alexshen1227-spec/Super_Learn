@@ -5,18 +5,18 @@
  */
 import type { ItemTemplate } from '../../domain/types'
 import { pick, rint } from '../../engine/rng'
-import { mcq, mcqNoted, numeric, round, tpl } from '../lib'
+import { cycle, mcq, mcqNoted, numeric, round, tpl} from '../lib'
 
 const measureUnits = tpl(
-  { id: 'p-si-units', name: 'SI units', skillIds: ['p-measure'], bucket: 'physics', difficulty: 1, variants: 6, minutes: 1.5 },
-  (rng) => {
+  { id: 'p-si-units', name: 'SI units', skillIds: ['p-measure'], bucket: 'physics', difficulty: 1, variants: 4, minutes: 1.5 },
+  (rng, seed) => {
     const cases = [
       { q: 'speed', correct: 'meters per second (m/s)', wrong: ['kilograms (kg)', 'newtons (N)', 'seconds per meter (s/m)'] },
       { q: 'force', correct: 'newtons (N)', wrong: ['joules (J)', 'watts (W)', 'kilograms (kg)'] },
       { q: 'energy', correct: 'joules (J)', wrong: ['newtons (N)', 'volts (V)', 'meters per second (m/s)'] },
       { q: 'density', correct: 'kilograms per cubic meter (kg/m³)', wrong: ['kilograms (kg)', 'cubic meters (m³)', 'newtons per meter (N/m)'] },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'Which unit?',
       prompt: `Which SI unit measures **${c.q}**?`,
@@ -32,8 +32,8 @@ const measureUnits = tpl(
 )
 
 const dimensionalCheck = tpl(
-  { id: 'p-dimensional', name: 'Dimensional check', skillIds: ['p-measure'], bucket: 'physics', difficulty: 2, variants: 4, minutes: 2, transfer: true },
-  (rng) => {
+  { id: 'p-dimensional', name: 'Dimensional check', skillIds: ['p-measure'], bucket: 'physics', difficulty: 2, variants: 2, minutes: 2, transfer: true },
+  (rng, seed) => {
     const cases = [
       {
         given: 'distance = 120 m and time = 30 s',
@@ -50,7 +50,7 @@ const dimensionalCheck = tpl(
         why: '(m/s)·s = m — matching units on both sides. Mixed unit systems need converting first.',
       },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'Units as error detectors',
       prompt: `Given ${c.given}: ${c.q}`,
@@ -99,7 +99,7 @@ const speedBasic = tpl(
 )
 
 const velocityVsSpeed = tpl(
-  { id: 'p-velocity-concept', name: 'Speed vs velocity', skillIds: ['p-motion'], bucket: 'physics', difficulty: 2, variants: 4, minutes: 2 },
+  { id: 'p-velocity-concept', name: 'Speed vs velocity', skillIds: ['p-motion'], bucket: 'physics', difficulty: 2, variants: 1, minutes: 2 },
   (rng) => {
     const d = pick(rng, [200, 300, 400])
     return {
@@ -232,7 +232,7 @@ const netForce = tpl(
 )
 
 const balancedForces = tpl(
-  { id: 'p-balanced', name: 'Balanced forces', skillIds: ['p-forces'], bucket: 'physics', difficulty: 2, variants: 4, minutes: 2 },
+  { id: 'p-balanced', name: 'Balanced forces', skillIds: ['p-forces'], bucket: 'physics', difficulty: 2, variants: 1, minutes: 2 },
   (rng) => {
     const v = pick(rng, [3, 5, 8])
     const noted = mcqNoted(rng, '0 N — balanced forces', [
@@ -398,15 +398,15 @@ const ohmsLaw = tpl(
 )
 
 const orderMagnitude = tpl(
-  { id: 'p-order-magnitude', name: 'Orders of magnitude', skillIds: ['p-estimate'], bucket: 'physics', difficulty: 2, variants: 6, minutes: 2, transfer: true },
-  (rng) => {
+  { id: 'p-order-magnitude', name: 'Orders of magnitude', skillIds: ['p-estimate'], bucket: 'physics', difficulty: 2, variants: 4, minutes: 2, transfer: true },
+  (rng, seed) => {
     const cases = [
       { q: 'the height of a door', correct: '2 × 10⁰ m (about 2 m)', wrong: ['2 × 10¹ m (about 20 m)', '2 × 10⁻² m (about 2 cm)', '2 × 10² m (about 200 m)'] },
       { q: 'the mass of an apple', correct: '2 × 10⁻¹ kg (about 200 g)', wrong: ['2 × 10¹ kg (about 20 kg)', '2 × 10⁻³ kg (about 2 g)', '2 × 10⁰ kg (about 2 kg)'] },
       { q: 'the number of seconds in a day', correct: '≈ 9 × 10⁴ s', wrong: ['≈ 9 × 10² s', '≈ 9 × 10⁶ s', '≈ 9 × 10³ s'] },
       { q: 'walking speed', correct: '≈ 1.5 × 10⁰ m/s', wrong: ['≈ 1.5 × 10¹ m/s', '≈ 1.5 × 10⁻² m/s', '≈ 1.5 × 10² m/s'] },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'Pick the right power of ten',
       prompt: `Which is the best estimate for **${c.q}**?`,

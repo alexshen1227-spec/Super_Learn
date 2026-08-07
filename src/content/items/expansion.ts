@@ -133,7 +133,7 @@ const titForTat = fixed(
 // ---------------------------------------------------------------- algebra depth
 
 const negExponents = tpl(
-  { id: 'exp-negative', name: 'Zero & negative exponents', skillIds: ['m-exponents'], bucket: 'math', difficulty: 3, variants: 14, minutes: 2 },
+  { id: 'exp-negative', name: 'Zero & negative exponents', skillIds: ['m-exponents'], bucket: 'math', difficulty: 3, variants: 12, minutes: 2 },
   (rng) => {
     const base = pick(rng, [2, 3, 4, 5, 10])
     const kind = pick(rng, ['zero', 'neg'] as const)

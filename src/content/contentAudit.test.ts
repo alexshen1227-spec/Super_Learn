@@ -574,6 +574,27 @@ describe('items are answerable and fair', () => {
     }
   })
 
+  /**
+   * Identity of an answer with presentation stripped out.
+   *
+   * The first version of the variant check hashed the answer spec as-is, which
+   * meant a RESHUFFLED OPTION LIST counted as a brand-new question — so a
+   * template with three real questions could claim thirty-six variants and
+   * pass. Sorting the options and naming the correct one by its text (not its
+   * index) makes the key measure the question, not the ordering.
+   */
+  function answerIdentity(a: unknown): unknown {
+    if (!a || typeof a !== 'object') return a
+    const spec = a as { type?: string; options?: string[]; correct?: number | number[] }
+    if (spec.type === 'mcq' && spec.options && typeof spec.correct === 'number') {
+      return ['mcq', [...spec.options].sort(), spec.options[spec.correct]]
+    }
+    if (spec.type === 'multi' && spec.options && Array.isArray(spec.correct)) {
+      return ['multi', [...spec.options].sort(), spec.correct.map((i) => spec.options![i]).sort()]
+    }
+    return a
+  }
+
   it('declared variant counts are not inflated', () => {
     // `variants` drives the planner's novelty tracking, the auto-graded-forms
     // count, and every content-supply estimate. A template claiming 16 forms
@@ -589,8 +610,8 @@ describe('items are answerable and fair', () => {
         seen.add(
           JSON.stringify([
             item.prompt,
-            item.answer,
-            item.parts?.map((p) => [p.prompt, p.study ?? '', p.answer]),
+            answerIdentity(item.answer),
+            item.parts?.map((p) => [p.prompt, p.study ?? '', answerIdentity(p.answer)]),
             item.polyomino?.pieces.map((x) => x.cells),
             item.logicgrid?.clues.map((c) => c.text),
             item.chess?.fen,
@@ -732,7 +753,12 @@ describe('content volume targets', () => {
     expect(academic.length).toBeGreaterThanOrEqual(90)
     const academicSkills = SKILLS.filter((s) => ['math', 'physics', 'coding', 'science'].includes(s.bucket))
     expect(academicSkills.length).toBeGreaterThanOrEqual(40)
-    expect(academicSkills.length).toBeLessThanOrEqual(65)
+    // There is deliberately NO ceiling on skill count. The V1 brief named 40-60
+    // as a seed target, and an upper bound was once asserted here to stop
+    // breadth crowding out depth — but a raw count is a bad proxy for that.
+    // What actually matters is whether each skill carries enough question
+    // families for its evidence ladder to be REACHABLE, which is tested below.
+    // Growing the curriculum should never require editing this file.
     const observer = BUILTIN_TEMPLATES.filter((t) => t.bucket === 'observer')
     const investigator = BUILTIN_TEMPLATES.filter((t) => t.bucket === 'investigator')
     const strategist = BUILTIN_TEMPLATES.filter((t) => t.bucket === 'strategist')
@@ -742,5 +768,34 @@ describe('content volume targets', () => {
     expect(strategist.length).toBeGreaterThanOrEqual(8)
     expect(insightMeta.length).toBeGreaterThanOrEqual(8)
     expect(BUILTIN_TEMPLATES.filter((t) => t.kind === 'multi' && t.id.startsWith('case-')).length).toBeGreaterThanOrEqual(3)
+  })
+
+  /**
+   * Breadth is only harmful when it outruns depth, so measure depth directly.
+   *
+   * Independent needs two distinct FORMS (`templateId:seed`), so a skill needs
+   * at least two reachable variants. Transferred additionally needs a template
+   * family the learner has never practiced on this skill, so a skill whose
+   * every item lives in one family can never reach the top rung — its ladder is
+   * structurally capped no matter how well the learner performs.
+   */
+  it('gives every skill a reachable evidence ladder', () => {
+    const shallow: string[] = []
+    const cappedAtIndependent: string[] = []
+    for (const s of SKILLS) {
+      const templates = DEFAULT_INDEX.bySkill.get(s.id) ?? []
+      const forms = templates.reduce((a, t) => a + Math.max(1, t.variants), 0)
+      if (forms < 2) shallow.push(`${s.id} (${forms} form)`)
+      if (templates.length < 2) cappedAtIndependent.push(`${s.id} (${templates.length} family)`)
+    }
+    expect(shallow, `these skills cannot reach Independent: ${shallow.join(', ')}`).toEqual([])
+    // Transfer reachability is reported as a ratio rather than an absolute:
+    // a brand-new skill legitimately starts with one family, but the bank as a
+    // whole must not drift toward single-family skills.
+    const reach = 1 - cappedAtIndependent.length / SKILLS.length
+    expect(
+      reach,
+      `${cappedAtIndependent.length}/${SKILLS.length} skills cannot reach Transferred: ${cappedAtIndependent.join(', ')}`,
+    ).toBeGreaterThanOrEqual(0.8)
   })
 })

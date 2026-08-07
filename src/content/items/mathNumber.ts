@@ -4,7 +4,7 @@
  */
 import type { ItemTemplate } from '../../domain/types'
 import { pick, rint, type Rng } from '../../engine/rng'
-import { fracStr, fraction, gcd, mcq, mcqNoted, money, numeric, round, tpl } from '../lib'
+import { cycle, fracStr, fraction, gcd, mcq, mcqNoted, money, numeric, round, tpl} from '../lib'
 
 // ---------------------------------------------------------------- integers
 
@@ -269,11 +269,11 @@ const decConvert = tpl(
     variants: 7,
     minutes: 1,
   },
-  (rng) => {
+  (_rng, seed) => {
     const nice: [number, number][] = [
       [1, 2], [1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5], [1, 8], [3, 8], [5, 8], [7, 8], [1, 10], [7, 10], [9, 20],
     ]
-    const [n, d] = pick(rng, nice)
+    const [n, d] = cycle(seed, nice)
     return {
       title: 'Convert to a decimal',
       prompt: `Write **${n}/${d}** as a decimal.`,
@@ -326,10 +326,10 @@ const decOrder = tpl(
     skillIds: ['m-decimals'],
     bucket: 'math',
     difficulty: 2,
-    variants: 8,
+    variants: 5,
     minutes: 1.5,
   },
-  (rng) => {
+  (rng, seed) => {
     const sets: { items: [string, number][] }[] = [
       { items: [['0.45', 0.45], ['2/5', 0.4], ['0.405', 0.405], ['44%', 0.44]] },
       { items: [['0.7', 0.7], ['5/8', 0.625], ['68%', 0.68], ['0.665', 0.665]] },
@@ -337,7 +337,7 @@ const decOrder = tpl(
       { items: [['3/4', 0.75], ['0.7', 0.7], ['72%', 0.72], ['0.745', 0.745]] },
       { items: [['0.09', 0.09], ['1/8', 0.125], ['11%', 0.11], ['0.1', 0.1]] },
     ]
-    const set = pick(rng, sets)
+    const set = cycle(seed, sets)
     const best = set.items.reduce((a, b) => (a[1] >= b[1] ? a : b))
     return {
       title: 'Which is largest?',
@@ -714,7 +714,7 @@ const propIdentify = tpl(
     skillIds: ['m-proportion'],
     bucket: 'math',
     difficulty: 2,
-    variants: 10,
+    variants: 8,
     minutes: 2,
   },
   (rng) => {
@@ -881,14 +881,14 @@ const unitConvert = tpl(
     variants: 2,
     minutes: 2,
   },
-  (rng) => {
+  (rng, seed) => {
     const conversions = [
       { from: 'cm', to: 'm', factor: 0.01, vals: [150, 240, 375, 480, 625] },
       { from: 'kg', to: 'g', factor: 1000, vals: [1.2, 2.5, 3.4, 0.75, 4.2] },
       { from: 'hours', to: 'minutes', factor: 60, vals: [1.5, 2.25, 3.5, 0.75, 4.25] },
       { from: 'mL', to: 'L', factor: 0.001, vals: [1500, 2400, 750, 3250, 500] },
     ]
-    const c = pick(rng, conversions)
+    const c = cycle(seed, conversions)
     const v = pick(rng, c.vals)
     const ans = round(v * c.factor, 6)
     return {
@@ -950,17 +950,17 @@ const unitFactor = tpl(
     skillIds: ['m-units'],
     bucket: 'math',
     difficulty: 2,
-    variants: 6,
+    variants: 4,
     minutes: 1.5,
   },
-  (rng) => {
+  (rng, seed) => {
     const cases = [
       { q: 'minutes → seconds', correct: '× 60 s / 1 min', wrong: ['÷ 60 s / 1 min', '× 1 min / 60 s', '× 100 s / 1 min'] },
       { q: 'grams → kilograms', correct: '× 1 kg / 1000 g', wrong: ['× 1000 kg / 1 g', '÷ 1 kg / 100 g', '× 100 g / 1 kg'] },
       { q: 'kilometers → meters', correct: '× 1000 m / 1 km', wrong: ['× 1 km / 1000 m', '× 100 m / 1 km', '÷ 1000 m / 1 km'] },
       { q: 'days → hours', correct: '× 24 h / 1 day', wrong: ['× 1 day / 24 h', '× 60 h / 1 day', '÷ 24 h / 1 day'] },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'Conversion factor',
       prompt: `To convert **${c.q}**, which factor do you multiply by?`,

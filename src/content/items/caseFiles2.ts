@@ -115,7 +115,7 @@ const streamingPlans = mk(
 // ---------------------------------------------------------------- 2. free-throw claim (parameterized)
 
 const freeThrow = mk(
-  { id: 'case-freethrow', name: 'Case File: The Free-Throw Claim', skillIds: ['s-measure', 'm-percent', 'i-hypo'], bucket: 'science', minutes: 12, variants: 10 },
+  { id: 'case-freethrow', name: 'Case File: The Free-Throw Claim', skillIds: ['s-measure', 'm-percent', 'i-hypo'], bucket: 'science', minutes: 12, variants: 4 },
   (v) => {
     const rng = mulberry32(v * 104729 + 11)
     const beforeMade = rint(rng, 9, 12)

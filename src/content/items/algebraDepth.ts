@@ -154,7 +154,7 @@ const solutionCount = tpl(
 )
 
 const squareOfSum = tpl(
-  { id: 'alg-square-of-sum', name: 'Squaring a sum', skillIds: ['m-polys'], bucket: 'math', difficulty: 3, variants: 21, minutes: 2, calibration: true },
+  { id: 'alg-square-of-sum', name: 'Squaring a sum', skillIds: ['m-polys'], bucket: 'math', difficulty: 3, variants: 4, minutes: 2, calibration: true },
   (rng) => {
     const a = rint(rng, 2, 9)
     const correct = `x² + ${2 * a}x + ${a * a}`
@@ -180,7 +180,7 @@ const squareOfSum = tpl(
 )
 
 const factorableOrNot = tpl(
-  { id: 'alg-difference-squares', name: 'Difference of squares — or not', skillIds: ['m-polys'], bucket: 'math', difficulty: 4, variants: 22, minutes: 2.5, calibration: true },
+  { id: 'alg-difference-squares', name: 'Difference of squares — or not', skillIds: ['m-polys'], bucket: 'math', difficulty: 4, variants: 12, minutes: 2.5, calibration: true },
   (rng, seed) => {
     const a = rint(rng, 2, 9)
     const isDifference = seed % 2 === 0
@@ -581,7 +581,7 @@ const ratioEquation = tpl(
 )
 
 const literalEquation = tpl(
-  { id: 'alg-rearrange-formula', name: 'Rearrange the formula', skillIds: ['m-lineqmulti', 'm-model'], bucket: 'math', difficulty: 4, variants: 18, minutes: 2.5 },
+  { id: 'alg-rearrange-formula', name: 'Rearrange the formula', skillIds: ['m-lineqmulti', 'm-model'], bucket: 'math', difficulty: 4, variants: 6, minutes: 2.5 },
   (rng, seed) => {
     const forms = [
       { formula: 'A = ½bh', target: 'h', correct: 'h = 2A / b', wrong: ['h = A / (2b)', 'h = 2A · b', 'h = b / (2A)'] },

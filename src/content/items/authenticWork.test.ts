@@ -11,7 +11,11 @@ describe('authentic work studios', () => {
     required.forEach((format) => expect(formats.has(format), `missing ${format} studio`).toBe(true))
 
     expect(AUTHENTIC_WORK_TEMPLATES.length).toBeGreaterThanOrEqual(9)
-    expect(AUTHENTIC_WORK_TEMPLATES.reduce((sum, template) => sum + template.variants, 0)).toBeGreaterThanOrEqual(70)
+    // Was 70 while option-reshuffling still counted as a new form. Nothing was
+    // deleted — the variant audit stopped accepting a reordered option list as
+    // a different question, and these studios lost the padding. The floor now
+    // tracks forms a learner would recognise as distinct.
+    expect(AUTHENTIC_WORK_TEMPLATES.reduce((sum, template) => sum + template.variants, 0)).toBeGreaterThanOrEqual(48)
     for (const template of AUTHENTIC_WORK_TEMPLATES) {
       expect(template.kind).toBe('multi')
       expect(template.transfer).toBe(true)
@@ -45,9 +49,11 @@ describe('authentic work studios', () => {
 describe('short real-world practice', () => {
   it('adds broad, checkable transfer practice rather than one-off anecdotes', () => {
     expect(REAL_WORLD_TEMPLATES.length).toBeGreaterThanOrEqual(19)
-    // Was 280 when variant counts were inflated. Every count is now verified
-    // to equal the number of genuinely distinct forms the generator produces.
-    expect(REAL_WORLD_TEMPLATES.reduce((sum, template) => sum + template.variants, 0)).toBeGreaterThanOrEqual(210)
+    // 280 -> 210 -> 170 across two rounds of the same correction: first when
+    // declared counts were forced to match generated forms, then when option
+    // order stopped counting as difference. The generators were left alone
+    // both times; only the claim about them changed.
+    expect(REAL_WORLD_TEMPLATES.reduce((sum, template) => sum + template.variants, 0)).toBeGreaterThanOrEqual(170)
     expect(new Set(REAL_WORLD_TEMPLATES.map((template) => template.bucket)).size).toBeGreaterThanOrEqual(9)
     expect(REAL_WORLD_TEMPLATES.every((template) => template.transfer)).toBe(true)
     expect(REAL_WORLD_TEMPLATES.every((template) => template.generate(0).answer?.type !== 'draft')).toBe(true)

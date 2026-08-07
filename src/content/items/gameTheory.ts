@@ -385,7 +385,7 @@ const commitment = tpl(
     skillIds: ['i-commit'],
     bucket: 'investigator',
     difficulty: 5,
-    variants: 14,
+    variants: 4,
     minutes: 4,
     transfer: true,
     calibration: true,
@@ -575,7 +575,7 @@ const mixedSignals = tpl(
     skillIds: ['i-equilibrium'],
     bucket: 'investigator',
     difficulty: 5,
-    variants: 20,
+    variants: 12,
     minutes: 4,
     calibration: true,
   },
@@ -617,7 +617,172 @@ const mixedSignals = tpl(
   },
 )
 
+/**
+ * PLAY FIRST, THEN FORMALIZE.
+ *
+ * Yale's ECON 159 opens by having students play a game before any theory
+ * exists, then organises what happened into players, strategies and payoffs.
+ * Committing to a move before you can analyse it is retrieval before reveal:
+ * you find out what your instinct actually was, and the formalism then has
+ * something of yours to correct rather than a blank page to fill.
+ *
+ * Both steps are genuinely graded — the commitment has a defensible answer
+ * once reasoned through, and the second step asks what the game turned out to
+ * be, so the theory arrives attached to a decision you already made.
+ */
+const playFirst = tpl(
+  {
+    id: 'gt-play-first',
+    name: 'Play it, then name it',
+    skillIds: ['i-game', 'i-equilibrium'],
+    bucket: 'investigator',
+    difficulty: 4,
+    variants: 12,
+    minutes: 4,
+    kind: 'multi',
+    calibration: true,
+    transfer: true,
+  },
+  (rng) => {
+    // A genuine dilemma (T > R > P > S), but the table is withheld until after
+    // the learner has already committed to a move.
+    const S = rint(rng, 0, 1)
+    const P = S + rint(rng, 1, 2)
+    const R = P + rint(rng, 2, 3)
+    const T = R + rint(rng, 1, 3)
+    const row: Pay = [
+      [R, S],
+      [T, P],
+    ]
+    const col: Pay = [
+      [R, T],
+      [S, P],
+    ]
+    const names = ['Split', 'Take'] as const
+    const setting = pick(rng, [
+      'You and one other person, chosen at random and never named, each decide privately',
+      'Two teams are asked, separately and at the same moment, to decide',
+      'You and an anonymous partner each submit one sealed choice',
+    ] as const)
+    return {
+      title: 'Decide first. Theory after.',
+      prompt: `${setting}. You may **Split** or **Take**.\n\n- Both Split: you each get **${R}**.\n- Both Take: you each get **${P}**.\n- One Takes while the other Splits: the taker gets **${T}**, the splitter gets **${S}**.\n\nNo table yet. Decide, and then we will build one.`,
+      parts: [
+        {
+          stage: 'Commit',
+          prompt: 'Before any analysis: which do you choose, and on what grounds? Pick the reasoning that matches your decision.',
+          answer: mcq(rng, `Take — whatever they do, taking pays me more (${T} beats ${R}, and ${P} beats ${S})`, [
+            `Split — if we both do it we each get ${R}, which is better than the ${P} we get by both taking`,
+            `Split — taking risks ending up with very little if they happen to take as well, so it is safer`,
+            `Take — the ${T} payoff is the largest single number available anywhere in the description`,
+          ]),
+          hints: [
+            'Hold their choice fixed, one case at a time. If they Split, what do each of your options pay?',
+            `If they Split: Take pays ${T}, Split pays ${R}. If they Take: Take pays ${P}, Split pays ${S}.`,
+            'Taking wins in BOTH cases — that is what makes it dominant.',
+          ],
+          explanation: `Taking pays more whichever way they go: ${T} against ${R} if they Split, ${P} against ${S} if they Take. Dominant, and dominant before you know anything at all about them.\n\nThe two Split answers are the interesting wrong ones. "We both do better if we both Split" is TRUE — ${R} each beats ${P} each — but it is not a reason for YOUR choice to change, because your choice cannot move theirs. And "safer" is the wrong frame entirely: Take is not a gamble here, it is better in every single case.`,
+        },
+        {
+          stage: 'Formalize',
+          prompt: `Here is what you just played, written out properly.\n\n${matrix(names, names, row, col)}\n\nWhat kind of situation was it?`,
+          answer: mcq(rng, 'Both taking is the stable outcome, and it pays both of you less than both splitting would', [
+            `Both splitting is the stable outcome, since ${R} each is the best result available to the pair`,
+            'Nothing here is stable, because whichever pair of choices happens somebody wishes they had moved',
+            'Both outcomes are equally stable, so which one happens comes down to who decides first',
+          ]),
+          hints: [
+            'Stability is a one-sided test: from a given cell, does either player gain by moving alone?',
+            `From both-Split, moving alone to Take pays ${T} instead of ${R} — so somebody does want to move.`,
+            `From both-Take, moving alone to Split pays ${S} instead of ${P} — nobody wants to move. That is the stable cell.`,
+          ],
+          explanation: `Both-Take is the only cell nobody wants to leave, and it pays **${P} each** when **${R} each** was sitting right there.\n\nThat gap between "stable" and "good" is the most important idea in the subject, and you now have your own decision to hang it on — you reasoned your way to the outcome that leaves both sides worse off, and the reasoning was correct.\n\nNotice what does not fix it: being told to cooperate. The table is the table. What fixes it is changing the game — repetition so reputation matters, or an agreement that actually binds.`,
+        },
+      ],
+      hints: [
+        'First part: hold their choice fixed and compare your two options inside that case.',
+        'Second part: a cell is stable only when neither side gains by moving on their own.',
+        '"Stable" and "good" are different questions. Check them separately.',
+      ],
+      explanation:
+        'Deciding before analysing is the whole point here. It is easy to nod along to a dilemma explained on a page; it is a different thing to notice that you had already reasoned your way into it.',
+    }
+  },
+)
+
+/**
+ * "Payoffs matter" — the lesson this strand was missing.
+ *
+ * ECON 159's third lesson: the same strategic structure with different payoffs
+ * is a different game, so you cannot choose a strategy until you know what you
+ * are actually trying to get. That is a planning skill long before it is a
+ * mathematical one, and it is the step most real arguments about strategy skip.
+ */
+const payoffsMatter = tpl(
+  {
+    id: 'gt-payoffs-matter',
+    name: 'What are you actually trying to get?',
+    skillIds: ['i-game'],
+    bucket: 'investigator',
+    difficulty: 4,
+    variants: 6,
+    minutes: 3.5,
+    calibration: true,
+    transfer: true,
+  },
+  (rng, seed) => {
+    const cases = [
+      {
+        setting: 'You and a partner are finalising a shared project. You can push on every disagreement or let the small ones go.',
+        goalA: 'you care only about the mark this project receives',
+        goalB: 'you care mainly about still wanting to work together next term',
+        answerA: 'Push on every disagreement, since the mark is the only thing being measured here',
+        answerB: 'Let the small disagreements go and spend your objections on the one that moves the mark most',
+      },
+      {
+        setting: 'You and another club each choose whether to hold an event on the popular night.',
+        goalA: 'you want the biggest possible turnout at your own event',
+        goalB: 'you want as many people as possible to attend something at all',
+        answerA: 'Book the popular night regardless, because your own turnout is the thing being maximised',
+        answerB: 'Coordinate onto different nights, because splitting the audience shrinks the total you care about',
+      },
+      {
+        setting: 'Two stalls set a price for the same item, and each can see what the other charges.',
+        goalA: 'you want the most profit this month',
+        goalB: 'you want to still be trading here in two years',
+        answerA: 'Undercut sharply now, because this month is the window the profit is being counted in',
+        answerB: 'Hold your price, because a price war both sides can see coming ends with neither able to trade',
+      },
+    ] as const
+    const c = cases[seed % cases.length]
+    const askA = Math.floor(seed / cases.length) % 2 === 0
+    const goal = askA ? c.goalA : c.goalB
+    const correct = askA ? c.answerA : c.answerB
+    const other = askA ? c.answerB : c.answerA
+    return {
+      title: 'Same game, different goal',
+      prompt: `${c.setting}\n\nThe structure of the situation is fixed. What changes is what you want out of it.\n\n**Suppose ${goal}.** What follows?`,
+      answer: mcq(rng, correct, [
+        other,
+        'Neither, because the right move here is settled by the situation rather than by what you want from it',
+        'Neither, because nothing can be decided until you know what the other side is going to do first',
+      ]),
+      hints: [
+        'The moves available have not changed. Only the thing being maximised has.',
+        `Read the option that follows from "${goal}", and set aside the one that would follow from the other aim.`,
+        `With that goal, the answer is: ${correct}`,
+      ],
+      explanation: `**${correct}**\n\nThe other option is not wrong in general — it is the right answer to a different question, the one where ${askA ? c.goalB : c.goalA}. Identical situation, identical moves, opposite conclusion.\n\nThis is why "what should I do here?" is usually the wrong first question. You cannot get what you want until you know what you want, and a surprising number of arguments about strategy turn out, on inspection, to be arguments about goals that nobody stated out loud.`,
+      commonErrors: {
+        strategy: 'Treating the situation as fixing the answer. Two people in the same position with different aims should reason to different moves — if they do not, one of them has not named their aim.',
+      },
+    }
+  },
+)
+
 export const GAME_THEORY_TEMPLATES: ItemTemplate[] = [
+  playFirst,
+  payoffsMatter,
   bestResponse,
   dominantStrategy,
   nashFind,

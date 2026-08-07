@@ -5,7 +5,7 @@
  */
 import type { ItemTemplate } from '../../domain/types'
 import { pick, rint } from '../../engine/rng'
-import { mcq, mcqNoted, numeric, round, tpl } from '../lib'
+import { cycle, mcq, mcqNoted, numeric, round, tpl} from '../lib'
 
 const variabilityIqr = tpl(
   { id: 'var-iqr', name: 'Interquartile range', skillIds: ['m-variability'], bucket: 'math', difficulty: 2, variants: 20, minutes: 2.5 },
@@ -141,8 +141,8 @@ const waveEquation = tpl(
 )
 
 const waveConcept = tpl(
-  { id: 'wave-concept', name: 'Frequency, wavelength, amplitude', skillIds: ['p-waves'], bucket: 'physics', difficulty: 3, variants: 8, minutes: 2.5, transfer: true, calibration: true },
-  (rng) => {
+  { id: 'wave-concept', name: 'Frequency, wavelength, amplitude', skillIds: ['p-waves'], bucket: 'physics', difficulty: 3, variants: 2, minutes: 2.5, transfer: true, calibration: true },
+  (rng, seed) => {
     const cases = [
       {
         prompt: 'Two sound waves travel through the same air. Wave B has twice the frequency of wave A. What happens to B’s wavelength?',
@@ -155,7 +155,7 @@ const waveConcept = tpl(
         wrong: ['Its pitch doubles', 'Its wavelength becomes zero', 'Its frequency must decrease'],
       },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'Read the wave',
       prompt: c.prompt,
@@ -184,7 +184,7 @@ const complexityCount = tpl(
 )
 
 const complexityChoose = tpl(
-  { id: 'complexity-choose', name: 'Choose an algorithm by scale', skillIds: ['c-complexity'], bucket: 'coding', difficulty: 4, variants: 8, minutes: 3, transfer: true },
+  { id: 'complexity-choose', name: 'Choose an algorithm by scale', skillIds: ['c-complexity'], bucket: 'coding', difficulty: 4, variants: 1, minutes: 3, transfer: true },
   (rng) => {
     const power = pick(rng, [8, 9, 10, 11])
     const n = 2 ** power
@@ -205,7 +205,7 @@ const complexityChoose = tpl(
 )
 
 const designAssignment = tpl(
-  { id: 'design-assignment', name: 'Random sampling vs assignment', skillIds: ['s-design'], bucket: 'science', difficulty: 3, variants: 7, minutes: 3, calibration: true },
+  { id: 'design-assignment', name: 'Random sampling vs assignment', skillIds: ['s-design'], bucket: 'science', difficulty: 3, variants: 1, minutes: 3, calibration: true },
   (rng) => {
     const correct = 'Randomly assign the volunteers to the two methods, then compare outcomes'
     const noted = mcqNoted(rng, correct, [
@@ -225,8 +225,8 @@ const designAssignment = tpl(
 )
 
 const designReplication = tpl(
-  { id: 'design-replication', name: 'Blinding and replication', skillIds: ['s-design'], bucket: 'science', difficulty: 4, variants: 9, minutes: 3, transfer: true },
-  (rng) => {
+  { id: 'design-replication', name: 'Blinding and replication', skillIds: ['s-design'], bucket: 'science', difficulty: 4, variants: 2, minutes: 3, transfer: true },
+  (rng, seed) => {
     const cases = [
       {
         setup: 'Researchers scoring essays know which students used the new curriculum.',
@@ -245,7 +245,7 @@ const designReplication = tpl(
         wrong: ['Repeat the analysis many ways and publish the smallest p-value', 'Remove inconvenient observations without reporting it', 'Treat p = 0.04 as proof that the theory is true'],
       },
     ]
-    const c = pick(rng, cases)
+    const c = cycle(seed, cases)
     return {
       title: 'Make the result survive scrutiny',
       prompt: `${c.setup}\n\n${c.ask}`,
