@@ -15,7 +15,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: '2026-08-06',
     title: 'First Day of Real Use',
     points: [
-      'Scrolling past the practice-balance sliders no longer moves them. A swipe that started on a slider was being read as a drag, so passing through Settings could quietly rewrite your targets — and since moving one slider rebalances the rest, a bump you never noticed changed several areas at once. Vertical swipes now scroll and only sideways drags adjust.',
+      'The practice-balance sliders now have to be grabbed. Tapping anywhere on the track used to jump the value to that spot, and a swipe that merely started on a slider was read as a drag — so passing through Settings could quietly rewrite your targets, and since moving one slider rebalances the rest, a bump you never noticed changed several areas at once. Only the handle responds now; tapping elsewhere on the track selects the slider so the arrow keys can nudge it, without changing anything.',
       'A "Reset to recommended" link sits under those sliders, appearing only once something has actually moved. There was previously no way back from an accidental change.',
       'Quiet hours for review reminders now read on the 12-hour clock — 9 PM to 7 AM instead of 21:00 to 7:00 — with midnight and noon written out, since "12 AM" is read backwards about half the time.',
       '"Export problem reports" in Settings → Data used to appear only after you had filed a report, which made it impossible to find when you went looking for it. It is always listed now, and when empty it explains where reports come from: the flag icon at the top of any question.',

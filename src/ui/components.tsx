@@ -356,6 +356,62 @@ export function Divider() {
   return <div className="h-px bg-line mx-4" role="separator" />
 }
 
+/** Handle width and the grab radius around it — together a 44px target. */
+const THUMB_PX = 20
+const GRAB_PX = 22
+
+/**
+ * A slider you have to GRAB.
+ *
+ * A native range input jumps to wherever the track is tapped, so on a phone a
+ * stray brush while scrolling past rewrites the value — and for allocation
+ * targets that silently reshuffles every other bucket too. Here a press only
+ * counts when it lands on the handle; anywhere else on the track is ignored.
+ *
+ * Tapping the track still FOCUSES the slider, so it doubles as "select this
+ * one, then adjust with the arrow keys" — and keyboard behaviour is otherwise
+ * untouched, which keeps this usable without a pointer at all.
+ */
+export function GrabSlider({
+  min,
+  max,
+  value,
+  onChange,
+  label,
+  className = '',
+}: {
+  min: number
+  max: number
+  value: number
+  onChange: (next: number) => void
+  label: string
+  className?: string
+}) {
+  return (
+    <input
+      type="range"
+      min={min}
+      max={max}
+      value={value}
+      aria-label={label}
+      onPointerDown={(e) => {
+        const el = e.currentTarget
+        const rect = el.getBoundingClientRect()
+        // The handle's centre travels between half a handle from each end.
+        const span = max - min
+        const ratio = span > 0 ? (value - min) / span : 0
+        const centre = rect.left + THUMB_PX / 2 + ratio * (rect.width - THUMB_PX)
+        if (Math.abs(e.clientX - centre) > GRAB_PX) {
+          e.preventDefault()
+          el.focus()
+        }
+      }}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className={`flex-1 ${className}`}
+    />
+  )
+}
+
 /** Consistent screen title and Settings entry point. */
 export function HeaderBar({ title, subtitle }: { title: string; subtitle?: string }) {
   const { go, view } = useNav()

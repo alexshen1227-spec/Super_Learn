@@ -11,7 +11,7 @@ import { storageInfo, type StorageInfo } from '../../store/persist'
 import { validatePack } from '../../engine/contentSchema'
 import { BUCKETS, DEFAULT_ALLOCATIONS, MIN_ALLOCATION_PERCENT, type BucketId, type Deadline } from '../../domain/types'
 import { uid } from '../../engine/rng'
-import { Button, Card, Chip, Confirm, Divider, Modal, Row, SectionTitle, Segmented, Toggle } from '../components'
+import { Button, Card, Chip, Confirm, Divider, GrabSlider, Modal, Row, SectionTitle, Segmented, Toggle } from '../components'
 import { IconBack } from '../icons'
 import { CHANGELOG } from '../../content/changelog'
 import { requestNotificationPermission } from '../notify'
@@ -211,19 +211,17 @@ export function SettingsScreen() {
           {BUCKETS.map((b) => (
             <div key={b.id} className="flex items-center gap-3">
               <span className="text-[13px] w-24 shrink-0 font-medium">{b.short}</span>
-              <input
-                type="range"
+              <GrabSlider
                 min={MIN_ALLOCATION_PERCENT}
                 max={55}
                 value={allocations[b.id]}
-                aria-label={`${b.name} target percentage`}
-                onChange={(e) =>
+                label={`${b.name} target percentage`}
+                onChange={(next) =>
                   dispatch({
                     type: 'update-settings',
-                    settings: { allocations: rebalanceAllocationPercentage(allocations, b.id, Number(e.target.value)) },
+                    settings: { allocations: rebalanceAllocationPercentage(allocations, b.id, next) },
                   })
                 }
-                className="flex-1"
               />
               <span className="text-[12px] font-mono text-muted w-9 text-right">{allocations[b.id]}%</span>
             </div>
