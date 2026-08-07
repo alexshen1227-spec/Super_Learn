@@ -18,6 +18,7 @@ import { calibrationGap, highConfidenceErrors } from './calibration'
 import { dueForms, dueReviews } from './scheduler'
 import { prereqLeverage, prereqsMet, scoreSkills } from './planner'
 import { calendarDaysUntil } from './time'
+import { stretchSignal } from './stretch'
 
 function recentEvents(events: AttemptEvent[], now: number, days: number): AttemptEvent[] {
   const cutoff = now - days * 86_400_000
@@ -108,6 +109,40 @@ export function coachBeliefs(
       resolve: 'A few sessions of normal practice will replace this with real evidence.',
     })
     return beliefs
+  }
+
+  /*
+   * Say what the difficulty dial is doing and why.
+   *
+   * The planner now raises or lowers difficulty from recent unaided accuracy,
+   * and a coach that silently changes the work is worse than one that does
+   * not change it — the learner cannot check a decision they were never told
+   * about. Stated as a belief with its evidence, like everything else here.
+   */
+  const stretch = stretchSignal(state.events, now)
+  if (stretch.accuracy !== null && stretch.why) {
+    const cruising = stretch.adjust > 0
+    const easing = stretch.adjust < 0
+    beliefs.push({
+      id: 'difficulty-dial',
+      statement: cruising
+        ? 'The work has been easier than it should be, so I am raising the difficulty.'
+        : easing
+          ? 'The work has been beyond reach lately, so I am lowering the difficulty.'
+          : 'The difficulty is about right, so I am leaving it alone.',
+      confidence: stretch.n >= 20 ? 'high' : 'medium',
+      evidence: [
+        `${Math.round(stretch.accuracy * 100)}% first-try correct across your last ${stretch.n} unaided attempts.`,
+        cruising
+          ? 'Consistently high accuracy means the material is under you — comfortable practice is pleasant and teaches little.'
+          : easing
+            ? 'Accuracy this low means too much is being spent on problems you cannot yet get into.'
+            : 'This range is where difficulty is high enough to be worth doing and low enough to be winnable.',
+      ],
+      unknown:
+        'Where exactly your limit is. The thresholds are a rule of thumb, not a measured optimum, and they move the dial rather than jumping to a conclusion.',
+      resolve: 'Keep practising normally — the dial re-reads your accuracy every session and moves back if it overshot.',
+    })
   }
 
   // Per-bucket accuracy → strengths / weaknesses (refuses below 6 samples).

@@ -11,6 +11,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '4.1',
+    date: '2026-08-07',
+    title: 'The Work Actually Gets Harder Now',
+    points: [
+      'The biggest fix here came from a question worth asking: do the problems really get harder as you improve? Simulating a learner for 120 days said no. Someone answering 95% of questions correctly was still being handed difficulty 2.4 in week 17 — the same as in week 3. Four months of practice, no change in challenge.',
+      'Two causes, both structural. Once a skill reached Retained it left the pool completely, so you were permanently working at the frontier of NEW material — and new material starts easy by definition. And reviews were capped at difficulty 3 no matter how well you were doing. So difficulty could not rise even in principle.',
+      'The app now watches your recent unaided accuracy and moves the dial. Above about 82% first-try it raises difficulty; below 50% it lowers it; in between it holds, because that band is where work is hard enough to be worth doing and still winnable. Skills you own come back for harder work instead of being retired, and the review ceiling lifts when you are clearly cruising.',
+      'Choosing between two available questions is no longer symmetric either. One rung too hard and one rung too easy used to count as equally bad matches; too-easy is now penalised more, because a comfortable session is pleasant and teaches little.',
+      'After the change, the same simulation ramps from difficulty 2.10 in week 1 to 2.87 by week 5, and first-try accuracy settles at 75–92% instead of drifting up to 98%. A simulated struggling learner gets the opposite treatment — difficulty eased when accuracy fell to 47%, and their accuracy recovered.',
+      'The Coach now says so out loud. "Model of Me" states what the difficulty dial is doing, the accuracy it is reading, how many attempts that rests on, and what it does not know — including that the thresholds are a rule of thumb rather than a measured optimum. A coach that changes your work silently is worse than one that never changes it.',
+      'Scientific reasoning gets its advanced tier, the last bucket that was thin: confounds that survive the controls a study lists, what a bigger sample actually buys you (precision follows the square root, so 16× the people buys 4× the precision), reading a headline against the study underneath it, and designing the test whose results would actually point in different directions. Several items deliberately score "reject it" as WRONG — scepticism that dismisses everything is its own failure, and it feels sophisticated, which is what makes it dangerous.',
+    ],
+  },
+  {
     version: '4.0',
     date: '2026-08-07',
     title: 'An Advanced Tier, Placed Where the Bank Ran Out',

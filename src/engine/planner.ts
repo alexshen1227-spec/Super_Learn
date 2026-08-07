@@ -31,6 +31,7 @@ import { activeMission, missionPriority, missionReadiness } from './mission'
 import type { RepairTarget } from './errors'
 import { calendarDaysUntil } from './time'
 import { calibrationGap } from './calibration'
+import { stretchSignal } from './stretch'
 
 export interface PlannerContext {
   index: ContentIndex
@@ -115,6 +116,14 @@ export function targetDifficulty(
   energy: CheckIn['energy'],
   conservative: boolean,
   placement?: 'gap' | 'ok' | 'strong' | 'skipped',
+  /**
+   * Global stretch adjustment from recent unaided accuracy (see
+   * `engine/stretch.ts`). Per-skill evidence says where a skill sits; this says
+   * whether the whole diet is currently under or over the learner. Without it,
+   * a simulated learner at 95% first-try accuracy was still being served
+   * difficulty 2.4 four months in.
+   */
+  stretch = 0,
 ): number {
   const fromEvidence =
     ev.state === 'transferred'
@@ -130,11 +139,19 @@ export function targetDifficulty(
   const placementFloor = stateRank(ev.state) >= stateRank('independent') ? 0 : placement === 'strong' ? 3 : placement === 'ok' ? 2.5 : 0
   const base = Math.max(fromEvidence, placementFloor)
   const adjusted =
-    base + (energy === 'high' && !conservative ? 0.5 : 0) - (energy === 'low' ? 0.5 : 0) - (ev.recentMisses >= 2 ? 1 : 0)
+    base +
+    stretch +
+    (energy === 'high' && !conservative ? 0.5 : 0) -
+    (energy === 'low' ? 0.5 : 0) -
+    // Recent misses on THIS skill still pull down even while the global signal
+    // pushes up: struggling here is more specific information than cruising
+    // everywhere, so it wins locally.
+    (ev.recentMisses >= 2 ? 1 : 0)
   // The early-sessions cap exists so a cold planner does not overreach. It
   // lifts when placement actually saw the skill go well — capping a strong
-  // placement at 3 is what made the first real sessions feel like review.
-  const ceiling = conservative ? (placement === 'strong' ? 4 : 3) : 5
+  // placement at 3 is what made the first real sessions feel like review — and
+  // it lifts again once sustained accuracy says the caution is unwarranted.
+  const ceiling = conservative ? (placement === 'strong' || stretch >= 1 ? 4 : 3) : 5
   return Math.max(1, Math.min(ceiling, adjusted))
 }
 
@@ -161,7 +178,12 @@ function pickTemplates(
     .map((t) => ({
       t,
       score:
-        -Math.abs(t.difficulty - wantDifficulty) * 2 -
+        // ASYMMETRIC on purpose. A symmetric distance penalty treats "one rung
+        // too easy" and "one rung too hard" as equally bad, but they are not:
+        // slightly-too-hard is where learning happens, while too-easy produces
+        // a pleasant session that teaches nothing. Erring upward is the whole
+        // point of aiming at the frontier.
+        -(t.difficulty < wantDifficulty ? 2.6 : 1.4) * Math.abs(t.difficulty - wantDifficulty) -
         (templateUse.get(t.id) ?? 0) * 1.5 +
         Math.min(1, t.variants / 4) * 0.5 +
         // Confidence data was being collected and displayed but never acted on.
@@ -277,15 +299,35 @@ export function scoreSkills(
 ): SkillScore[] {
   const { index, evidence, state, now } = ctx
   const out: SkillScore[] = []
+  // Is the learner currently cruising? If so, owned skills come back into play
+  // for DEPTH rather than being retired.
+  const cruising = stretchSignal(state.events, now).adjust > 0
   for (const skill of ctx.index.skillList) {
     if (skill.bucket !== bucket) continue
     const ev = evidenceFor(evidence, skill.id)
-    // Frontier = not yet retained, prereqs met, and content exists.
-    if (stateRank(ev.state) >= stateRank('retained') && !ev.needsReview) continue
+    const owned = stateRank(ev.state) >= stateRank('retained')
+    /*
+     * Retained used to mean "retired": the skill left the pool for good unless
+     * it fell due. That is why difficulty flatlined — a learner was always at
+     * the frontier of NEW material, and new material starts easy by definition,
+     * so four months of practice produced the same difficulty as week three.
+     *
+     * An owned skill now stays eligible while the learner is cruising, where it
+     * competes on a deliberately low base score (below) so it deepens the
+     * program rather than crowding out new ground. A skill that has reached
+     * Transferred is genuinely done and still retires.
+     */
+    if (owned && !ev.needsReview && !(cruising && ev.state === 'retained')) continue
     if (!prereqsMet(skill, evidence, state)) continue
     if (!(index.bySkill.get(skill.id) ?? []).length) continue
     const reasons: string[] = []
     let score = 0
+    if (owned && !ev.needsReview) {
+      // Low, so new material still wins a fair fight — but non-zero, so the
+      // hardest available work on a solid skill is reachable at all.
+      score += 0.7
+      reasons.push('you own this one, so it comes back at a harder level rather than being retired')
+    }
     if (ev.needsReview) {
       score += 3
       reasons.push(ev.blockedByMisconception ? 'has an unrepaired confident error' : 'is due for review')
@@ -544,6 +586,10 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   const used = recentlyUsedForms(state.events, now)
   const templateUse = recentTemplateUse(state.events, now)
   const recentGraded = state.events.filter((e) => e.t >= now - 28 * 86_400_000 && e.mode !== 'placement')
+  // Is the diet currently under or over this learner? Silent until there is
+  // enough graded evidence to say (engine/stretch.ts).
+  const stretch = stretchSignal(state.events, now)
+  if (stretch.why && stretch.adjust !== 0) rationale.push(stretch.why)
   const total = checkIn.minutes
   const short = total <= 12
   const exitBudget = short ? 2 : total >= 25 ? 3 : 2
@@ -583,7 +629,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     const ev = evidenceFor(evidence, d.skillId)
     const picks = pickTemplates(
       index.bySkill.get(d.skillId) ?? [],
-      Math.min(3, targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, d.skillId))),
+      Math.min(stretch.adjust > 0 ? 4 : 3, targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, d.skillId), stretch.adjust)),
       1,
       templateUse,
     )
@@ -679,7 +725,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   }
   if (coreChoice) {
     const ev = evidenceFor(evidence, coreChoice.skill.id)
-    const diff = targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, coreChoice.skill.id))
+    const diff = targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, coreChoice.skill.id), stretch.adjust)
     const coreBudget = short ? Math.max(4, total - warmMin - exitBudget) : Math.max(6, total - warmMin - labBudget - exitBudget)
     const needsIntro = stateRank(ev.state) < stateRank('guided')
     // Calibration steering: only once there is enough rated history to say
@@ -756,7 +802,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       labTemplates.push(
         ...pickTemplatesForBudget(
           index.bySkill.get(labSkill.skill.id) ?? [],
-          targetDifficulty(evidenceFor(evidence, labSkill.skill.id), checkIn.energy, conservative, placementSignal(state, labSkill.skill.id)),
+          targetDifficulty(evidenceFor(evidence, labSkill.skill.id), checkIn.energy, conservative, placementSignal(state, labSkill.skill.id), stretch.adjust),
           labBudget,
           templateUse,
           { maxCount: total >= 40 ? 4 : 3, minCount: 1 },

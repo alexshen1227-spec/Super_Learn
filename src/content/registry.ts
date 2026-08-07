@@ -30,6 +30,7 @@ import { ABDUCTION_TEMPLATES } from './items/abduction'
 import { TRANSFER_BRIDGE_TEMPLATES } from './items/transferBridge'
 import { ADVANCED_TEMPLATES } from './items/advanced'
 import { ADVANCED_STEM_TEMPLATES } from './items/advancedStem'
+import { ADVANCED_SCIENCE_TEMPLATES } from './items/advancedScience'
 import { CASEFILE_TEMPLATES } from './items/caseFiles'
 import { CASEFILE2_TEMPLATES } from './items/caseFiles2'
 import { EXPANSION_TEMPLATES } from './items/expansion'
@@ -65,6 +66,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...TRANSFER_BRIDGE_TEMPLATES,
   ...ADVANCED_TEMPLATES,
   ...ADVANCED_STEM_TEMPLATES,
+  ...ADVANCED_SCIENCE_TEMPLATES,
   ...CASEFILE_TEMPLATES,
   ...CASEFILE2_TEMPLATES,
   ...EXPANSION_TEMPLATES,
