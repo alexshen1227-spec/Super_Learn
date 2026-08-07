@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '3.1',
+    date: '2026-08-06',
+    title: 'You Can No Longer Guess by Reading the Options',
+    points: [
+      'Multiple choice used to leak the answer through its shape. Correct options were the careful, fully-qualified ones and the wrong ones were short dismissals you could rule out on sight, so "always pick the longest" scored 52.8% against a 25% baseline — half the questions were clearable with no knowledge at all. Roughly a hundred distractors have been rewritten as equally specific, equally tempting statements. That strategy now scores 30.7%, and the build fails if it ever gets back above 34%.',
+      'The side effect is that the questions genuinely got harder. A wrong answer that is a full, reasonable-sounding position takes actual understanding to reject, rather than a glance at how short it is.',
+      'Fixed several sentences that read wrongly because a value was dropped into them: "on-time returns was 58%", "library text reminders improves…", "longer rotor blades always causes…", and a lower-case word opening a sentence. All were plural phrases meeting a singular verb. The audit now fails any sentence that starts in lower case where a value was interpolated, so this class cannot come back.',
+    ],
+  },
+  {
     version: '3.0',
     date: '2026-08-06',
     title: 'Show Your Work — and the App Reads It',

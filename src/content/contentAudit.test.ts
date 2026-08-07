@@ -633,7 +633,11 @@ describe('items are answerable and fair', () => {
     expect(
       strategy,
       `"always pick the longest" scores ${(strategy * 100).toFixed(1)}% against a ${(baseline * 100).toFixed(1)}% baseline — rebalance distractor lengths`,
-    ).toBeLessThan(0.45)
+      // Tightened from 0.45 after a rebalancing pass took the real figure from
+      // 52.8% to ~30%. The floor is the ~25% guessing baseline; the gap that
+      // remains is mostly items where the correct answer is genuinely the one
+      // that needs a qualifying clause.
+    ).toBeLessThan(0.34)
   })
 
   it('worked chains diagnose the step that broke', () => {
@@ -679,6 +683,26 @@ describe('items are answerable and fair', () => {
         }
         const clean = serializeSteps(spec.steps.map((st) => correctResponse(st.answer)))
         expect(firstFailedStep(spec, clean), `${t.id}@${seed}: a correct chain reports no failure`).toBeNull()
+      }
+    }
+  })
+
+  it('no sentence starts in lower case where a value was interpolated', () => {
+    // Templates that open a sentence with `${something}` produced text like
+    // "on-time returns was 58%" and "library text reminders improves…" — a
+    // lower-case start AND a subject-verb mismatch, because the interpolated
+    // phrase is a plural noun the author could not see while writing.
+    const badStart = /(?:^|[.!?]\s+|\n\n)([a-z][a-z-]{3,}\s+(?:was|is|were|are|has|have|improves?|causes?)\s)/
+    for (const { t, seed, item } of renders) {
+      for (const text of visibleText(item)) {
+        if (!text) continue
+        // Skip fenced code and table rows, where lower-case starts are normal.
+        const prose = text.replace(/```[\s\S]*?```/g, '').replace(/^\|.*$/gm, '')
+        const hit = prose.match(badStart)
+        expect(
+          hit?.[1],
+          `${t.id}@${seed}: sentence starts lower-case — "${hit?.[1]?.slice(0, 50)}"`,
+        ).toBeUndefined()
       }
     }
   })

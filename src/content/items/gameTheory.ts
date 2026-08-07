@@ -33,8 +33,8 @@ function nashCells(row: Pay, col: Pay): [number, number][] {
   return out
 }
 
-/** Strictly dominant row for the row player, or null. */
-function dominantRow(row: Pay): number | null {
+/** Strictly dominant row for the row player, or null. Exported for tests. */
+export function dominantRow(row: Pay): number | null {
   if (row[0][0] > row[1][0] && row[0][1] > row[1][1]) return 0
   if (row[1][0] > row[0][0] && row[1][1] > row[0][1]) return 1
   return null
@@ -140,7 +140,6 @@ const dominantStrategy = tpl(
       [rint(rng, 1, 9), rint(rng, 1, 9)],
       [rint(rng, 1, 9), rint(rng, 1, 9)],
     ]
-    const dom = dominantRow(row)
     const correct = hasDominant
       ? `${p.row[0]} — it pays more in both columns, whatever they choose`
       : `Neither — the better row depends on which column they pick`
@@ -165,7 +164,7 @@ const dominantStrategy = tpl(
       ],
       explanation: hasDominant
         ? `${p.row[0]} beats ${p.row[1]} in the ${p.col[0]} column (${row[0][0]} vs ${row[1][0]}) **and** in the ${p.col[1]} column (${row[0][1]} vs ${row[1][1]}). That is what dominance means: you can decide without predicting them at all.\n\nDominance is rare and precious. When you have it, stop forecasting — a dominant move is right against every possible opponent, including one who plays badly.`
-        : `${p.row[0]} is better against ${p.col[0]} (${row[0][0]} vs ${row[1][0]}), but ${p.row[1]} is better against ${p.col[1]} (${row[1][1]} vs ${row[0][1]}). No row wins both columns, so nothing is dominant and your choice genuinely depends on theirs.\n\nThis is the honest and common case. Notice the trap: needing to predict them is not a failure of analysis — it is the actual structure of the situation.${dom === null ? '' : ''}`,
+        : `${p.row[0]} is better against ${p.col[0]} (${row[0][0]} vs ${row[1][0]}), but ${p.row[1]} is better against ${p.col[1]} (${row[1][1]} vs ${row[0][1]}). No row wins both columns, so nothing is dominant and your choice genuinely depends on theirs.\n\nThis is the honest and common case. Notice the trap: needing to predict them is not a failure of analysis — it is the actual structure of the situation.`,
     }
   },
 )
@@ -316,9 +315,9 @@ const coordination = tpl(
       title: 'Coordination, not conflict',
       prompt: `${p.story.charAt(0).toUpperCase() + p.story.slice(1)} — you both do well only if you pick the SAME option.\n\n${matrix(p.row, p.row, row, col)}\n\nWhat does this situation actually require?`,
       answer: mcq(rng, 'Communication, since two arrangements are equally stable and the only real risk is mismatching', [
-        'A stronger negotiating position, since one side has to give way for the other to be satisfied',
-        'A careful probability estimate, since the payoffs reward whoever predicts the other side best',
-        'Nothing much, since both sides want the same thing and will naturally end up choosing it',
+        'A stronger negotiating position, since one of the two sides has to give way before the other one can be satisfied',
+        'A careful probability estimate, since the payoffs here reward whichever side predicts the other one most accurately',
+        'Nothing much, since both sides already want the same outcome and will therefore tend to arrive at it on their own',
       ]),
       hints: [
         'Check both matching cells for stability. Does either side want to move alone from them?',
@@ -551,9 +550,9 @@ const threatTest = tpl(
         rng,
         `Not credible on its own: carrying it out costs them ${punishCost} to gain ${punishGain}, so they would not want to follow through`,
         [
-          `Credible, because they have stated it openly and going back on it would damage how they are seen`,
-          `Credible, because the ${punishCost} they would spend shows how seriously they are treating this`,
-          `Impossible to judge, because their willingness to follow through is not something you can observe`,
+          `Credible, because they have stated it openly and backing down now would visibly damage how they are seen`,
+          `Credible, because being willing to spend ${punishCost} on it shows just how seriously they are treating this`,
+          `Impossible to judge either way, because whether they would really follow through is not something you can observe`,
         ],
       ),
       hints: [
@@ -604,8 +603,8 @@ const mixedSignals = tpl(
         `${p.row[rowBestAfter]} — they will never play ${p.col[1]}, and ${p.row[rowBestAfter]} is my best reply to ${p.col[0]}`,
         [
           `${p.row[1 - rowBestAfter]} — they will never play ${p.col[1]}, and it is my best reply to ${p.col[0]}`,
-          `${p.row[0]} — it has the single highest payoff anywhere in the table for me`,
-          `Either row, because their choice cannot be predicted from the table alone`,
+          `${p.row[0]} — it contains the single highest payoff available to me anywhere in the whole table`,
+          `Either row is defensible, because nothing in the table lets me predict which column they will actually pick`,
         ],
       ),
       hints: [

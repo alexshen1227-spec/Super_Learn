@@ -73,9 +73,9 @@ const projectStudio = tpl(
           studySeconds: 75,
           prompt: 'Which item is a genuine launch dependency rather than a nice-to-have?',
           answer: mcq(rng, 'Staff approval of the safety plan before publicizing the date', [
-            'Choosing the most stylish poster font',
-            'Buying every possible decoration',
-            'Getting 100 social-media reactions',
+            'Settling on the most stylish poster font, since the posters are what people see first',
+            'Buying the full range of decorations so the room looks finished on the night itself',
+            'Reaching a hundred reactions on the announcement post before the doors are due to open',
           ]),
           explanation: 'A dependency can stop downstream work from being valid. Publicity before approval risks advertising a date that cannot legally or safely run; poster style changes quality, not feasibility.',
         }),
@@ -130,9 +130,9 @@ const projectStudio = tpl(
         part('Revise', {
           prompt: 'A reviewer says your plan has dates but no evidence that work is actually complete. What is the strongest revision?',
           answer: mcq(rng, 'Add observable completion checks to milestones: approval received, receipt logged, rehearsal passed', [
-            'Use bold text for every deadline',
-            'Move all dates one day earlier without changing checks',
-            'Add “ASAP” after each task',
+            'Put every deadline in bold so that the dates are impossible for anyone to overlook',
+            'Move every date one day earlier, so there is slack in the schedule if any milestone slips',
+            'Mark each task “ASAP” so the whole team understands that none of it can be left late',
           ]),
           explanation: 'A deadline states when; a completion check states what must be true. Projects slip when “worked on” is mistaken for “done.”',
         }),
@@ -177,7 +177,7 @@ const writingStudio = tpl(
       prompt: `A school leader wants a short brief on whether to expand **${topic.program}**. Your job is to write to the evidence—not to sell a predetermined answer.`,
       parts: [
         part('Source pack', {
-          study: `SOURCE A — evaluation memo\n${topic.n} students were assigned by timetable group to usual practice or ${topic.program}. ${topic.outcome} was ${topic.control}% in usual practice and ${topic.treatment}% with the program. Limitation: ${caveat}.\n\nSOURCE B — student interview\n“I liked it and my friends did too. It definitely works for everyone.”\n\nSOURCE C — provider page\n“Our approach transforms outcomes.” No sample, comparison group, or raw result is reported.`,
+          study: `SOURCE A — evaluation memo\n${topic.n} students were assigned by timetable group to usual practice or ${topic.program}. The measured rate of ${topic.outcome} was ${topic.control}% under usual practice and ${topic.treatment}% with the program. Limitation: ${caveat}.\n\nSOURCE B — student interview\n“I liked it and my friends did too. It definitely works for everyone.”\n\nSOURCE C — provider page\n“Our approach transforms outcomes.” No sample, comparison group, or raw result is reported.`,
           studySeconds: 100,
           prompt: `What is the observed difference in ${topic.outcome}, in **percentage points**?`,
           answer: { type: 'numeric', answer: diff },
@@ -191,7 +191,7 @@ const writingStudio = tpl(
         part('Claim size', {
           prompt: 'Which sentence is proportioned to the evidence?',
           answer: mcq(rng, `In this ${topic.n}-student evaluation, the program was associated with a ${diff}-point improvement; ${caveat} limits generalization.`, [
-            `${topic.program} improves ${topic.outcome} for everyone by ${diff}%.`,
+            `The evaluation shows that ${topic.program} improve ${topic.outcome} for everyone by ${diff}%.`,
             'Students liked it, proving the measured effect is causal.',
             'The provider says it transforms outcomes, so expansion is risk-free.',
           ]),
@@ -207,7 +207,7 @@ const writingStudio = tpl(
               'Uses the interview as experience/context—not proof of effect—and does not rely on the provider claim',
               'Recommends a proportionate next step with a measurement or stop condition',
             ],
-            `Model:\n\nThe current evidence supports a **measured expansion** of ${topic.program}, not a universal rollout. In a ${topic.n}-student comparison, ${topic.outcome} was ${topic.treatment}% with the program versus ${topic.control}% under usual practice—a ${diff}-percentage-point difference. That is the strongest source in the packet. A student interview suggests the program may be acceptable to users, but one enthusiastic account cannot establish the effect; the provider’s unsupported marketing adds little. Because the evaluation covered ${caveat}, we should pilot the program in one additional setting, predefine the same outcome, and compare results after a term. Continue only if the improvement is reproduced without creating a large participation or workload problem.`,
+            `Model:\n\nThe current evidence supports a **measured expansion** of ${topic.program}, not a universal rollout. In a ${topic.n}-student comparison, the rate of ${topic.outcome} was ${topic.treatment}% with the program versus ${topic.control}% under usual practice—a ${diff}-percentage-point difference. That is the strongest source in the packet. A student interview suggests the program may be acceptable to users, but one enthusiastic account cannot establish the effect; the provider’s unsupported marketing adds little. Because the evaluation covered ${caveat}, we should pilot the program in one additional setting, predefine the same outcome, and compare results after a term. Continue only if the improvement is reproduced without creating a large participation or workload problem.`,
             120,
             'Write 120–180 words for the decision-maker. Start with the answer, then evidence, limitation, and next step…',
           ),
@@ -407,18 +407,18 @@ const experimentStudio = tpl(
         part('Interpret', {
           prompt: `The treatment mean is ${difference} ${ex.outcome} ${direction} than control. Which conclusion fits four trials per condition?`,
           answer: mcq(rng, `In these trials, ${ex.change} produced a ${difference}-unit ${direction} mean; repeat with more trials before generalizing.`, [
-            `${ex.change} always causes exactly a ${difference}-unit change.`,
-            'The means differ, so measurement noise is impossible.',
-            'Four trials can never provide any evidence.',
+            `It is established that ${ex.change} always cause exactly a ${difference}-unit change.`,
+            'The two means came out different, so ordinary measurement noise cannot be what produced the gap.',
+            'Four trials per condition is too few to provide any usable evidence about the change at all.',
           ]),
           explanation: 'A small experiment can supply evidence without supplying certainty. State the observed result, scope it to these trials, and name replication.',
         }),
         part('Quality check', {
           prompt: 'One treatment trial was recorded from memory after the sheet was lost. What is the trustworthy action?',
           answer: mcq(rng, 'Mark that value as reconstructed, report analysis with and without it, and repeat the trial if possible', [
-            'Keep it without comment because it is probably close',
-            'Delete it silently if it hurts the conclusion',
-            'Change it to the treatment mean',
+            'Keep the reconstructed value in without comment, since it is very probably close to what was measured',
+            'Remove the trial quietly if it works against the conclusion the rest of the data already supports',
+            'Replace the lost value with the treatment mean, which is the most representative figure available',
           ]),
           explanation: 'The provenance of a measurement is part of the data. Transparent sensitivity analysis shows whether the conclusion depends on the questionable point.',
         }),
@@ -432,7 +432,7 @@ const experimentStudio = tpl(
               'Sizes the conclusion to four trials per condition and distinguishes result from explanation',
               'Names a concrete replication or measurement improvement',
             ],
-            `Model:\n\n**Methods:** Eight ${ex.subject} trials were assigned to control or ${ex.change} (four each). Trial order was randomized; materials, operator, environment, and measurement procedure were held constant. The outcome was ${ex.outcome}. **Results:** Control trials (${ex.control.join(', ')}) averaged ${controlMean}; treatment trials (${ex.treatment.join(', ')}) averaged ${treatmentMean}, a ${difference}-unit ${direction} result. In this small test, ${ex.change} was associated with the observed change, but four trials per condition cannot establish a universal effect or mechanism. Repeat with more objects, blinded measurement where practical, and a preregistered exclusion rule.`,
+            `Model:\n\n**Methods:** Eight ${ex.subject} trials were assigned to control or ${ex.change} (four each). Trial order was randomized; materials, operator, environment, and measurement procedure were held constant. The outcome was ${ex.outcome}. **Results:** Control trials (${ex.control.join(', ')}) averaged ${controlMean}; treatment trials (${ex.treatment.join(', ')}) averaged ${treatmentMean}, a ${difference}-unit ${direction} result. In this small test, the use of ${ex.change} was associated with the observed change, but four trials per condition cannot establish a universal effect or mechanism. Repeat with more objects, blinded measurement where practical, and a preregistered exclusion rule.`,
             110,
             'Write reproducible Methods, then numerical Results and a conclusion limited to what the design supports…',
           ),
@@ -441,9 +441,9 @@ const experimentStudio = tpl(
         part('Replicate', {
           prompt: 'Which follow-up most increases confidence in generalization?',
           answer: mcq(rng, 'Repeat on newly made samples with randomized order and the same predefined analysis', [
-            'Repeat only the best treatment trial',
-            'Add more decimal places to the existing means',
-            'Ask participants which result they expected',
+            'Repeat the strongest treatment trial several times to confirm the best result the design can reach',
+            'Report the existing means to more decimal places so the difference between them is stated precisely',
+            'Ask the people involved which result they had expected, and compare that with what was measured',
           ]),
           explanation: 'Independent new trials test whether the effect survives fresh samples. Precision formatting cannot manufacture replication.',
         }),
@@ -519,27 +519,27 @@ const bookStudio = tpl(
         part('Thesis', {
           prompt: 'Which thesis best explains the chapter’s central movement without merely retelling it?',
           answer: mcq(rng, ex.thesis, [
-            'The chapter contains a problem and then some events happen.',
-            'The setting proves that all difficult situations have simple answers.',
-            'The protagonist is better than everyone else.',
+            'The chapter sets up a problem, works through a sequence of events, and arrives at an outcome.',
+            'The setting is used to show that even genuinely difficult situations tend to have simple answers.',
+            'The protagonist turns out to be more capable than the people around her, and the chapter shows it.',
           ]),
           explanation: `A thesis names the pattern the events enact: ${ex.thesis}`,
         }),
         part('Evidence', {
           prompt: 'Which support is strongest for that thesis?',
           answer: mcq(rng, ex.evidence, [
-            'The title sounds meaningful.',
-            'A reader might have felt something similar once.',
-            'The passage is short and therefore clear.',
+            'The title of the chapter points directly at the idea the passage is built around.',
+            'Most readers will recognise the feeling described, which is what gives the passage its force.',
+            'The passage is short and tightly written, which makes its central claim unusually clear.',
           ]),
           explanation: 'Strong literary evidence points to a specific choice, contrast, image, or change in the text and explains its connection to the claim.',
         }),
         part('Counter-reading', {
           prompt: 'Which complication would make a seminar comment more intellectually honest?',
           answer: mcq(rng, ex.counter, [
-            'There can be no other reading because one thesis was already found.',
-            'Every interpretation is equally supported.',
-            'The passage should be judged only by whether it was entertaining.',
+            'No competing reading is available now that a thesis fitting the evidence has already been identified.',
+            'Every reading of the passage is supported about equally well, so no single thesis can be preferred.',
+            'The passage is best judged on whether it holds a reader’s attention, rather than on its argument.',
           ]),
           explanation: `A counter-reading tests the thesis at its boundary: ${ex.counter}`,
         }),
@@ -562,7 +562,7 @@ const bookStudio = tpl(
         part('Discuss', {
           prompt: 'A classmate gives a different reading with real textual support. What is the strongest response?',
           answer: mcq(rng, 'Paraphrase their claim, identify the evidence that would distinguish the readings, then revise if theirs explains more', [
-            'Repeat your thesis louder',
+            'Restate your own thesis more forcefully, so the strongest version of it is on the table',
             'Say interpretation is subjective so evidence does not matter',
             'Change the subject to whether you liked the story',
           ]),
@@ -635,7 +635,7 @@ const dialogueStudio = tpl(
           studySeconds: 70,
           prompt: 'What did the expert actually recommend?',
           answer: mcq(rng, mentor.principle, [
-            'Hand the entire task to an expert.',
+            'Hand the whole task to somebody with more experience of this kind of problem.',
             'Collect more information without deciding what it would change.',
             'Trust confidence and experience instead of observable evidence.',
           ]),
@@ -644,27 +644,27 @@ const dialogueStudio = tpl(
         part('Paraphrase', {
           prompt: 'Which reply checks understanding instead of merely saying “okay”?',
           answer: mcq(rng, `“So your point is: ${mentor.principle.toLowerCase()} Is that accurate?”`, [
-            '“Yeah, I knew that.”',
-            '“Can you just show me the answer?”',
-            '“That sounds complicated.”',
+            '“Yeah, I knew that already — it lines up with what I had been assuming so far.”',
+            '“Could you just show me the answer, and then I can work backwards from it later?”',
+            '“That sounds complicated — I think I will need to go over it a few more times.”',
           ]),
           explanation: 'A paraphrase gives the expert a chance to repair your model before the conversation moves on.',
         }),
         part('Challenge', {
           prompt: 'Which question tests the advice respectfully at a real boundary?',
           answer: mcq(rng, mentor.challenge, [
-            'Are you sure?',
-            'Why should I listen to you?',
-            'Can you explain literally everything about this topic?',
+            'Are you sure that holds in every case, or are there situations where it would not?',
+            'What makes you confident about that, given how many other opinions there are on it?',
+            'Could you walk me through everything on this topic so I have the full picture first?',
           ]),
           explanation: 'A productive challenge names a condition under which the rule might bend. It creates precision instead of status conflict.',
         }),
         part('Next test', {
           prompt: 'What should happen immediately after office hours?',
           answer: mcq(rng, 'Apply the principle to one concrete example, record the result, and return with the exact point that still fails', [
-            'Wait until the expert checks in again',
-            'Copy the wording into notes without using it',
-            'Ask a second expert the same vague opening question',
+            'Wait for them to check in again, so the next question comes at a time that suits them',
+            'Write the advice into notes in their exact wording so nothing gets lost in paraphrase',
+            'Put the same opening question to a second expert, to see whether the two answers agree',
           ]),
           explanation: 'Expert time compounds when advice becomes an experiment. A concrete attempt produces a better next question.',
         }),
@@ -687,9 +687,9 @@ const dialogueStudio = tpl(
         part('Follow up', {
           prompt: 'Which follow-up message uses the expert’s time well?',
           answer: mcq(rng, '“I tried the agreed test. Here was my prediction, here is the result, and this exact step still confuses me. Could you check my reasoning there?”', [
-            '“Still confused. Any more tips?”',
-            '“Can we start over from the beginning?”',
-            '“I copied your advice. Thanks.”',
+            '“Still a bit confused after trying it. Do you have any more tips I could work through?”',
+            '“Could we start again from the beginning? I think I lost the thread somewhere early on.”',
+            '“I have written your advice down and will work through it properly later. Thanks a lot.”',
           ]),
           explanation: 'A strong follow-up shows work, isolates the remaining uncertainty, and asks for a bounded kind of help.',
         }),
@@ -756,27 +756,27 @@ const guardianDialogueStudio = tpl(
           studySeconds: 65,
           prompt: 'Which preparation keeps observation separate from motive-reading?',
           answer: mcq(rng, 'List the specific repeated behavior, its effect, and the change needed—without claiming to know why they do it', [
-            'Decide they do not respect anyone and prepare to prove it',
-            'Collect unrelated examples of their bad personality',
-            'Avoid naming any behavior so the conversation stays comfortable',
+            'Work out in advance that they do not respect anyone, and prepare the examples that will demonstrate it',
+            'Gather a range of other examples from the past that show the same underlying attitude in them',
+            'Avoid naming any specific behaviour, so the conversation has the best chance of staying calm and comfortable',
           ]),
           explanation: 'Specific behavior can be confirmed and changed. Motive accusations invite a side argument and often exceed the evidence.',
         }),
         part('Perspective', {
           prompt: 'What is the useful role of perspective-taking before the conversation?',
           answer: mcq(rng, 'Generate possible context so you can listen well, while keeping the boundary intact regardless of guessed motive', [
-            'Find an excuse that means you no longer need a boundary',
-            'Predict their exact feelings and present them as fact',
-            'Take responsibility for preventing every uncomfortable reaction',
+            'Look for a reading of their situation generous enough that the boundary stops being necessary at all',
+            'Work out exactly what they are feeling beforehand and open by telling them what that feeling is',
+            'Take responsibility for anticipating and preventing every uncomfortable reaction they might have to it',
           ]),
           explanation: 'Perspective improves tone and questions; it does not require surrendering agency or pretending guesses are facts.',
         }),
         part('Pressure check', {
           prompt: 'They reply, “If you cared about me/the team, you would just allow it.” What is happening?',
           answer: mcq(rng, 'A relationship test is being used to replace discussion of the actual boundary', [
-            'They have supplied evidence that the boundary is unfair',
-            'The boundary automatically becomes invalid',
-            'You must prove you care by complying once',
+            'They have offered a genuine reason to think the boundary is unfair and worth reconsidering',
+            'The boundary stops being valid, because a rule that damages a relationship cannot be the right one',
+            'You need to show that you care by giving way this one time, and can hold the line in future',
           ]),
           explanation: 'Conditional belonging (“if you cared…”) pressures compliance without addressing consent, ownership, privacy, or honesty.',
         }),
@@ -885,25 +885,25 @@ const fieldStudio = tpl(
           prompt: 'Which working stance best protects accuracy?',
           answer: mcq(rng, `Keep all three live: ${c.hypotheses.join('; ')}.`, [
             `Assume ${c.hypotheses[2]} because it is the most blameworthy.`,
-            'Choose whichever explanation was mentioned first.',
-            'Refuse to investigate because certainty is impossible.',
+            'Go with whichever explanation came up first, because the earliest account is usually the accurate one.',
+            'Decline to investigate at all, on the grounds that certainty is not achievable from these records.',
           ]),
           explanation: 'Competing hypotheses prevent one early story from controlling what evidence gets noticed.',
         }),
         part('Next test', {
           prompt: 'What is the highest-value, lowest-harm next action?',
           answer: mcq(rng, c.test, [
-            'Publicly name the person mentioned in the records.',
-            'Search personal belongings without permission.',
-            'Post the most dramatic hypothesis to get witnesses.',
+            'Name the person the records mention publicly, so that anyone who knows more can come forward.',
+            'Search the personal belongings of everyone who had access, so nothing is left unchecked.',
+            'Post the most striking version of events publicly, which is the fastest way to bring witnesses forward.',
           ]),
           explanation: `${c.test} It checks high-probability physical/logistical explanations before taking actions that create reputational or privacy harm.`,
         }),
         part('Interview', {
           prompt: 'Which opening question is neutral and information-rich?',
           answer: mcq(rng, '“Walk me through what you did from the last confirmed handoff onward.”', [
-            '“Why did you lose it?”',
-            '“You returned it, right?”',
+            '“Why did you end up losing it — was something distracting you at the time?”',
+            '“You did return it at the end, right? I just want to confirm that before I look elsewhere.”',
             '“Who should we blame?”',
           ]),
           explanation: 'A chronological invitation elicits detail without embedding the conclusion. Leading questions contaminate the account you hoped to learn from.',

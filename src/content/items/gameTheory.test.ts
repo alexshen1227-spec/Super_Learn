@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GAME_THEORY_TEMPLATES } from './gameTheory'
+import { dominantRow, GAME_THEORY_TEMPLATES } from './gameTheory'
 
 /**
  * Game-theory answers are computed from the generated payoff matrix, so the
@@ -49,6 +49,30 @@ describe('game theory items are well-posed', () => {
       expect(R, `gt-dilemma@${seed}: R must beat P`).toBeGreaterThan(P)
       expect(P, `gt-dilemma@${seed}: P must beat S`).toBeGreaterThan(S)
     }
+  })
+
+  it('the dominance item matches the claim it makes', () => {
+    // Half its variants are built to HAVE a dominant row and half not. If the
+    // construction ever drifted from the branch, the item would teach the
+    // wrong lesson silently, so re-derive dominance from the rendered table.
+    const t = byId('gt-dominant')
+    let withDominant = 0
+    for (let seed = 0; seed < t.variants; seed++) {
+      const item = t.generate(seed)
+      const { row } = readMatrix(item.prompt)
+      const dom = dominantRow([
+        [row[0][0], row[0][1]],
+        [row[1][0], row[1][1]],
+      ])
+      const claimsNeither = (item.answer as { options: string[]; correct: number }).options[
+        (item.answer as { correct: number }).correct
+      ].startsWith('Neither')
+      expect(claimsNeither, `gt-dominant@${seed}: answer must match the real matrix`).toBe(dom === null)
+      if (dom !== null) withDominant++
+    }
+    // Both cases must actually occur, or the item is answerable by pattern.
+    expect(withDominant).toBeGreaterThan(0)
+    expect(withDominant).toBeLessThan(t.variants)
   })
 
   it('every best-response variant has one decisive reply', () => {

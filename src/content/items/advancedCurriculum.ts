@@ -232,7 +232,11 @@ const designReplication = tpl(
         setup: 'Researchers scoring essays know which students used the new curriculum.',
         ask: 'What design improvement most directly blocks expectation from affecting the scores?',
         correct: 'Hide group labels from the essay scorers (blind the outcome assessment)',
-        wrong: ['Increase the font size on every essay', 'Tell scorers the expected result more clearly', 'Remove the comparison group'],
+        wrong: [
+          'Increase the font size on every essay so the scorers can read them all more comfortably',
+          'Tell the scorers the expected result more clearly so they know what to look out for',
+          'Score only the essays from the new curriculum and drop the comparison group entirely',
+        ],
       },
       {
         setup: 'One small experiment finds a surprising effect with p = 0.04.',

@@ -117,7 +117,7 @@ const genRecall = tpl(
           // without testing anything.
           answer: mcq(rng, 'Impose an order on the rows — largest first, smallest last — and total them as you read', [
             'Read the table start to finish three times over before it disappears from view',
-            'Hold a mental photograph of the whole table and read the numbers back off it later',
+            'Hold a mental photograph of the whole table and then read the numbers back off it afterwards',
             'Concentrate hard on each row in turn and trust that the numbers will stay put',
           ]),
           explanation:
