@@ -12,6 +12,7 @@ import { reviewBurden } from '../../engine/scheduler'
 import { findBottleneck } from '../../engine/coach'
 import { stateRank } from '../../engine/mastery'
 import { ERROR_TAGS, BUCKETS } from '../../domain/types'
+import { SKILL_BY_ID } from '../../content/skills'
 import { Button, Card, Chip, EmptyState, HeaderBar, SectionTitle } from '../components'
 import { BarPair, CalibrationChart, TrendColumns } from '../charts'
 import { WeekReviewModal } from '../WeekReview'
@@ -280,6 +281,43 @@ export function ProgressScreen() {
       ) : null}
 
       <WeekReviewLauncher />
+
+      {/* Sits deliberately BELOW every evidence section and says outright that
+          it is not evidence. These are self-reported and never touch a rung —
+          the replay cannot even see them (engine/fieldPlan.ts). */}
+      {state.plans.length ? (
+        <>
+          <SectionTitle>Plans you made</SectionTitle>
+          <p className="text-[12px] text-faint px-1 mb-2 leading-snug">
+            Your own notes on using a Path outside the app. Not scored, and not part of any rung — real life cannot be
+            machine-checked, so nothing here counts as evidence.
+          </p>
+          <div className="space-y-2 mb-6">
+            {[...state.plans].reverse().slice(0, 12).map((p) => (
+              <Card key={p.id} className="p-3.5">
+                <p className="text-[14px] leading-relaxed">
+                  If <span className="font-medium">{p.cue}</span>, then <span className="font-medium">{p.action}</span>.
+                </p>
+                <div className="flex items-center justify-between gap-3 mt-1.5">
+                  <span className="text-[12px] text-faint">
+                    {SKILL_BY_ID.get(p.skillId)?.name ?? p.skillId} ·{' '}
+                    {new Date(p.t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                  {p.outcome === 'used' ? (
+                    <Chip tone="good">came up · did it</Chip>
+                  ) : p.outcome === 'noticed-too-late' ? (
+                    <Chip tone="warn">saw it afterwards</Chip>
+                  ) : p.outcome === 'not-yet' ? (
+                    <Chip tone="neutral">not yet</Chip>
+                  ) : (
+                    <Chip tone="neutral">will ask later</Chip>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </>
+      ) : null}
 
       <SectionTitle>Session history</SectionTitle>
       <div className="space-y-2 mb-6">

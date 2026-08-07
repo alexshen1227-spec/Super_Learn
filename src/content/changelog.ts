@@ -19,6 +19,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'There is nothing to come back and read. Writing the plan is what does the work; re-reading it adds almost nothing, so no log or journal screen was built. Roughly two weeks later, one session ends by asking whether that situation ever came up — three buttons, then it is done and never asked again.',
       'It is not scored and it moves no rung, ever. Real life cannot be machine-checked, so anything you report about it is self-assessment — which this app refuses as evidence everywhere else, and refuses here too. A test now locks that: a plan reporting "I used it" changes no skill state, schedules no review, and cannot create a rung on its own.',
       'Paths only. Your math is already checked by the app and by school; the four Paths are the ones whose whole point is outside the app.',
+      'The plans you write are listed at the bottom of Progress, with what you reported back — newest first, below every evidence section, and labelled as not being evidence. Nothing chases you to read it; it is there if you want it. It also travels in your export like everything else.',
     ],
   },
   {
