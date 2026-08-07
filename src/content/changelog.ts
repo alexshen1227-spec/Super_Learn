@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '4.0',
+    date: '2026-08-07',
+    title: 'An Advanced Tier, Placed Where the Bank Ran Out',
+    points: [
+      'Twelve new question families at the top two difficulty levels, aimed by measurement rather than by feel. Counting first: 57 of 97 skills had nothing above difficulty 3, and Meta Lab had no hard question at all — so however well you did, the planner had nothing harder to reach for. That is a content ceiling, and only content fixes it.',
+      'Math: sign discipline (a negative distributed across a difference, then evaluated at a negative), equations with no solution or infinitely many, successive percent change and why the round trip never returns, working backwards from a midpoint, exponent laws colliding with a zero power, shaded-region area, and ratios that change when a fixed count is added to one side.',
+      'Meta Lab went from zero hard questions to three families: judging what study evidence actually supports, reading your own confidence against your accuracy, and telling an explanation apart from an instruction. These ask you to evaluate claims about learning rather than recite advice about it.',
+      'Observer gains pulling a report into its separate claims and finding the weakest; Guardian gains pressure that arrives under a friendly surface — a manufactured cost attached to your refusal, a checkable claim about what everyone else did, a line that makes thinking itself look like not caring.',
+      'Every numeric answer is derived from the question\'s own generated values and was re-checked by parsing the finished question back out and recomputing it independently — so an answer cannot quietly drift from the problem it belongs to. Guessing by answer shape is unchanged at 28.5% against a 25.4% baseline.',
+      'Still thin, and worth saying: physics and coding remain light on hard material (3% and 9% of their questions), and 48 skills still top out at difficulty 3. Those are the next targets, not finished work.',
+    ],
+  },
+  {
     version: '3.9',
     date: '2026-08-07',
     title: 'One If-Then Plan, No Log to Read',

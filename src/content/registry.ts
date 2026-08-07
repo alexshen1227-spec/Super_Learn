@@ -28,6 +28,7 @@ import { WORKED_CHAIN_TEMPLATES } from './items/workedChains'
 import { HS_BRIDGE_TEMPLATES } from './items/hsBridge'
 import { ABDUCTION_TEMPLATES } from './items/abduction'
 import { TRANSFER_BRIDGE_TEMPLATES } from './items/transferBridge'
+import { ADVANCED_TEMPLATES } from './items/advanced'
 import { CASEFILE_TEMPLATES } from './items/caseFiles'
 import { CASEFILE2_TEMPLATES } from './items/caseFiles2'
 import { EXPANSION_TEMPLATES } from './items/expansion'
@@ -61,6 +62,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...HS_BRIDGE_TEMPLATES,
   ...ABDUCTION_TEMPLATES,
   ...TRANSFER_BRIDGE_TEMPLATES,
+  ...ADVANCED_TEMPLATES,
   ...CASEFILE_TEMPLATES,
   ...CASEFILE2_TEMPLATES,
   ...EXPANSION_TEMPLATES,
