@@ -18,7 +18,8 @@ import { IconFlag, IconHint } from '../icons'
 import { useStore } from '../../store/store'
 import { uid } from '../../engine/rng'
 import type { ActivityResult } from './SessionScreen'
-import { aggregateParts, type PartOutcome } from '../../engine/activity'
+import { aggregateParts, verdictMessage, type PartOutcome } from '../../engine/activity'
+import { isPflTemplate } from '../../engine/pfl'
 
 type Phase = 'study' | 'answer' | 'wrong' | 'retry' | 'revealed' | 'final'
 
@@ -605,6 +606,7 @@ export function ItemPlayer({
                   : null
               }
               parts={Boolean(parts)}
+              supported={isPflTemplate(template.id)}
               ok={parts ? retryVerdictOk : retryVerdictOk === null ? true : retryVerdictOk}
               firstTry={parts
                 ? partOutcomes[partOutcomes.length - 1]?.firstCorrect === true
@@ -1015,6 +1017,7 @@ function FinalFeedback({
   onContinue,
   continueLabel,
   parts,
+  supported,
 }: {
   ok: boolean | null
   firstTry: boolean
@@ -1030,21 +1033,14 @@ function FinalFeedback({
   onContinue: () => void
   continueLabel: string
   parts: boolean
+  supported: boolean
 }) {
   const suggested = commonErrors ? (Object.keys(commonErrors)[0] as ErrorTag | undefined) : undefined
   return (
     <div className="mt-4 anim-in" role="status" aria-live="polite">
       <Card className={`p-4 ${ok ? 'border-good/40' : 'border-warn/40'}`}>
         <p className={`font-semibold text-[15px] ${ok ? 'text-good' : 'text-warn'}`}>
-          {ok === null
-            ? 'Recorded.'
-            : ok
-              ? firstTry && hintsUsed === 0
-                ? 'Correct — unaided, first try. That is the evidence that advances skills.'
-                : hintsUsed > 0
-                  ? 'Correct — with hints, so this counts as guided evidence (independence comes next).'
-                  : 'Corrected. The repair is real learning; a fresh version of this idea will come back later.'
-              : 'Still not there — read the path below closely; this idea will return as a new problem.'}
+          {verdictMessage({ ok, firstTry, hintsUsed, supported })}
         </p>
         <div className="mt-3 pt-3 border-t border-line">
           <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-1">Why</p>

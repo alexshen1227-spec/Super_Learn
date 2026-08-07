@@ -20,6 +20,7 @@
  *    promotion to independent and flags the skill for review
  */
 import type { AttemptEvent, SkillEvidence, SkillState } from '../domain/types'
+import { isPflTemplate } from './pflId'
 
 export const STATE_ORDER: SkillState[] = [
   'unseen',
@@ -497,10 +498,28 @@ export function deriveEvidence(events: AttemptEvent[], now: number): Map<string,
   return fresh
 }
 
+/**
+ * A PFL probe hands the learner the explanation before asking, so it can never
+ * be evidence of ownership in either direction. The player writes probes as
+ * exposure already; this re-imposes it during REPLAY so the guarantee does not
+ * depend on who wrote the event.
+ *
+ * That matters for two real cases: events imported from another device (all
+ * external input is treated as hostile — see store/sanitize.ts), and any event
+ * already appended under an older build. Events are append-only and never
+ * mutated, so a probe recorded with a graded verdict would otherwise keep
+ * over-crediting forever.
+ */
+function asExposureIfProbe(e: AttemptEvent): AttemptEvent {
+  if (!isPflTemplate(e.templateId)) return e
+  if (e.correct === null && e.firstCorrect === null) return e
+  return { ...e, correct: null, firstCorrect: null }
+}
+
 /** Uncached replay. Events must be time-ordered. */
 function replayEvidence(events: AttemptEvent[], now: number): Map<string, SkillEvidence> {
   const trackers = new Map<string, Tracker>()
-  const sorted = [...events].sort((a, b) => a.t - b.t)
+  const sorted = [...events].map(asExposureIfProbe).sort((a, b) => a.t - b.t)
   for (const e of sorted) {
     for (const skillId of e.skillIds) {
       let tr = trackers.get(skillId)

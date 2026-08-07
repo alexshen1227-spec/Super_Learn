@@ -1,6 +1,7 @@
 /** Honest 28-day training-dose and learning-outcome summary. */
 import type { AppState, AttemptEvent, SkillState } from '../domain/types'
 import { deriveEvidence, stateRank } from './mastery'
+import { isPflTemplate } from './pfl'
 
 const DAY = 86_400_000
 
@@ -42,7 +43,13 @@ export function outcomeReport(state: AppState, now: number, days = 28, dailyTarg
     }),
   )
   const events = state.events.filter((e) => e.t >= cutoff && e.mode !== 'placement')
-  const gradedAttempts = events.filter((e) => e.firstCorrect !== null || e.score !== null).length
+  // A PFL probe carries a `score` but no graded verdict, so the `score !== null`
+  // clause would otherwise let probes help unlock this report. They must not:
+  // this count is the gate deciding whether the app may judge learning at all,
+  // and a probe is a measurement of readiness, not evidence of ownership.
+  const gradedAttempts = events.filter(
+    (e) => !isPflTemplate(e.templateId) && (e.firstCorrect !== null || e.score !== null),
+  ).length
   const before = deriveEvidence(state.events.filter((e) => e.t < cutoff), cutoff)
   const current = deriveEvidence(state.events, now)
   const ids = new Set([...before.keys(), ...current.keys()])

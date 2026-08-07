@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '5.1',
+    date: '2026-08-07',
+    title: 'A Second Way of Measuring — How Fast You Pick Up Something New',
+    points: [
+      'Last release admitted the biggest gap in how this app measures you: it only ever tests you cold, with no resources, which understates what your practice actually bought. The alternative from that literature is to measure how well you learn something new — so there is now a "Learn something new" card in Practice that teaches a genuinely new idea for about a minute, hides the explanation, and asks questions you can only answer from it. Clock arithmetic, Simpson\'s paradox, and how an algorithm\'s work grows are the first three.',
+      'These do not advance anything, and they are not meant to. A probe hands you the explanation, so getting it right proves nothing about what you own — it is recorded as exposure, the same as reading something. It cannot promote a skill, schedule a review, or count as a first-try win. A wrong answer is not held against you either, because failing to pick up an idea you met ninety seconds ago is not a gap in your knowledge.',
+      'The readout compares you to yourself: how often ideas land when you already had the groundwork versus when you did not, judged by what you knew at the time of each probe rather than what you know today. It refuses to say anything under four probes, and stays silent on the comparison until both sides have samples. There is no norm and no cohort — three probes is enough to make a readout appear, not enough to characterise anyone, and it says so.',
+      'A bug worth naming, found by playing one: the screen congratulated a correct probe with "unaided, first try — that is the evidence that advances skills", on the one activity where the explanation had just been handed over. The scoring underneath was right; the sentence was not. Worse, six other places counted a correct answer as unaided without re-checking whether help was given — enough perfect probes would have talked the coach into calling a subject "a strength" while you were at 50% on real work. Fixed at the source, so all of them drop probes at once.',
+      'Difficulty stars no longer borrow the words the mastery ladder uses. Levels 2 and 3 were called "Guided" and "Independent" — the same two words that mean specific things about what you have proven — so a 3-star question answered with three hints displayed the word "Independent" on screen. They are now "Routine" and "Combining", and a test keeps the two scales from sharing vocabulary again.',
+    ],
+  },
+  {
     version: '5.0',
     date: '2026-08-07',
     title: 'Transferred Was Being Awarded Too Easily — Including for Being Told the Answer',

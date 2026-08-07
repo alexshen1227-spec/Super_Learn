@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aggregateParts, type PartOutcome } from './activity'
+import { aggregateParts, verdictMessage, type PartOutcome } from './activity'
 import { deriveEvidence, evidenceFor } from './mastery'
 import type { AttemptEvent } from '../domain/types'
 
@@ -130,5 +130,47 @@ describe('repaired multi-part work cannot fake independence', () => {
     const ev = evidenceFor(deriveEvidence([eventFrom(abandoned)], T0 + 60_000), 'sk1')
     expect(ev.recentMisses).toBe(1)
     expect(ev.guidedSuccesses).toBe(0)
+  })
+})
+
+/**
+ * The verdict sentence is the app's spoken claim about what an answer proved.
+ * A PFL probe hands the learner the explanation before asking, so a correct
+ * answer on one is NOT unaided evidence — and the screen used to say it was.
+ * That bug shipped into a real session before this test existed.
+ */
+describe('the verdict never claims evidence the engine did not collect', () => {
+  const ALL = [true, false].flatMap((firstTry) =>
+    [0, 1, 3].map((hintsUsed) => ({ firstTry, hintsUsed })),
+  )
+
+  it('never claims unaided or advancing evidence on supported work', () => {
+    for (const base of ALL) {
+      for (const ok of [true, false, null] as const) {
+        const msg = verdictMessage({ ...base, ok, supported: true })
+        expect(msg).not.toMatch(/unaided/i)
+        expect(msg).not.toMatch(/advances skills/i)
+        // "not counted as independent evidence" is the honest phrasing; a bare
+        // claim of independence is not.
+        expect(msg).not.toMatch(/(?<!not counted as )\bindependent evidence\b/i)
+      }
+    }
+  })
+
+  it('says plainly that a correct supported answer is not independent evidence', () => {
+    const msg = verdictMessage({ ok: true, firstTry: true, hintsUsed: 0, supported: true })
+    expect(msg).toMatch(/not counted as independent evidence/i)
+  })
+
+  it('still credits genuine unaided work when nothing was supplied', () => {
+    expect(verdictMessage({ ok: true, firstTry: true, hintsUsed: 0, supported: false }))
+      .toMatch(/unaided, first try/)
+  })
+
+  it('still refuses to call hinted or repaired work independent', () => {
+    const hinted = verdictMessage({ ok: true, firstTry: true, hintsUsed: 2, supported: false })
+    const repaired = verdictMessage({ ok: true, firstTry: false, hintsUsed: 0, supported: false })
+    expect(hinted).toMatch(/guided evidence/)
+    expect(repaired).not.toMatch(/unaided/)
   })
 })

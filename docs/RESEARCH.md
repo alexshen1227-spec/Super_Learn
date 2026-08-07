@@ -577,26 +577,67 @@ Simulated 365 days at 30 min/day against the real content bank and planner:
   application rather than transfer. `contentAudit.test.ts` now fails the build
   if any `transfer: true` template names the principle in its prompt.
 
-## 23. What was deliberately NOT built, and why
+## 23. Preparation for Future Learning — EVIDENCE (implemented 2026-08-07)
 
-- **Preparation for Future Learning (PFL)** — Bransford, J. D. & Schwartz,
-  D. L. (1999), *Rethinking transfer: a simple proposal with multiple
-  implications*, Review of Research in Education 24, 61-100.
-  https://journals.sagepub.com/doi/10.3102/0091732X024001061 . Accessed
-  2026-08-07. They argue that measuring transfer as **sequestered problem
-  solving** — no resources, no help, apply it cold — systematically
-  underestimates what prior learning bought, and propose measuring **readiness
-  to learn something new** instead. Every rung in this app is sequestered
-  problem solving, so the critique lands squarely on our evidence model.
-  **Not built this session.** It needs a new activity form (supply resources,
-  measure the rate of learning from them) plus a second evidence channel that
-  is explicitly not a rung. Done badly it produces exactly the soft,
-  self-reported "growth" number this app refuses. Recorded as the strongest
-  known gap in the evidence model rather than quietly dropped.
+Bransford, J. D. & Schwartz, D. L. (1999), *Rethinking transfer: a simple
+proposal with multiple implications*, Review of Research in Education 24,
+61-100. https://journals.sagepub.com/doi/10.3102/0091732X024001061 . Accessed
+2026-08-07. They argue that measuring transfer as **sequestered problem
+solving** — no resources, no help, apply it cold — systematically
+underestimates what prior learning bought, and propose measuring **readiness to
+learn something new** instead. Every rung in this app is sequestered problem
+solving, so the critique landed squarely on our evidence model.
+
+**Shape as built** (`src/engine/pfl.ts`, `src/content/items/pflProbes.ts`):
+a probe teaches a genuinely new idea in a short study phase, hides it, then
+asks questions answerable only from that explanation. Three exist —
+`pfl-modular` (clock arithmetic), `pfl-simpson` (Simpson's paradox),
+`pfl-growth` (asymptotic growth). The readout compares pick-up rate **within
+one learner** between probes whose prerequisites they owned and probes whose
+prerequisites they did not, judged at the time of the probe, never against a
+population.
+
+**The three honesty rules, and how each is enforced:**
+
+1. **A probe is never a rung.** Probes are written as EXPOSURE — `correct` and
+   `firstCorrect` both null — which is the ungraded shape mastery already
+   understands: no success, no miss, no review scheduled, no promotion. The
+   outcome survives only in `score`, which nothing but the PFL report reads.
+   Enforced in `SessionScreen.logEvent`, the single line every attempt passes
+   through, rather than by trusting templates to behave.
+2. **Within-learner comparison only.** No norms, no cohort, no percentile.
+3. **It refuses to exist** below `MIN_PROBES` (4), and stays silent on the
+   prerequisite split until both sides have samples.
+
+**Coverage correction (2026-08-07, same day).** The first implementation wrote
+probes as *guided* work — `hintLevel` forced to 1, but `firstCorrect` left
+true. The ladder held, because `isFirstUnaidedSuccess` re-checks `hintLevel`.
+Six other readers do not: the coach's per-bucket accuracy, the weekly accuracy
+readout, and the session summary all treat `firstCorrect` as unaided success on
+its own. Measured consequence: 24 perfect probes dragged 50% real accuracy to
+83%, over the 80% threshold at which the coach declares a bucket "a strength" —
+the app telling a learner they were strong at math on the strength of work
+where it had handed them the explanation. The exposure shape fixes all of them
+at once, because every one filters on `firstCorrect !== null`. Regression tests:
+`engine/pfl.test.ts` ("probes are invisible to the derived readouts").
+
+**Known limit.** Three probes is enough to make the readout appear, not enough
+to characterise a learner. Pick-up rate is a within-app measure of how well a
+new idea lands in this app's format; it is not a validated PFL instrument, and
+the copy says so.
+
+## 23b. What was deliberately NOT built, and why
+
 - **Authored transfer-distance tags.** Rejected. Letting content declare its
   own distance repeats the mistake §13 already corrected once, when an
   authoring flag decided the top rung. Distance is derived from the learner's
   own history instead.
+- **A shared vocabulary between the difficulty scale and the evidence ladder.**
+  Removed rather than added: difficulty tiers 2 and 3 were named "Guided" and
+  "Independent", the same words the evidence ladder uses for rungs, so a 3-star
+  problem answered with three hints displayed the word "Independent". Renamed
+  to "Routine" and "Combining", with an audit gate keeping the two scales
+  disjoint (`contentAudit.test.ts`).
 
 ## 24. Abstract rule training does transfer — EVIDENCE (strongest positive)
 

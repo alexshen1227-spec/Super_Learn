@@ -31,6 +31,7 @@ import { TRANSFER_BRIDGE_TEMPLATES } from './items/transferBridge'
 import { ADVANCED_TEMPLATES } from './items/advanced'
 import { ADVANCED_STEM_TEMPLATES } from './items/advancedStem'
 import { ADVANCED_SCIENCE_TEMPLATES } from './items/advancedScience'
+import { PFL_TEMPLATES } from './items/pflProbes'
 import { CASEFILE_TEMPLATES } from './items/caseFiles'
 import { CASEFILE2_TEMPLATES } from './items/caseFiles2'
 import { EXPANSION_TEMPLATES } from './items/expansion'
@@ -67,6 +68,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...ADVANCED_TEMPLATES,
   ...ADVANCED_STEM_TEMPLATES,
   ...ADVANCED_SCIENCE_TEMPLATES,
+  ...PFL_TEMPLATES,
   ...CASEFILE_TEMPLATES,
   ...CASEFILE2_TEMPLATES,
   ...EXPANSION_TEMPLATES,

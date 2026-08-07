@@ -16,6 +16,8 @@ import { describe, expect, it } from 'vitest'
 import { Chess } from 'chess.js'
 import { BUILTIN_TEMPLATES, DEFAULT_INDEX } from './registry'
 import { COURSES, SKILLS, SKILL_BY_ID } from './skills'
+import { DIFFICULTY_INFO } from './difficulty'
+import { STATE_LABEL } from '../engine/mastery'
 import { KB_BY_SKILL } from './kb'
 import { correctResponse, firstFailedStep, serializeSteps, validate, wrongResponse } from '../engine/validate'
 import { matingMoves, movesKeepingMate } from '../engine/chessTools'
@@ -830,5 +832,23 @@ describe('content volume targets', () => {
       reach,
       `${cappedAtIndependent.length}/${SKILLS.length} skills cannot reach Transferred: ${cappedAtIndependent.join(', ')}`,
     ).toBeGreaterThanOrEqual(0.8)
+  })
+})
+
+/**
+ * Difficulty tiers name the TASK; evidence rungs name what the learner PROVED.
+ * When the two scales shared words ("Guided", "Independent"), a hinted 3-star
+ * problem displayed the word "Independent" — the exact claim this app exists to
+ * refuse. They must stay disjoint.
+ */
+describe('the difficulty scale and the evidence ladder do not share vocabulary', () => {
+  it('no difficulty tier is named after an evidence rung', () => {
+    const rungs = new Set(Object.values(STATE_LABEL).map((s) => s.toLowerCase()))
+    for (const [level, info] of Object.entries(DIFFICULTY_INFO)) {
+      expect(
+        rungs.has(info.name.toLowerCase()),
+        `difficulty ${level} is named "${info.name}", which is also an evidence rung`,
+      ).toBe(false)
+    }
   })
 })

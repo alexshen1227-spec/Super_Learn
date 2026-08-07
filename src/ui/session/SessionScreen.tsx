@@ -34,6 +34,7 @@ import { nextReviewAt } from '../../engine/scheduler'
 import { uid } from '../../engine/rng'
 import { clearDraft, loadDraftSync, saveDraft, type ActivityRecord, type SessionDraft, type SessionPhase } from '../../store/draft'
 import { useWakeLock } from '../useWakeLock'
+import { isPflTemplate } from '../../engine/pfl'
 import { planCandidate, planNeedingFollowUp } from '../../engine/fieldPlan'
 import { Button, Card, Chip, Confirm, Modal, Segmented } from '../components'
 import { ItemPlayer } from './ItemPlayer'
@@ -55,6 +56,19 @@ export interface ActivityResult {
   confidence: number | null
   errorTag: ErrorTag | null
   validator: string
+}
+
+/**
+ * A probe's outcome lives entirely in `score`, because the event carries no
+ * graded verdict (see logEvent). Multi-part probes already produce a partial
+ * score; a single-part one would not, so its first-submission verdict is
+ * folded down into the same 0..1 field rather than being lost.
+ */
+function probeScore(result: ActivityResult): number | null {
+  if (result.score !== null) return result.score
+  if (result.firstCorrect !== null) return result.firstCorrect ? 1 : 0
+  if (result.correct !== null) return result.correct ? 1 : 0
+  return null
 }
 
 function emptyRecord(key: string): ActivityRecord {
@@ -323,6 +337,7 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
       if (!template || !activity || !block) return
       if (records[actKey]?.eventLogged) return
       const mode: AttemptMode = activity.mode
+      const probe = isPflTemplate(template.id)
       const event: AttemptEvent = {
         id: uid('e'),
         t: Date.now(),
@@ -336,11 +351,34 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
         mode,
         firstResponse: result.firstResponse.slice(0, 2000),
         finalResponse: result.finalResponse.slice(0, 2000),
-        correct: result.correct,
-        firstCorrect: result.firstCorrect,
-        score: result.score,
+        /*
+         * A PFL probe hands the learner an explanation and then asks about it.
+         * The resource IS support, so the attempt is not evidence of ownership
+         * in either direction — it must never produce a rung, and it must never
+         * be counted as a miss for skipping one.
+         *
+         * So a probe is written as EXPOSURE: `correct` and `firstCorrect` null,
+         * which is exactly the ungraded shape mastery already understands (no
+         * success, no miss, no review rescheduled). The outcome survives in
+         * `score`, which is the only field the PFL report reads.
+         *
+         * Enforced here rather than by trusting every present and future PFL
+         * template to behave: this is the single line every attempt passes
+         * through. Doing it this way also fixes the readers downstream that
+         * treat `firstCorrect` as unaided success WITHOUT re-checking hints
+         * (coach bucket accuracy, the weekly accuracy readout) — they all
+         * filter on `firstCorrect !== null`, so a probe now drops out of every
+         * one of them at once instead of each needing its own guard.
+         *
+         * See engine/pfl.ts and RESEARCH.md §23.
+         */
+        correct: probe ? null : result.correct,
+        firstCorrect: probe ? null : result.firstCorrect,
+        score: probe ? probeScore(result) : result.score,
         validator: result.validator,
-        hintLevel: result.hintLevel,
+        /* Defence in depth: even if a probe ever did carry a graded verdict,
+         * hintLevel > 0 independently blocks independent evidence. */
+        hintLevel: probe ? Math.max(1, result.hintLevel) : result.hintLevel,
         confidence: result.confidence,
         elapsedSec: Math.max(5, Math.round(elapsedSec)),
         errorTags: result.errorTag ? [result.errorTag] : [],
@@ -462,7 +500,9 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
           const r = records[`${bi}:${ai}`]
           if (r?.eventLogged) {
             attempts++
-            if (r.firstCorrect && r.hintsUsed === 0) correctFirst++
+            // A probe is supported work, so it can never be a first-try win —
+            // the summary counted one before this guard existed.
+            if (r.firstCorrect && r.hintsUsed === 0 && !isPflTemplate(a.templateId)) correctFirst++
             const tpl = index.templates.get(a.templateId)
             if (tpl) bucketMinutes[tpl.bucket] = (bucketMinutes[tpl.bucket] ?? 0) + r.elapsedSec / 60
           }

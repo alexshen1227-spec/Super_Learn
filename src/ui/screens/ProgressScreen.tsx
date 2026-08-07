@@ -10,7 +10,7 @@ import { effectiveAllocation } from '../../engine/allocationPlus'
 import { brierScore, calibrationBands, calibrationGap, highConfidenceErrors } from '../../engine/calibration'
 import { reviewBurden } from '../../engine/scheduler'
 import { findBottleneck } from '../../engine/coach'
-import { stateRank } from '../../engine/mastery'
+import { deriveEvidence, stateRank } from '../../engine/mastery'
 import { ERROR_TAGS, BUCKETS } from '../../domain/types'
 import { SKILL_BY_ID } from '../../content/skills'
 import { Button, Card, Chip, EmptyState, HeaderBar, SectionTitle } from '../components'
@@ -18,6 +18,7 @@ import { BarPair, CalibrationChart, TrendColumns } from '../charts'
 import { WeekReviewModal } from '../WeekReview'
 import { useState } from 'react'
 import { learningQualityReport, outcomeReport } from '../../engine/outcomes'
+import { pflProbes, pflReport } from '../../engine/pfl'
 
 const DAY = 86_400_000
 
@@ -74,6 +75,12 @@ export function ProgressScreen() {
   const brier = brierScore(state.forecasts)
   const outcome = useMemo(() => outcomeReport(state, now), [state, now])
   const quality = useMemo(() => learningQualityReport(events, now), [events, now])
+  // Prerequisite ownership is judged AT THE TIME of each probe, so the replay
+  // is re-run up to that moment rather than compared against today.
+  const pfl = useMemo(
+    () => pflReport(pflProbes(state.events, SKILL_BY_ID, (upTo) => deriveEvidence(state.events.filter((e) => e.t <= upTo), upTo))),
+    [state.events],
+  )
 
   const errorPattern = useMemo(() => {
     const cutoff = now - 28 * DAY
@@ -294,6 +301,42 @@ export function ProgressScreen() {
       {/* Sits deliberately BELOW every evidence section and says outright that
           it is not evidence. These are self-reported and never touch a rung —
           the replay cannot even see them (engine/fieldPlan.ts). */}
+      {/* Readiness to learn — deliberately BELOW the ladder and visibly not
+          part of it. Every rung above is a cold test; this is the one measure
+          that asks whether practice made you quicker to pick up something new.
+          engine/pfl.ts, RESEARCH.md §23. */}
+      {pfl.probes > 0 ? (
+        <>
+          <SectionTitle>Readiness to learn</SectionTitle>
+          <Card className="p-4 mb-1">
+            <p className="text-[14px] leading-relaxed">{pfl.summary}</p>
+            {pfl.pickUp !== null ? (
+              <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
+                <span className="text-[12px] text-faint">
+                  Pick-up <span className="font-mono text-ink">{Math.round(pfl.pickUp * 100)}%</span>
+                </span>
+                {pfl.withPrereqs !== null ? (
+                  <span className="text-[12px] text-faint">
+                    Groundwork owned <span className="font-mono text-good">{Math.round(pfl.withPrereqs * 100)}%</span>
+                  </span>
+                ) : null}
+                {pfl.withoutPrereqs !== null ? (
+                  <span className="text-[12px] text-faint">
+                    Not owned <span className="font-mono text-muted">{Math.round(pfl.withoutPrereqs * 100)}%</span>
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </Card>
+          <p className="text-[11px] text-faint mb-6 px-1 leading-snug">
+            Not a skill and not a rung. You had the explanation in front of you, so a probe proves nothing either way:
+            it can never promote a skill, and getting one wrong is never counted against you. They sit here, apart
+            from the ladder above, because a cold test cannot see whether practice made you faster at picking up
+            something new.
+          </p>
+        </>
+      ) : null}
+
       {state.plans.length ? (
         <>
           <SectionTitle>Plans you made</SectionTitle>

@@ -32,6 +32,7 @@ import type { RepairTarget } from './errors'
 import { calendarDaysUntil } from './time'
 import { calibrationGap } from './calibration'
 import { stretchSignal } from './stretch'
+import { isPflTemplate } from './pfl'
 
 export interface PlannerContext {
   index: ContentIndex
@@ -174,6 +175,12 @@ function pickTemplates(
     // 20-minute project into a 7-minute daily block breaks both the plan and
     // the realism of the work.
     .filter((t) => !t.authentic)
+    // Preparation-for-future-learning probes are excluded from ordinary pools
+    // for two reasons. They teach an idea the tree never covers, so serving one
+    // as practice for the skill it is attached to would be teaching the wrong
+    // thing; and a probe re-served is a probe wasted, because the second time
+    // it measures memory rather than pick-up. They are launched deliberately.
+    .filter((t) => !isPflTemplate(t.id))
   const scored = pool
     .map((t) => ({
       t,

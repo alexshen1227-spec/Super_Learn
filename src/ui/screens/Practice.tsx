@@ -13,6 +13,7 @@ import { Button, Card, Chip, DifficultyBadge, DifficultyGuide, EmptyState, Heade
 import { DIFFICULTY_INFO } from '../../content/difficulty'
 import { KB_BY_SKILL } from '../../content/kb'
 import { openRepairTargets } from '../../engine/errors'
+import { isPflTemplate } from '../../engine/pfl'
 import { effectiveAllocation } from '../../engine/allocationPlus'
 
 const LAB_ORDER: BucketId[] = ['observer', 'investigator', 'strategist', 'puzzle', 'insight', 'meta']
@@ -49,6 +50,13 @@ export function Practice() {
   }, [query, index])
   const due = useMemo(() => dueReviews(evidence, Date.now()), [evidence])
   const repairs = useMemo(() => openRepairTargets(state, evidence, Date.now()), [state, evidence])
+  /** Prefer a probe never attempted; fall back to the least-recently used. */
+  const nextProbe = useMemo(() => {
+    const probes = [...index.templates.values()].filter((t) => isPflTemplate(t.id))
+    const usedAt = new Map<string, number>()
+    for (const e of state.events) if (isPflTemplate(e.templateId)) usedAt.set(e.templateId, Math.max(usedAt.get(e.templateId) ?? 0, e.t))
+    return probes.sort((a, b) => (usedAt.get(a.id) ?? 0) - (usedAt.get(b.id) ?? 0))[0] ?? null
+  }, [index, state.events])
   const confidentRepairs = repairs.filter((r) => r.blockedByMisconception).length
   const authenticWork = useMemo(
     () => [...index.templates.values()].filter((t) => t.authentic).sort((a, b) => b.minutes - a.minutes || a.name.localeCompare(b.name)),
@@ -102,6 +110,16 @@ export function Practice() {
           onClick={() => go({ name: 'session', launch: { kind: 'error-clinic' } })}
         />
         <ModeCard title="Homework support" sub="A coach, not an answer machine" onClick={() => setHomework(true)} />
+        {/* Launched deliberately and never by the planner: a probe re-served
+            measures memory rather than pick-up, so the learner chooses when to
+            spend one. Offers an unused probe first. See engine/pfl.ts. */}
+        {nextProbe ? (
+          <ModeCard
+            title="Learn something new"
+            sub="An idea this app never teaches, explained once — then questions. Not a rung."
+            onClick={() => go({ name: 'session', launch: { kind: 'single', templateId: nextProbe.id } })}
+          />
+        ) : null}
         <ModeCard
           title="Authentic Work"
           sub="Projects, writing, programs, experiments, books & dialogue"
