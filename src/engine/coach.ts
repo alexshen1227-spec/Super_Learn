@@ -15,7 +15,7 @@ import type { ContentIndex } from './content-index'
 import { evidenceFor, stateRank } from './mastery'
 import { effectiveAllocation } from './allocationPlus'
 import { calibrationGap, highConfidenceErrors } from './calibration'
-import { dueReviews } from './scheduler'
+import { dueForms, dueReviews } from './scheduler'
 import { prereqLeverage, prereqsMet, scoreSkills } from './planner'
 import { calendarDaysUntil } from './time'
 
@@ -214,6 +214,28 @@ export function coachBeliefs(
       ],
       unknown: 'How good the writing actually was — the app deliberately does not judge it, and neither does a self-rating.',
       resolve: 'The graded probe that follows each draft is where that evidence comes from.',
+    })
+  }
+
+  // A specific question family that keeps failing. This is sharper than
+  // "percent problems need review": it names the KIND of percent problem,
+  // which is what the learner can actually act on.
+  const lapsed = dueForms(evidence, now, 4).filter((f) => f.reason === 'lapsed')
+  if (lapsed.length) {
+    const named = lapsed
+      .map((f) => {
+        const skill = index.skills.get(f.skillId)?.name ?? f.skillId
+        const family = index.templates.get(f.templateId)?.name
+        return family ? `${family} (${skill})` : skill
+      })
+      .slice(0, 3)
+    beliefs.push({
+      id: 'weak-forms',
+      statement: `${lapsed.length} question type${lapsed.length > 1 ? 's are' : ' is'} failing while the surrounding skill looks fine.`,
+      confidence: 'high',
+      evidence: named.map((nm) => `Last attempt at ${nm} was wrong.`),
+      unknown: 'Whether the difficulty is the idea itself or just this presentation of it.',
+      resolve: 'Each clears when you get that exact question type right unaided — a different question from the same skill will not do it.',
     })
   }
 

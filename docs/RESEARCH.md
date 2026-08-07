@@ -52,6 +52,16 @@ others are cited from their stable published records.
 - **HEURISTIC label**: the specific ladder values and multipliers are product
   heuristics; Cepeda et al. support *expanding gaps tuned to the retention
   goal*, not these exact numbers. The Settings/About screen says so.
+- **Granularity correction (2026-08-06)**: spacing was tracked per SKILL, but a
+  skill spans many question families (`m-percent` has ten). A single schedule
+  meant a strong family could satisfy the review and push the interval out
+  while a family the learner had actually failed went untested — verified in
+  `formSpacing.test.ts`, where the skill reaches **Retained** on the easy
+  family while the failed one is never re-asked. Each family now carries its
+  own ladder position, and the planner asks for the family that lapsed rather
+  than any item from the topic. Families never attempted have no schedule (so
+  they cannot flood the queue) and the due list is capped, because per-family
+  scheduling multiplies review load roughly fivefold.
 
 ## 3. Interleaving — EVIDENCE (moderate, strongest in math)
 

@@ -47,6 +47,30 @@ const DAY = 86_400_000
 export const RETENTION_GAP_MS = 48 * 3_600_000
 const HIGH_CONF = 80
 
+/**
+ * Review state for ONE question family (keyed by templateId).
+ *
+ * A skill is not one thing: `m-percent` covers ten distinct families, and a
+ * learner can own percent-of-a-number while reverse-percent keeps failing.
+ * With a single schedule per skill, answering the easy family satisfied the
+ * review and pushed the interval out — so the weak family could go untested
+ * for months while the skill read "Retained". Each family now carries its own
+ * ladder position, which is what lets the planner ask for the one that broke.
+ *
+ * Keyed by templateId, NOT templateId:seed. Seeds are what make two ATTEMPTS
+ * distinct (the independence rule needs that); families are what make two
+ * KINDS of problem distinct. Keying on the seed would hand every new variant a
+ * blank history and nothing would ever accumulate a schedule.
+ */
+interface FormTracker {
+  reviewIndex: number
+  reviewDue: number | null
+  successes: number
+  lapses: number
+  lastAttemptAt: number
+  lastOutcomeCorrect: boolean | null
+}
+
 interface Tracker {
   skillId: string
   exposure: number
@@ -75,6 +99,8 @@ interface Tracker {
    * rather than trusted to an authoring flag.
    */
   practicedTemplates: Set<string>
+  /** Per-question-family review schedules. See FormTracker. */
+  forms: Map<string, FormTracker>
 }
 
 function newTracker(skillId: string): Tracker {
@@ -98,6 +124,40 @@ function newTracker(skillId: string): Tracker {
     reviewSuccesses: 0,
     lapses: 0,
     practicedTemplates: new Set(),
+    forms: new Map(),
+  }
+}
+
+function newFormTracker(): FormTracker {
+  return { reviewIndex: 0, reviewDue: null, successes: 0, lapses: 0, lastAttemptAt: 0, lastOutcomeCorrect: null }
+}
+
+/**
+ * Advance one family's ladder. Mirrors the skill-level rules deliberately —
+ * the same interval ladder, the same shortening on error — so a learner never
+ * has to hold two different mental models of how review timing works.
+ */
+function applyFormEvent(
+  form: FormTracker,
+  e: AttemptEvent,
+  firstSuccess: boolean,
+  eventualSuccess: boolean,
+  confidentMiss: boolean,
+): void {
+  form.lastAttemptAt = e.t
+  form.lastOutcomeCorrect = e.firstCorrect
+  if (firstSuccess) {
+    form.successes++
+    form.reviewIndex = Math.min(form.reviewIndex + 1, REVIEW_LADDER_DAYS.length)
+    const baseDays = REVIEW_LADDER_DAYS[Math.min(form.reviewIndex - 1, REVIEW_LADDER_DAYS.length - 1)]
+    form.reviewDue = e.t + baseDays * stabilityFactor(form.successes, form.lapses) * DAY
+  } else if (eventualSuccess) {
+    // Repaired: hold the rung but bring it back soon.
+    form.reviewDue = e.t + 1 * DAY
+  } else {
+    form.lapses++
+    form.reviewIndex = Math.max(0, form.reviewIndex - 2)
+    form.reviewDue = e.t + (confidentMiss ? 0.5 : 1) * DAY
   }
 }
 
@@ -210,6 +270,17 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
     }
   }
 
+  // Per-family schedule, in parallel with the skill-level one above.
+  // Placement routes rather than teaches, so it schedules nothing.
+  if (e.mode !== 'placement') {
+    let form = tr.forms.get(e.templateId)
+    if (!form) {
+      form = newFormTracker()
+      tr.forms.set(e.templateId, form)
+    }
+    applyFormEvent(form, e, firstSuccess, eventualSuccess, confidentMiss)
+  }
+
   // Recorded LAST, so the transfer test above compared this attempt against
   // the families seen strictly before it. Placement routes rather than
   // teaches, so it must not make a family look already-practiced.
@@ -258,6 +329,14 @@ function finalize(tr: Tracker, now: number): SkillEvidence {
     blockedByMisconception: blocked,
     hintDependence: hinted.length >= 3 ? hinted.filter(Boolean).length / hinted.length : null,
     review: tr.reviewDue !== null ? { due: tr.reviewDue, intervalIndex: tr.reviewIndex } : null,
+    forms: [...tr.forms.entries()].map(([templateId, f]) => ({
+      templateId,
+      due: f.reviewDue,
+      intervalIndex: f.reviewIndex,
+      successes: f.successes,
+      lapses: f.lapses,
+      lastOutcomeCorrect: f.lastOutcomeCorrect,
+    })),
     attempts: tr.attempts,
   }
 }
@@ -333,6 +412,7 @@ export function evidenceFor(
       blockedByMisconception: false,
       hintDependence: null,
       review: null,
+      forms: [],
       attempts: 0,
     }
   )

@@ -22,7 +22,7 @@ import type {
 import { ACADEMIC_BUCKETS, BUCKET_BY_ID, ERROR_TAGS } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { evidenceFor, stateRank } from './mastery'
-import { dueReviews } from './scheduler'
+import { dueForms, dueReviews } from './scheduler'
 import { relativeDebt, type AllocationReport } from './allocation'
 import { effectiveAllocation } from './allocationPlus'
 import { uid } from './rng'
@@ -342,8 +342,31 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   const warmBudget = short ? 3 : Math.min(6, Math.max(4, Math.round(total * 0.18)))
   let warmMin = 0
   const warmSkills: string[] = []
+  // FAMILY-LEVEL first. Asking for the exact question family that lapsed is
+  // the whole point: choosing by difficulty-match let a strong family satisfy
+  // the skill's review while the weak one stayed untested.
+  const forms = dueForms(evidence, now)
+  const coveredSkills = new Set<string>()
+  let lapsedTargeted = 0
+  for (const f of forms) {
+    if (warmActs.length >= 3 || warmMin >= warmBudget) break
+    // One family per skill per session — the point is coverage of weak spots,
+    // not drilling a single skill into the ground.
+    if (coveredSkills.has(f.skillId)) continue
+    const template = index.templates.get(f.templateId)
+    // A family can vanish when content is renamed; fall through to the
+    // skill-level path rather than dropping the review.
+    if (!template || template.authentic) continue
+    coveredSkills.add(f.skillId)
+    warmActs.push(act(template, 'review', used))
+    warmMin += template.minutes
+    warmSkills.push(index.skills.get(f.skillId)?.name ?? f.skillId)
+    if (f.reason === 'lapsed') lapsedTargeted++
+  }
+  // Then any skill that is due without a specific family to blame.
   for (const d of due) {
     if (warmActs.length >= 3 || warmMin >= warmBudget) break
+    if (coveredSkills.has(d.skillId)) continue
     const ev = evidenceFor(evidence, d.skillId)
     const picks = pickTemplates(
       index.bySkill.get(d.skillId) ?? [],
@@ -352,6 +375,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       templateUse,
     )
     if (picks.length) {
+      coveredSkills.add(d.skillId)
       warmActs.push(act(picks[0], 'review', used))
       warmMin += picks[0].minutes
       warmSkills.push(index.skills.get(d.skillId)?.name ?? d.skillId)
@@ -386,6 +410,11 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     if (due.length) {
       const names = due.slice(0, 3).map((d) => index.skills.get(d.skillId)?.name ?? d.skillId)
       rationale.push(`Reviews due: ${names.join(', ')}${due.length > 3 ? ` and ${due.length - 3} more` : ''}.`)
+    }
+    if (lapsedTargeted > 0) {
+      rationale.push(
+        `${lapsedTargeted} of those ${lapsedTargeted === 1 ? 'is' : 'are'} the exact question type you got wrong last time, not just the same topic — a different question from the same skill would not have tested it.`,
+      )
     }
   }
 

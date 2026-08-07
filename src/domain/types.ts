@@ -449,6 +449,17 @@ export interface AttemptEvent {
 
 // ---------------------------------------------------------------- mastery
 
+/** One question family's review state within a skill. */
+export interface FormEvidence {
+  templateId: string
+  /** Next scheduled retrieval, or null if never yet succeeded. */
+  due: number | null
+  intervalIndex: number
+  successes: number
+  lapses: number
+  lastOutcomeCorrect: boolean | null
+}
+
 export interface SkillEvidence {
   skillId: string
   state: SkillState
@@ -469,8 +480,15 @@ export interface SkillEvidence {
   /** Unrepaired high-confidence misconception blocks promotion. */
   blockedByMisconception: boolean
   hintDependence: number | null
-  /** Review scheduling state. */
+  /** Review scheduling state for the skill as a whole. */
   review: { due: number; intervalIndex: number } | null
+  /**
+   * Review state per QUESTION FAMILY. A skill spans many kinds of problem —
+   * `m-percent` has ten — and a single skill-level interval let a strong
+   * family satisfy the review while a weak one went untested. Keyed by
+   * templateId; only families actually attempted appear here.
+   */
+  forms: FormEvidence[]
   attempts: number
 }
 
