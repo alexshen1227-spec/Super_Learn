@@ -349,7 +349,15 @@ const EXPERIMENTS = [
   { subject: 'seed tray', outcome: 'sprouts after 7 days', control: [11, 12, 10, 11], treatment: [15, 14, 16, 15], change: 'daily bottom watering' },
 ] as const
 
-const mean = (xs: readonly number[]) => xs.reduce((a, b) => a + b, 0) / xs.length
+/**
+ * Means are ROUNDED before they are ever displayed. Raw binary floating point
+ * printed "0.3999999999999999 flight time higher than control" into the
+ * prompt, the options, and the model report. Rounding here also keeps the
+ * arithmetic self-consistent: the difference is computed from the same
+ * rounded means the learner is shown.
+ */
+const round2 = (v: number) => Math.round(v * 100) / 100
+const mean = (xs: readonly number[]) => round2(xs.reduce((a, b) => a + b, 0) / xs.length)
 
 const experimentStudio = tpl(
   {
@@ -373,7 +381,7 @@ const experimentStudio = tpl(
     const controlMean = mean(ex.control)
     const treatmentMean = mean(ex.treatment)
     const direction = treatmentMean > controlMean ? 'higher' : 'lower'
-    const difference = Math.abs(treatmentMean - controlMean)
+    const difference = round2(Math.abs(treatmentMean - controlMean))
     return {
       title: `Lab notebook: ${ex.subject}`,
       prompt: `Test whether **${ex.change}** changes ${ex.outcome} for a ${ex.subject}. You inherit materials and a clean notebook; you still have to make the study interpretable.`,

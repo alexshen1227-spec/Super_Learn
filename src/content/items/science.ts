@@ -8,7 +8,7 @@ import { pick, rint } from '../../engine/rng'
 import { fixed, mcq, numeric, round, tpl } from '../lib'
 
 const hypoControl = tpl(
-  { id: 's-control-var', name: 'Control the variable', skillIds: ['s-hypo'], bucket: 'science', difficulty: 2, variants: 6, minutes: 2.5 },
+  { id: 's-control-var', name: 'Control the variable', skillIds: ['s-hypo'], bucket: 'science', difficulty: 2, variants: 4, minutes: 2.5 },
   (rng) => {
     const cases = [
       {
@@ -86,7 +86,7 @@ const measureReliability = tpl(
 )
 
 const corrCause = tpl(
-  { id: 's-corr-cause', name: 'Correlation ≠ causation', skillIds: ['s-corr'], bucket: 'science', difficulty: 3, variants: 8, minutes: 3, calibration: true },
+  { id: 's-corr-cause', name: 'Correlation ≠ causation', skillIds: ['s-corr'], bucket: 'science', difficulty: 3, variants: 6, minutes: 3, calibration: true },
   (rng) => {
     const cases = [
       {
@@ -130,7 +130,7 @@ const corrCause = tpl(
 )
 
 const graphClaim = tpl(
-  { id: 's-graph-claim', name: 'Does the chart back the claim?', skillIds: ['s-graphs'], bucket: 'science', difficulty: 3, variants: 6, minutes: 3 },
+  { id: 's-graph-claim', name: 'Does the chart back the claim?', skillIds: ['s-graphs'], bucket: 'science', difficulty: 3, variants: 4, minutes: 3 },
   (rng) => {
     const cases = [
       {
@@ -172,7 +172,7 @@ const graphClaim = tpl(
 )
 
 const fermi = tpl(
-  { id: 's-fermi', name: 'Fermi estimate', skillIds: ['s-fermi'], bucket: 'science', difficulty: 3, variants: 6, minutes: 3.5, transfer: true, calibration: true },
+  { id: 's-fermi', name: 'Fermi estimate', skillIds: ['s-fermi'], bucket: 'science', difficulty: 3, variants: 1, minutes: 3.5, transfer: true, calibration: true },
   (rng) => {
     const cases = [
       {
@@ -213,7 +213,7 @@ const fermi = tpl(
 )
 
 const statsTrap = tpl(
-  { id: 's-stats-trap', name: 'Statistics traps', skillIds: ['s-sources'], bucket: 'science', difficulty: 3, variants: 8, minutes: 3 },
+  { id: 's-stats-trap', name: 'Statistics traps', skillIds: ['s-sources'], bucket: 'science', difficulty: 3, variants: 6, minutes: 3 },
   (rng) => {
     const cases = [
       {

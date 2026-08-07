@@ -109,6 +109,7 @@ function partition(rng: Rng, shape: Shape): string[] | null {
 const FALLBACKS: Record<string, string[]> = {
   '4x4': ['AABB', 'AABB', 'CCDD', 'CCDD'],
   '5x4': ['AABBB', 'AABCC', 'DDECC', 'DDEEE'],
+  '6x4': ['AABBCC', 'AABBCC', 'DDEEFF', 'DDEEFF'],
   '5x5': ['AAABB', 'AACBB', 'DACCB', 'DDDCE', 'DEEEE'],
   '6x5': ['AAABBB', 'AACCBB', 'DDCCEE', 'DDDFEE', 'FFFFEE'],
 }
@@ -185,10 +186,12 @@ export const GENERATED_SPATIAL: ItemTemplate[] = [
   spatialTemplate({
     id: 'poly-gen-mid',
     name: 'Assembly: wide panel',
-    shape: { w: 5, h: 4, sizes: [4, 4, 4, 4, 4] },
+    // A 5x4 board with five tetrominoes has too few reachable tilings to
+    // support a real variant count; 6x4 opens the space up considerably.
+    shape: { w: 6, h: 4, sizes: [4, 4, 4, 4, 4, 4] },
     difficulty: 3,
     minutes: 5,
-    variants: 20,
+    variants: 30,
     intro: 'Five pieces, twenty cells, a layout generated fresh for this attempt.',
     lesson:
       'With five pieces the search space is large enough that guessing loses. Working from the boundary inward keeps every partial placement checkable — which is exactly why engineers fix interfaces before internals.',

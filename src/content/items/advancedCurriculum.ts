@@ -61,7 +61,7 @@ const variabilityCompare = tpl(
 )
 
 const exponentialGrowth = tpl(
-  { id: 'exp-growth', name: 'Repeated percent growth', skillIds: ['m-exponential'], bucket: 'math', difficulty: 3, variants: 24, minutes: 3 },
+  { id: 'exp-growth', name: 'Repeated percent growth', skillIds: ['m-exponential'], bucket: 'math', difficulty: 3, variants: 14, minutes: 3 },
   (rng) => {
     const start = pick(rng, [80, 100, 160, 200, 320, 400])
     const rate = pick(rng, [10, 20, 25])
@@ -114,7 +114,7 @@ const exponentialRecognize = tpl(
 )
 
 const waveEquation = tpl(
-  { id: 'wave-equation', name: 'Wave speed equation', skillIds: ['p-waves'], bucket: 'physics', difficulty: 2, variants: 24, minutes: 2.5 },
+  { id: 'wave-equation', name: 'Wave speed equation', skillIds: ['p-waves'], bucket: 'physics', difficulty: 2, variants: 20, minutes: 2.5 },
   (rng) => {
     const frequency = pick(rng, [50, 80, 100, 120, 200, 250])
     const wavelength = pick(rng, [0.5, 1, 1.5, 2, 3, 4])
@@ -141,7 +141,7 @@ const waveEquation = tpl(
 )
 
 const waveConcept = tpl(
-  { id: 'wave-concept', name: 'Frequency, wavelength, amplitude', skillIds: ['p-waves'], bucket: 'physics', difficulty: 3, variants: 12, minutes: 2.5, transfer: true, calibration: true },
+  { id: 'wave-concept', name: 'Frequency, wavelength, amplitude', skillIds: ['p-waves'], bucket: 'physics', difficulty: 3, variants: 8, minutes: 2.5, transfer: true, calibration: true },
   (rng) => {
     const cases = [
       {
@@ -168,7 +168,7 @@ const waveConcept = tpl(
 )
 
 const complexityCount = tpl(
-  { id: 'complexity-count', name: 'Count nested-loop work', skillIds: ['c-complexity'], bucket: 'coding', difficulty: 3, variants: 16, minutes: 3 },
+  { id: 'complexity-count', name: 'Count nested-loop work', skillIds: ['c-complexity'], bucket: 'coding', difficulty: 3, variants: 4, minutes: 3 },
   (rng) => {
     const n = rint(rng, 3, 9)
     const count = n * n
@@ -184,7 +184,7 @@ const complexityCount = tpl(
 )
 
 const complexityChoose = tpl(
-  { id: 'complexity-choose', name: 'Choose an algorithm by scale', skillIds: ['c-complexity'], bucket: 'coding', difficulty: 4, variants: 12, minutes: 3, transfer: true },
+  { id: 'complexity-choose', name: 'Choose an algorithm by scale', skillIds: ['c-complexity'], bucket: 'coding', difficulty: 4, variants: 8, minutes: 3, transfer: true },
   (rng) => {
     const power = pick(rng, [8, 9, 10, 11])
     const n = 2 ** power
@@ -205,7 +205,7 @@ const complexityChoose = tpl(
 )
 
 const designAssignment = tpl(
-  { id: 'design-assignment', name: 'Random sampling vs assignment', skillIds: ['s-design'], bucket: 'science', difficulty: 3, variants: 12, minutes: 3, calibration: true },
+  { id: 'design-assignment', name: 'Random sampling vs assignment', skillIds: ['s-design'], bucket: 'science', difficulty: 3, variants: 7, minutes: 3, calibration: true },
   (rng) => {
     const correct = 'Randomly assign the volunteers to the two methods, then compare outcomes'
     const noted = mcqNoted(rng, correct, [
@@ -225,7 +225,7 @@ const designAssignment = tpl(
 )
 
 const designReplication = tpl(
-  { id: 'design-replication', name: 'Blinding and replication', skillIds: ['s-design'], bucket: 'science', difficulty: 4, variants: 16, minutes: 3, transfer: true },
+  { id: 'design-replication', name: 'Blinding and replication', skillIds: ['s-design'], bucket: 'science', difficulty: 4, variants: 9, minutes: 3, transfer: true },
   (rng) => {
     const cases = [
       {

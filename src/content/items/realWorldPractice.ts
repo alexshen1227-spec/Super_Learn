@@ -9,7 +9,7 @@ import { mcq, money, round, tpl } from '../lib'
 import { pick, rint } from '../../engine/rng'
 
 const receipt = tpl(
-  { id: 'real-receipt-check', name: 'Real Life: Check the Receipt', skillIds: ['m-percent'], bucket: 'math', difficulty: 2, variants: 24, minutes: 2.5, transfer: true },
+  { id: 'real-receipt-check', name: 'Real Life: Check the Receipt', skillIds: ['m-percent'], bucket: 'math', difficulty: 2, variants: 20, minutes: 2.5, transfer: true },
   (rng) => {
     const subtotal = rint(rng, 8, 32)
     const rate = pick(rng, [10, 15, 20] as const)
@@ -51,7 +51,7 @@ const unitPrice = tpl(
 )
 
 const commute = tpl(
-  { id: 'real-commute-time', name: 'Real Life: Travel-Time Check', skillIds: ['p-motion'], bucket: 'physics', difficulty: 2, variants: 20, minutes: 2.5, transfer: true },
+  { id: 'real-commute-time', name: 'Real Life: Travel-Time Check', skillIds: ['p-motion'], bucket: 'physics', difficulty: 2, variants: 11, minutes: 2.5, transfer: true },
   (rng) => {
     const distance = rint(rng, 3, 12)
     const speed = pick(rng, [3, 4, 6] as const)
@@ -61,14 +61,14 @@ const commute = tpl(
       prompt: `A route is **${distance} km**. At an average moving speed of **${speed} km/h**, how many minutes does the travel itself take?`,
       answer: { type: 'numeric', answer: minutes, tolerance: 0.01, unit: 'minutes' },
       hints: ['Time = distance ÷ speed.', 'The result is in hours; multiply by 60.'],
-      explanation: `${distance} ÷ ${speed} = ${distance / speed} hours = **${minutes} minutes**. This excludes waiting, parking, and delays—real arrival plans need a buffer beyond the physics minimum.`,
+      explanation: `${distance} ÷ ${speed} = ${round(distance / speed, 3)} hours = **${minutes} minutes**. This excludes waiting, parking, and delays—real arrival plans need a buffer beyond the physics minimum.`,
       transferBridge: 'Separate moving time from door-to-door time. Hidden transitions are where real schedules usually fail.',
     }
   },
 )
 
 const energyLabel = tpl(
-  { id: 'real-energy-label', name: 'Real Life: Appliance Energy', skillIds: ['p-energy'], bucket: 'physics', difficulty: 3, variants: 20, minutes: 3, transfer: true },
+  { id: 'real-energy-label', name: 'Real Life: Appliance Energy', skillIds: ['p-energy'], bucket: 'physics', difficulty: 3, variants: 18, minutes: 3, transfer: true },
   (rng) => {
     const watts = pick(rng, [40, 60, 80, 100] as const)
     const hours = rint(rng, 2, 6)
@@ -86,16 +86,16 @@ const energyLabel = tpl(
 )
 
 const bugReport = tpl(
-  { id: 'real-bug-report', name: 'Real Life: Write a Reproducible Bug Report', skillIds: ['c-trace'], bucket: 'coding', difficulty: 3, variants: 12, minutes: 3, transfer: true },
+  { id: 'real-bug-report', name: 'Real Life: Write a Reproducible Bug Report', skillIds: ['c-trace'], bucket: 'coding', difficulty: 3, variants: 8, minutes: 3, transfer: true },
   (rng) => {
     const feature = pick(rng, ['Save button', 'search filter', 'dark-mode toggle', 'assignment sorter'] as const)
     return {
       title: 'Bug triage',
       prompt: `Someone reports: “The **${feature}** is broken sometimes.” Which follow-up creates the most useful bug report?`,
       answer: mcq(rng, 'Record exact starting state, numbered actions, expected result, actual result, and whether the sequence reproduces twice', [
-        'Ask them to describe how annoying it feels',
-        'Rewrite the feature immediately without reproducing it',
-        'Close the report because “sometimes” is vague',
+        'Collect how often it happens and how badly it disrupts them, then rank the report against other open issues by severity',
+        'Rewrite the feature the way it probably should have worked, then ask the reporter to confirm the problem has gone away',
+        'Ask for the browser, device, and app version, and close the report if the setup is one the team does not officially support',
       ]),
       hints: ['A developer needs to make the failure happen on demand.', 'Separate expected behavior from observed behavior.'],
       explanation: 'Reproduction steps turn a complaint into a test. Starting state matters because many intermittent bugs depend on hidden state left by an earlier action.',
@@ -130,9 +130,9 @@ const headlineClaim = tpl(
       title: 'Headline versus study',
       prompt: `Headline: “New study proves the habit causes success.” Study detail: a one-time survey finds **${group} ${outcome}**. Which rewrite matches the design?`,
       answer: mcq(rng, `Survey finds an association: ${group} ${outcome}; causal direction remains unknown`, [
-        'The habit has been proven to cause success',
-        'The survey proves success causes the habit',
-        'The data means nothing because it is observational',
+        `The study establishes that the habit causes the outcome, since ${group} ${outcome}`,
+        `The study shows the causation runs the other way: the outcome is what leads people into the habit`,
+        `Because nobody was assigned the habit, the survey cannot support any claim about these two things`,
       ]),
       hints: ['A one-time survey observes; it does not assign the habit.', 'Name association and the missing causal direction.'],
       explanation: 'The relationship may be real while its cause remains unresolved. Confounds and reverse causation are live until design—not confident wording—rules them out.',
@@ -142,16 +142,16 @@ const headlineClaim = tpl(
 )
 
 const householdExperiment = tpl(
-  { id: 'real-household-experiment', name: 'Real Life: Improve a Household Test', skillIds: ['s-design'], bucket: 'science', difficulty: 4, variants: 12, minutes: 4, transfer: true },
+  { id: 'real-household-experiment', name: 'Real Life: Improve a Household Test', skillIds: ['s-design'], bucket: 'science', difficulty: 4, variants: 8, minutes: 4, transfer: true },
   (rng) => {
     const claim = pick(rng, ['one towel brand absorbs more', 'one battery lasts longer', 'one insulation material slows cooling', 'one soil mix retains more water'] as const)
     return {
       title: 'From demonstration to experiment',
       prompt: `You want to test whether **${claim}**. Which plan produces the most interpretable comparison?`,
       answer: mcq(rng, 'Predefine one outcome, use equal starting conditions, randomize order, repeat each condition, and record every trial', [
-        'Try each option once under whatever conditions are convenient',
-        'Let each option use the setup where it performs best',
-        'Stop as soon as the preferred option wins twice',
+        'Run each option several times under everyday conditions, so the result reflects how they really get used rather than a lab setup',
+        'Give each option the setup where it performs at its best, so every candidate is judged fairly at its own peak performance',
+        'Repeat the comparison until one option has clearly won more often than the other, then stop and record that as the result',
       ]),
       hints: ['Ask what must be held equal.', 'One trial cannot reveal ordinary variation.'],
       explanation: 'Equal conditions isolate the candidate cause; random order spreads time drift; repeats reveal noise; recording every trial prevents stopping-rule cherry-picking.',
@@ -161,7 +161,7 @@ const householdExperiment = tpl(
 )
 
 const meetingParaphrase = tpl(
-  { id: 'real-meeting-paraphrase', name: 'Real Life: Paraphrase a Request', skillIds: ['o-listen'], bucket: 'observer', difficulty: 2, variants: 12, minutes: 2.5, transfer: true },
+  { id: 'real-meeting-paraphrase', name: 'Real Life: Paraphrase a Request', skillIds: ['o-listen'], bucket: 'observer', difficulty: 2, variants: 8, minutes: 2.5, transfer: true },
   (rng) => {
     const msg = pick(rng, [
       { text: 'I can finish the slides tonight, but I need the final numbers by six.', para: 'You will finish tonight if the final numbers arrive by 6 pm.' },
@@ -173,9 +173,9 @@ const meetingParaphrase = tpl(
       title: 'Listen for the condition',
       prompt: `Speaker: “${msg.text}” Which paraphrase preserves the actual request?`,
       answer: mcq(rng, msg.para, [
-        'The speaker refuses to help.',
-        'The speaker agrees without conditions.',
-        'The speaker is angry and should calm down.',
+        'The speaker has agreed to do it, so the work can be treated as settled.',
+        'The speaker is raising an objection and does not really want to do this.',
+        'The speaker is frustrated with how the whole thing has been organised.',
       ]),
       hints: ['Keep the condition, boundary, or distinction.', 'Do not add an emotion the speaker did not name.'],
       explanation: `Accurate paraphrase: **${msg.para}** It preserves the actionable condition without mind-reading.`,
@@ -185,7 +185,7 @@ const meetingParaphrase = tpl(
 )
 
 const witnessNotes = tpl(
-  { id: 'real-witness-notes', name: 'Real Life: Clean Up Eyewitness Notes', skillIds: ['o-obsinf'], bucket: 'observer', difficulty: 3, variants: 12, minutes: 3, transfer: true },
+  { id: 'real-witness-notes', name: 'Real Life: Clean Up Eyewitness Notes', skillIds: ['o-obsinf'], bucket: 'observer', difficulty: 3, variants: 1, minutes: 3, transfer: true },
   (rng) => {
     const place = pick(rng, ['hallway', 'bus stop', 'library desk', 'practice room'] as const)
     return {
@@ -209,7 +209,7 @@ const witnessNotes = tpl(
 )
 
 const repairTest = tpl(
-  { id: 'real-repair-test', name: 'Real Life: Separate Competing Causes', skillIds: ['i-hypo'], bucket: 'investigator', difficulty: 4, variants: 16, minutes: 4, transfer: true },
+  { id: 'real-repair-test', name: 'Real Life: Separate Competing Causes', skillIds: ['i-hypo'], bucket: 'investigator', difficulty: 4, variants: 10, minutes: 4, transfer: true },
   (rng) => {
     const issue = pick(rng, [
       { symptom: 'a laptop disconnects only at one desk', a: 'the laptop Wi-Fi is failing', b: 'that desk has weak signal', test: 'Use the same laptop at another desk and a second device at the problem desk.' },
@@ -221,9 +221,9 @@ const repairTest = tpl(
       title: 'The separating test',
       prompt: `Symptom: **${issue.symptom}**. Hypothesis A: ${issue.a}. Hypothesis B: ${issue.b}. What test best separates them?`,
       answer: mcq(rng, issue.test, [
-        'Repeat the same setup without changing anything',
-        'Ask which hypothesis sounds more common',
-        'Replace everything at once and see whether the issue disappears',
+        'Repeat the exact same setup several more times and see whether the failure shows up consistently enough to be believed',
+        'Work out which of the two explanations is the more common cause in general, and treat that one as the likely answer here',
+        'Replace or reset everything involved at once, then check whether the problem has disappeared afterwards',
       ]),
       hints: ['Change device/context in a crossed comparison.', 'A good result should favor A in one direction and B in another.'],
       explanation: `${issue.test} Crossed tests isolate whether the failure follows the object or the context.`,
@@ -233,7 +233,7 @@ const repairTest = tpl(
 )
 
 const baseRateMessage = tpl(
-  { id: 'real-base-rate-message', name: 'Real Life: Size an Alarming Message', skillIds: ['i-bayes'], bucket: 'investigator', difficulty: 4, variants: 16, minutes: 4, transfer: true, calibration: true },
+  { id: 'real-base-rate-message', name: 'Real Life: Size an Alarming Message', skillIds: ['i-bayes'], bucket: 'investigator', difficulty: 4, variants: 4, minutes: 4, transfer: true, calibration: true },
   (rng) => {
     const total = 100
     const real = pick(rng, [2, 4, 5, 10] as const)
@@ -279,9 +279,9 @@ const sunkCost = tpl(
       title: 'Past cost, future choice',
       prompt: `You already spent **$${spent}** on a course you no longer use. Continuing costs **$${future} more** and about 12 hours. What belongs in today’s decision?`,
       answer: mcq(rng, `Whether the future benefit is worth $${future} and 12 hours; the $${spent} is gone either way`, [
-        `Continue because stopping wastes the $${spent}`,
-        `Stop because anything that disappointed you once can never improve`,
-        'Ignore both money and time and follow the original plan',
+        `Whether stopping now would waste the $${spent} already paid, which continuing would at least put to some use`,
+        `Whether something that has already disappointed you once is realistically going to be worth returning to`,
+        `Whether abandoning the plan you committed to sets a habit of quitting things partway through`,
       ]),
       hints: ['Ask which quantities change between today’s options.', 'Past spending is identical under continue and stop.'],
       explanation: `The **$${spent}** is sunk. The live comparison is future value versus **$${future} + 12 hours**, including alternatives for that time.`,
@@ -291,16 +291,16 @@ const sunkCost = tpl(
 )
 
 const boundaryText = tpl(
-  { id: 'real-boundary-text', name: 'Real Life: Send a Clear Boundary', skillIds: ['h-boundary'], bucket: 'insight', difficulty: 2, variants: 12, minutes: 3, transfer: true },
+  { id: 'real-boundary-text', name: 'Real Life: Send a Clear Boundary', skillIds: ['h-boundary'], bucket: 'insight', difficulty: 2, variants: 8, minutes: 3, transfer: true },
   (rng) => {
     const ask = pick(rng, ['share your account password', 'send your homework answers', 'join a late-night call', 'lend an item you cannot replace'] as const)
     return {
       title: 'Clear, calm, complete',
       prompt: `A peer repeatedly asks you to **${ask}** after you already hesitated. Which message is clearest?`,
       answer: mcq(rng, `“No, I’m not going to ${ask}. Please stop asking. I can help with a safe alternative if there is one.”`, [
-        '“Maybe later idk”',
-        'A long apology that never actually says no',
-        'An insult followed by blocking everyone involved',
+        `“I really can’t right now, maybe another time — sorry, it’s complicated to explain properly.”`,
+        `“I’m sorry, I feel bad about this, I know you need it and I hate saying no, please don’t be upset.”`,
+        `“Stop asking me things like this. I’m done with this conversation and with everyone involved in it.”`,
       ]),
       hints: ['State the decision, not a debate invitation.', 'A boundary can be calm and still be final.'],
       explanation: 'The message names the boundary and repeat-request limit without attacking the person. An alternative is optional; it does not weaken the no.',
@@ -310,16 +310,16 @@ const boundaryText = tpl(
 )
 
 const permissionChoice = tpl(
-  { id: 'real-permission-choice', name: 'Real Life: Check Consent and Privacy', skillIds: ['h-influence', 'h-boundary'], bucket: 'insight', difficulty: 3, variants: 12, minutes: 3.5, transfer: true },
+  { id: 'real-permission-choice', name: 'Real Life: Check Consent and Privacy', skillIds: ['h-influence', 'h-boundary'], bucket: 'insight', difficulty: 3, variants: 8, minutes: 3.5, transfer: true },
   (rng) => {
     const scenario = pick(rng, ['upload a group photo', 'add contacts to a club mailing list', 'share a private chat screenshot', 'install an app that reads location history'] as const)
     return {
       title: 'Permission is specific',
       prompt: `Before you **${scenario}**, which action best respects other people’s agency?`,
       answer: mcq(rng, 'Explain exactly what will be shared, with whom and for how long; ask before acting and provide a real no/opt-out', [
-        'Assume silence means yes',
-        'Hide the details so the choice feels easier',
-        'Ask after sharing, because deletion is always complete',
+        'Give everyone a chance to object beforehand, and treat nobody raising a concern as agreement to go ahead',
+        'Keep the explanation short and simple so the choice is easy to make and nobody feels pressured by detail',
+        'Share it first and ask afterwards, offering to take it straight down for anyone who turns out to mind',
       ]),
       hints: ['Consent needs information and a genuine choice.', 'Permission for one use does not automatically cover another.'],
       explanation: 'Specific, informed, reversible permission preserves agency. Dark patterns manufacture compliance by hiding scope or making refusal costly.',
@@ -329,16 +329,16 @@ const permissionChoice = tpl(
 )
 
 const communityAlert = tpl(
-  { id: 'real-community-alert', name: 'Real Life: Handle an Unverified Safety Alert', skillIds: ['i-hypo', 'h-influence'], bucket: 'investigator', difficulty: 5, variants: 8, minutes: 5, transfer: true, calibration: true },
+  { id: 'real-community-alert', name: 'Real Life: Handle an Unverified Safety Alert', skillIds: ['i-hypo', 'h-influence'], bucket: 'investigator', difficulty: 5, variants: 6, minutes: 5, transfer: true, calibration: true },
   (rng) => {
     const place = pick(rng, ['school entrance', 'community center', 'bus station', 'sports venue'] as const)
     return {
       title: 'Accuracy under urgency',
       prompt: `A forwarded post claims an unspecified danger at the **${place}**, urges everyone to repost immediately, and gives no time, source, or official notice. What response best balances safety, uncertainty, and harm?`,
       answer: mcq(rng, 'Do not amplify the claim; check an official/primary channel, alert a responsible adult or staff member privately, and follow verified safety instructions', [
-        'Repost with “not sure if true” so people can decide',
-        'Declare it false because details are missing',
-        'Go to the location to investigate personally',
+        'Pass it on with a clear note that it is unconfirmed, so people nearby can judge the risk and decide for themselves',
+        'Treat it as false and say so, since a real warning would have carried a time, a source, and an official notice',
+        'Go and look for yourself before saying anything, so that whatever you pass on afterwards is something you verified',
       ]),
       hints: ['Urgency can justify verification and safe escalation without public amplification.', 'Do not turn yourself into the field investigator for a possible danger.'],
       explanation: 'This preserves both safety and information hygiene: verify through an independent responsible channel, avoid multiplying an unverified claim, and do not take personal risks.',
@@ -355,9 +355,9 @@ const projectTriage = tpl(
       title: 'Triage, do not panic-plan',
       prompt: `A group deliverable is due in **${hours} hours**. One required section is missing, the evidence table has two unverified numbers, and a teammate is unreachable. Which plan best protects quality and fairness?`,
       answer: mcq(rng, 'Freeze optional polish, assign one owner to verify the numbers, define a minimum complete version, document attempts to reach the teammate, and tell the teacher/client early if scope or attribution must change', [
-        'Quietly invent the missing section and put the absent teammate’s name on it',
-        'Spend the remaining time redesigning the cover so the project looks finished',
-        'Wait until the deadline because contacting the teacher might look weak',
+        'Write the missing section yourself and leave the absent teammate credited, so the group is not penalised for one person',
+        'Put the remaining hours into presentation and layout, so that what does exist reads as finished and considered work',
+        'Hold off on contacting anyone until the deadline, since the situation may still resolve and early warnings invite scrutiny',
       ]),
       hints: ['Protect the required, verifiable core first.', 'Transparency before the deadline preserves options and fair attribution.'],
       explanation: 'Triage cuts optional scope, secures truth-critical work, creates explicit ownership, and communicates early. Fabrication and false attribution convert a schedule failure into an integrity failure.',
@@ -367,7 +367,7 @@ const projectTriage = tpl(
 )
 
 const packingConstraints = tpl(
-  { id: 'real-packing-constraints', name: 'Real Life: Pack Under Constraints', skillIds: ['z-deduce'], bucket: 'puzzle', difficulty: 4, variants: 12, minutes: 4, transfer: true },
+  { id: 'real-packing-constraints', name: 'Real Life: Pack Under Constraints', skillIds: ['z-deduce'], bucket: 'puzzle', difficulty: 4, variants: 8, minutes: 4, transfer: true },
   (rng) => {
     const setting = pick(rng, ['equipment shelf', 'delivery cart', 'storage locker', 'stage supply rack'] as const)
     return {

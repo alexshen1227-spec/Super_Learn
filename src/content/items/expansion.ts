@@ -197,7 +197,7 @@ const gcfFactor = tpl(
 )
 
 const absValue = tpl(
-  { id: 'abs-equation', name: 'Absolute value equations', skillIds: ['m-lineqmulti', 'm-integers'], bucket: 'math', difficulty: 3, variants: 14, minutes: 2.5 },
+  { id: 'abs-equation', name: 'Absolute value equations', skillIds: ['m-lineqmulti', 'm-integers'], bucket: 'math', difficulty: 3, variants: 8, minutes: 2.5 },
   (rng) => {
     const a = rint(rng, 1, 8)
     const k = rint(rng, 2, 9)
@@ -267,11 +267,12 @@ const slopeIntercept = tpl(
 // ---------------------------------------------------------------- physics depth
 
 const freeFall = tpl(
-  { id: 'p-free-fall', name: 'Free fall', skillIds: ['p-accel'], bucket: 'physics', difficulty: 3, variants: 10, minutes: 2.5 },
-  (rng) => {
-    const t = rint(rng, 1, 4)
+  { id: 'p-free-fall', name: 'Free fall', skillIds: ['p-accel'], bucket: 'physics', difficulty: 3, variants: 8, minutes: 2.5 },
+  (_rng, seed) => {
+    // Enumerate time x question so all eight combinations occur.
+    const t = 1 + (seed % 4)
     const d = 5 * t * t // g≈10: d = ½gt²
-    const askD = rng() < 0.6
+    const askD = Math.floor(seed / 4) % 2 === 0
     return {
       title: 'Dropping it',
       prompt: askD
@@ -291,10 +292,13 @@ const freeFall = tpl(
 )
 
 const power = tpl(
-  { id: 'p-power', name: 'Power', skillIds: ['p-energy'], bucket: 'physics', difficulty: 2, variants: 12, minutes: 2 },
+  { id: 'p-power', name: 'Power', skillIds: ['p-energy'], bucket: 'physics', difficulty: 2, variants: 31, minutes: 2 },
   (rng) => {
-    const w = pick(rng, [200, 300, 400, 600, 900])
-    const t = pick(rng, [5, 10, 20, 30])
+    // Build the work FROM a clean power so W/t is always exact. Picking w and
+    // t independently produced 400/30 = 13.333… — an answer nobody can type.
+    const p = pick(rng, [15, 20, 25, 30, 40, 50, 60, 75, 90, 120])
+    const t = pick(rng, [4, 5, 8, 10, 15, 20, 30])
+    const w = p * t
     return {
       title: 'How fast is the energy moving?',
       prompt: `A motor does **${w} J** of work in **${t} s**. What is its power, in watts?`,
@@ -310,7 +314,7 @@ const power = tpl(
 )
 
 const seriesResistors = tpl(
-  { id: 'p-series-r', name: 'Series circuits', skillIds: ['p-circuits'], bucket: 'physics', difficulty: 3, variants: 12, minutes: 2.5 },
+  { id: 'p-series-r', name: 'Series circuits', skillIds: ['p-circuits'], bucket: 'physics', difficulty: 3, variants: 8, minutes: 2.5 },
   (rng) => {
     const r1 = pick(rng, [2, 3, 4, 6])
     const r2 = pick(rng, [2, 4, 5, 6])
@@ -331,7 +335,7 @@ const seriesResistors = tpl(
 )
 
 const efficiency = tpl(
-  { id: 'p-efficiency', name: 'Efficiency', skillIds: ['p-energy', 'm-percent'], bucket: 'physics', difficulty: 3, variants: 12, minutes: 2.5, transfer: true },
+  { id: 'p-efficiency', name: 'Efficiency', skillIds: ['p-energy', 'm-percent'], bucket: 'physics', difficulty: 3, variants: 4, minutes: 2.5, transfer: true },
   (rng) => {
     const inputE = pick(rng, [200, 400, 500, 800])
     const eff = pick(rng, [20, 25, 40, 60])

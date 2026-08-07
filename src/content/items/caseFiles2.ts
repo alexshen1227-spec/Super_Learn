@@ -122,7 +122,9 @@ const freeThrow = mk(
     const beforeTotal = 20
     const afterTotal = rint(rng, 5, 6)
     const afterMade = afterTotal - 1 // high small-sample rate
-    const beforePct = (beforeMade / beforeTotal) * 100
+    // Round like afterPct does: 11/20*100 is 55.00000000000001 in binary
+    // floating point, and an item whose key cannot be typed is unanswerable.
+    const beforePct = Math.round((beforeMade / beforeTotal) * 1000) / 10
     const afterPct = Math.round((afterMade / afterTotal) * 1000) / 10
     return {
       title: 'The Free-Throw Claim',

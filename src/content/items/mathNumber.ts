@@ -52,7 +52,7 @@ const intOrderOps = tpl(
     skillIds: ['m-integers'],
     bucket: 'math',
     difficulty: 2,
-    variants: 18,
+    variants: 16,
     minutes: 2,
   },
   (rng) => {
@@ -117,7 +117,7 @@ const fracAddSub = tpl(
     skillIds: ['m-fractions'],
     bucket: 'math',
     difficulty: 2,
-    variants: 20,
+    variants: 18,
     minutes: 2,
   },
   (rng) => {
@@ -190,7 +190,7 @@ const fracWord = tpl(
     skillIds: ['m-fractions'],
     bucket: 'math',
     difficulty: 3,
-    variants: 12,
+    variants: 10,
     minutes: 3,
     transfer: true,
   },
@@ -266,7 +266,7 @@ const decConvert = tpl(
     skillIds: ['m-decimals'],
     bucket: 'math',
     difficulty: 1,
-    variants: 12,
+    variants: 7,
     minutes: 1,
   },
   (rng) => {
@@ -295,7 +295,7 @@ const decPercent = tpl(
     skillIds: ['m-decimals'],
     bucket: 'math',
     difficulty: 1,
-    variants: 14,
+    variants: 9,
     minutes: 1,
   },
   (rng) => {
@@ -326,7 +326,7 @@ const decOrder = tpl(
     skillIds: ['m-decimals'],
     bucket: 'math',
     difficulty: 2,
-    variants: 10,
+    variants: 8,
     minutes: 1.5,
   },
   (rng) => {
@@ -362,12 +362,20 @@ const expPower = tpl(
     skillIds: ['m-exponents'],
     bucket: 'math',
     difficulty: 1,
-    variants: 14,
+    variants: 15,
     minutes: 1,
   },
-  (rng) => {
-    const base = pick(rng, [2, 3, 4, 5, 10])
-    const exp = base === 2 ? rint(rng, 3, 6) : base === 10 ? rint(rng, 2, 5) : rint(rng, 2, 3)
+  (_rng, seed) => {
+    // Enumerated, not sampled: random draws from a small space collided and
+    // this template produced only 3 distinct powers while claiming more.
+    const PAIRS: [number, number][] = [
+      [2, 3], [2, 4], [2, 5], [2, 6],
+      [3, 2], [3, 3], [3, 4],
+      [4, 2], [4, 3],
+      [5, 2], [5, 3],
+      [10, 2], [10, 3], [10, 4], [10, 5],
+    ]
+    const [base, exp] = PAIRS[seed % PAIRS.length]
     const value = base ** exp
     return {
       title: 'Evaluate the power',
@@ -378,7 +386,7 @@ const expPower = tpl(
         `Build up: ${Array.from({ length: exp - 1 }, (_, i) => `${base ** (i + 2)}`).join(' → ')}.`,
         `Worked path: **${value}**.`,
       ],
-      explanation: `${base}^${exp} = ${Array.from({ length: exp }, () => base).join(' × ')} = **${value}**.`,
+      explanation: `${base}^${exp} = ${Array.from({ length: exp }, () => base).join(' × ')} = **${value}**. The exponent counts how many copies of the base are multiplied, so it grows far faster than multiplying by the exponent would.`,
       commonErrors: { concept: `${base} × ${exp} = ${base * exp} confuses repeated multiplication with multiplication.` },
     }
   },
@@ -488,8 +496,9 @@ const rootPerfect = tpl(
     variants: 12,
     minutes: 1,
   },
-  (rng) => {
-    const r = rint(rng, 4, 15)
+  (_rng, seed) => {
+    // Enumerated so all 12 perfect squares in range really appear.
+    const r = 4 + (seed % 12)
     return {
       title: 'Square root',
       prompt: `Compute: **√${r * r}**`,
@@ -546,7 +555,7 @@ const unitRate = tpl(
     skillIds: ['m-ratio'],
     bucket: 'math',
     difficulty: 2,
-    variants: 16,
+    variants: 12,
     minutes: 2,
   },
   (rng) => {
@@ -574,7 +583,7 @@ const ratioShare = tpl(
     skillIds: ['m-ratio'],
     bucket: 'math',
     difficulty: 3,
-    variants: 14,
+    variants: 12,
     minutes: 2.5,
   },
   (rng) => {
@@ -645,7 +654,7 @@ const propSolve = tpl(
     skillIds: ['m-proportion'],
     bucket: 'math',
     difficulty: 2,
-    variants: 18,
+    variants: 14,
     minutes: 2,
   },
   (rng) => {
@@ -675,7 +684,7 @@ const propWord = tpl(
     skillIds: ['m-proportion'],
     bucket: 'math',
     difficulty: 3,
-    variants: 14,
+    variants: 11,
     minutes: 2.5,
     transfer: true,
   },
@@ -745,7 +754,7 @@ const pctOf = tpl(
     skillIds: ['m-percent'],
     bucket: 'math',
     difficulty: 1,
-    variants: 16,
+    variants: 12,
     minutes: 1.5,
   },
   (rng) => {
@@ -773,7 +782,7 @@ const pctChange = tpl(
     skillIds: ['m-percent'],
     bucket: 'math',
     difficulty: 2,
-    variants: 14,
+    variants: 11,
     minutes: 2,
   },
   (rng) => {
@@ -803,7 +812,7 @@ const pctMulti = tpl(
     skillIds: ['m-percent'],
     bucket: 'math',
     difficulty: 3,
-    variants: 12,
+    variants: 8,
     minutes: 3,
   },
   (rng) => {
@@ -834,7 +843,7 @@ const pctReverse = tpl(
     skillIds: ['m-percent'],
     bucket: 'math',
     difficulty: 4,
-    variants: 12,
+    variants: 7,
     minutes: 3,
     transfer: true,
     calibration: true,
@@ -869,7 +878,7 @@ const unitConvert = tpl(
     skillIds: ['m-units'],
     bucket: 'math',
     difficulty: 2,
-    variants: 16,
+    variants: 2,
     minutes: 2,
   },
   (rng) => {
@@ -903,13 +912,16 @@ const unitRateConvert = tpl(
     skillIds: ['m-units'],
     bucket: 'math',
     difficulty: 3,
-    variants: 10,
+    variants: 12,
     minutes: 3,
     transfer: true,
   },
-  (rng) => {
-    const mps = pick(rng, [5, 10, 15, 20, 25, 30])
-    const toKmh = rng() < 0.5
+  (_rng, seed) => {
+    // Enumerate speed x direction so all 12 combinations really occur; random
+    // draws from six speeds collapsed this to a single form.
+    const SPEEDS = [5, 10, 15, 20, 25, 30]
+    const mps = SPEEDS[seed % SPEEDS.length]
+    const toKmh = Math.floor(seed / SPEEDS.length) % 2 === 0
     const kmh = mps * 3.6
     return {
       title: 'Rate conversion',
@@ -938,7 +950,7 @@ const unitFactor = tpl(
     skillIds: ['m-units'],
     bucket: 'math',
     difficulty: 2,
-    variants: 8,
+    variants: 6,
     minutes: 1.5,
   },
   (rng) => {
@@ -972,7 +984,7 @@ const statsMean = tpl(
     skillIds: ['m-stats'],
     bucket: 'math',
     difficulty: 1,
-    variants: 16,
+    variants: 13,
     minutes: 2,
   },
   (rng) => {
@@ -1050,7 +1062,7 @@ const statsMissing = tpl(
     skillIds: ['m-stats'],
     bucket: 'math',
     difficulty: 3,
-    variants: 14,
+    variants: 12,
     minutes: 3,
     transfer: true,
   },
@@ -1140,7 +1152,7 @@ const countMult = tpl(
     skillIds: ['m-counting'],
     bucket: 'math',
     difficulty: 2,
-    variants: 14,
+    variants: 9,
     minutes: 2,
   },
   (rng) => {
@@ -1170,7 +1182,7 @@ const countArrange = tpl(
     skillIds: ['m-counting'],
     bucket: 'math',
     difficulty: 3,
-    variants: 8,
+    variants: 1,
     minutes: 2,
   },
   (rng) => {
@@ -1197,7 +1209,7 @@ const probSingle = tpl(
     skillIds: ['m-prob'],
     bucket: 'math',
     difficulty: 1,
-    variants: 16,
+    variants: 14,
     minutes: 1.5,
   },
   (rng) => {
@@ -1228,7 +1240,7 @@ const probComplement = tpl(
     skillIds: ['m-prob'],
     bucket: 'math',
     difficulty: 2,
-    variants: 12,
+    variants: 2,
     minutes: 2,
   },
   (rng) => {
@@ -1255,7 +1267,7 @@ const probCompound = tpl(
     skillIds: ['m-prob'],
     bucket: 'math',
     difficulty: 3,
-    variants: 12,
+    variants: 1,
     minutes: 2.5,
     transfer: true,
     calibration: true,
@@ -1287,7 +1299,7 @@ const evGame = tpl(
     skillIds: ['m-ev'],
     bucket: 'math',
     difficulty: 3,
-    variants: 12,
+    variants: 7,
     minutes: 3,
     calibration: true,
   },

@@ -485,6 +485,176 @@ describe('repair loop coverage', () => {
   })
 })
 
+/**
+ * ANSWERABILITY AND FAIRNESS.
+ *
+ * These catch defect classes that shipped undetected because the original
+ * audit only asked "does the key validate?" — never "can a learner type this
+ * answer?", "are two options secretly the same number?", or "could someone
+ * score without reading the question?". Each rule below exists because a real
+ * item failed it.
+ */
+describe('items are answerable and fair', () => {
+  const renders = BUILTIN_TEMPLATES.flatMap((t) => {
+    const seeds = Array.from({ length: Math.max(1, Math.min(t.variants, 24)) }, (_, i) => i)
+    return seeds.map((seed) => ({ t, seed, item: t.generate(seed) }))
+  })
+
+  const specsOf = (item: RenderedItem): AnswerSpec[] =>
+    item.parts?.length ? item.parts.map((p) => p.answer) : item.answer ? [item.answer] : []
+
+  /** Every string a learner can actually read. */
+  const visibleText = (item: RenderedItem): string[] => {
+    const out = [item.prompt, item.explanation, item.title, ...item.hints]
+    for (const p of item.parts ?? []) out.push(p.prompt, p.explanation, p.study ?? '', ...(p.hints ?? []))
+    for (const spec of specsOf(item)) {
+      if (spec.type === 'mcq' || spec.type === 'multi' || spec.type === 'order') out.push(...spec.options)
+      if (spec.type === 'classify') out.push(...spec.statements.map((s) => s.text))
+      if (spec.type === 'draft') out.push(spec.model, ...spec.criteria)
+      if (spec.type === 'text') out.push(...spec.accept)
+    }
+    return out
+  }
+
+  it('never shows binary floating-point dust to the learner', () => {
+    // 8+ decimals is unambiguously an artifact — it leaves real constants
+    // like pi ~ 3.14159 alone. "0.3999999999999999 higher than control"
+    // shipped in a studio prompt, its options, and its model report.
+    const dust = /\d+\.\d{8,}/
+    for (const { t, seed, item } of renders) {
+      for (const text of visibleText(item)) {
+        const hit = text?.match(dust)
+        expect(hit?.[0], `${t.id}@${seed}: float dust "${hit?.[0]}" in visible text`).toBeUndefined()
+      }
+    }
+  })
+
+  it('every numeric answer can actually be typed', () => {
+    for (const { t, seed, item } of renders) {
+      for (const spec of specsOf(item)) {
+        if (spec.type !== 'numeric') continue
+        expect(Number.isFinite(spec.answer), `${t.id}@${seed}: non-finite numeric answer`).toBe(true)
+        const decimals = String(spec.answer).includes('.') ? String(spec.answer).split('.')[1].length : 0
+        // Without a tolerance, a repeating decimal is unanswerable: the item
+        // demands a value no keyboard can produce exactly.
+        if (!spec.tolerance) {
+          expect(decimals, `${t.id}@${seed}: answer ${spec.answer} needs a tolerance`).toBeLessThanOrEqual(4)
+        }
+      }
+    }
+  })
+
+  it('no two choices are secretly the same value', () => {
+    const numish = (raw: string): number | null => {
+      let s = raw.trim().replace(/[$,\s]/g, '')
+      if (s.endsWith('%')) s = s.slice(0, -1)
+      if (!s || /[a-zA-Z]/.test(s)) return null
+      const frac = s.match(/^(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/)
+      if (frac) return Number(frac[2]) === 0 ? null : Number(frac[1]) / Number(frac[2])
+      return /^-?\d*\.?\d+$/.test(s) ? Number(s) : null
+    }
+    for (const { t, seed, item } of renders) {
+      for (const spec of specsOf(item)) {
+        if (spec.type !== 'mcq') continue
+        const vals = spec.options.map(numish)
+        for (let i = 0; i < vals.length; i++) {
+          for (let j = i + 1; j < vals.length; j++) {
+            const a = vals[i]
+            const b = vals[j]
+            if (a === null || b === null) continue
+            // String-distinct is not enough: "0.75" and "3/4" are one option
+            // wearing two hats, and one of them is silently also correct.
+            expect(
+              Math.abs(a - b) > 1e-9,
+              `${t.id}@${seed}: options "${spec.options[i]}" and "${spec.options[j]}" are the same value`,
+            ).toBe(true)
+          }
+        }
+      }
+    }
+  })
+
+  it('declared variant counts are not inflated', () => {
+    // `variants` drives the planner's novelty tracking, the auto-graded-forms
+    // count, and every content-supply estimate. A template claiming 16 forms
+    // while producing 7 is a quiet lie about how much material exists — and
+    // it was true of 99 templates before this rule went in.
+    let declared = 0
+    let actual = 0
+    for (const t of BUILTIN_TEMPLATES) {
+      const n = Math.max(1, t.variants)
+      const seen = new Set<string>()
+      for (let seed = 0; seed < n; seed++) {
+        const item = t.generate(seed)
+        seen.add(
+          JSON.stringify([
+            item.prompt,
+            item.answer,
+            item.parts?.map((p) => [p.prompt, p.study ?? '', p.answer]),
+            item.polyomino?.pieces.map((x) => x.cells),
+            item.logicgrid?.clues.map((c) => c.text),
+            item.chess?.fen,
+          ]),
+        )
+      }
+      declared += n
+      actual += seen.size
+      // Per-template floor. Some slack is unavoidable: a generator drawing
+      // parameters at random will occasionally repeat itself.
+      expect(
+        seen.size / n,
+        `${t.id}: declares ${n} variants but produces only ${seen.size} distinct forms`,
+      ).toBeGreaterThanOrEqual(0.7)
+    }
+    expect(actual / declared, `bank-wide: ${actual} real forms against ${declared} declared`).toBeGreaterThanOrEqual(0.9)
+  })
+
+  it('cannot be beaten by picking the longest option', () => {
+    // Test-wiseness check. Correct answers are naturally the careful, hedged,
+    // fully-specified ones, and distractors are naturally terse — which let a
+    // learner who knew nothing score 52.8% by always choosing the longest
+    // option, against a 25% guessing baseline. That corrupts "independent
+    // evidence" at the source, so it is gated bank-wide.
+    let mcqs = 0
+    let chance = 0
+    let strategyWins = 0
+    for (const { item } of renders) {
+      for (const spec of specsOf(item)) {
+        if (spec.type !== 'mcq') continue
+        mcqs++
+        chance += 1 / spec.options.length
+        const lens = spec.options.map((o) => o.length)
+        const max = Math.max(...lens)
+        if (lens.filter((l) => l === max).length === 1 && lens.indexOf(max) === spec.correct) strategyWins++
+      }
+    }
+    const strategy = strategyWins / mcqs
+    const baseline = chance / mcqs
+    expect(
+      strategy,
+      `"always pick the longest" scores ${(strategy * 100).toFixed(1)}% against a ${(baseline * 100).toFixed(1)}% baseline — rebalance distractor lengths`,
+    ).toBeLessThan(0.45)
+  })
+
+  it('multiple choice offers a real choice', () => {
+    for (const { t, seed, item } of renders) {
+      for (const spec of specsOf(item)) {
+        if (spec.type === 'mcq') {
+          // Two options is a coin flip, which cannot distinguish knowing from guessing.
+          expect(spec.options.length, `${t.id}@${seed}: mcq needs 3+ options`).toBeGreaterThanOrEqual(3)
+        }
+        if (spec.type === 'multi') {
+          expect(spec.correct.length, `${t.id}@${seed}: multi with no correct answer`).toBeGreaterThan(0)
+          expect(
+            spec.correct.length,
+            `${t.id}@${seed}: every option correct makes selection meaningless`,
+          ).toBeLessThan(spec.options.length)
+        }
+      }
+    }
+  })
+})
+
 describe('content volume targets', () => {
   it('meets the V1 seed targets', () => {
     const academic = BUILTIN_TEMPLATES.filter((t) => ['math', 'physics', 'coding', 'science'].includes(t.bucket))

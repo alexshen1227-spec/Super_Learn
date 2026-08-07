@@ -111,10 +111,14 @@ const genRecall = tpl(
         },
         {
           prompt: 'Which encoding would have made that recall most reliable?',
-          answer: mcq(rng, 'Group the rows into a shape — biggest and smallest first, then the two in between', [
-            'Read the table through three times in a row',
-            'Try to picture the table as a photograph',
-            'Focus hard and trust concentration',
+          // Options are deliberately the same length and specificity. A
+          // correct answer that is visibly the longest can be picked off by
+          // test-wiseness alone, which would make the item look like evidence
+          // without testing anything.
+          answer: mcq(rng, 'Impose an order on the rows — largest first, smallest last — and total them as you read', [
+            'Read the table start to finish three times over before it disappears from view',
+            'Hold a mental photograph of the whole table and read the numbers back off it later',
+            'Concentrate hard on each row in turn and trust that the numbers will stay put',
           ]),
           explanation:
             'Structure beats repetition and beats effort. Re-reading feels productive but leaves no retrieval route; "picture it as a photograph" fails because memory does not store images that way. Imposing a shape — an order, a comparison, a total — gives the number somewhere to live and a path back to it.',

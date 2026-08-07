@@ -247,6 +247,8 @@ const investigator = defineCourse(
         { id: 'i-hypo', name: 'Competing hypotheses', bucket: 'investigator', prereqs: ['i-logic'], gradeBand: 8, blurb: 'Hold several explanations; find the test that separates them.' },
         { id: 'i-forecast', name: 'Forecasting', bucket: 'investigator', prereqs: [], gradeBand: 8, blurb: 'Probabilities you can be scored on; Brier feedback over time.' },
         { id: 'i-game', name: 'Game & cooperation lab', bucket: 'investigator', prereqs: ['m-ev'], gradeBand: 9, blurb: 'Payoff tables, dominant choices, and when cooperation wins.' },
+        { id: 'i-equilibrium', name: 'Best response & equilibrium', bucket: 'investigator', prereqs: ['i-game'], gradeBand: 9, blurb: 'Find each side\'s best reply and the stable point where neither wants to move.' },
+        { id: 'i-commit', name: 'Commitment & bargaining', bucket: 'investigator', prereqs: ['i-equilibrium'], gradeBand: 10, blurb: 'Why removing your own options can win, and how repetition changes the game.' },
       ],
     },
   ],

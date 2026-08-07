@@ -45,7 +45,9 @@ describe('authentic work studios', () => {
 describe('short real-world practice', () => {
   it('adds broad, checkable transfer practice rather than one-off anecdotes', () => {
     expect(REAL_WORLD_TEMPLATES.length).toBeGreaterThanOrEqual(19)
-    expect(REAL_WORLD_TEMPLATES.reduce((sum, template) => sum + template.variants, 0)).toBeGreaterThanOrEqual(280)
+    // Was 280 when variant counts were inflated. Every count is now verified
+    // to equal the number of genuinely distinct forms the generator produces.
+    expect(REAL_WORLD_TEMPLATES.reduce((sum, template) => sum + template.variants, 0)).toBeGreaterThanOrEqual(210)
     expect(new Set(REAL_WORLD_TEMPLATES.map((template) => template.bucket)).size).toBeGreaterThanOrEqual(9)
     expect(REAL_WORLD_TEMPLATES.every((template) => template.transfer)).toBe(true)
     expect(REAL_WORLD_TEMPLATES.every((template) => template.generate(0).answer?.type !== 'draft')).toBe(true)

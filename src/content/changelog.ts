@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '2.2',
+    date: '2026-08-06',
+    title: 'More Questions, and Harder Ones That Are Honest',
+    points: [
+      'A big content release: about 46% more distinct material than before, and for the first time every declared variant count has been verified to equal the number of genuinely different questions the generator produces. No category now recycles its material inside a year.',
+      'Algebra gained a full strand — 22 new question families from easy on-ramps up to non-routine work. Several are deliberate traps: the inequality where dividing by a negative flips the sign, the equation with no solution or infinitely many, squaring a sum, a sum of squares that looks factorable and is not, zero slope versus undefined slope. Their wrong answers are the tempting-but-wrong ones, so a miss names the misconception instead of just scoring zero.',
+      'Game theory became a real subject rather than two payoff tables: best response, dominance, finding the stable point, the dilemma where the stable outcome is worse for everyone, coordination versus conflict, repeated play, credible commitment, spotting a threat nobody would carry out, and thinking one step further than the other side. Two new skills track it, and every answer is computed by actually analysing the generated game.',
+      'Physics gained five more question families with exact, typeable answers — average speed over two legs (which is not the average of the speeds), net force, height-to-speed energy conversion, density, and Ohm\'s law rearranged.',
+      'A generator stress sweep found real defects that had shipped. Two items were literally unanswerable: one demanded 55.00000000000001 and another 13.333…, values no keyboard produces. A studio was printing "0.3999999999999999 higher than control" into its prompt, its options, and its model report. A boolean-logic question offered only two options, making it a coin flip. All fixed, and each defect class is now a release-blocking audit rule.',
+      'Multiple choice can no longer be beaten by test-wiseness. Correct answers were the careful, fully-spelled-out ones and distractors were short dismissals, so "always pick the longest option" scored 52.8% against a 25% guessing baseline — you could clear half the questions knowing nothing. Distractors have been rebuilt to be equally specific and equally plausible, and the build now fails if that strategy ever gets back above 45%.',
+    ],
+  },
+  {
     version: '2.1',
     date: '2026-08-06',
     title: 'Every Error Gets a Repair',

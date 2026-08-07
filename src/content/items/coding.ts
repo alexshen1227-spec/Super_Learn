@@ -11,7 +11,7 @@ import { fixed, mcq, numeric, tpl } from '../lib'
 const code = (s: string) => '```\n' + s + '\n```'
 
 const varsTrace = tpl(
-  { id: 'c-vars-trace', name: 'Variable tracing', skillIds: ['c-vars'], bucket: 'coding', difficulty: 1, variants: 16, minutes: 2 },
+  { id: 'c-vars-trace', name: 'Variable tracing', skillIds: ['c-vars'], bucket: 'coding', difficulty: 1, variants: 12, minutes: 2 },
   (rng) => {
     const a = rint(rng, 2, 9)
     const b = rint(rng, 2, 9)
@@ -37,7 +37,7 @@ const varsTrace = tpl(
 )
 
 const exprOrder = tpl(
-  { id: 'c-expr-order', name: 'Expression evaluation', skillIds: ['c-vars'], bucket: 'coding', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'c-expr-order', name: 'Expression evaluation', skillIds: ['c-vars'], bucket: 'coding', difficulty: 2, variants: 12, minutes: 2 },
   (rng) => {
     const a = rint(rng, 2, 6)
     const b = rint(rng, 2, 6)
@@ -74,24 +74,38 @@ const exprOrder = tpl(
 )
 
 const boolEval = tpl(
-  { id: 'c-bool-eval', name: 'Boolean logic', skillIds: ['c-bool'], bucket: 'coding', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'c-bool-eval', name: 'Boolean logic', skillIds: ['c-bool'], bucket: 'coding', difficulty: 2, variants: 60, minutes: 2 },
   (rng) => {
     const x = rint(rng, 1, 10)
     const y = rint(rng, 1, 10)
     const op = pick(rng, ['&&', '||'] as const)
     const c1 = x > 4
     const c2 = y <= 6
-    const result = op === '&&' ? c1 && c2 : c1 || c2
+    const apply = (a: boolean, b: boolean) => (op === '&&' ? a && b : a || b)
+    const result = apply(c1, c2)
+    // A bare true/false pair is a coin flip. Asking for the whole reasoning
+    // chain makes each distractor a NAMED mistake: misread the first
+    // comparison, misread the second, or apply the operator wrongly. It also
+    // keeps every option the same shape, so length gives nothing away.
+    const line = (a: boolean, b: boolean, r: boolean) =>
+      `x > 4 is ${a}, y <= 6 is ${b}, so r is ${r}`
     return {
       title: 'True or false?',
-      prompt: `${code(`let x = ${x}\nlet y = ${y}\nlet r = x > 4 ${op} y <= 6`)}\nIs **r** true or false?`,
-      answer: mcq(rng, String(result), [String(!result)]),
+      prompt: `${code(`let x = ${x}\nlet y = ${y}\nlet r = x > 4 ${op} y <= 6`)}\nWhich line traces this correctly?`,
+      answer: mcq(rng, line(c1, c2, result), [
+        line(c1, c2, !result),
+        line(!c1, c2, apply(!c1, c2)),
+        line(c1, !c2, apply(c1, !c2)),
+      ]),
       hints: [
-        'Evaluate each comparison separately first.',
-        `x > 4 is ${c1}; y <= 6 is ${c2}.`,
-        `Worked path: ${c1} ${op} ${c2} = **${result}**.`,
+        'Evaluate each comparison separately before touching the operator.',
+        `Check them one at a time: is ${x} > 4? is ${y} <= 6? Watch that <= includes 6 itself.`,
+        `Worked path: x > 4 is ${c1}, y <= 6 is ${c2}, and ${op === '&&' ? 'AND needs both' : 'OR needs at least one'} → **${result}**.`,
       ],
-      explanation: `x > 4 → ${c1}; y <= 6 → ${c2}. ${op === '&&' ? 'AND needs both true' : 'OR needs at least one true'}: **${result}**.`,
+      explanation: `x > 4 → ${c1}; y <= 6 → ${c2}. ${op === '&&' ? 'AND needs both true' : 'OR needs at least one true'}, so **r is ${result}**. The three wrong traces each break at one step: the right comparisons with the operator misapplied, or one comparison misread — and note that <= 6 is true when y is exactly 6, which is the boundary people slip on.`,
+      commonErrors: {
+        slip: 'Reading <= as < drops the boundary case; when y is exactly 6 that single character flips the whole result.',
+      },
     }
   },
 )
@@ -117,7 +131,7 @@ const condTrace = tpl(
 )
 
 const loopSum = tpl(
-  { id: 'c-loop-sum', name: 'Loop accumulation', skillIds: ['c-loops'], bucket: 'coding', difficulty: 2, variants: 16, minutes: 2.5 },
+  { id: 'c-loop-sum', name: 'Loop accumulation', skillIds: ['c-loops'], bucket: 'coding', difficulty: 2, variants: 9, minutes: 2.5 },
   (rng) => {
     const start = rint(rng, 1, 3)
     const end = rint(rng, 4, 7)
@@ -145,7 +159,7 @@ const loopSum = tpl(
 )
 
 const loopCount = tpl(
-  { id: 'c-loop-count', name: 'Iteration counting', skillIds: ['c-loops'], bucket: 'coding', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'c-loop-count', name: 'Iteration counting', skillIds: ['c-loops'], bucket: 'coding', difficulty: 2, variants: 12, minutes: 2 },
   (rng) => {
     let n = rint(rng, 10, 40)
     const div = pick(rng, [2, 3])
@@ -171,7 +185,7 @@ const loopCount = tpl(
 )
 
 const funcReturn = tpl(
-  { id: 'c-func-return', name: 'Function calls', skillIds: ['c-funcs'], bucket: 'coding', difficulty: 2, variants: 16, minutes: 2 },
+  { id: 'c-func-return', name: 'Function calls', skillIds: ['c-funcs'], bucket: 'coding', difficulty: 2, variants: 12, minutes: 2 },
   (rng) => {
     const m = rint(rng, 2, 5)
     const b = rint(rng, 1, 9)

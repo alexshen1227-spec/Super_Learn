@@ -49,7 +49,7 @@ const backwardPlan = tpl(
 // ---------- Decision trees & EV ----------
 
 const decisionTree = tpl(
-  { id: 'st-decision-tree', name: 'Decision Tree Lab', skillIds: ['st-ev'], bucket: 'strategist', difficulty: 3, variants: 12, minutes: 3.5, calibration: true },
+  { id: 'st-decision-tree', name: 'Decision Tree Lab', skillIds: ['st-ev'], bucket: 'strategist', difficulty: 3, variants: 10, minutes: 3.5, calibration: true },
   (rng) => {
     const sureShot = rint(rng, 4, 7)
     const riskyWin = rint(rng, 10, 16)

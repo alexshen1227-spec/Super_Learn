@@ -314,7 +314,7 @@ const bayesCounts = tpl(
     skillIds: ['i-bayes'],
     bucket: 'investigator',
     difficulty: 4,
-    variants: 12,
+    variants: 6,
     minutes: 3,
   },
   (rng) => {
@@ -415,7 +415,9 @@ const payoffChoice = tpl(
     const safe = rint(rng, 3, 8)
     const leftPayoff = rint(rng, 8, 15)
     const rightPayoff = rint(rng, 0, 4)
-    const riskyEv = round((pLeft / 100) * leftPayoff + (1 - pLeft / 100) * rightPayoff, 2)
+    const pL = round(pLeft / 100, 2)
+    const pR = round(1 - pLeft / 100, 2)
+    const riskyEv = round(pL * leftPayoff + pR * rightPayoff, 2)
     const correct = riskyEv > safe ? `Choose Flexible: expected payoff ${riskyEv}` : riskyEv < safe ? `Choose Steady: expected payoff ${safe}` : `Either choice: both have expected payoff ${safe}`
     return {
       title: 'Read the payoff table',
@@ -428,7 +430,7 @@ const payoffChoice = tpl(
       ]),
       hints: [
         'Multiply each Flexible payoff by the probability of meeting that column.',
-        `Flexible = ${pLeft / 100} x ${leftPayoff} + ${1 - pLeft / 100} x ${rightPayoff}. Compare that with ${safe}.`,
+        `Flexible = ${pL} x ${leftPayoff} + ${pR} x ${rightPayoff}. Compare that with ${safe}.`,
         `Flexible EV is ${riskyEv}; Steady EV is ${safe}.`,
       ],
       explanation: `**${correct}** Flexible averages to ${riskyEv}; Steady remains ${safe}. Expected payoff evaluates the whole distribution instead of choosing by the most vivid best or worst cell.`,
@@ -487,17 +489,21 @@ const strategyEv = tpl(
     const successChance = rint(rng, 2, 8) * 10
     const successValue = rint(rng, 8, 20)
     const failureValue = -rint(rng, 1, 8)
-    const answer = round((successChance / 100) * successValue + (1 - successChance / 100) * failureValue, 2)
+    // 1 - 0.8 is 0.19999999999999996 in binary floating point. Round the
+    // complement before it is ever printed into a hint or explanation.
+    const pWin = round(successChance / 100, 2)
+    const pLose = round(1 - successChance / 100, 2)
+    const answer = round(pWin * successValue + pLose * failureValue, 2)
     return {
       title: 'Price both branches',
       prompt: `A plan has a ${successChance}% chance of producing ${successValue} value points and otherwise produces ${failureValue} points. What is its expected value?`,
       answer: numeric(answer, { tolerance: 0.01 }),
       hints: [
         'Expected value = probability x value, added across every branch.',
-        `Compute ${successChance / 100} x ${successValue} + ${1 - successChance / 100} x (${failureValue}).`,
+        `Compute ${pWin} x ${successValue} + ${pLose} x (${failureValue}).`,
         `The result is ${answer} value points.`,
       ],
-      explanation: `The expected value is **${answer}**: (${successChance / 100} x ${successValue}) + (${1 - successChance / 100} x ${failureValue}). Keeping the failure value signed prevents a decision tree from hiding its downside.`,
+      explanation: `The expected value is **${answer}**: (${pWin} x ${successValue}) + (${pLose} x ${failureValue}). Keeping the failure value signed prevents a decision tree from hiding its downside.`,
     }
   },
 )

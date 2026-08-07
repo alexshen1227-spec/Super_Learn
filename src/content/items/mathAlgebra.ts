@@ -166,7 +166,7 @@ const eqmBoth = tpl(
 )
 
 const eqmDistribute = tpl(
-  { id: 'eqm-distribute', name: 'Distribute, then solve', skillIds: ['m-lineqmulti'], bucket: 'math', difficulty: 3, variants: 16, minutes: 3 },
+  { id: 'eqm-distribute', name: 'Distribute, then solve', skillIds: ['m-lineqmulti'], bucket: 'math', difficulty: 3, variants: 14, minutes: 3 },
   (rng) => {
     const a = rint(rng, 2, 5)
     const b = rnz(rng, 6)
@@ -271,7 +271,7 @@ const wordSetup = tpl(
 )
 
 const wordSolve = tpl(
-  { id: 'word-solve', name: 'Number relationships', skillIds: ['m-wordeq'], bucket: 'math', difficulty: 3, variants: 14, minutes: 3, transfer: true },
+  { id: 'word-solve', name: 'Number relationships', skillIds: ['m-wordeq'], bucket: 'math', difficulty: 3, variants: 12, minutes: 3, transfer: true },
   (rng) => {
     const n = rint(rng, 5, 30)
     const kind = pick(rng, ['consecutive', 'age'] as const)
@@ -330,7 +330,7 @@ const coordQuadrant = tpl(
 )
 
 const coordDistance = tpl(
-  { id: 'coord-distance', name: 'Distance on the grid', skillIds: ['m-coord'], bucket: 'math', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'coord-distance', name: 'Distance on the grid', skillIds: ['m-coord'], bucket: 'math', difficulty: 2, variants: 12, minutes: 2 },
   (rng) => {
     const x1 = rint(rng, -8, 3)
     const y = rint(rng, -6, 6)
@@ -379,7 +379,7 @@ const slopeTwoPoints = tpl(
 )
 
 const slopeTable = tpl(
-  { id: 'slope-table', name: 'Rate from a table', skillIds: ['m-linear'], bucket: 'math', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'slope-table', name: 'Rate from a table', skillIds: ['m-linear'], bucket: 'math', difficulty: 2, variants: 10, minutes: 2 },
   (rng) => {
     const m = rnz(rng, 6)
     const b = rint(rng, -5, 10)
@@ -517,7 +517,7 @@ const funcEval = tpl(
 )
 
 const funcConcept = tpl(
-  { id: 'func-concept', name: 'What makes a function', skillIds: ['m-functions'], bucket: 'math', difficulty: 2, variants: 8, minutes: 2 },
+  { id: 'func-concept', name: 'What makes a function', skillIds: ['m-functions'], bucket: 'math', difficulty: 2, variants: 6, minutes: 2 },
   (rng) => {
     const x = rint(rng, 2, 7)
     const correct = `Each input has exactly one output`
@@ -601,9 +601,10 @@ const polyFactor = tpl(
 )
 
 const quadSqrt = tpl(
-  { id: 'quad-sqrt', name: 'Solve x² = k', skillIds: ['m-quadratic'], bucket: 'math', difficulty: 2, variants: 12, minutes: 2 },
-  (rng) => {
-    const r = rint(rng, 2, 12)
+  { id: 'quad-sqrt', name: 'Solve x² = k', skillIds: ['m-quadratic'], bucket: 'math', difficulty: 2, variants: 11, minutes: 2 },
+  (_rng, seed) => {
+    // Enumerated: sampling from eleven values collapsed to three forms.
+    const r = 2 + (seed % 11)
     return {
       title: 'Square-root solving',
       prompt: `Solve **x² = ${r * r}**. Enter the **positive** solution. (How many solutions are there in total?)`,
@@ -620,7 +621,7 @@ const quadSqrt = tpl(
 )
 
 const quadFactorSolve = tpl(
-  { id: 'quad-solve-factored', name: 'Solve by factoring', skillIds: ['m-quadratic'], bucket: 'math', difficulty: 3, variants: 14, minutes: 3, transfer: true },
+  { id: 'quad-solve-factored', name: 'Solve by factoring', skillIds: ['m-quadratic'], bucket: 'math', difficulty: 3, variants: 12, minutes: 3, transfer: true },
   (rng) => {
     const p = rint(rng, 1, 7)
     let q = rint(rng, 1, 7) * -1
@@ -719,7 +720,7 @@ const PYTH_TRIPLES: [number, number, number][] = [
 ]
 
 const pythHypotenuse = tpl(
-  { id: 'pyth-hypotenuse', name: 'Find the hypotenuse', skillIds: ['m-triangles'], bucket: 'math', difficulty: 2, variants: 10, minutes: 2 },
+  { id: 'pyth-hypotenuse', name: 'Find the hypotenuse', skillIds: ['m-triangles'], bucket: 'math', difficulty: 2, variants: 5, minutes: 2 },
   (rng) => {
     const [a, b, c] = pick(rng, PYTH_TRIPLES)
     return {
@@ -737,7 +738,7 @@ const pythHypotenuse = tpl(
 )
 
 const pythLeg = tpl(
-  { id: 'pyth-leg', name: 'Find a leg', skillIds: ['m-triangles'], bucket: 'math', difficulty: 3, variants: 10, minutes: 2.5 },
+  { id: 'pyth-leg', name: 'Find a leg', skillIds: ['m-triangles'], bucket: 'math', difficulty: 3, variants: 5, minutes: 2.5 },
   (rng) => {
     const [a, b, c] = pick(rng, PYTH_TRIPLES)
     return {
@@ -756,7 +757,7 @@ const pythLeg = tpl(
 )
 
 const pythWord = tpl(
-  { id: 'pyth-word', name: 'Right triangles in the world', skillIds: ['m-triangles'], bucket: 'math', difficulty: 3, variants: 10, minutes: 3, transfer: true },
+  { id: 'pyth-word', name: 'Right triangles in the world', skillIds: ['m-triangles'], bucket: 'math', difficulty: 3, variants: 6, minutes: 3, transfer: true },
   (rng) => {
     const [a, b, c] = pick(rng, PYTH_TRIPLES)
     const kind = pick(rng, ['ladder', 'tv'] as const)
@@ -825,7 +826,7 @@ const transformPoint = tpl(
 )
 
 const dilateScale = tpl(
-  { id: 'transform-dilate', name: 'Similar figures', skillIds: ['m-transform'], bucket: 'math', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'transform-dilate', name: 'Similar figures', skillIds: ['m-transform'], bucket: 'math', difficulty: 2, variants: 12, minutes: 2 },
   (rng) => {
     const small = rint(rng, 3, 9)
     const k = pick(rng, [2, 3, 1.5, 2.5])
@@ -847,7 +848,7 @@ const dilateScale = tpl(
 )
 
 const areaRectTri = tpl(
-  { id: 'area-rect-tri', name: 'Area basics', skillIds: ['m-area'], bucket: 'math', difficulty: 1, variants: 16, minutes: 1.5 },
+  { id: 'area-rect-tri', name: 'Area basics', skillIds: ['m-area'], bucket: 'math', difficulty: 1, variants: 14, minutes: 1.5 },
   (rng) => {
     const b = rint(rng, 4, 14)
     const h = rint(rng, 3, 12)
@@ -892,7 +893,7 @@ const areaComposite = tpl(
 )
 
 const perimeterMissing = tpl(
-  { id: 'perimeter-missing', name: 'Perimeter reasoning', skillIds: ['m-area'], bucket: 'math', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'perimeter-missing', name: 'Perimeter reasoning', skillIds: ['m-area'], bucket: 'math', difficulty: 2, variants: 12, minutes: 2 },
   (rng) => {
     const w = rint(rng, 3, 12)
     const perim = 2 * w + 2 * rint(rng, 4, 14)
@@ -912,7 +913,7 @@ const perimeterMissing = tpl(
 )
 
 const circleC = tpl(
-  { id: 'circle-circumference', name: 'Circumference', skillIds: ['m-circles'], bucket: 'math', difficulty: 2, variants: 12, minutes: 2 },
+  { id: 'circle-circumference', name: 'Circumference', skillIds: ['m-circles'], bucket: 'math', difficulty: 2, variants: 8, minutes: 2 },
   (rng) => {
     const r = rint(rng, 2, 12)
     const givenDiameter = rng() < 0.5
@@ -932,7 +933,7 @@ const circleC = tpl(
 )
 
 const circleA = tpl(
-  { id: 'circle-area', name: 'Circle area', skillIds: ['m-circles'], bucket: 'math', difficulty: 2, variants: 12, minutes: 2 },
+  { id: 'circle-area', name: 'Circle area', skillIds: ['m-circles'], bucket: 'math', difficulty: 2, variants: 5, minutes: 2 },
   (rng) => {
     const r = rint(rng, 2, 10)
     const ans = round(Math.PI * r * r, 1)
@@ -952,7 +953,7 @@ const circleA = tpl(
 )
 
 const volPrism = tpl(
-  { id: 'vol-prism', name: 'Prism volume', skillIds: ['m-volume'], bucket: 'math', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'vol-prism', name: 'Prism volume', skillIds: ['m-volume'], bucket: 'math', difficulty: 2, variants: 12, minutes: 2 },
   (rng) => {
     const l = rint(rng, 3, 10)
     const w = rint(rng, 2, 8)
@@ -972,7 +973,7 @@ const volPrism = tpl(
 )
 
 const volCylinder = tpl(
-  { id: 'vol-cylinder', name: 'Cylinder volume', skillIds: ['m-volume'], bucket: 'math', difficulty: 3, variants: 12, minutes: 2.5 },
+  { id: 'vol-cylinder', name: 'Cylinder volume', skillIds: ['m-volume'], bucket: 'math', difficulty: 3, variants: 8, minutes: 2.5 },
   (rng) => {
     const r = rint(rng, 2, 6)
     const h = rint(rng, 3, 12)
@@ -994,7 +995,7 @@ const volCylinder = tpl(
 // ---------------------------------------------------------------- modeling, proof, non-routine
 
 const modelChoose = tpl(
-  { id: 'model-choose', name: 'Choose the model', skillIds: ['m-model'], bucket: 'math', difficulty: 3, variants: 8, minutes: 2.5 },
+  { id: 'model-choose', name: 'Choose the model', skillIds: ['m-model'], bucket: 'math', difficulty: 3, variants: 6, minutes: 2.5 },
   (rng) => {
     const cases = [
       {
@@ -1055,31 +1056,50 @@ const modelBudget = tpl(
 )
 
 const proofCounterexample = tpl(
-  { id: 'proof-counterexample', name: 'Find the counterexample', skillIds: ['m-proof'], bucket: 'math', difficulty: 3, variants: 8, minutes: 2.5, calibration: true },
+  { id: 'proof-counterexample', name: 'Find the counterexample', skillIds: ['m-proof'], bucket: 'math', difficulty: 3, variants: 6, minutes: 2.5, calibration: true },
   (rng) => {
     const claims = [
+      // Every option carries the same parallel clause. When only the correct
+      // option spells out its consequence, its length gives it away and the
+      // item stops testing anything (see the option-balance audit rule).
       {
         claim: '"Doubling a number always makes it larger."',
         correct: 'x = −3 (doubling gives −6, which is smaller)',
-        wrong: ['x = 5 (doubling gives 10)', 'x = 100 (doubling gives 200)', 'x = 1/2 (doubling gives 1)'],
+        wrong: [
+          'x = 5 (doubling gives 10, which is larger)',
+          'x = 100 (doubling gives 200, which is larger)',
+          'x = 1/2 (doubling gives 1, which is larger)',
+        ],
         why: 'negative numbers get MORE negative when doubled; zero stays equal.',
       },
       {
         claim: '"The square of a number is always bigger than the number."',
         correct: 'x = 1/2 (its square is 1/4, which is smaller)',
-        wrong: ['x = 3 (square is 9)', 'x = −2 (square is 4)', 'x = 10 (square is 100)'],
+        wrong: [
+          'x = 3 (its square is 9, which is larger)',
+          'x = −2 (its square is 4, which is larger)',
+          'x = 10 (its square is 100, which is much larger)',
+        ],
         why: 'fractions between 0 and 1 shrink when squared (and 1² = 1).',
       },
       {
         claim: '"If a number is divisible by 4, it is divisible by 8."',
-        correct: 'x = 12 (divisible by 4 but not 8)',
-        wrong: ['x = 16 (divisible by both)', 'x = 24 (divisible by both)', 'x = 7 (divisible by neither)'],
+        correct: 'x = 12 (divisible by 4 but not by 8)',
+        wrong: [
+          'x = 16 (divisible by 4 and also by 8)',
+          'x = 24 (divisible by 4 and also by 8)',
+          'x = 7 (divisible by neither 4 nor by 8)',
+        ],
         why: 'divisibility climbs DOWN factors, not up: multiples of 8 are multiples of 4, not vice versa.',
       },
       {
         claim: '"Adding two fractions always gives a smaller number than multiplying them."',
-        correct: '1/2 and 1/3 (sum 5/6 > product 1/6)',
-        wrong: ['2 and 3 (sum 5 < product 6)', '4 and 5 (sum 9 < product 20)', '3 and 3 (sum 6 < product 9)'],
+        correct: '1/2 and 1/3 (sum 5/6 is bigger than product 1/6)',
+        wrong: [
+          '2 and 3 (sum 5 is smaller than product 6)',
+          '4 and 5 (sum 9 is far smaller than the product 20)',
+          '3 and 3 (sum 6 is smaller than product 9)',
+        ],
         why: 'for small fractions, products shrink fast — sums usually win.',
       },
     ]
@@ -1099,7 +1119,7 @@ const proofCounterexample = tpl(
 )
 
 const proofAlways = tpl(
-  { id: 'proof-always', name: 'Always, sometimes, never', skillIds: ['m-proof'], bucket: 'math', difficulty: 3, variants: 8, minutes: 2.5 },
+  { id: 'proof-always', name: 'Always, sometimes, never', skillIds: ['m-proof'], bucket: 'math', difficulty: 3, variants: 6, minutes: 2.5 },
   (rng) => {
     const cases = [
       { s: 'The sum of two odd numbers is even.', a: 'Always true', why: '(2a+1)+(2b+1) = 2(a+b+1), which is even for every choice.' },

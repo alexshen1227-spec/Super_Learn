@@ -73,7 +73,7 @@ const syllogism = tpl(
 // ---------- Bayes with natural frequencies ----------
 
 const bayesNatural = tpl(
-  { id: 'i-bayes-natural', name: 'Bayes by counting', skillIds: ['i-bayes'], bucket: 'investigator', difficulty: 3, variants: 12, minutes: 4, calibration: true },
+  { id: 'i-bayes-natural', name: 'Bayes by counting', skillIds: ['i-bayes'], bucket: 'investigator', difficulty: 3, variants: 4, minutes: 4, calibration: true },
   (rng) => {
     // Construct clean natural-frequency scenarios.
     const pop = 1000

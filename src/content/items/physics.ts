@@ -8,7 +8,7 @@ import { pick, rint } from '../../engine/rng'
 import { mcq, mcqNoted, numeric, round, tpl } from '../lib'
 
 const measureUnits = tpl(
-  { id: 'p-si-units', name: 'SI units', skillIds: ['p-measure'], bucket: 'physics', difficulty: 1, variants: 8, minutes: 1.5 },
+  { id: 'p-si-units', name: 'SI units', skillIds: ['p-measure'], bucket: 'physics', difficulty: 1, variants: 6, minutes: 1.5 },
   (rng) => {
     const cases = [
       { q: 'speed', correct: 'meters per second (m/s)', wrong: ['kilograms (kg)', 'newtons (N)', 'seconds per meter (s/m)'] },
@@ -32,7 +32,7 @@ const measureUnits = tpl(
 )
 
 const dimensionalCheck = tpl(
-  { id: 'p-dimensional', name: 'Dimensional check', skillIds: ['p-measure'], bucket: 'physics', difficulty: 2, variants: 6, minutes: 2, transfer: true },
+  { id: 'p-dimensional', name: 'Dimensional check', skillIds: ['p-measure'], bucket: 'physics', difficulty: 2, variants: 4, minutes: 2, transfer: true },
   (rng) => {
     const cases = [
       {
@@ -66,7 +66,7 @@ const dimensionalCheck = tpl(
 )
 
 const speedBasic = tpl(
-  { id: 'p-speed', name: 'Speed problems', skillIds: ['p-motion'], bucket: 'physics', difficulty: 2, variants: 18, minutes: 2 },
+  { id: 'p-speed', name: 'Speed problems', skillIds: ['p-motion'], bucket: 'physics', difficulty: 2, variants: 16, minutes: 2 },
   (rng) => {
     const v = pick(rng, [4, 5, 8, 10, 12, 15, 20, 25])
     const t = rint(rng, 3, 12)
@@ -99,7 +99,7 @@ const speedBasic = tpl(
 )
 
 const velocityVsSpeed = tpl(
-  { id: 'p-velocity-concept', name: 'Speed vs velocity', skillIds: ['p-motion'], bucket: 'physics', difficulty: 2, variants: 6, minutes: 2 },
+  { id: 'p-velocity-concept', name: 'Speed vs velocity', skillIds: ['p-motion'], bucket: 'physics', difficulty: 2, variants: 4, minutes: 2 },
   (rng) => {
     const d = pick(rng, [200, 300, 400])
     return {
@@ -157,7 +157,7 @@ const motionGraph = tpl(
 )
 
 const acceleration = tpl(
-  { id: 'p-acceleration', name: 'Acceleration', skillIds: ['p-accel'], bucket: 'physics', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'p-acceleration', name: 'Acceleration', skillIds: ['p-accel'], bucket: 'physics', difficulty: 2, variants: 12, minutes: 2 },
   (rng) => {
     const a = rint(rng, 2, 5)
     const t = rint(rng, 3, 8)
@@ -183,7 +183,7 @@ const acceleration = tpl(
 )
 
 const newtonSecond = tpl(
-  { id: 'p-fma', name: 'F = ma', skillIds: ['p-forces'], bucket: 'physics', difficulty: 2, variants: 16, minutes: 2 },
+  { id: 'p-fma', name: 'F = ma', skillIds: ['p-forces'], bucket: 'physics', difficulty: 2, variants: 14, minutes: 2 },
   (rng) => {
     const m = pick(rng, [2, 4, 5, 8, 10, 20])
     const a = rint(rng, 2, 6)
@@ -232,7 +232,7 @@ const netForce = tpl(
 )
 
 const balancedForces = tpl(
-  { id: 'p-balanced', name: 'Balanced forces', skillIds: ['p-forces'], bucket: 'physics', difficulty: 2, variants: 6, minutes: 2 },
+  { id: 'p-balanced', name: 'Balanced forces', skillIds: ['p-forces'], bucket: 'physics', difficulty: 2, variants: 4, minutes: 2 },
   (rng) => {
     const v = pick(rng, [3, 5, 8])
     const noted = mcqNoted(rng, '0 N — balanced forces', [
@@ -257,7 +257,7 @@ const balancedForces = tpl(
 )
 
 const workEnergy = tpl(
-  { id: 'p-work', name: 'Work & energy', skillIds: ['p-energy'], bucket: 'physics', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'p-work', name: 'Work & energy', skillIds: ['p-energy'], bucket: 'physics', difficulty: 2, variants: 10, minutes: 2 },
   (rng) => {
     const f = pick(rng, [10, 15, 20, 25, 40])
     const d = rint(rng, 2, 10)
@@ -276,7 +276,7 @@ const workEnergy = tpl(
 )
 
 const kineticEnergy = tpl(
-  { id: 'p-kinetic', name: 'Kinetic energy', skillIds: ['p-energy'], bucket: 'physics', difficulty: 3, variants: 12, minutes: 2.5, transfer: true, calibration: true },
+  { id: 'p-kinetic', name: 'Kinetic energy', skillIds: ['p-energy'], bucket: 'physics', difficulty: 3, variants: 8, minutes: 2.5, transfer: true, calibration: true },
   (rng) => {
     const m = pick(rng, [2, 4, 6, 8])
     const v = pick(rng, [2, 3, 4, 5, 10])
@@ -311,7 +311,7 @@ const kineticEnergy = tpl(
 )
 
 const momentum = tpl(
-  { id: 'p-momentum', name: 'Momentum', skillIds: ['p-momentum'], bucket: 'physics', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'p-momentum', name: 'Momentum', skillIds: ['p-momentum'], bucket: 'physics', difficulty: 2, variants: 12, minutes: 2 },
   (rng) => {
     const m1 = pick(rng, [2, 3, 5, 8, 10])
     const v1 = rint(rng, 2, 9)
@@ -372,7 +372,7 @@ const density = tpl(
 )
 
 const ohmsLaw = tpl(
-  { id: 'p-ohm', name: "Ohm's law", skillIds: ['p-circuits'], bucket: 'physics', difficulty: 2, variants: 14, minutes: 2 },
+  { id: 'p-ohm', name: "Ohm's law", skillIds: ['p-circuits'], bucket: 'physics', difficulty: 2, variants: 12, minutes: 2 },
   (rng) => {
     const i = pick(rng, [0.5, 1, 2, 3, 4])
     const r = pick(rng, [3, 5, 6, 10, 12])
@@ -398,7 +398,7 @@ const ohmsLaw = tpl(
 )
 
 const orderMagnitude = tpl(
-  { id: 'p-order-magnitude', name: 'Orders of magnitude', skillIds: ['p-estimate'], bucket: 'physics', difficulty: 2, variants: 8, minutes: 2, transfer: true },
+  { id: 'p-order-magnitude', name: 'Orders of magnitude', skillIds: ['p-estimate'], bucket: 'physics', difficulty: 2, variants: 6, minutes: 2, transfer: true },
   (rng) => {
     const cases = [
       { q: 'the height of a door', correct: '2 × 10⁰ m (about 2 m)', wrong: ['2 × 10¹ m (about 20 m)', '2 × 10⁻² m (about 2 cm)', '2 × 10² m (about 200 m)'] },
