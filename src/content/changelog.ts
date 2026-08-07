@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '3.7',
+    date: '2026-08-07',
+    title: 'Best Explanation — the Investigator Gets the Missing Half',
+    points: [
+      'New Investigator skill: Best explanation. The Path could already deduce from premises, update a belief with evidence, and test rival hypotheses — but nothing taught you to GENERATE the explanations in the first place, or to choose between two that both fit. That is the actual detective move, and it was missing.',
+      'Four question families. "Explain all of it" — the wrong answer covers most of the evidence and quietly drops one observation. "Fewest coincidences" — two stories both fit, so you count what each needs you to accept without evidence; a more detailed story is more expensive, not better supported. "What is it resting on" — name the one fact an inference depends on, because sharp deduction in any subject is specific knowledge, not general cleverness. And "When the evidence will not decide", where the correct answer is repeatedly "leading candidate, not proven — here is the test that would settle it".',
+      'The scenarios reason about objects, places and events — never about reading a person\'s character or history from how they look. That famous version of this trick is cold reading, which this app refuses to teach anywhere.',
+    ],
+  },
+  {
     version: '3.6',
     date: '2026-08-07',
     title: 'The Balance Sliders Actually Have to Be Dragged',

@@ -347,3 +347,51 @@ user-opted fluency drills.
 - No content, artwork, question text, or scoring constants were copied from
   either product. All items in `src/content/` are original (provenance field
   on every item).
+
+## §19 — Abduction / inference to the best explanation (`i-abduce`)
+
+**Claim taught:** explanation-choosing is two steps. Abduction generates the
+candidate explanations; inference to the best explanation (IBE) ranks them by
+explanatory virtues. The two virtues the content trains directly are **scope**
+(how much of the evidence a candidate accounts for) and **parsimony** (how many
+unsupported auxiliary assumptions it needs). A third family trains **fit with
+background knowledge** — naming the specific fact an inference rests on.
+
+**Tier: ESTABLISHED CONCEPT, not an effect size.** This is a description of a
+reasoning method from philosophy of science, not a claim that practising it
+produces a measured learning gain. No number is asserted to the learner
+anywhere in this content, and no transfer claim is made beyond the app's normal
+per-user transfer testing.
+
+**Sources**
+- Inference to the Best Explanation — an overview (Cabrera):
+  https://philsci-archive.pitt.edu/20363/ — sets out abduction as the
+  candidate-generating first step and IBE as the evaluative second, and
+  surveys the explanatory virtues.
+- Explanatory virtues and coherence (Synthese):
+  https://link.springer.com/article/10.1007/s11229-011-0054-y — parsimony as
+  the size of the set of auxiliary assumptions a hypothesis needs; scope /
+  unification as breadth of evidence covered.
+
+**The ceiling is taught, not hidden.** Lipton names the gap between the
+explanation that would give the most understanding if true and the one most
+likely to be true ("Voltaire's objection"). The `abd-overreach` family exists
+so the method never ships without it: the correct answer there is repeatedly
+"leading candidate, not proven — and here is the test that would settle it".
+
+**Safety boundary (content law).** The famous fictional demonstration of this
+skill is reading a person's history off their appearance. That is cold reading
+and profiling, which Observer/Insight content explicitly refuses, so it is
+refused here too. Every scenario reasons about objects, places and events;
+where a person appears, the inference is about what happened, never about what
+they are like. The `abd-parsimony` case about an unanswered message is
+deliberately scored the other way — the elaborate story about someone's inner
+state is the WRONG answer.
+
+**Provenance note.** Prompted by the learner asking whether a Sherlock
+Holmes-inspired Path should be added. The measured answer was no: Observer
+(observation vs inference, recall, listening, bias) and Investigator (logic,
+Bayes, competing hypotheses, forecasting) already cover that ground, and the
+app's four Paths are named in the founding brief as its identity. What the
+question did surface was a real gap — nothing taught generating or ranking
+explanations — which is what this skill fills, inside the Path where it belongs.

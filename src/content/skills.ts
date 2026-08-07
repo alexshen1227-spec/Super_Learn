@@ -253,6 +253,7 @@ const investigator = defineCourse(
         { id: 'i-game', name: 'Game & cooperation lab', bucket: 'investigator', prereqs: ['m-ev'], gradeBand: 9, blurb: 'Payoff tables, dominant choices, and when cooperation wins.' },
         { id: 'i-equilibrium', name: 'Best response & equilibrium', bucket: 'investigator', prereqs: ['i-game'], gradeBand: 9, blurb: 'Find each side\'s best reply and the stable point where neither wants to move.' },
         { id: 'i-commit', name: 'Commitment & bargaining', bucket: 'investigator', prereqs: ['i-equilibrium'], gradeBand: 10, blurb: 'Why removing your own options can win, and how repetition changes the game.' },
+        { id: 'i-abduce', name: 'Best explanation', bucket: 'investigator', prereqs: ['i-hypo'], gradeBand: 9, blurb: 'Generate the explanations, then rank them by what they cover and what they assume.' },
       ],
     },
   ],
