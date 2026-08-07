@@ -97,6 +97,69 @@ export function formsRequired(bucket: string | null): number {
   return bucket !== null && PATH_BUCKETS.has(bucket) ? 3 : 2
 }
 
+/**
+ * Transfer distance, measured on the dimensions this app can actually observe.
+ *
+ * Barnett & Ceci (2002) decompose transfer distance into nine dimensions across
+ * CONTENT (learned skill, performance change, memory demands) and CONTEXT
+ * (knowledge domain, physical, temporal, functional, social, modality). Their
+ * point is that "near" and "far" are not two boxes: an item sits at a position
+ * in that space, and you can move one dial at a time.
+ *
+ * Four of those dimensions are observable from an event log on a single device,
+ * and only these four are claimed:
+ *
+ *  - `family`   — a question form never practiced on this skill. Surface
+ *                 features (content), the dial the old rule moved alone.
+ *  - `domain`   — the item sits in a different bucket from where this skill was
+ *                 first practiced. Knowledge domain (context).
+ *  - `format`   — a different answer format from any used on this skill before:
+ *                 recognising an option and constructing a number are different
+ *                 memory demands, and roughly a modality shift.
+ *  - `delayed`  — at least the retention gap since the last success. Temporal
+ *                 context.
+ *
+ * Physical, functional and social context are NOT observable here — the app
+ * cannot know where the learner is, why they are practising, or who is present
+ * — so nothing in the UI claims them. That is the honest ceiling of a
+ * single-device log, and it is stated rather than papered over.
+ *
+ * HEURISTIC: the threshold below is a product judgment, not a measured optimum.
+ * What is not a judgment is the direction — one dial is near transfer, and
+ * calling it "Transferred" overstated it.
+ */
+export const TRANSFER_DIMENSIONS_REQUIRED = 2
+
+export interface CrossedDimensions {
+  family: boolean
+  domain: boolean
+  format: boolean
+  delayed: boolean
+}
+
+function crossedDimensions(tr: Tracker, e: AttemptEvent): CrossedDimensions {
+  return {
+    family: !tr.practicedTemplates.has(e.templateId),
+    domain: tr.bucket !== null && e.bucket !== tr.bucket,
+    format: e.validator !== '' && !tr.practicedValidators.has(e.validator),
+    delayed: tr.lastCorrectAt !== null && e.t - tr.lastCorrectAt >= RETENTION_GAP_MS,
+  }
+}
+
+function countCrossed(c: CrossedDimensions): number {
+  return Number(c.family) + Number(c.domain) + Number(c.format) + Number(c.delayed)
+}
+
+/** Learner-facing names, so Progress can say what the rung actually rests on. */
+function describeCrossed(c: CrossedDimensions): string[] {
+  const out: string[] = []
+  if (c.family) out.push('an unfamiliar question form')
+  if (c.domain) out.push('a different subject')
+  if (c.format) out.push('a different answer format')
+  if (c.delayed) out.push('after a delay')
+  return out
+}
+
 interface Tracker {
   skillId: string
   /** Bucket of the first event seen — sets how strict this skill's ladder is. */
@@ -127,6 +190,10 @@ interface Tracker {
    * rather than trusted to an authoring flag.
    */
   practicedTemplates: Set<string>
+  /** Answer formats practiced on this skill — one axis of transfer distance. */
+  practicedValidators: Set<string>
+  /** Which dimensions the transfer attempt crossed, once it fires. */
+  transferCrossed: string[] | null
   /** Per-question-family review schedules. See FormTracker. */
   forms: Map<string, FormTracker>
 }
@@ -153,6 +220,8 @@ function newTracker(skillId: string): Tracker {
     reviewSuccesses: 0,
     lapses: 0,
     practicedTemplates: new Set(),
+    practicedValidators: new Set(),
+    transferCrossed: null,
     forms: new Map(),
   }
 }
@@ -271,14 +340,29 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
     }
     tr.independentForms.add(formKey)
     if (tr.independentForms.size >= required && tr.independentAt === null) tr.independentAt = e.t
-    // TRANSFER IS MEASURED, NOT DECLARED. It used to fire on any success in
-    // transfer mode, which meant an authoring flag decided the top rung. Now
-    // the item must come from a template family this skill has never been
-    // practiced on — novelty checked against the learner's own history — so
-    // "Transferred" means the principle survived leaving its familiar form.
-    const novelFamily = !tr.practicedTemplates.has(e.templateId)
-    if (e.mode === 'transfer' && tr.independentAt !== null && tr.transferredAt === null && novelFamily) {
+    // TRANSFER IS MEASURED, NOT DECLARED — and now measured on more than one
+    // axis. Barnett & Ceci (2002) decompose transfer distance into nine
+    // dimensions across content and context; treating it as a boolean throws
+    // all of that away. Requiring only a novel template FAMILY (the previous
+    // rule) moves exactly one dial — surface form — inside the same subject,
+    // the same question format and the same sitting, and then calls the result
+    // "Transferred".
+    //
+    // Every dimension below is derived from the learner's own history, never
+    // from an authoring flag, which is the property that made the family rule
+    // an improvement in the first place. See RESEARCH.md §21.
+    const crossed = crossedDimensions(tr, e)
+    if (
+      e.mode === 'transfer' &&
+      tr.independentAt !== null &&
+      tr.transferredAt === null &&
+      crossed.family &&
+      // A novel family alone is near transfer. The rung needs real distance:
+      // a different subject, a different question format, or a real delay.
+      countCrossed(crossed) >= TRANSFER_DIMENSIONS_REQUIRED
+    ) {
       tr.transferredAt = e.t
+      tr.transferCrossed = describeCrossed(crossed)
     }
     tr.lastCorrectAt = e.t
     // Review ladder advances on unaided success (placement does not schedule).
@@ -321,7 +405,10 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
   // Recorded LAST, so the transfer test above compared this attempt against
   // the families seen strictly before it. Placement routes rather than
   // teaches, so it must not make a family look already-practiced.
-  if (e.mode !== 'placement') tr.practicedTemplates.add(e.templateId)
+  if (e.mode !== 'placement') {
+    tr.practicedTemplates.add(e.templateId)
+    if (e.validator) tr.practicedValidators.add(e.validator)
+  }
 }
 
 function finalize(tr: Tracker, now: number): SkillEvidence {
@@ -360,6 +447,7 @@ function finalize(tr: Tracker, now: number): SkillEvidence {
     independentForms: [...tr.independentForms],
     retainedAt: tr.retainedAt,
     transferredAt: tr.transferredAt,
+    transferCrossed: tr.transferCrossed,
     lastCorrectAt: tr.lastCorrectAt,
     lastAttemptAt: tr.lastAttemptAt,
     lastOutcomeCorrect: tr.lastOutcomeCorrect,
@@ -443,6 +531,7 @@ export function evidenceFor(
       independentForms: [],
       retainedAt: null,
       transferredAt: null,
+      transferCrossed: null,
       lastCorrectAt: null,
       lastAttemptAt: null,
       lastOutcomeCorrect: null,

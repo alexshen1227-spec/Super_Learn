@@ -66,8 +66,25 @@ function bridgePair(
     },
   )
 
+  /*
+   * CUED APPLICATION, NOT TRANSFER — and deliberately no longer flagged as such.
+   *
+   * This item names the principle in its own prompt ("The pattern: X") and asks
+   * the learner to find an instance. Detterman's standard is that transfer has
+   * to be SPONTANEOUS: an experiment where subjects are told which principle
+   * applies is not measuring transfer, it is measuring application. This
+   * template carried `transfer: true`, so it could grant the top rung of the
+   * ladder for exactly the thing the critique says does not count — and the
+   * explanation text underneath it claimed "nothing in real life arrives tagged
+   * with which idea applies" while the prompt did the tagging.
+   *
+   * The item is kept, because cued application is genuinely useful practice and
+   * is the step between comparing two cases and recognising one cold. It simply
+   * no longer pretends to be evidence of transfer. `contentAudit.test.ts`
+   * enforces this for every template, not just this one.
+   */
   const spot = tpl(
-    { id: `${id}-spot`, name: `${name}: same thing elsewhere`, skillIds, bucket, difficulty: 4, variants: cases.length, minutes: 2.5, transfer: true },
+    { id: `${id}-spot`, name: `${name}: same thing elsewhere`, skillIds, bucket, difficulty: 4, variants: cases.length, minutes: 2.5 },
     (rng, seed) => {
       const c = cycle(seed, cases)
       return {
@@ -79,7 +96,7 @@ function bridgePair(
           'A wrong option usually shares a topic with the pattern while having a different shape.',
           `Worked path: **${c.novel}**.`,
         ],
-        explanation: `**${c.novel}**\n\n${c.novelWhy}\n\nSpotting a pattern you have named, in a place nobody labelled for you, is the whole point. Nothing in real life arrives tagged with which idea applies.`,
+        explanation: `**${c.novel}**\n\n${c.novelWhy}\n\nWorth being straight about what this exercise is: you were told which pattern to look for, so finding it is application, not transfer. The hard version is meeting one of these with no label attached — which is what the rest of the app is trying to set you up for.`,
         transferBridge:
           'When you meet this outside the app, the cue will be a feeling of familiarity with no label attached. That feeling is worth trusting enough to check.',
       }

@@ -413,7 +413,10 @@ function SkillDetail({ skill, onClose, onPractice }: { skill: SkillNode | null; 
         ) : null}
         <p className="text-[11px] text-faint mt-2">
           Promotion rules are heuristics, stated plainly: 2 unaided first-try successes on distinct forms → Independent;
-          a later success ≥48h after the previous → Retained; success on a novel-context item → Transferred.
+          a later success ≥48h after the previous → Retained. Transferred needs distance on{' '}
+          <span className="font-medium">two</span> counts at once — an unfamiliar question form plus a different
+          subject, a different answer format, or a real delay. A new question form on its own is near transfer, and
+          the app used to call that Transferred.
         </p>
       </div>
 

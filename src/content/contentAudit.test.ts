@@ -595,6 +595,39 @@ describe('items are answerable and fair', () => {
     return a
   }
 
+  /**
+   * A transfer item may not tell the learner which principle to apply.
+   *
+   * Detterman's standard (Transfer on Trial, 1993): transfer has to be
+   * spontaneous — an experiment that hints which principle applies measures
+   * application, not transfer. Four templates violated this, all of them the
+   * `bridge-*-spot` family, which opened "The pattern: X" and then asked the
+   * learner to find an instance while carrying `transfer: true`. They could
+   * therefore grant the app's top rung for cued application.
+   *
+   * This is a release gate rather than a comment because the failure mode is
+   * so easy to reintroduce: naming the principle makes an item easier to write
+   * AND easier to answer, so it is exactly what a hurried author reaches for.
+   */
+  it('no transfer item names the principle it is testing', () => {
+    const CUES = [/\bthe pattern:/i, /\busing the (idea|principle|rule) (of|that)\b/i, /\bapply (the|this) (idea|principle|rule)\b/i]
+    const offenders: string[] = []
+    for (const t of BUILTIN_TEMPLATES) {
+      if (!t.transfer) continue
+      for (let seed = 0; seed < Math.min(3, Math.max(1, t.variants)); seed++) {
+        const prompt = t.generate(seed).prompt ?? ''
+        if (CUES.some((re) => re.test(prompt))) {
+          offenders.push(`${t.id}@${seed}`)
+          break
+        }
+      }
+    }
+    expect(
+      offenders,
+      `these carry transfer:true but name the principle in the prompt, which is cued application: ${offenders.join(', ')}`,
+    ).toEqual([])
+  })
+
   it('declared variant counts are not inflated', () => {
     // `variants` drives the planner's novelty tracking, the auto-graded-forms
     // count, and every content-supply estimate. A template claiming 16 forms

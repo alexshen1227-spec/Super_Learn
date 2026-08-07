@@ -190,6 +190,14 @@ others are cited from their stable published records.
 - **Product behavior**: Transfer Bridges after puzzles (name the principle,
   strip the surface, apply in a new domain); skills only reach "Transferred"
   through success on a novel-context item; Weekly Case Files mix domains.
+- **Coverage correction (2026-08-07)**: two things in the line above were
+  narrower than they sounded. (a) Barnett & Ceci was cited here but never used
+  structurally — "novel-context item" meant a single dial, an unfamiliar
+  question family inside the same subject, format and sitting. The taxonomy is
+  now actually applied; see §21. (b) The Transfer Bridge that "applies in a new
+  domain" NAMED the principle in its prompt, which is cued application rather
+  than transfer; see §22. Both are fixed, and both were overclaims in this
+  entry rather than in the code alone.
 
 ## 11. What does NOT transfer — EVIDENCE of absence
 
@@ -244,6 +252,13 @@ than "reading" people.
   own event history at replay time. This is a narrower and more defensible
   reading of Barnett & Ceci's "different context" dimension; it still does not
   claim far transfer, and the app makes no such claim.
+- **Correction to that correction (2026-08-07)**: calling one dial "a narrower
+  and more defensible reading of Barnett & Ceci" was itself too generous. A
+  novel template family inside the same subject, the same answer format and the
+  same sitting moves ONE of nine dimensions, which is near transfer by their
+  own taxonomy. The rung now requires at least two observable dimensions and
+  records which were crossed. Measured effect: over a simulated year, skills
+  reaching Transferred fall to 2 of 47 practiced. See §21.
 - Append-only evidence with derived state ensures deleting/editing history
   recomputes progress honestly.
 
@@ -470,3 +485,148 @@ raise the odds, and keep measuring what it can actually see.
   that set the goal and measure the behaviour. Nothing here measures whether
   the learner's own reported use is accurate — it is not, and cannot be,
   verified. It is a prompt, not a result.
+
+## 21. Transfer distance is multi-dimensional — EVIDENCE (taxonomy), threshold HEURISTIC
+
+- **Claim**: "near" and "far" transfer are not two boxes. Barnett & Ceci
+  decompose transfer distance into **nine dimensions**, grouped as CONTENT
+  (learned skill, performance change, memory demands) and CONTEXT (knowledge
+  domain, physical context, temporal context, functional context, social
+  context, modality). A transfer task sits at a position in that space, and the
+  dimensions can be moved one at a time.
+- **Source**: Barnett, S. M. & Ceci, S. J. (2002), *When and where do we apply
+  what we learn? A taxonomy for far transfer*, Psychological Bulletin 128(4),
+  612-637. DOI 10.1037/0033-2909.128.4.612 —
+  https://pubmed.ncbi.nlm.nih.gov/12081085/ . Accessed 2026-08-07. The nine
+  dimensions and their grouping were confirmed against two independent
+  secondary reproductions; the primary PDF reachable from this machine was a
+  scanned image and could not be text-extracted, so the dimension NAMES come
+  from those reproductions rather than from quoted primary text.
+- **Limitations**: the authors state the taxonomy is a simplified model and
+  caution that it does not capture every relevant factor. They also conclude
+  that **far transfer occurs unreliably** — a constraint on this product, not a
+  licence for it.
+- **Product behavior**: `transferred` no longer fires on a single dial. It
+  requires an unaided first-attempt success in transfer mode crossing **at
+  least two** observable dimensions. `SkillEvidence.transferCrossed` records
+  which ones, and Progress and Path state them in plain language.
+
+### What this app can and cannot observe
+
+Four of the nine are visible to a single-device event log. Only these are claimed:
+
+| Dimension (Barnett & Ceci) | How it is measured here |
+| --- | --- |
+| content / surface features | a question family never practiced on this skill |
+| knowledge domain | the item's bucket differs from where the skill was first practiced |
+| memory demands (≈ modality) | a different answer format from any practiced on this skill |
+| temporal context | at least the 48h retention gap since the last success |
+
+**Physical, functional and social context are not observable.** The app cannot
+know where the learner is, what they are trying to accomplish, or who is
+present. Nothing in the UI claims those, and this table is why.
+
+- **Tier**: the taxonomy is EVIDENCE. The "at least two dimensions" threshold
+  is a **HEURISTIC** — no study fixes that number. What is not a judgment call
+  is the direction: moving one dial is near transfer.
+
+### Measured consequence (2026-08-07)
+
+Simulated 365 days at 30 min/day against the real content bank and planner:
+
+- 2,641 attempts, of which **58 (2.2%) were served in transfer mode at all**;
+- **2 of 47 practiced skills reached `transferred`** under the new rule;
+- of the four dimensions, **knowledge domain never crossed once**. That is
+  structural rather than a bug: "one primary bucket per activity" is an
+  allocation law (founding brief §5), so a skill's items nearly all sit in its
+  own bucket. In practice the rule is therefore "novel family + (format shift
+  or delay)", and the domain dial is close to dead until content deliberately
+  crosses buckets. Recorded so a future session does not mistake it for
+  working.
+
+## 22. Cued application is not transfer — EVIDENCE (methodological)
+
+- **Claim**: an item that tells the learner which principle applies measures
+  application, not transfer. Transfer has to be spontaneous.
+- **Source**: Detterman, D. K. (1993), *The case for the prosecution: transfer
+  as an epiphenomenon*, in Detterman & Sternberg (eds.), *Transfer on Trial:
+  Intelligence, Cognition, and Instruction*, Ablex. Accessed 2026-08-07 via
+  https://gwern.net/doc/iq/1993-detterman.pdf — that PDF is scanned images and
+  could not be text-extracted here, so this entry rests on the chapter's
+  argument as reported in secondary sources rather than on quoted primary
+  text. Flagged deliberately: a weaker citation than the others in this file.
+- **Limitations**: this is the strong-sceptic position and it is contested.
+  Bransford & Schwartz (§23) argue the opposite — that the standard measure is
+  too strict, not too lax. The app follows Detterman for what it will CLAIM and
+  Bransford for what it should try to teach.
+- **Coverage correction, 2026-08-07 — an audit of our own content**: all 392
+  non-authentic templates were rendered and their prompts checked. 88 carried
+  `transfer: true`. **Four named the principle in the prompt** — the entire
+  `bridge-*-spot` family, which opened "The pattern: **X**" and then asked the
+  learner to find an instance, while flagged as transfer evidence. They could
+  grant the app's top rung for exactly the thing this critique excludes, and
+  the explanation under them asserted that "nothing in real life arrives tagged
+  with which idea applies" while the prompt did the tagging. Four further
+  templates were flagged by a crude word-overlap heuristic and manually
+  confirmed as false positives (a paraphrase item necessarily shares words with
+  its prompt).
+- **Product behavior**: those four keep their content — cued application is
+  useful practice, and it is the natural step between comparing two cases and
+  recognising one cold — but they no longer carry `transfer: true`, and their
+  explanation now says plainly that being told the pattern makes this
+  application rather than transfer. `contentAudit.test.ts` now fails the build
+  if any `transfer: true` template names the principle in its prompt.
+
+## 23. What was deliberately NOT built, and why
+
+- **Preparation for Future Learning (PFL)** — Bransford, J. D. & Schwartz,
+  D. L. (1999), *Rethinking transfer: a simple proposal with multiple
+  implications*, Review of Research in Education 24, 61-100.
+  https://journals.sagepub.com/doi/10.3102/0091732X024001061 . Accessed
+  2026-08-07. They argue that measuring transfer as **sequestered problem
+  solving** — no resources, no help, apply it cold — systematically
+  underestimates what prior learning bought, and propose measuring **readiness
+  to learn something new** instead. Every rung in this app is sequestered
+  problem solving, so the critique lands squarely on our evidence model.
+  **Not built this session.** It needs a new activity form (supply resources,
+  measure the rate of learning from them) plus a second evidence channel that
+  is explicitly not a rung. Done badly it produces exactly the soft,
+  self-reported "growth" number this app refuses. Recorded as the strongest
+  known gap in the evidence model rather than quietly dropped.
+- **Authored transfer-distance tags.** Rejected. Letting content declare its
+  own distance repeats the mistake §13 already corrected once, when an
+  authoring flag decided the top rung. Distance is derived from the learner's
+  own history instead.
+
+## 24. Abstract rule training does transfer — EVIDENCE (strongest positive)
+
+- **Claim**: brief training in *formal abstract rule systems* (the law of large
+  numbers, cost-benefit reasoning, methodological reasoning about confounds)
+  improves everyday reasoning **in domains that were never trained**.
+- **Sources**:
+  - Fong, G. T., Krantz, D. H. & Nisbett, R. E. (1986), *The effects of
+    statistical training on thinking about everyday problems*, Cognitive
+    Psychology 18(3), 253-292.
+    https://www.sciencedirect.com/science/article/abs/pii/0010028586900010 —
+    brief training in the formal properties of the law of large numbers raised
+    both the frequency and the quality of statistical reasoning on everyday
+    problems, and **improvement in untaught domains matched improvement in
+    taught ones**. Accessed 2026-08-07.
+  - Nisbett, R. E., Fong, G. T., Lehman, D. R. & Cheng, P. W. (1987),
+    *Teaching reasoning*, Science 238, 625-631. DOI 10.1126/science.3672116 —
+    even brief formal training in inferential rules enhances their use in
+    reasoning about everyday events; earlier pessimism rested partly on
+    misidentifying which rules people actually use.
+- **Limitations**: short-horizon studies with verbal-protocol outcomes, not
+  year-long behaviour change. Fong & Nisbett's later work on immediate versus
+  delayed transfer found the advantage in **untrained** domains decayed across
+  a two-week delay while trained-domain performance held. The finding therefore
+  argues for spaced re-exposure of a rule across several domains, not for one
+  lesson.
+- **Product behavior**: this is the evidential basis for teaching rule systems
+  explicitly — base rates, expected value, confound detection, inference to the
+  best explanation, parsimony — rather than hoping domain practice generalises
+  on its own, and for scheduling those rules for review like any other skill
+  instead of teaching them once.
+- **Tier**: EVIDENCE for the direction. No effect size is asserted to the
+  learner anywhere in the app.

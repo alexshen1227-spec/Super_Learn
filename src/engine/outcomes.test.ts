@@ -12,8 +12,9 @@ function event(i: number): AttemptEvent {
     id: `e${i}`,
     t: NOW - age * DAY,
     sessionId: `s${i % 4}`,
-    // Transfer is now MEASURED: it only counts on a template family this skill
-    // has not been practiced on, so the transfer attempt uses a novel family.
+    // Transfer is MEASURED on several dimensions, not one: a novel family alone
+    // is near transfer. This fixture's transfer attempt crosses TWO — an
+    // unfamiliar question family and a different answer format. See §21.
     templateId: mode === 'transfer' ? 'int-word-novel' : 'int-ops',
     itemVersion: 1,
     seed: i,
@@ -25,7 +26,7 @@ function event(i: number): AttemptEvent {
     correct: true,
     firstCorrect: true,
     score: null,
-    validator: 'numeric',
+    validator: mode === 'transfer' ? 'mcq' : 'numeric',
     hintLevel: 0,
     confidence: 70,
     elapsedSec: 60,

@@ -107,8 +107,17 @@ export function ProgressScreen() {
       <div className="grid grid-cols-3 gap-3 mt-3">
         <StatCard label="Independent" value={stateCounts.independent + stateCounts.retained + stateCounts.transferred} sub="skills" tone="text-accent" />
         <StatCard label="Retained" value={stateCounts.retained + stateCounts.transferred} sub="≥48h later" tone="text-good" />
-        <StatCard label="Transferred" value={stateCounts.transferred} sub="novel context" tone="text-good" />
+        <StatCard label="Transferred" value={stateCounts.transferred} sub="2+ kinds of distance" tone="text-good" />
       </div>
+      {/* The honest ceiling, stated rather than implied. The app can observe
+          four of Barnett & Ceci's nine transfer dimensions from a single
+          device; it cannot see where you are, why you are practising, or who
+          is with you, so it does not claim those. RESEARCH.md §21. */}
+      <p className="text-[11px] text-faint mt-2 px-1 leading-snug">
+        Transferred means an unfamiliar question form <em>plus</em> a different subject, answer format, or a real
+        delay. It is expected to be rare — far transfer is the hardest thing in this literature, and the app measures
+        only the distances a single device can see, never where you were or what you were doing.
+      </p>
       {stateCounts.needsReview > 0 ? (
         <p className="text-[13px] text-warn mt-2 px-1">
           {stateCounts.needsReview} skill{stateCounts.needsReview === 1 ? '' : 's'} flagged for review — earlier
@@ -136,7 +145,7 @@ export function ProgressScreen() {
         </div>
         <p className={`text-[13px] mt-3 ${outcome.enoughEvidence ? 'text-muted' : 'text-faint'}`}>{outcome.verdict}</p>
         <p className="text-[11px] text-faint mt-1.5">
-          Outcome = unaided independence, delayed retention, and novel-context transfer. This is evidence of specific learning—not an IQ score or a causal claim from screen time alone.
+          Outcome = unaided independence, delayed retention, and transfer across two kinds of distance. This is evidence of specific learning—not an IQ score or a causal claim from screen time alone.
         </p>
       </Card>
 

@@ -93,7 +93,7 @@ function promotionDecisions(prev: AppState, nextEvents: AttemptEvent[], all: Att
             ? [`Two unaided first-attempt successes on distinct forms (${a.independentForms.length} total).`]
             : a.state === 'retained'
               ? ['An unaided success at least 48 hours after the previous one.']
-              : ['Success on a novel-context transfer item.'],
+              : ['Success on a transfer item crossing two kinds of distance.'],
         confidence: 'medium',
         wouldChange: 'Misses on review would flag this skill for repair (the history stays visible).',
       })

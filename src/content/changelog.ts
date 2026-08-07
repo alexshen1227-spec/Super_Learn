@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '5.0',
+    date: '2026-08-07',
+    title: 'Transferred Was Being Awarded Too Easily — Including for Being Told the Answer',
+    points: [
+      'Four questions were handing out the app\'s highest rung for something that is not transfer. The "same thing elsewhere" items open by naming the pattern — "The pattern: a fact was observed, and a motive was invented" — and then ask you to find an instance of it. Being told which idea applies and then applying it is application, not transfer; the standard test in this literature is that transfer has to happen without the prompt. Those four still exist, because cued practice is genuinely useful, but they no longer count as transfer evidence, and their explanation now says so instead of claiming that "nothing in real life arrives tagged with which idea applies" while the prompt did the tagging.',
+      'Transferred now needs distance on two counts, not one. It used to fire on an unfamiliar question form alone — same subject, same answer format, same sitting, only the surface changed. The standard taxonomy in this field puts transfer distance on nine separate dimensions, and moving one of them is near transfer. It now takes an unfamiliar form PLUS a different subject, a different answer format, or a real delay, and your Progress screen names which ones you actually crossed.',
+      'Expect this rung to be rare. Simulated across a year of daily practice, 2 skills out of 47 reach it. That is not a bug to be tuned away — far transfer is the hardest and least reliable result in this whole literature, and a top rung that everybody reaches is measuring something else.',
+      'Being straight about the ceiling: of those nine dimensions the app can only observe four, because it runs on one device and sees only your answers. It cannot know where you were, what you were trying to get done, or who was with you — so it never claims those. One of the four, "different subject", turns out to almost never fire in practice, because every activity belongs to exactly one subject by design. That is written into the research ledger rather than left to look like it works.',
+      'What was not built, and why: the strongest criticism of how this app measures anything is that testing you cold, with no resources, underestimates what your practice actually bought you — the alternative being to measure how much faster you learn something new. That needs a whole new activity type and a second kind of evidence that is deliberately not a rung, and done carelessly it becomes exactly the soft self-reported progress number this app refuses. It is recorded as the biggest known gap rather than half-built.',
+    ],
+  },
+  {
     version: '4.3',
     date: '2026-08-07',
     title: 'Ten-Minute Sessions Were a Different App',

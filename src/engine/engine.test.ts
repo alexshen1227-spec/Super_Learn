@@ -360,7 +360,7 @@ describe('five-level difficulty routing', () => {
   it('moves retained and transferred skills into advanced and expert work', () => {
     const base: SkillEvidence = {
       skillId: 'o-obsinf', state: 'unseen', bestState: 'unseen', needsReview: false, exposure: 0,
-      guidedSuccesses: 0, independentForms: [], retainedAt: null, transferredAt: null,
+      guidedSuccesses: 0, independentForms: [], retainedAt: null, transferredAt: null, transferCrossed: null,
       lastCorrectAt: null, lastAttemptAt: null, lastOutcomeCorrect: null, recentMisses: 0,
       blockedByMisconception: false, hintDependence: null, review: null, forms: [], attempts: 0,
     }

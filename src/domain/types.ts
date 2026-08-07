@@ -472,6 +472,8 @@ export interface SkillEvidence {
   independentForms: string[]
   retainedAt: number | null
   transferredAt: number | null
+  /** Which transfer dimensions the qualifying attempt crossed (RESEARCH.md §21). */
+  transferCrossed: string[] | null
   lastCorrectAt: number | null
   lastAttemptAt: number | null
   lastOutcomeCorrect: boolean | null

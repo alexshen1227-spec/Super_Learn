@@ -98,14 +98,22 @@ describe('evidence ladder', () => {
     expect(e.retainedAt).not.toBeNull()
   })
 
-  it('transfer success after independence marks transferred', () => {
-    const events = [
-      ev({ seed: 1 }),
-      ev({ seed: 2 }),
-      ev({ seed: 5, t: T0 + RETENTION_GAP_MS + 60_000, mode: 'review' }),
-      ev({ seed: 9, t: T0 + RETENTION_GAP_MS + 2 * 60_000 + 1, mode: 'transfer', templateId: 'tpl-b' }),
+  it('transfer needs distance on two dimensions, not just a new question form', () => {
+    // Times pinned: the shared `ev` counter drives `t` by default, so events
+    // added elsewhere in this file would otherwise reorder these.
+    const upTo = [
+      ev({ seed: 1, t: T0 + 1_000, templateId: 'x-1' }),
+      ev({ seed: 2, t: T0 + 2_000, templateId: 'x-2' }),
+      ev({ seed: 5, t: T0 + RETENTION_GAP_MS + 60_000, mode: 'review', templateId: 'x-1' }),
     ]
-    expect(deriveEvidence(events, T0 + 5 * DAY).get('sk1')!.state).toBe('transferred')
+    // Novel family, but same subject, same format, moments after the last
+    // success. One dial — near transfer, and it does not earn the rung.
+    const nearOnly = [...upTo, ev({ seed: 9, t: T0 + RETENTION_GAP_MS + 2 * 60_000 + 1, mode: 'transfer', templateId: 'tpl-b' })]
+    expect(deriveEvidence(nearOnly, T0 + 5 * DAY).get('sk1')!.state).toBe('retained')
+
+    // Same attempt, but the item also sits in another subject.
+    const withDistance = [...upTo, ev({ seed: 9, t: T0 + RETENTION_GAP_MS + 2 * 60_000 + 1, mode: 'transfer', templateId: 'tpl-b', bucket: 'science' })]
+    expect(deriveEvidence(withDistance, T0 + 5 * DAY).get('sk1')!.state).toBe('transferred')
   })
 
   it('a high-confidence miss blocks independent until repaired, keeping bestState visible', () => {
@@ -204,11 +212,60 @@ describe('transferred is measured, not declared', () => {
     expect(state.state).toBe('independent')
   })
 
-  it('a transfer attempt on a NOVEL family does count', () => {
+  /**
+   * A novel family ALONE is near transfer — same subject, same answer format,
+   * same sitting, only the surface changed. Barnett & Ceci put transfer
+   * distance on nine dimensions; moving one and calling it "Transferred" was
+   * the overclaim this rule now closes. See RESEARCH.md §21.
+   */
+  it('a novel family ALONE is not enough — that is near transfer', () => {
     const events = [...independent(), ev({ seed: 3, templateId: 'fam-b', mode: 'transfer' })]
+    const state = evidenceFor(deriveEvidence(events, T0 + 10 * 60_000), 'sk1')
+    expect(state.transferredAt).toBeNull()
+    expect(state.state).toBe('independent')
+  })
+
+  it('a novel family in a DIFFERENT SUBJECT counts', () => {
+    const events = [
+      ...independent(),
+      ev({ seed: 3, templateId: 'fam-b', mode: 'transfer', bucket: 'investigator' }),
+    ]
     const state = evidenceFor(deriveEvidence(events, T0 + 10 * 60_000), 'sk1')
     expect(state.transferredAt).not.toBeNull()
     expect(state.state).toBe('transferred')
+    expect(state.transferCrossed).toContain('a different subject')
+  })
+
+  it('a novel family in a DIFFERENT ANSWER FORMAT counts', () => {
+    const events = [
+      ...independent(),
+      ev({ seed: 3, templateId: 'fam-b', mode: 'transfer', validator: 'mcq' }),
+    ]
+    const state = evidenceFor(deriveEvidence(events, T0 + 10 * 60_000), 'sk1')
+    expect(state.transferredAt).not.toBeNull()
+    expect(state.transferCrossed).toContain('a different answer format')
+  })
+
+  it('a novel family AFTER A DELAY counts', () => {
+    const events = [
+      ev({ seed: 1, templateId: 'd-a', t: T0 + 1_000 }),
+      ev({ seed: 2, templateId: 'd-b', t: T0 + 2_000 }),
+      ev({ seed: 3, templateId: 'd-c', mode: 'transfer', t: T0 + RETENTION_GAP_MS + 60_000 }),
+    ]
+    const state = evidenceFor(deriveEvidence(events, T0 + 5 * DAY), 'sk1')
+    expect(state.transferredAt).not.toBeNull()
+    expect(state.transferCrossed).toContain('after a delay')
+  })
+
+  it('reports which dimensions the qualifying attempt actually crossed', () => {
+    const events = [
+      ...independent(),
+      ev({ seed: 3, templateId: 'fam-b', mode: 'transfer', bucket: 'investigator', validator: 'mcq' }),
+    ]
+    const state = evidenceFor(deriveEvidence(events, T0 + 10 * 60_000), 'sk1')
+    // Never claims physical, functional or social context — unobservable here.
+    expect(state.transferCrossed!.length).toBeGreaterThanOrEqual(3)
+    expect(state.transferCrossed!.join(' ')).not.toMatch(/physical|social|purpose/i)
   })
 
   it('transfer still requires independence first', () => {
@@ -229,7 +286,7 @@ describe('transferred is measured, not declared', () => {
     const events = [
       ev({ seed: 9, templateId: 'fam-b', mode: 'placement' }),
       ...independent(),
-      ev({ seed: 3, templateId: 'fam-b', mode: 'transfer' }),
+      ev({ seed: 3, templateId: 'fam-b', mode: 'transfer', bucket: 'investigator' }),
     ]
     const state = evidenceFor(deriveEvidence(events, T0 + 10 * 60_000), 'sk1')
     expect(state.transferredAt).not.toBeNull()
