@@ -264,14 +264,14 @@ export function SettingsScreen() {
               />
             </div>
           </div>
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <p className="text-[14px] font-medium">Relaxed text spacing</p>
               <p className="text-[12px] text-muted">Wider letter/line spacing. A readability preference — no font cures dyslexia, and this claims nothing of the sort.</p>
             </div>
             <Toggle checked={state.settings.textSpacing} onChange={(v) => dispatch({ type: 'update-settings', settings: { textSpacing: v } })} label="Relaxed text spacing" />
           </div>
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <p className="text-[14px] font-medium">Confidence prompts</p>
               <p className="text-[12px] text-muted">"Minimal" asks only on explicitly calibration-tagged items.</p>
@@ -286,7 +286,7 @@ export function SettingsScreen() {
               ]}
             />
           </div>
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <p className="text-[14px] font-medium">Review reminders</p>
               <p className="text-[12px] text-muted leading-snug">
@@ -310,39 +310,46 @@ export function SettingsScreen() {
             />
           </div>
           {state.settings.notifications ? (
-            <div className="flex items-center gap-2 text-[13px]">
+            /* Label on its own line and both dropdowns free to shrink
+               (`min-w-0` — without it a select refuses to go below the width of
+               its longest option). Squeezing a label, two hour pickers and the
+               word "to" onto one line pushed the second picker clean out of the
+               card once relaxed text spacing widened everything. */
+            <div className="text-[13px]">
               <span className="text-muted font-medium">Quiet hours</span>
-              <select
-                aria-label="Quiet hours start"
-                value={state.settings.quietHours?.start ?? 21}
-                onChange={(e) =>
-                  dispatch({
-                    type: 'update-settings',
-                    settings: { quietHours: { start: Number(e.target.value), end: state.settings.quietHours?.end ?? 7 } },
-                  })
-                }
-                className="bg-surface2 border border-line rounded-lg px-2 py-1.5"
-              >
-                {Array.from({ length: 24 }, (_, h) => (
-                  <option key={h} value={h}>{hourLabel(h)}</option>
-                ))}
-              </select>
-              <span className="text-faint">to</span>
-              <select
-                aria-label="Quiet hours end"
-                value={state.settings.quietHours?.end ?? 7}
-                onChange={(e) =>
-                  dispatch({
-                    type: 'update-settings',
-                    settings: { quietHours: { start: state.settings.quietHours?.start ?? 21, end: Number(e.target.value) } },
-                  })
-                }
-                className="bg-surface2 border border-line rounded-lg px-2 py-1.5"
-              >
-                {Array.from({ length: 24 }, (_, h) => (
-                  <option key={h} value={h}>{hourLabel(h)}</option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2 mt-1.5">
+                <select
+                  aria-label="Quiet hours start"
+                  value={state.settings.quietHours?.start ?? 21}
+                  onChange={(e) =>
+                    dispatch({
+                      type: 'update-settings',
+                      settings: { quietHours: { start: Number(e.target.value), end: state.settings.quietHours?.end ?? 7 } },
+                    })
+                  }
+                  className="bg-surface2 border border-line rounded-lg px-2 py-1.5 flex-1 min-w-0"
+                >
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={h}>{hourLabel(h)}</option>
+                  ))}
+                </select>
+                <span className="text-faint shrink-0">to</span>
+                <select
+                  aria-label="Quiet hours end"
+                  value={state.settings.quietHours?.end ?? 7}
+                  onChange={(e) =>
+                    dispatch({
+                      type: 'update-settings',
+                      settings: { quietHours: { start: state.settings.quietHours?.start ?? 21, end: Number(e.target.value) } },
+                    })
+                  }
+                  className="bg-surface2 border border-line rounded-lg px-2 py-1.5 flex-1 min-w-0"
+                >
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={h}>{hourLabel(h)}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           ) : null}
           <p className="text-[12px] text-faint">

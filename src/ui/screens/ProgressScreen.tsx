@@ -123,10 +123,10 @@ export function ProgressScreen() {
             { label: 'Focused dose', value: compactMinutes(outcome.focusedMinutes), sub: `${outcome.dosePercent}% of 30m/day`, tone: 'text-accent' },
             { label: 'Durable gains', value: outcome.newRetained + outcome.newTransferred, sub: 'retained/transfer', tone: 'text-good' },
           ].map((m) => (
-            <div key={m.label} className="text-center">
+            <div key={m.label} className="text-center min-w-0">
               <p className={`font-display text-xl font-bold ${m.tone}`}>{m.value}</p>
-              <p className="text-[11px] text-muted font-medium mt-0.5">{m.label}</p>
-              <p className="text-[10px] text-faint">{m.sub}</p>
+              <p className="text-[11px] text-muted font-medium mt-0.5 break-words">{m.label}</p>
+              <p className="text-[10px] text-faint break-words">{m.sub}</p>
             </div>
           ))}
         </div>
@@ -319,11 +319,15 @@ function WeekReviewLauncher() {
 }
 
 function StatCard({ label, value, sub, tone }: { label: string; value: number; sub: string; tone: string }) {
+  // Three tiles across a 320px phone leaves ~60px of text per tile, and
+  // "Independent" is a single word wider than that — one word cannot wrap, so
+  // it escaped the tile. Tighter padding on small screens buys the room;
+  // `break-words` is the backstop for any label longer than these.
   return (
-    <Card className="p-3.5 text-center">
+    <Card className="p-2.5 sm:p-3.5 text-center">
       <p className={`font-display text-2xl font-bold ${tone}`}>{value}</p>
-      <p className="text-[11px] text-muted font-medium mt-0.5">{label}</p>
-      <p className="text-[10px] text-faint">{sub}</p>
+      <p className="text-[11px] text-muted font-medium mt-0.5 break-words">{label}</p>
+      <p className="text-[10px] text-faint break-words">{sub}</p>
     </Card>
   )
 }

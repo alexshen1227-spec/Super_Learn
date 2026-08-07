@@ -19,6 +19,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'A "Reset to recommended" link sits under those sliders, appearing only once something has actually moved. There was previously no way back from an accidental change.',
       'Quiet hours for review reminders now read on the 12-hour clock — 9 PM to 7 AM instead of 21:00 to 7:00 — with midnight and noon written out, since "12 AM" is read backwards about half the time.',
       '"Export problem reports" in Settings → Data used to appear only after you had filed a report, which made it impossible to find when you went looking for it. It is always listed now, and when empty it explains where reports come from: the flag icon at the top of any question.',
+      'Four layout breaks fixed, found by sweeping every screen for content escaping its container at both 375px and 320px, with relaxed text spacing on and off. The quiet-hours pickers pushed the second dropdown clean out of its card; the balance sliders shoved their own percentage readout past the card edge; the Progress tiles let single words like "Independent" spill out; and the Coach tone selector pushed the entire page sideways. Only the first needed relaxed spacing to show up — the rest were already broken on a narrow phone and spacing just made them obvious.',
     ],
   },
   {

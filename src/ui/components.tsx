@@ -293,8 +293,13 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void
   ariaLabel: string
 }) {
+  // Wraps rather than overflows. Fixed-width segments with wordy labels
+  // ("Concise / Socratic / Supportive") pushed the whole page sideways on a
+  // 320px screen — worse with relaxed text spacing, but broken without it too.
+  // A basis lets them share a row when they fit and drop to a second row when
+  // they do not, so no label is ever truncated.
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className="flex gap-1 bg-surface2 border border-line rounded-xl p-1">
+    <div role="radiogroup" aria-label={ariaLabel} className="flex flex-wrap gap-1 bg-surface2 border border-line rounded-xl p-1">
       {options.map((o) => (
         <button
           type="button"
@@ -302,7 +307,7 @@ export function Segmented<T extends string>({
           role="radio"
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
-          className={`flex-1 min-h-11 px-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex-1 basis-auto min-h-11 px-2 rounded-lg text-sm font-medium transition-colors ${
             value === o.value ? 'bg-surface text-ink shadow-card border border-line' : 'text-muted hover:text-ink'
           }`}
         >
@@ -407,7 +412,10 @@ export function GrabSlider({
         }
       }}
       onChange={(e) => onChange(Number(e.target.value))}
-      className={`flex-1 ${className}`}
+      // `min-w-0` is load-bearing: a range input has an intrinsic minimum
+      // width, and `flex-1` alone will not shrink past it — so on a 320px
+      // screen the row pushed its own percentage readout out of the card.
+      className={`flex-1 min-w-0 ${className}`}
     />
   )
 }
