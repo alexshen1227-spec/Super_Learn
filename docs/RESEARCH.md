@@ -395,3 +395,65 @@ Bayes, competing hypotheses, forecasting) already cover that ground, and the
 app's four Paths are named in the founding brief as its identity. What the
 question did surface was a real gap — nothing taught generating or ranking
 explanations — which is what this skill fills, inside the Path where it belongs.
+
+## §20 — Making the Paths reach real life — EVIDENCE (mechanisms), OUTCOME NOT GUARANTEED
+
+The learner's ask: practise the four Paths consistently for a year or two and
+be able to use them outside the app. Their own framing was "not guaranteed,
+nothing is, but that is the goal" — which is the correct framing, and this
+entry keeps the app to it.
+
+**What must not be claimed.** No study supports "practise these skills for N
+months and you will apply them in life". Far transfer is the hardest result in
+the field and the app's own neuromyth table already refuses adjacent claims
+(brain games raising general intelligence, chess improving academics). Nothing
+in the UI says or implies that. What the app CAN do is use the mechanisms that
+raise the odds, and keep measuring what it can actually see.
+
+### 20a. Comparing two analogues to abstract the structure — EVIDENCE
+
+- **Claim**: abstracting a transferable schema from a single worked example
+  largely fails; comparing TWO analogues from different surfaces produces the
+  schema as a by-product and raises later spontaneous transfer.
+- **Source**: Gick & Holyoak (1983), *Schema induction and analogical
+  transfer*, Cognitive Psychology 15(1).
+  https://www.sciencedirect.com/science/article/abs/pii/0010028583900026 —
+  Part I tried to induce a schema from one analogue via summarising, stating
+  the principle, and diagramming, with little success; Part II found subjects
+  derived the schema while describing the similarities between two analogues.
+  Gentner, Loewenstein & Thompson (2003) replicate the comparison effect in
+  applied training settings:
+  https://groups.psych.northwestern.edu/gentner/papers/GentnerLoewensteinThompson03.pdf
+- **Uncomfortable implication, recorded deliberately**: "teach one case, then
+  state the principle" is close to the Part I manipulation that did NOT work,
+  and that is what most of this app's Path explanations do. The bridge items in
+  `content/items/transferBridge.ts` implement the Part II version instead: two
+  scenarios far apart on the surface, one shared structure, and the question is
+  what the structure IS. Distractors are deliberately SURFACE matches, because
+  matching on surface is the failure being trained against.
+- **Product behavior**: two families per Path — `*-compare` (extract the shared
+  structure from two cases) and `*-spot` (given the structure, find it in an
+  unlabelled third situation). The second carries `transfer: true`.
+- **Limitation**: this raises transfer to novel PROBLEMS, mostly measured
+  minutes-to-days later in lab settings. It is not evidence about behaviour in
+  someone's life two years on.
+
+### 20b. Implementation intentions — EVIDENCE (not yet built)
+
+- **Claim**: an if-then plan naming a specific cue ("if situation Y, then I do
+  Z") substantially narrows the gap between intending an action and performing
+  it, by making the cue itself trigger the behaviour.
+- **Source**: Gollwitzer & Sheeran (2006), *Implementation intentions and goal
+  achievement: a meta-analysis of effects and processes*, Advances in
+  Experimental Social Psychology 38 — d = 0.65 across 94 independent tests and
+  over 8,000 participants.
+  https://www.semanticscholar.org/paper/c4deb3507fe725ce6363c1735f1ba83bab20d665
+- **Status: NOT IMPLEMENTED.** Recorded here so the ledger does not imply
+  coverage the app lacks. The intended shape is: once a Path skill is Retained,
+  the learner writes an if-then plan naming a real recurring cue in their own
+  life, and a spaced follow-up asks what actually happened.
+- **Hard constraint if it is built**: what the learner reports about their own
+  life is SELF-REPORT, and self-report never advances a rung anywhere else in
+  this app. A field log must be stored and shown as a diary, explicitly
+  labelled as not evidence, and must not touch the mastery ladder. Breaking
+  that would undo the entire no-self-grading spine to chase a feel-good number.

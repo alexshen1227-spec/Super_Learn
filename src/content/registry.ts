@@ -27,6 +27,7 @@ import { PHYSICS_DEPTH_TEMPLATES } from './items/physicsDepth'
 import { WORKED_CHAIN_TEMPLATES } from './items/workedChains'
 import { HS_BRIDGE_TEMPLATES } from './items/hsBridge'
 import { ABDUCTION_TEMPLATES } from './items/abduction'
+import { TRANSFER_BRIDGE_TEMPLATES } from './items/transferBridge'
 import { CASEFILE_TEMPLATES } from './items/caseFiles'
 import { CASEFILE2_TEMPLATES } from './items/caseFiles2'
 import { EXPANSION_TEMPLATES } from './items/expansion'
@@ -59,6 +60,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...WORKED_CHAIN_TEMPLATES,
   ...HS_BRIDGE_TEMPLATES,
   ...ABDUCTION_TEMPLATES,
+  ...TRANSFER_BRIDGE_TEMPLATES,
   ...CASEFILE_TEMPLATES,
   ...CASEFILE2_TEMPLATES,
   ...EXPANSION_TEMPLATES,

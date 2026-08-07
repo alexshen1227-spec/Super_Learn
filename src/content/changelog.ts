@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '3.8',
+    date: '2026-08-07',
+    title: 'Structure Bridges — Aimed at Using This Outside the App',
+    points: [
+      'Every Path gains two new question types built specifically to make the ideas usable outside the app. "Shared structure" shows you two situations that look nothing alike — a show you keep buying tickets for, and a company funding a dead project — and asks what is the same underneath. "Same thing elsewhere" gives you the pattern and asks you to find it in an unlabelled third situation.',
+      'The wrong answers are deliberately surface matches: both involve money, both happen at school, both are people behaving badly. Matching on surface and missing structure is exactly the failure that stops a skill leaving the app, so it is the thing being trained against.',
+      'This shape was not a guess. Comparing two examples is the version of this that works in the research; abstracting a principle from a single example — teach one case, then state the rule — is close to the version that was tested and largely failed. That is roughly what most explanations in this app do, so these items do the other thing.',
+      'Being straight about the ceiling: nothing here guarantees you will use this in real life, and no honest app can promise that. What it can do is train recognition on the kind of question where the answer is not labelled, which is what real situations are like. The research ledger records the full claim, its limits, and the piece still missing — if-then plans tied to real situations in your own life.',
+    ],
+  },
+  {
     version: '3.7',
     date: '2026-08-07',
     title: 'Best Explanation — the Investigator Gets the Missing Half',
