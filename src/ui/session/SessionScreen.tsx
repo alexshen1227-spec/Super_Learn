@@ -10,6 +10,7 @@ import type {
   BucketId,
   CheckIn,
   ErrorTag,
+  FieldPlan,
   ItemTemplate,
   SessionPlan,
 } from '../../domain/types'
@@ -33,6 +34,7 @@ import { nextReviewAt } from '../../engine/scheduler'
 import { uid } from '../../engine/rng'
 import { clearDraft, loadDraftSync, saveDraft, type ActivityRecord, type SessionDraft, type SessionPhase } from '../../store/draft'
 import { useWakeLock } from '../useWakeLock'
+import { planCandidate, planNeedingFollowUp } from '../../engine/fieldPlan'
 import { Button, Card, Chip, Confirm, Modal, Segmented } from '../components'
 import { ItemPlayer } from './ItemPlayer'
 import { ChessPlayer } from './ChessPlayer'
@@ -100,6 +102,17 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
   // held on the summary screen, where reading is done and the phone may as
   // well behave normally again.
   useWakeLock(phase !== 'summary')
+
+  /**
+   * If-then plan hooks, resolved once at mount so the exit screen cannot flip
+   * shape while it is on screen. Both are null in the overwhelming majority of
+   * sessions — this is meant to be rare enough to stay welcome.
+   */
+  const followUp = useMemo(() => planNeedingFollowUp(state, Date.now()), [state])
+  const planSkillId = useMemo(
+    () => (followUp ? null : planCandidate(state, evidence, (id) => index.skills.get(id)?.bucket)),
+    [followUp, state, evidence, index],
+  )
 
   /** Set when the session re-picked the next item; shown once, then cleared. */
   const [adaptNote, setAdaptNote] = useState<'eased' | 'stepped-up' | null>(null)
@@ -486,13 +499,29 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
   }
 
   if (phase === 'exit-reflect') {
+    const done = () => {
+      finishSession(false)
+      setPhase('summary')
+    }
     return (
       <ExitScreen
         principle={principle}
         setPrinciple={setPrinciple}
-        onDone={() => {
-          finishSession(false)
-          setPhase('summary')
+        onDone={done}
+        planFor={planSkillId ? (index.skills.get(planSkillId)?.name ?? null) : null}
+        onPlan={(cue, action) => {
+          if (planSkillId) {
+            dispatch({
+              type: 'add-plan',
+              plan: { id: uid('fp'), t: Date.now(), skillId: planSkillId, cue, action, askedAt: null, outcome: null },
+            })
+          }
+          done()
+        }}
+        followUp={followUp}
+        onFollowUp={(outcome) => {
+          if (followUp) dispatch({ type: 'answer-plan', id: followUp.id, outcome, t: Date.now() })
+          done()
         }}
       />
     )
@@ -860,7 +889,100 @@ function CheckInScreen({
   )
 }
 
-function ExitScreen({ principle, setPrinciple, onDone }: { principle: string; setPrinciple: (s: string) => void; onDone: () => void }) {
+function ExitScreen({
+  principle,
+  setPrinciple,
+  onDone,
+  planFor,
+  onPlan,
+  followUp,
+  onFollowUp,
+}: {
+  principle: string
+  setPrinciple: (s: string) => void
+  onDone: () => void
+  /** Skill name to offer an if-then plan for, or null. */
+  planFor: string | null
+  onPlan: (cue: string, action: string) => void
+  followUp: FieldPlan | null
+  onFollowUp: (outcome: FieldPlan['outcome']) => void
+}) {
+  const [cue, setCue] = useState('')
+  const [action, setAction] = useState('')
+
+  // The follow-up takes priority: it is one tap, and it closes a loop the app
+  // opened. Never both in the same session — this is an exit, not a form.
+  if (followUp) {
+    return (
+      <div className="pt-safe min-h-dvh flex flex-col max-w-md mx-auto w-full">
+        <div className="flex-1 flex flex-col justify-center pb-20">
+          <h1 className="font-display text-2xl font-bold">Did this come up?</h1>
+          <p className="text-muted text-sm mt-1 leading-relaxed">
+            You wrote this a couple of weeks ago. No wrong answer — this is not scored and does not affect your progress.
+          </p>
+          <Card className="mt-4 p-4">
+            <p className="text-[15px] leading-relaxed">
+              If <span className="text-accent font-medium">{followUp.cue}</span>, then{' '}
+              <span className="text-accent font-medium">{followUp.action}</span>.
+            </p>
+          </Card>
+          <Button className="w-full mt-5" onClick={() => onFollowUp('used')}>
+            It came up, and I did it
+          </Button>
+          <Button kind="secondary" className="w-full mt-2" onClick={() => onFollowUp('noticed-too-late')}>
+            It came up — I saw it afterwards
+          </Button>
+          <Button kind="ghost" className="w-full mt-2" onClick={() => onFollowUp('not-yet')}>
+            Has not come up yet
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (planFor) {
+    const ready = cue.trim().length >= 3 && action.trim().length >= 3
+    return (
+      <div className="pt-safe min-h-dvh flex flex-col max-w-md mx-auto w-full">
+        <div className="flex-1 flex flex-col justify-center pb-20">
+          <h1 className="font-display text-2xl font-bold">Take {planFor} outside</h1>
+          <p className="text-muted text-sm mt-1 leading-relaxed">
+            You have held this one long enough to use it. Name a situation that actually recurs in your week, and the
+            move you want it to trigger. Writing it is the whole exercise — nothing to come back and read.
+          </p>
+          <label className="block mt-4">
+            <span className="text-[13px] font-medium text-muted">If…</span>
+            <input
+              value={cue}
+              onChange={(e) => setCue(e.target.value.slice(0, 240))}
+              placeholder="someone pushes me to decide right now"
+              className="mt-1 w-full bg-surface border border-line rounded-xl px-4 py-3 text-[16px] outline-none focus:border-accent"
+            />
+          </label>
+          <label className="block mt-3">
+            <span className="text-[13px] font-medium text-muted">…then I</span>
+            <input
+              value={action}
+              onChange={(e) => setAction(e.target.value.slice(0, 240))}
+              placeholder="say I'll give an answer tomorrow"
+              className="mt-1 w-full bg-surface border border-line rounded-xl px-4 py-3 text-[16px] outline-none focus:border-accent"
+            />
+          </label>
+          <p className="text-[12px] text-faint mt-3 leading-snug">
+            Not scored, and it changes no rung — real life cannot be machine-checked, so it is never treated as
+            evidence. The app will ask once, in a couple of weeks, whether the situation came up.
+          </p>
+          <Button className="w-full mt-4" disabled={!ready} onClick={() => onPlan(cue.trim(), action.trim())}>
+            Save the plan and finish
+          </Button>
+          <Button kind="ghost" className="w-full mt-2" onClick={onDone}>
+            Not now
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="pt-safe min-h-dvh flex flex-col max-w-md mx-auto w-full">
       <div className="flex-1 flex flex-col justify-center pb-20">

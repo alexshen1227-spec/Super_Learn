@@ -438,7 +438,7 @@ raise the odds, and keep measuring what it can actually see.
   minutes-to-days later in lab settings. It is not evidence about behaviour in
   someone's life two years on.
 
-### 20b. Implementation intentions — EVIDENCE (not yet built)
+### 20b. Implementation intentions — EVIDENCE
 
 - **Claim**: an if-then plan naming a specific cue ("if situation Y, then I do
   Z") substantially narrows the gap between intending an action and performing
@@ -448,12 +448,25 @@ raise the odds, and keep measuring what it can actually see.
   Experimental Social Psychology 38 — d = 0.65 across 94 independent tests and
   over 8,000 participants.
   https://www.semanticscholar.org/paper/c4deb3507fe725ce6363c1735f1ba83bab20d665
-- **Status: NOT IMPLEMENTED.** Recorded here so the ledger does not imply
-  coverage the app lacks. The intended shape is: once a Path skill is Retained,
-  the learner writes an if-then plan naming a real recurring cue in their own
-  life, and a spaced follow-up asks what actually happened.
-- **Hard constraint if it is built**: what the learner reports about their own
-  life is SELF-REPORT, and self-report never advances a rung anywhere else in
-  this app. A field log must be stored and shown as a diary, explicitly
-  labelled as not evidence, and must not touch the mastery ladder. Breaking
-  that would undo the entire no-self-grading spine to chase a feel-good number.
+- **Status: IMPLEMENTED 2026-08-07** — `engine/fieldPlan.ts`, prompted at the
+  session exit. Once a Path skill reaches **Retained** (not merely Independent:
+  asking someone to carry a technique into their week before it survives a
+  delay is asking them to rehearse something they will not have when the moment
+  comes), the exit asks for one if-then plan naming a real recurring cue.
+  Roughly 14 days later, one session exit asks whether it came up — once, three
+  options, never repeated. Paths only; academic skills are already checked.
+- **Hard constraint, enforced by `engine/fieldPlan.test.ts`**: what the learner
+  reports about their own life is SELF-REPORT, and self-report advances no rung
+  anywhere in this app. Plans live in `AppState` and are **not an input to
+  `deriveEvidence` at all** — the strongest available form of the guarantee,
+  since the replay physically cannot see them. Tests assert that a plan
+  reporting "I used it" changes no skill state, schedules no review, and cannot
+  create evidence for a skill never practised.
+- **No log screen, deliberately.** The learner said plainly they would not read
+  one. Forming the plan is what carries the effect; re-reading adds little. A
+  journal nobody opens is a feature that only looks good in a changelog, so it
+  was not built.
+- **Limitation**: the meta-analytic effect is on goal attainment in studies
+  that set the goal and measure the behaviour. Nothing here measures whether
+  the learner's own reported use is accurate — it is not, and cannot be,
+  verified. It is a prompt, not a result.

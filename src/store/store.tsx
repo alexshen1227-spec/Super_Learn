@@ -23,6 +23,7 @@ import type {
   Deadline,
   Forecast,
   PlacementResult,
+  FieldPlan,
   ProblemReport,
   Profile,
   SessionRecord,
@@ -58,6 +59,8 @@ export type Action =
   | { type: 'revise-forecast'; id: string; probability: number }
   | { type: 'resolve-forecast'; id: string; outcome: boolean; note: string }
   | { type: 'add-report'; report: ProblemReport }
+  | { type: 'add-plan'; plan: FieldPlan }
+  | { type: 'answer-plan'; id: string; outcome: FieldPlan['outcome']; t: number }
   | { type: 'set-placement'; placement: PlacementResult }
   | { type: 'add-pack'; pack: ContentPackJson }
   | { type: 'remove-pack'; id: string }
@@ -161,6 +164,16 @@ function reducer(state: AppState, action: Action): AppState {
           f.id === action.id && !f.resolved
             ? { ...f, resolved: { outcome: action.outcome, resolvedAt: Date.now(), note: action.note } }
             : f,
+        ),
+      }
+    case 'add-plan':
+      // Capped like reports: a runaway list is a storage problem, not a feature.
+      return { ...state, plans: [...state.plans, action.plan].slice(-100) }
+    case 'answer-plan':
+      return {
+        ...state,
+        plans: state.plans.map((p) =>
+          p.id === action.id ? { ...p, outcome: action.outcome, askedAt: action.t } : p,
         ),
       }
     case 'add-report':

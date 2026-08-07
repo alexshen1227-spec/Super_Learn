@@ -18,6 +18,7 @@ import type {
   ContentPackJson,
   Deadline,
   ErrorTag,
+  FieldPlan,
   Forecast,
   PlacementResult,
   ProblemReport,
@@ -253,6 +254,30 @@ function sanitizeDeadline(raw: unknown): Deadline | null {
   }
 }
 
+/**
+ * Imports are hostile: every field is assigned from a validated value, never
+ * spread from the input. `outcome` is narrowed to the three allowed strings so
+ * a crafted file cannot inject arbitrary text into the follow-up UI.
+ */
+function sanitizePlan(raw: unknown): FieldPlan | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const r = raw as Record<string, unknown>
+  const cue = str(r.cue, '', 240)
+  const action = str(r.action, '', 240)
+  const skillId = str(r.skillId, '', 60)
+  if (!cue || !action || !skillId) return null
+  const outcome = r.outcome
+  return {
+    id: str(r.id, `fp${Math.random().toString(36).slice(2, 8)}`, 40),
+    t: num(r.t, 0, 4102444800000, Date.now()),
+    skillId,
+    cue,
+    action,
+    askedAt: typeof r.askedAt === 'number' ? num(r.askedAt, 0, 4102444800000, 0) : null,
+    outcome: outcome === 'used' || outcome === 'noticed-too-late' || outcome === 'not-yet' ? outcome : null,
+  }
+}
+
 function sanitizeReport(raw: unknown): ProblemReport | null {
   if (typeof raw !== 'object' || raw === null) return null
   const r = raw as Record<string, unknown>
@@ -345,6 +370,10 @@ export function sanitizeState(raw: unknown): AppState {
       .map(sanitizeReport)
       .filter((p): p is ProblemReport => p !== null)
       .slice(-200),
+    plans: (Array.isArray(r.plans) ? r.plans : [])
+      .map(sanitizePlan)
+      .filter((p): p is FieldPlan => p !== null)
+      .slice(-100),
     placement: sanitizePlacement(r.placement),
     customPacks,
     sampleMode: bool(r.sampleMode, false),

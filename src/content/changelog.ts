@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '3.9',
+    date: '2026-08-07',
+    title: 'One If-Then Plan, No Log to Read',
+    points: [
+      'When a Path skill has been held long enough to actually use — Retained, not merely learned — the end of that session asks for one if-then plan: "if someone pushes me to decide right now, then I say I\'ll answer tomorrow." Two short boxes, about twenty seconds.',
+      'There is nothing to come back and read. Writing the plan is what does the work; re-reading it adds almost nothing, so no log or journal screen was built. Roughly two weeks later, one session ends by asking whether that situation ever came up — three buttons, then it is done and never asked again.',
+      'It is not scored and it moves no rung, ever. Real life cannot be machine-checked, so anything you report about it is self-assessment — which this app refuses as evidence everywhere else, and refuses here too. A test now locks that: a plan reporting "I used it" changes no skill state, schedules no review, and cannot create a rung on its own.',
+      'Paths only. Your math is already checked by the app and by school; the four Paths are the ones whose whole point is outside the app.',
+    ],
+  },
+  {
     version: '3.8',
     date: '2026-08-07',
     title: 'Structure Bridges — Aimed at Using This Outside the App',

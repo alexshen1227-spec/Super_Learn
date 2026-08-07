@@ -649,6 +649,37 @@ export interface ProblemReport {
   note: string
 }
 
+/**
+ * An if-then plan: "if <cue>, then <action>".
+ *
+ * The one mechanism in this app aimed squarely at using a skill OUTSIDE it.
+ * Naming a concrete cue and the move it should trigger is what narrows the gap
+ * between knowing something and doing it (RESEARCH.md §20b).
+ *
+ * Two design rules, both load-bearing:
+ *
+ * 1. NOT EVIDENCE, EVER. Everything here is self-reported, and self-report
+ *    advances no rung anywhere in this app. A plan and its outcome never reach
+ *    `deriveEvidence`, never schedule a review, and never appear as mastery.
+ * 2. NOTHING TO GO AND READ. Forming the plan is what does the work;
+ *    re-reading it adds little. So it is written once inside a session and
+ *    asked about once, later, inside another session. There is no log screen,
+ *    because a log nobody opens is just a feature.
+ */
+export interface FieldPlan {
+  id: string
+  t: number
+  skillId: string
+  /** "if ..." — a concrete, recurring, recognisable situation. */
+  cue: string
+  /** "then ..." — the move, small enough to actually make. */
+  action: string
+  /** When the follow-up was asked; null until then. */
+  askedAt: number | null
+  /** Self-reported and deliberately coarse. Never graded. */
+  outcome: 'used' | 'noticed-too-late' | 'not-yet' | null
+}
+
 export interface PlacementSkillSignal {
   skillId: string
   signal: 'gap' | 'ok' | 'strong' | 'skipped'
@@ -711,6 +742,8 @@ export interface AppState {
   coachLog: CoachDecision[]
   forecasts: Forecast[]
   reports: ProblemReport[]
+  /** If-then plans. Self-reported, never evidence — see FieldPlan. */
+  plans: FieldPlan[]
   placement: PlacementResult | null
   customPacks: ContentPackJson[]
   /** True when the sample profile is loaded (banner shown; real data kept aside). */
@@ -762,6 +795,7 @@ export function initialState(): AppState {
     coachLog: [],
     forecasts: [],
     reports: [],
+    plans: [],
     placement: null,
     customPacks: [],
     sampleMode: false,
