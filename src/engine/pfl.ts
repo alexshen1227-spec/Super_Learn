@@ -99,9 +99,24 @@ export function pflProbes(
   evidenceAt: (upTo: number) => Map<string, SkillEvidence>,
 ): PflProbe[] {
   const probes: PflProbe[] = []
-  for (const e of events) {
+  /*
+   * FIRST ENCOUNTER ONLY, per template.
+   *
+   * The second time a learner meets an idea they are recalling it, not picking
+   * it up, so a repeat is not a probe — it is a memory test wearing a probe's
+   * clothes. Different seeds do not help: the numbers change but the IDEA is
+   * the same, and the idea is what is being measured.
+   *
+   * This also removes the only way to inflate the readout. Without it, tapping
+   * one probe four times would satisfy MIN_PROBES and produce a pick-up figure
+   * built entirely from re-reads.
+   */
+  const seenTemplates = new Set<string>()
+  for (const e of [...events].sort((a, b) => a.t - b.t)) {
     if (!isPflTemplate(e.templateId)) continue
     if (e.firstCorrect === null && e.score === null) continue
+    if (seenTemplates.has(e.templateId)) continue
+    seenTemplates.add(e.templateId)
     const skillId = e.skillIds[0]
     if (!skillId) continue
     const prereqs = skills.get(skillId)?.prereqs ?? []

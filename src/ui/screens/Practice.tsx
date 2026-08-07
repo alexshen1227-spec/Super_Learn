@@ -51,11 +51,21 @@ export function Practice() {
   const due = useMemo(() => dueReviews(evidence, Date.now()), [evidence])
   const repairs = useMemo(() => openRepairTargets(state, evidence, Date.now()), [state, evidence])
   /** Prefer a probe never attempted; fall back to the least-recently used. */
+  /*
+   * Only ever offers an UNSEEN probe. It used to serve the least-recently-used
+   * one, which meant that once all probes were done the card kept offering
+   * re-reads — and a repeat measures memory, not pick-up, so `pflProbes`
+   * discards it. The card would have been spending the learner's time to
+   * record nothing. When they run out, the card disappears rather than
+   * pretending there is more to measure.
+   */
   const nextProbe = useMemo(() => {
-    const probes = [...index.templates.values()].filter((t) => isPflTemplate(t.id))
-    const usedAt = new Map<string, number>()
-    for (const e of state.events) if (isPflTemplate(e.templateId)) usedAt.set(e.templateId, Math.max(usedAt.get(e.templateId) ?? 0, e.t))
-    return probes.sort((a, b) => (usedAt.get(a.id) ?? 0) - (usedAt.get(b.id) ?? 0))[0] ?? null
+    const seen = new Set(state.events.filter((e) => isPflTemplate(e.templateId)).map((e) => e.templateId))
+    return (
+      [...index.templates.values()]
+        .filter((t) => isPflTemplate(t.id) && !seen.has(t.id))
+        .sort((a, b) => a.id.localeCompare(b.id))[0] ?? null
+    )
   }, [index, state.events])
   const confidentRepairs = repairs.filter((r) => r.blockedByMisconception).length
   const authenticWork = useMemo(

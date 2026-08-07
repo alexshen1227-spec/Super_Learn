@@ -186,66 +186,324 @@ const simpsonsParadox = tpl(
   },
 )
 
-/** Growth rates — reachable from loops, never taught as complexity theory. */
-const growthRates = tpl(
+/**
+ * Pigeonhole — guarantees existence without ever naming the box. Absent from
+ * the tree (verified by grep over the rendered bank); reachable from integers.
+ */
+const pigeonhole = tpl(
   {
-    id: 'pfl-growth',
-    name: 'New idea: how work grows',
-    skillIds: ['c-algo'],
-    bucket: 'coding',
-    difficulty: 4,
-    variants: 4,
+    id: 'pfl-pigeonhole',
+    name: 'New idea: the pigeonhole principle',
+    skillIds: ['m-proof'],
+    bucket: 'math',
+    difficulty: 3,
+    variants: 12,
     minutes: 4,
     kind: 'multi',
   },
   (rng, seed) => {
-    const n = [10, 20, 50, 100][seed % 4]
-    const doubled = n * 2
-    const linear = doubled
-    const quadratic = doubled * doubled
-    const quadStart = n * n
+    const colours = [3, 4, 5, 6][seed % 4]
+    const want = [2, 3, 4][Math.floor(seed / 4) % 3]
+    // Worst case: (want-1) of every colour, then one more forces a match.
+    const socks = colours * (want - 1) + 1
+    const people = 30 + ((seed * 7) % 25)
+    const months = 12
+    const guaranteed = Math.ceil(people / months)
     return {
       title: 'Learn it here, then use it',
       prompt: 'A short explanation of something this app has never taught you. Read it, then answer from it.',
       parts: [
         {
           study: study(
-            `**HOW THE WORK GROWS WHEN THE DATA GROWS**\n\n` +
-              `Programmers describe an algorithm by how its work grows with the size of the input, written **n**.\n\n` +
-              `· A single pass over the list does about **n** steps. Doubling n doubles the work.\n\n` +
-              `· A loop inside a loop, each running over the whole list, does about **n × n = n²** steps. Doubling n makes the work **four times** bigger, because (2n)² = 4n².\n\n` +
-              `· Repeatedly halving the list does about **log₂ n** steps — 1024 items takes only about 10.\n\n` +
-              `The point is not the exact count. It is the SHAPE: as n grows, an n² method falls behind an n method no matter how fast each individual step is, because a constant speed-up is a fixed multiplier while the gap between n and n² keeps widening.`,
+            `**THE PIGEONHOLE PRINCIPLE**\n\n` +
+              `Put more items than boxes, and some box must hold more than one. That is the whole idea, and it is obvious — but it proves things that are not.\n\n` +
+              `**The basic form.** If **n + 1** items go into **n** boxes, at least one box holds at least **2**.\n\n` +
+              `· 13 people, 12 birth months → at least two share a month. You cannot say WHICH month, and you do not need to.\n\n` +
+              `**The general form.** To force some box to hold **k** items, you need **n × (k − 1) + 1** items across n boxes. The reasoning is the worst case: fill every box with k − 1 items — that is as far as you can get without any box reaching k — then one more item has nowhere safe to go.\n\n` +
+              `· 4 suits, want 3 of one suit → 4 × 2 + 1 = 9 cards guarantees it.\n\n` +
+              `**Averaging form.** With m items in n boxes, some box holds at least **m ÷ n, rounded up**.\n\n` +
+              `The principle only ever promises that such a box EXISTS. It never identifies it, and it says nothing about the likely case — only the guaranteed one.`,
           ),
-          studySeconds: 80,
-          prompt: `From the explanation: a single-pass method does about ${n} steps on ${n} items. About how many steps on **${doubled}** items?`,
-          answer: numeric(linear, { tolerance: 0 }),
-          explanation: `A single pass grows in step with n, so doubling ${n} to ${doubled} gives about **${linear}** steps.`,
-          hints: ['The text says doubling n doubles the work for a single pass.', `Double ${n}.`],
+          studySeconds: 85,
+          prompt: `Using the general form: a drawer holds socks in **${colours}** colours, mixed up in the dark. How many socks must you take to GUARANTEE **${want}** of the same colour?`,
+          answer: numeric(socks, { tolerance: 0 }),
+          explanation: `Worst case first: you could draw ${want - 1} of every colour — that is ${colours} × ${want - 1} = ${colours * (want - 1)} socks — and still not have ${want} alike. One more sock must match something, so **${socks}**.`,
+          hints: [
+            `Use n × (k − 1) + 1 with n = ${colours} boxes and k = ${want}.`,
+            `Imagine the unluckiest possible draw: ${want - 1} of each colour, and then one more.`,
+          ],
         },
         {
-          prompt: `A nested-loop method does about ${quadStart} steps on ${n} items. About how many on **${doubled}** items?`,
-          answer: numeric(quadratic, { tolerance: 0 }),
-          explanation: `Nested loops grow as n², and (2n)² = 4n², so the work goes up four times: ${quadStart} × 4 = **${quadratic}**.`,
-          hints: ['The text says doubling n makes n² work four times bigger.', `Multiply ${quadStart} by 4.`],
+          prompt: `Now the averaging form: **${people}** people, **${months}** birth months. At least how many must share a single month?`,
+          answer: numeric(guaranteed, { tolerance: 0 }),
+          explanation: `${people} ÷ ${months} = ${(people / months).toFixed(2)}, rounded up is **${guaranteed}**. Spreading people as evenly as possible still leaves one month with ${guaranteed}.`,
+          hints: [
+            `Divide ${people} by ${months} and round UP.`,
+            'Think about spreading them as evenly as you can — the fullest month is what you want.',
+          ],
         },
         {
-          prompt: 'The explanation says a faster individual step cannot rescue an n² method at large n. Why not?',
-          answer: mcq(rng, 'A speed-up is a fixed multiplier, while the gap between n and n² keeps widening', [
-            'Because n² methods always contain a bug that slows them down',
-            'Because faster steps make the number of steps go up to compensate',
-            'Because n² only applies to lists that are already sorted',
+          prompt: 'The explanation is careful about one limit of the principle. Which is it?',
+          answer: mcq(rng, 'It proves such a box exists but never says which one', [
+            'It only works when the number of boxes is even',
+            'It tells you which box is fullest, but not by how much',
+            'It gives the most likely outcome rather than a guarantee',
           ]),
           explanation:
-            'The last paragraph makes exactly this point: a constant factor multiplies the work by a fixed amount once, while the difference between n and n² grows without limit as n grows.',
-          hints: ['Re-read the final paragraph.', 'Compare something that multiplies once against something that keeps growing.'],
+            'The last paragraph says it exactly: the principle promises existence, not identity, and it is about the guaranteed case rather than the likely one.',
+          hints: ['Re-read the closing paragraph.', 'Notice what the birthday example says you cannot name.'],
         },
       ],
-      hints: ['Everything needed is in the explanation.', 'Watch whether the rule says double or quadruple.'],
+      hints: ['Everything you need is in the explanation.', 'Work out the unluckiest case first.'],
       explanation:
         'A preparation-for-future-learning probe: how much of a new idea did a short explanation buy you? Recorded apart from your skills, and it never changes a rung.',
     }
   },
 )
 
-export const PFL_TEMPLATES: ItemTemplate[] = [clockArithmetic, simpsonsParadox, growthRates]
+/**
+ * Regression to the mean — the trap that makes praise look harmful and
+ * punishment look effective. Absent from the tree; hosted on measurement
+ * reliability, where it actually belongs.
+ */
+const regressionToMean = tpl(
+  {
+    id: 'pfl-regression',
+    name: 'New idea: why extremes come back',
+    skillIds: ['s-measure'],
+    bucket: 'science',
+    difficulty: 4,
+    variants: 8,
+    minutes: 4,
+    kind: 'multi',
+  },
+  (rng, seed) => {
+    const mean = 60 + ((seed % 4) * 5)
+    const gap = 16 + (Math.floor(seed / 4) % 2) * 8
+    const top = mean + gap
+    // The resource states the premise explicitly: half of an all-luck gap
+    // persists. That makes the arithmetic defined rather than an empirical claim.
+    const expected = mean + gap / 2
+    return {
+      title: 'Learn it here, then use it',
+      prompt: 'A short explanation of something this app has never taught you. Read it, then answer from it.',
+      parts: [
+        {
+          study: study(
+            `**WHY EXTREME RESULTS DRIFT BACK**\n\n` +
+              `Suppose a score is part real ability and part luck — a good night's sleep, an easy question set, a lucky guess.\n\n` +
+              `Now pick out the people who scored HIGHEST. You have selected two things at once: people who are genuinely good, AND people who got lucky. Their ability shows up again next time. Their luck does not.\n\n` +
+              `So the group's second score lands **closer to the average** than their first — with no coaching, no change, nothing done to them at all. Pick the LOWEST scorers and the same thing happens upward.\n\n` +
+              `This is called **regression to the mean**, and it sets a trap. Praise your best performers and they get worse; criticise your worst and they improve. It looks like praise hurts and criticism works. Both groups simply drifted back toward the middle, exactly as they would have with silence.\n\n` +
+              `**A rule of thumb for this exercise:** if a measure is about half ability and half luck, expect about **half of the gap** between an extreme group and the average to remain next time.\n\n` +
+              `The size of the drift depends on how much luck the measure carries. A perfectly reliable measure has no luck and shows no drift.`,
+          ),
+          studySeconds: 90,
+          prompt: `A test averages **${mean}**. A group scores **${top}** on it. Using the rule of thumb, what is their expected average on a retest — with nothing done to them in between?`,
+          answer: numeric(expected, { tolerance: 0 }),
+          explanation: `The gap is ${top} − ${mean} = ${gap}. About half of it remains, so expect ${mean} + ${gap / 2} = **${expected}**. They "got worse" without anything happening to them.`,
+          hints: [
+            `Find the gap between ${top} and the average ${mean}, then keep half of it.`,
+            `Half of ${gap} is ${gap / 2}. Add that to ${mean}.`,
+          ],
+        },
+        {
+          prompt: 'A coach praises the top scorers and criticises the bottom ones. Next test, the praised group drops and the criticised group rises. What does the explanation say is going on?',
+          answer: mcq(rng, 'Both groups drifted toward the average, which would have happened anyway', [
+            'Praise genuinely harms performance and criticism genuinely helps it',
+            'The second test must have been unfairly marked',
+            'The praised group stopped trying because they felt safe',
+          ]),
+          explanation:
+            'This is the trap named in the text. Selecting an extreme group selects for luck as well as ability, and the luck does not repeat. The coach is reading a drift back to the middle as an effect of their own actions.',
+          hints: ['Re-read the paragraph about the trap.', 'Ask what would have happened if the coach had said nothing.'],
+        },
+        {
+          prompt: 'According to the explanation, when would you expect NO drift at all?',
+          answer: mcq(rng, 'When the measure carries no luck — it is perfectly reliable', [
+            'When the group is large enough for averages to settle',
+            'When the same people are tested on the very same day',
+            'When the first scores were below average rather than above',
+          ]),
+          explanation:
+            'The final line makes this exact point: the drift comes from the luck component, so a measure with no luck in it shows no regression.',
+          hints: ['Re-read the final sentence.', 'The drift is caused by one specific ingredient of the score.'],
+        },
+      ],
+      hints: ['Everything you need is in the explanation.', 'Separate the part of a score that repeats from the part that does not.'],
+      explanation:
+        'A preparation-for-future-learning probe: how much of a new idea did a short explanation buy you? Recorded apart from your skills, and it never changes a rung.',
+    }
+  },
+)
+
+/**
+ * The handshake lemma — counting the same thing two ways. Absent from the tree
+ * (no graph theory anywhere); deliberately worded as dots and links so it does
+ * not collide with motion graphs or data graphs.
+ */
+const networkDegrees = tpl(
+  {
+    id: 'pfl-network',
+    name: 'New idea: counting links two ways',
+    skillIds: ['m-counting'],
+    bucket: 'math',
+    difficulty: 3,
+    variants: 12,
+    minutes: 4,
+    kind: 'multi',
+  },
+  (rng, seed) => {
+    /*
+     * Every degree list here must describe a network that can ACTUALLY be
+     * built, because part three teaches the learner to tell possible lists
+     * from impossible ones. Showing an impossible one as an ordinary example
+     * would teach the opposite of the lesson.
+     *
+     * An earlier version added a varying bump to the first degree, which
+     * pushed that degree above n − 1 and produced four impossible lists out of
+     * twelve. Variants now come from pairing a verified list with the party
+     * size — lcm(4, 6) = 12 distinct combinations — and `pflProbes.test.ts`
+     * re-checks realisability with Erdős–Gallai on every seed.
+     */
+    const degrees = [[2, 2, 3, 3], [1, 2, 2, 3, 4], [2, 3, 3, 4, 4, 2], [1, 1, 2, 2, 3, 3]][seed % 4]
+    const sum = degrees.reduce((a, b) => a + b, 0)
+    const links = sum / 2
+    const party = 5 + (seed % 6)
+    const allPairs = (party * (party - 1)) / 2
+    return {
+      title: 'Learn it here, then use it',
+      prompt: 'A short explanation of something this app has never taught you. Read it, then answer from it.',
+      parts: [
+        {
+          study: study(
+            `**COUNTING THE SAME THING TWO WAYS**\n\n` +
+              `Draw some dots and join some pairs of them with links. Each dot's **degree** is the number of links touching it.\n\n` +
+              `Now add up every dot's degree. Every link has two ends, so each link gets counted exactly **twice** — once at each end.\n\n` +
+              `**Sum of all degrees = 2 × (number of links).**\n\n` +
+              `· Degrees 1, 1, 2, 2 add to 6, so there are 3 links.\n\n` +
+              `Two consequences follow immediately, and neither needs a drawing:\n\n` +
+              `· The sum of the degrees is **always even**. A list of degrees adding to an odd number describes something that cannot be built.\n\n` +
+              `· The number of dots with an ODD degree is always even. Odd numbers must pair up to reach an even total.\n\n` +
+              `If everyone links to everyone else, each of n dots has degree n − 1, so the sum is n(n − 1) and the number of links is **n(n − 1) ÷ 2**.`,
+          ),
+          studySeconds: 85,
+          prompt: `A network has dots with degrees **${degrees.join(', ')}**. How many links does it have?`,
+          answer: numeric(links, { tolerance: 0 }),
+          explanation: `The degrees add to ${sum}. Every link is counted twice, so there are ${sum} ÷ 2 = **${links}** links.`,
+          hints: ['Add all the degrees, then halve the total.', `The degrees sum to ${sum}.`],
+        },
+        {
+          prompt: `**${party}** people are at a party and every person shakes hands with every other person exactly once. How many handshakes happen?`,
+          answer: numeric(allPairs, { tolerance: 0 }),
+          explanation: `Each of the ${party} people shakes ${party - 1} hands, giving ${party} × ${party - 1} = ${party * (party - 1)} ends. Each handshake has two ends, so there are ${allPairs} handshakes.`,
+          hints: [
+            `The text gives the formula n(n − 1) ÷ 2 with n = ${party}.`,
+            `${party} × ${party - 1} = ${party * (party - 1)}, then halve it.`,
+          ],
+        },
+        {
+          prompt: 'Someone claims a network has dots of degree 1, 2 and 2. What does the explanation let you say?',
+          answer: mcq(rng, 'It cannot exist, because the degrees add to an odd number', [
+            'It exists and has exactly 5 links',
+            'It exists, but only if two of the dots are joined twice',
+            'Nothing — degree lists never determine whether a network is possible',
+          ]),
+          explanation:
+            '1 + 2 + 2 = 5, which is odd. The text says the degree sum is always even because every link is counted twice, so no such network can be built.',
+          hints: ['Add the degrees and check the rule about even totals.', 'The text says an odd total describes something unbuildable.'],
+        },
+      ],
+      hints: ['Everything you need is in the explanation.', 'Remember every link gets counted at both ends.'],
+      explanation:
+        'A preparation-for-future-learning probe: how much of a new idea did a short explanation buy you? Recorded apart from your skills, and it never changes a rung.',
+    }
+  },
+)
+
+/**
+ * Benford's law — leading digits are not uniform. Absent from the tree, and a
+ * genuine tool for questioning a dataset, which is what s-sources is about.
+ */
+const leadingDigits = tpl(
+  {
+    id: 'pfl-benford',
+    name: 'New idea: the first-digit rule',
+    skillIds: ['s-sources'],
+    bucket: 'science',
+    difficulty: 4,
+    variants: 8,
+    minutes: 4,
+    kind: 'multi',
+  },
+  (rng, seed) => {
+    const d = 2 + (seed % 8) // 2..9 — the digit the learner computes for
+    const pct = Math.round(100 * Math.log10(1 + 1 / d))
+    const onePct = Math.round(100 * Math.log10(2)) // 30
+    return {
+      title: 'Learn it here, then use it',
+      prompt: 'A short explanation of something this app has never taught you. Read it, then answer from it.',
+      parts: [
+        {
+          study: study(
+            `**THE FIRST-DIGIT RULE**\n\n` +
+              `Take a big pile of real-world numbers that spans many sizes — river lengths, town populations, invoice totals. Look only at the FIRST digit of each.\n\n` +
+              `You might expect each of 1-9 to turn up about 11% of the time. They do not. **1** turns up about **30%** of the time, and the frequency falls away steadily to about 5% for **9**.\n\n` +
+              `The reason is that such data grows by multiplying rather than adding. A quantity growing steadily spends far longer between 100 and 200 — a 100% climb — than between 900 and 1000, an 11% climb. It lingers on a leading 1.\n\n` +
+              `The frequency of leading digit **d** is **log₁₀(1 + 1 ÷ d)**, as a fraction. For d = 1 that is log₁₀(2) ≈ 0.30.\n\n` +
+              `Because people inventing numbers tend to spread first digits evenly, auditors use this as a **flag**: a real-looking dataset with a flat first-digit spread is worth a closer look.\n\n` +
+              `It is only a flag. The rule needs data spanning several orders of magnitude, and it fails on things like human heights or numbers with an imposed floor or ceiling.`,
+          ),
+          studySeconds: 90,
+          prompt: `Using the formula in the explanation: about what percentage of numbers begin with the digit **${d}**? Give a whole number.`,
+          answer: numeric(pct, { tolerance: 1 }),
+          explanation: `log₁₀(1 + 1/${d}) = log₁₀(${(1 + 1 / d).toFixed(3)}) ≈ ${(Math.log10(1 + 1 / d)).toFixed(3)}, which is about **${pct}%**. Compare that with the ${onePct}% for a leading 1.`,
+          hints: [
+            `Put d = ${d} into log₁₀(1 + 1 ÷ d), then turn the fraction into a percentage.`,
+            `1 + 1/${d} = ${(1 + 1 / d).toFixed(3)}.`,
+          ],
+        },
+        {
+          prompt: 'The explanation gives a REASON the rule holds. Which is it?',
+          answer: mcq(rng, 'Such data grows by multiplying, so it lingers longer on a leading 1', [
+            'Small digits are easier to write, so they get recorded more often',
+            'Most real-world measurements are rounded down to the nearest unit',
+            'There are simply more numbers beginning with 1 than with any other digit',
+          ]),
+          explanation:
+            'The text explains it through growth: climbing from 100 to 200 is a 100% increase, while 900 to 1000 is only 11%, so a steadily growing quantity spends much longer showing a leading 1.',
+          hints: ['Re-read the paragraph comparing 100→200 with 900→1000.', 'The reason is about how the data grows.'],
+        },
+        {
+          prompt: 'A dataset shows a flat spread of first digits. What does the explanation license you to conclude?',
+          answer: mcq(rng, 'It is worth a closer look — the rule is a flag, not proof', [
+            'The data has certainly been fabricated',
+            'Nothing at all, since the rule applies to every dataset equally',
+            'The data must have been rounded, which caused the flat spread',
+          ]),
+          explanation:
+            'The closing paragraph is deliberate about this: it is a flag rather than proof, it needs data spanning several orders of magnitude, and it fails on bounded quantities like human heights.',
+          hints: ['Re-read the final paragraph.', 'Notice the word the text chooses instead of "proof".'],
+        },
+      ],
+      hints: ['Everything you need is in the explanation.', 'The formula is stated in the text — you do not need to recall it.'],
+      explanation:
+        'A preparation-for-future-learning probe: how much of a new idea did a short explanation buy you? Recorded apart from your skills, and it never changes a rung.',
+    }
+  },
+)
+
+/**
+ * Six distinct ideas, against a readout that needs four probes. That headroom
+ * is the point: with only three, reaching the threshold forced a repeat, and a
+ * repeated probe measures memory rather than pick-up. `retiredGrowthRates` is
+ * deliberately absent — see its comment.
+ */
+export const PFL_TEMPLATES: ItemTemplate[] = [
+  clockArithmetic,
+  simpsonsParadox,
+  pigeonhole,
+  regressionToMean,
+  networkDegrees,
+  leadingDigits,
+]

@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '5.2',
+    date: '2026-08-07',
+    title: 'The Readout I Shipped Yesterday Could Never Actually Appear',
+    points: [
+      'Last release added "how fast you pick up something new" — and shipped three of them against a readout that needs four before it will say anything. The only way to reach four was to do one twice, and the second time you are remembering an idea rather than picking it up. The number was unreachable by any honest route. I have not fixed that by lowering the bar to three, which would have been the dishonest repair.',
+      'There are now six: clock arithmetic, Simpson\'s paradox, the pigeonhole principle, why extreme results drift back, counting links two ways, and the first-digit rule. Repeats no longer count at all — only your first meeting with each idea, so nothing can be padded by re-reading.',
+      'One of the original three has been retired. It taught how an algorithm\'s work grows, which this app already teaches in the coding path — so for anyone who had done that, it was measuring memory, not pick-up. I found it by searching the whole question bank for the idea rather than by reading my own code, and that search is now a release check: every probe has to name the idea it teaches, and the app refuses to build if ordinary questions teach the same thing.',
+      'Probes now show up in your normal session too — at most once a week, always the very last thing, and never in a session under 15 minutes. They advance nothing, so they should never push practice or reviews aside, and putting them last means stopping early costs you only the part that does not count. Over a simulated year that works out to all six in about six weeks, half of them landing on ideas whose groundwork you already had and half not, which is what makes the comparison mean anything.',
+      'A content bug caught by checking rather than trusting: the new network questions were showing lists of connections that could not physically exist — four of the twelve versions — and then teaching you how to spot exactly that kind of impossible list. Every version is now checked mathematically before it can ship.',
+      'Being straight about a limit: each idea is only new once, so after about six weeks you will have met all of them and the number stops moving. It tells you how well new ideas land, not whether that is improving. Measuring the improvement would need a constant supply of genuinely new ideas, and I would rather say that plainly than let a frozen number look like a trend.',
+    ],
+  },
+  {
     version: '5.1',
     date: '2026-08-07',
     title: 'A Second Way of Measuring — How Fast You Pick Up Something New',

@@ -621,10 +621,49 @@ where it had handed them the explanation. The exposure shape fixes all of them
 at once, because every one filters on `firstCorrect !== null`. Regression tests:
 `engine/pfl.test.ts` ("probes are invisible to the derived readouts").
 
-**Known limit.** Three probes is enough to make the readout appear, not enough
-to characterise a learner. Pick-up rate is a within-app measure of how well a
-new idea lands in this app's format; it is not a validated PFL instrument, and
-the copy says so.
+**Coverage correction 2 (2026-08-07, same day).** The first cut shipped THREE
+probes against a threshold of four, so the only way to reach the readout was to
+repeat one — and a repeat measures memory, not pick-up. The readout could not
+honestly be reached at all. Fixed on both sides rather than by lowering the
+threshold, which would have been the dishonest repair:
+
+- `pflProbes` now counts a learner's FIRST encounter with each probe and
+  discards everything after it, so repeats cannot inflate the figure.
+- Six probes now exist: clock arithmetic, Simpson's paradox, the pigeonhole
+  principle, regression to the mean, the handshake lemma, and Benford's law.
+- `pfl-growth` was RETIRED. It taught asymptotic growth, which the tree already
+  teaches in `complexity-count` and `complexity-choose` — so for any learner
+  who had met those it measured recall. Found by grepping the rendered bank,
+  not by reading the source, which is now the release gate (`pflProbes.test.ts`
+  → "probes teach ideas the tree never teaches"): each probe declares terms
+  distinctive to its idea, those terms must appear in its own resource, and
+  they must appear nowhere in ordinary content.
+
+**Cadence — HEURISTIC, measured not sourced.** One probe at most per 7 days,
+always last in a session, never in a session under 15 minutes. There is no
+evidence for a specific interval; the constants are set so probes never compete
+with practice, and the short-session guard follows the same reasoning that fixed
+ten-minute sessions (§ changelog 4.3) — a small budget must go to learning, not
+instrumentation. Simulated over a year: the 7-day interval delivers all six
+probes by day 40 and splits them 3 with prerequisites owned / 3 without, which
+is the most balanced of the intervals tried (21 and 35 days both give 4/2,
+because by then the learner owns most prerequisites). The readout first appears
+around day 24.
+
+**Known limits, stated plainly.**
+
+- Six probes is enough to make the readout appear, not enough to characterise a
+  learner. Pick-up rate is a within-app measure of how well a new idea lands in
+  this app's format; it is not a validated PFL instrument, and the copy says so.
+- Probes are a FINITE resource — each idea is only new once. After roughly six
+  weeks a learner has met all of them and the readout stops updating. It is a
+  snapshot of pick-up, NOT a measure of pick-up improving over time, which is
+  what Bransford & Schwartz's argument would really want. Measuring change
+  would need a steady supply of genuinely new ideas; the honest position is
+  that this app measures the level, not the trend.
+- A learner who only ever runs sessions under 15 minutes will never meet a
+  probe in a session. They can still start one from Practice, and the readout
+  refuses to exist rather than reporting from too few.
 
 ## 23b. What was deliberately NOT built, and why
 

@@ -81,3 +81,93 @@ describe('the reversing-average probe genuinely reverses', () => {
     }
   })
 })
+
+/**
+ * THE GATE THAT WAS MISSING. `pfl-growth` taught asymptotic growth while the
+ * tree already taught it in `complexity-count` and `complexity-choose`, so for
+ * any learner who had met those the probe measured recall, not pick-up. It was
+ * caught by grepping the rendered bank, never by reading the source — so the
+ * grep is now the release gate.
+ *
+ * Each probe declares terms distinctive to the IDEA it teaches. Two assertions
+ * keep that list honest: the terms must appear in the probe's own resource (so
+ * the list cannot rot into vacuous strings), and they must appear nowhere in
+ * ordinary content (so the idea is genuinely untaught).
+ */
+const CONCEPT_TERMS: Record<string, string[]> = {
+  'pfl-modular': ['clock arithmetic'],
+  'pfl-simpson': ['overall winner loses'],
+  'pfl-pigeonhole': ['pigeonhole'],
+  'pfl-regression': ['regression to the mean'],
+  'pfl-network': ['handshake'],
+  'pfl-benford': ['first-digit rule'],
+}
+
+describe('probes teach ideas the tree never teaches', () => {
+  it('every probe declares concept terms, and they appear in its own resource', () => {
+    for (const t of PFL_TEMPLATES) {
+      const terms = CONCEPT_TERMS[t.id]
+      expect(terms, `${t.id}: no concept terms declared — add them or the gate is vacuous`).toBeTruthy()
+      const own = JSON.stringify(t.generate(0)).toLowerCase()
+      for (const term of terms) {
+        expect(own.includes(term.toLowerCase()), `${t.id}: declares "${term}" but never says it`).toBe(true)
+      }
+    }
+  })
+
+  it('no ordinary item anywhere in the bank teaches a probe concept', () => {
+    const offences: string[] = []
+    for (const ordinary of BUILTIN_TEMPLATES) {
+      if (isPflTemplate(ordinary.id)) continue
+      for (let seed = 0; seed < Math.min(4, Math.max(1, ordinary.variants)); seed++) {
+        let text = ''
+        try { text = JSON.stringify(ordinary.generate(seed)).toLowerCase() } catch { continue }
+        for (const [probeId, terms] of Object.entries(CONCEPT_TERMS)) {
+          for (const term of terms) {
+            if (text.includes(term.toLowerCase())) offences.push(`${ordinary.id} teaches "${term}" (${probeId})`)
+          }
+        }
+      }
+    }
+    expect([...new Set(offences)], 'a probe would measure recall rather than pick-up').toEqual([])
+  })
+})
+
+/**
+ * The network probe teaches the learner to tell a possible degree list from an
+ * impossible one, so every list it SHOWS must itself be possible. An earlier
+ * generator varied the first degree upward and pushed it above n − 1,
+ * producing four impossible networks out of twelve seeds. Erdős–Gallai decides
+ * this exactly, so it is checked rather than eyeballed.
+ */
+describe('the network probe never shows an impossible network', () => {
+  const graphical = (seq: number[]): boolean => {
+    const d = [...seq].sort((a, b) => b - a)
+    const n = d.length
+    if (d.reduce((a, b) => a + b, 0) % 2 !== 0) return false
+    if (d[0] > n - 1) return false
+    for (let k = 1; k <= n; k++) {
+      const lhs = d.slice(0, k).reduce((a, b) => a + b, 0)
+      const rhs = k * (k - 1) + d.slice(k).reduce((a, b) => a + Math.min(b, k), 0)
+      if (lhs > rhs) return false
+    }
+    return true
+  }
+
+  it('sanity-checks itself against a list known to be impossible', () => {
+    expect(graphical([4, 2, 3, 3])).toBe(false) // degree 4 among only 4 dots
+    expect(graphical([1, 2, 2])).toBe(false) // odd sum
+    expect(graphical([2, 2, 3, 3])).toBe(true)
+  })
+
+  it('every degree list it renders can actually be built', () => {
+    const t = PFL_TEMPLATES.find((x) => x.id === 'pfl-network')!
+    for (let seed = 0; seed < t.variants; seed++) {
+      const prompt = t.generate(seed).parts![0].prompt
+      const listed = prompt.match(/\*\*([\d, ]+)\*\*/)
+      expect(listed, `seed ${seed}: no degree list found in the prompt`).toBeTruthy()
+      const degrees = listed![1].split(',').map((s) => Number(s.trim()))
+      expect(graphical(degrees), `seed ${seed}: [${degrees}] describes a network that cannot exist`).toBe(true)
+    }
+  })
+})

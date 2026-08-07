@@ -21,9 +21,14 @@ const ev = (over: Partial<AttemptEvent> = {}): AttemptEvent => ({
  * raised as defence in depth. Built to match the player deliberately — an
  * earlier version of this helper hand-set `firstCorrect: false`, which made
  * these tests pass against a player that was in fact writing `true`.
+ *
+ * Each call gets its own template id by default, because only a learner's FIRST
+ * encounter with an idea counts — reusing one id would collapse to a single
+ * probe, which is the behaviour its own test below pins down.
  */
+let probeN = 0
 const probe = (score: number, over: Partial<AttemptEvent> = {}): AttemptEvent =>
-  ev({ templateId: 'pfl-modular', hintLevel: 1, score, firstCorrect: null, correct: null, ...over })
+  ev({ templateId: `pfl-idea${probeN++}`, hintLevel: 1, score, firstCorrect: null, correct: null, ...over })
 
 const evidenceAt = (events: AttemptEvent[]) => (upTo: number) =>
   deriveEvidence(events.filter((e) => e.t <= upTo), upTo)
@@ -182,5 +187,41 @@ describe('a probe stays inert even when the event claims otherwise', () => {
     const dirty = deriveEvidence(attacked, at).get('m-integers')!
     expect(dirty.state).toBe(clean.state)
     expect(dirty.recentMisses).toBe(clean.recentMisses)
+  })
+})
+
+/**
+ * Repeating one probe is a memory test, not a pick-up measurement. Before this
+ * rule, tapping a single probe four times satisfied MIN_PROBES and produced a
+ * pick-up figure built entirely from re-reads — with only three probes shipped
+ * against a threshold of four, that was the ONLY way to reach the readout.
+ */
+describe('only a first encounter with an idea counts', () => {
+  it('collapses repeats of the same probe to one', () => {
+    const same = Array.from({ length: 6 }, (_, i) =>
+      probe(1, { templateId: 'pfl-modular', t: T0 + i * 60_000 }))
+    expect(pflProbes(same, SKILL_BY_ID, evidenceAt(same)).length).toBe(1)
+    expect(report(same).pickUp).toBeNull()
+    expect(report(same).summary).toMatch(/Not enough yet/)
+  })
+
+  it('keeps the FIRST attempt, not the best or the latest', () => {
+    // Fumbled it cold, then aced the re-read. Only the cold attempt is real.
+    const events = [
+      probe(0, { templateId: 'pfl-modular', t: T0 }),
+      probe(1, { templateId: 'pfl-modular', t: T0 + DAY }),
+    ]
+    const got = pflProbes(events, SKILL_BY_ID, evidenceAt(events))
+    expect(got.length).toBe(1)
+    expect(got[0].score).toBe(0)
+  })
+
+  it('still counts distinct ideas separately', () => {
+    const distinct = [
+      probe(1, { templateId: 'pfl-modular' }),
+      probe(1, { templateId: 'pfl-simpson' }),
+      probe(1, { templateId: 'pfl-pigeonhole' }),
+    ]
+    expect(pflProbes(distinct, SKILL_BY_ID, evidenceAt(distinct)).length).toBe(3)
   })
 })

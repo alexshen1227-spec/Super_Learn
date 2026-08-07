@@ -435,6 +435,15 @@ export function estimatedPlanMinutes(plan: SessionPlan): number {
 export const SESSION_GRACE_MIN = 5
 
 /**
+ * Readiness-probe cadence. Both numbers are HEURISTICS, not findings — there
+ * is no evidence for a specific probe interval. They are set to keep probes
+ * rare enough that they never compete with practice: at most one a week, and
+ * never inside a short session, where every minute is already scarce.
+ */
+export const PROBE_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000
+export const PROBE_MIN_SESSION_MIN = 15
+
+/**
  * Extra work to fill a session that ran short, or null when it should end.
  *
  * Deliberately NOT more of whatever came last: it prefers skills already
@@ -902,6 +911,46 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
         activities: [act(fallback[0], 'independent', used)],
         why: 'One unaided problem on today’s focus — independent evidence is what advances a skill.',
       })
+    }
+  }
+
+  /*
+   * A readiness probe, at most weekly, always LAST.
+   *
+   * Placed after the exit ticket on purpose: a probe advances nothing, so it
+   * must never displace practice or review, and putting it last means a
+   * learner who stops early has lost only the thing that does not count. The
+   * weekly cadence and the short-session guard exist for the same reason —
+   * the founding brief's lesson from ten-minute sessions is that a small
+   * budget must go to learning, not to instrumentation.
+   *
+   * Only genuinely new ideas qualify. `pflProbes` counts a learner's FIRST
+   * encounter with each probe and nothing after it, so serving one twice would
+   * take session time to produce no measurement at all.
+   */
+  if (total >= PROBE_MIN_SESSION_MIN) {
+    const lastProbeAt = state.events.reduce(
+      (latest, e) => (isPflTemplate(e.templateId) ? Math.max(latest, e.t) : latest),
+      0,
+    )
+    if (now - lastProbeAt >= PROBE_INTERVAL_MS) {
+      const seenProbes = new Set(state.events.filter((e) => isPflTemplate(e.templateId)).map((e) => e.templateId))
+      const unseen = [...index.templates.values()]
+        .filter((t) => isPflTemplate(t.id) && !seenProbes.has(t.id))
+        .sort((a, b) => a.id.localeCompare(b.id))
+      if (unseen.length) {
+        const probe = unseen[0]
+        blocks.push({
+          id: uid('b'),
+          kind: 'exit',
+          bucket: probe.bucket,
+          label: 'One new idea',
+          minutes: probe.minutes,
+          activities: [act(probe, 'independent', used)],
+          why: 'An idea this app never teaches, explained once — this measures how fast you pick things up. It cannot advance or damage anything.',
+        })
+        rationale.push('Ends with a readiness probe: a brand-new idea, explained then tested. It is measured separately and changes no skill.')
+      }
     }
   }
 
