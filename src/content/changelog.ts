@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '3.6',
+    date: '2026-08-07',
+    title: 'The Balance Sliders Actually Have to Be Dragged',
+    points: [
+      'The practice-balance sliders now only respond to a real drag of the handle. Pressing anywhere else on the line does nothing at all.',
+      'The previous attempt at this only worked with a mouse. A standard slider jumps to wherever the line is pressed, and the code cancelled that jump on press — but touch never goes through that path, so on a phone the tap-to-jump survived untouched. The sliders are now built from scratch rather than restyled, so the behaviour is the same on touch, mouse and keyboard.',
+      'Only the handle claims a touch gesture, so swiping anywhere else on the row still scrolls the page normally. The handle is a 44px target, keeps its own focus ring, and arrow keys, Page keys, Home and End all still adjust it — dragging is required for pointers, not for keyboards.',
+    ],
+  },
+  {
     version: '3.5',
     date: '2026-08-07',
     title: 'Harder, Longer, and Honest About Mastery',

@@ -1,6 +1,6 @@
 /** Shared UI kit — quiet lab aesthetic, 44px touch targets, visible focus. */
 import { createPortal } from 'react-dom'
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { SkillState } from '../domain/types'
 import { STATE_LABEL } from '../engine/mastery'
 import { useNav } from './nav'
@@ -361,21 +361,29 @@ export function Divider() {
   return <div className="h-px bg-line mx-4" role="separator" />
 }
 
-/** Handle width and the grab radius around it — together a 44px target. */
+/** Visual handle size; the padded hit area around it reaches 44px. */
 const THUMB_PX = 20
-const GRAB_PX = 22
 
 /**
- * A slider you have to GRAB.
+ * A slider you have to physically DRAG.
  *
- * A native range input jumps to wherever the track is tapped, so on a phone a
- * stray brush while scrolling past rewrites the value — and for allocation
- * targets that silently reshuffles every other bucket too. Here a press only
- * counts when it lands on the handle; anywhere else on the track is ignored.
+ * Not a styled `<input type="range">`. A native range jumps to wherever the
+ * track is pressed, and the first attempt to suppress that — cancelling the
+ * default on pointerdown away from the handle — only works for a MOUSE.
+ * Touch never went through that path: the control has its own gesture
+ * handling, so on a phone the tap-to-jump survived and the value still moved
+ * from a stray brush while scrolling past. Verified by the learner, not by me.
  *
- * Tapping the track still FOCUSES the slider, so it doubles as "select this
- * one, then adjust with the arrow keys" — and keyboard behaviour is otherwise
- * untouched, which keeps this usable without a pointer at all.
+ * So the interaction is owned outright:
+ *  - a press anywhere but the handle does nothing at all;
+ *  - `touch-action: none` is set ONLY on the handle, so a drag that starts
+ *    there is never stolen by the page, while a swipe anywhere else on the row
+ *    still scrolls normally;
+ *  - pointer capture keeps the drag alive if the finger leaves the track.
+ *
+ * Keyboard is a first-class path, not an afterthought: the handle is a real
+ * focusable `role="slider"` with arrow, Home/End and Page keys, so this is
+ * fully usable with no pointer at all.
  */
 export function GrabSlider({
   min,
@@ -392,31 +400,99 @@ export function GrabSlider({
   label: string
   className?: string
 }) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  // Two copies on purpose. The REF is what the pointer handlers read: state
+  // does not update until a re-render, so a `dragging` state read inside
+  // onPointerMove still sees `false` for the first moves after the press and
+  // silently drops the start of every drag. The state exists only to drive the
+  // grabbed-look styling.
+  const draggingRef = useRef(false)
+  const [dragging, setDragging] = useState(false)
+  const span = Math.max(1, max - min)
+  const ratio = Math.max(0, Math.min(1, (value - min) / span))
+
+  const valueAt = (clientX: number): number => {
+    const el = trackRef.current
+    if (!el) return value
+    const r = el.getBoundingClientRect()
+    const usable = Math.max(1, r.width - THUMB_PX)
+    const x = clientX - r.left - THUMB_PX / 2
+    return Math.round(min + Math.max(0, Math.min(1, x / usable)) * span)
+  }
+
+  const clamp = (n: number) => Math.max(min, Math.min(max, n))
+
   return (
-    <input
-      type="range"
-      min={min}
-      max={max}
-      value={value}
-      aria-label={label}
-      onPointerDown={(e) => {
-        const el = e.currentTarget
-        const rect = el.getBoundingClientRect()
-        // The handle's centre travels between half a handle from each end.
-        const span = max - min
-        const ratio = span > 0 ? (value - min) / span : 0
-        const centre = rect.left + THUMB_PX / 2 + ratio * (rect.width - THUMB_PX)
-        if (Math.abs(e.clientX - centre) > GRAB_PX) {
+    <div
+      ref={trackRef}
+      className={`relative flex-1 min-w-0 h-11 flex items-center ${className}`}
+    >
+      {/* Track. Purely decorative: it has no pointer handlers, which is the
+          whole point — pressing it cannot change the value. */}
+      <div className="h-1.5 w-full rounded-full bg-surface3 overflow-hidden">
+        <div className="h-full rounded-full bg-accent" style={{ width: `${ratio * 100}%` }} />
+      </div>
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label={label}
+        aria-valuemin={min}
+        aria-valuemax={max}
+        aria-valuenow={value}
+        aria-valuetext={`${value}%`}
+        onPointerDown={(e) => {
+          // Capture keeps the drag alive when the finger wanders off the
+          // handle. It is an improvement, not a requirement — if the browser
+          // refuses, dragging still works while the pointer stays on target.
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId)
+          } catch {
+            /* no active pointer to capture */
+          }
+          draggingRef.current = true
+          setDragging(true)
+        }}
+        onPointerMove={(e) => {
+          if (!draggingRef.current) return
+          const next = valueAt(e.clientX)
+          if (next !== value) onChange(next)
+        }}
+        onPointerUp={(e) => {
+          try {
+            e.currentTarget.releasePointerCapture(e.pointerId)
+          } catch {
+            /* never captured */
+          }
+          draggingRef.current = false
+          setDragging(false)
+        }}
+        onPointerCancel={() => {
+          draggingRef.current = false
+          setDragging(false)
+        }}
+        onKeyDown={(e) => {
+          const step = e.key === 'PageUp' || e.key === 'PageDown' ? 5 : 1
+          let next: number | null = null
+          if (e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'PageUp') next = clamp(value + step)
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown' || e.key === 'PageDown') next = clamp(value - step)
+          else if (e.key === 'Home') next = min
+          else if (e.key === 'End') next = max
+          if (next === null) return
           e.preventDefault()
-          el.focus()
-        }
-      }}
-      onChange={(e) => onChange(Number(e.target.value))}
-      // `min-w-0` is load-bearing: a range input has an intrinsic minimum
-      // width, and `flex-1` alone will not shrink past it — so on a 320px
-      // screen the row pushed its own percentage readout out of the card.
-      className={`flex-1 min-w-0 ${className}`}
-    />
+          if (next !== value) onChange(next)
+        }}
+        // `touch-action: none` belongs on the handle alone. On the whole row it
+        // would swallow vertical scrolling; here it only claims the gesture
+        // once a finger is actually on the thing being dragged.
+        style={{ left: `calc(${ratio * 100}% - ${ratio * THUMB_PX}px)`, touchAction: 'none' }}
+        className={`absolute grid place-items-center h-11 w-11 -ml-[12px] cursor-grab touch-none ${dragging ? 'cursor-grabbing' : ''}`}
+      >
+        <span
+          className={`block rounded-full bg-accent border-2 border-bg shadow-card transition-transform ${dragging ? 'scale-125' : ''}`}
+          style={{ width: THUMB_PX, height: THUMB_PX }}
+        />
+      </div>
+    </div>
   )
 }
 
