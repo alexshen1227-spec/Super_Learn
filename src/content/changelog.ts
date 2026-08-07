@@ -11,6 +11,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '3.3',
+    date: '2026-08-06',
+    title: 'Updates Install Themselves Before You Start',
+    points: [
+      'On the very first screen — the one asking for a nickname and age band — a waiting update now installs itself instead of waiting to be tapped. The refresh banner lives inside the main app shell, which that screen does not render, so an update arriving during setup previously had no way to be applied at all.',
+      'After setup nothing changes: you still get the banner and decide when to reload, and it still never appears during a session, placement, or exam.',
+    ],
+  },
+  {
     version: '3.2',
     date: '2026-08-06',
     title: 'The Bridge to High School, and an Honest Count',

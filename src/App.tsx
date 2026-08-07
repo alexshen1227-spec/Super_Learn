@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Component, lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useStore } from './store/store'
 import { NavProvider, useNav, type Tab } from './ui/nav'
@@ -116,6 +116,25 @@ function Shell() {
     }
   }, [swRegistration])
 
+  // Auto-update BEFORE setup, prompt after it.
+  //
+  // Onboarding returns early (below), so the refresh banner is not even in the
+  // tree until a profile exists — a waiting update would sit there permanently
+  // unreachable. There is also nothing to protect yet: no session in progress,
+  // no answers, no history. So apply it silently and let the reload land the
+  // learner back on the same first screen, now running the new build.
+  //
+  // Once onboarded the banner takes over and the choice is the user's, because
+  // from that point a reload can interrupt real work.
+  const autoUpdated = useRef(false)
+  useEffect(() => {
+    if (!ready || state.onboarded || !needRefresh || autoUpdated.current) return
+    // Once per page load: if the update somehow fails, this must not become a
+    // reload loop on the very first screen of the app.
+    autoUpdated.current = true
+    void updateServiceWorker(true)
+  }, [ready, state.onboarded, needRefresh, updateServiceWorker])
+
   useEffect(() => {
     const on = () => setOffline(false)
     const off = () => setOffline(true)
@@ -198,7 +217,9 @@ function Shell() {
           </button>
         </div>
       ) : null}
-      {/* Update prompt: NEVER during an active session. */}
+      {/* Update prompt: NEVER during an active session. Before onboarding
+          completes this is unreachable by design — updates apply themselves
+          there instead (see the auto-update effect above). */}
       {needRefresh && !inSession ? (
         <div className="bg-accent-soft border-b border-accent/30 text-accent text-[13px] py-2 px-4 flex items-center justify-between gap-3" role="status">
           <span>A new version is ready.</span>
