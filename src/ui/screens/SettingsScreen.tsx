@@ -9,7 +9,7 @@ import { useNav } from '../nav'
 import { exportState, importState } from '../../engine/exportImport'
 import { storageInfo, type StorageInfo } from '../../store/persist'
 import { validatePack } from '../../engine/contentSchema'
-import { BUCKETS, MIN_ALLOCATION_PERCENT, type BucketId, type Deadline } from '../../domain/types'
+import { BUCKETS, DEFAULT_ALLOCATIONS, MIN_ALLOCATION_PERCENT, type BucketId, type Deadline } from '../../domain/types'
 import { uid } from '../../engine/rng'
 import { Button, Card, Chip, Confirm, Divider, Modal, Row, SectionTitle, Segmented, Toggle } from '../components'
 import { IconBack } from '../icons'
@@ -19,6 +19,18 @@ import { PackAuthor } from '../PackAuthor'
 import { SKILLS } from '../../content/skills'
 import { addLocalDaysISO, localDateISO } from '../../engine/time'
 import { rebalanceAllocationPercentage } from '../../engine/allocationTargets'
+
+/**
+ * Quiet hours are stored as a 0-23 hour so the comparison stays trivial, but
+ * they are DISPLAYED on the 12-hour clock the learner actually reads times in.
+ * Midnight and noon are spelled out rather than shown as "12 AM"/"12 PM",
+ * which people routinely read backwards.
+ */
+export function hourLabel(h: number): string {
+  if (h === 0) return '12 AM (midnight)'
+  if (h === 12) return '12 PM (noon)'
+  return h < 12 ? `${h} AM` : `${h - 12} PM`
+}
 
 export function SettingsScreen() {
   const { state, dispatch, enterSample, exitSample, resetAll } = useStore()
@@ -76,6 +88,7 @@ export function SettingsScreen() {
 
   const allocations = state.settings.allocations
   const allocTotal = Object.values(allocations).reduce((a, b) => a + b, 0)
+  const allocationsDrifted = BUCKETS.some((b) => allocations[b.id] !== DEFAULT_ALLOCATIONS[b.id])
 
   return (
     <div>
@@ -216,7 +229,23 @@ export function SettingsScreen() {
             </div>
           ))}
         </div>
-        <p className="text-[11px] text-faint mt-3 text-right">Total: {allocTotal}%</p>
+        <div className="flex items-center justify-between gap-3 mt-3">
+          {/* A nudged slider rebalances every other bucket at once, and there is
+              no undo. Offer the way back — but only once something has actually
+              moved, so the control does not sit there inviting a reset. */}
+          {allocationsDrifted ? (
+            <button
+              type="button"
+              className="text-[12px] text-accent underline min-h-11 -my-2"
+              onClick={() => dispatch({ type: 'update-settings', settings: { allocations: { ...DEFAULT_ALLOCATIONS } } })}
+            >
+              Reset to recommended
+            </button>
+          ) : (
+            <span />
+          )}
+          <p className="text-[11px] text-faint">Total: {allocTotal}%</p>
+        </div>
       </Card>
 
       <SectionTitle>Appearance & accessibility</SectionTitle>
@@ -297,7 +326,7 @@ export function SettingsScreen() {
                 className="bg-surface2 border border-line rounded-lg px-2 py-1.5"
               >
                 {Array.from({ length: 24 }, (_, h) => (
-                  <option key={h} value={h}>{h}:00</option>
+                  <option key={h} value={h}>{hourLabel(h)}</option>
                 ))}
               </select>
               <span className="text-faint">to</span>
@@ -313,7 +342,7 @@ export function SettingsScreen() {
                 className="bg-surface2 border border-line rounded-lg px-2 py-1.5"
               >
                 {Array.from({ length: 24 }, (_, h) => (
-                  <option key={h} value={h}>{h}:00</option>
+                  <option key={h} value={h}>{hourLabel(h)}</option>
                 ))}
               </select>
             </div>
@@ -365,16 +394,23 @@ export function SettingsScreen() {
           sub="Full local wipe — export first if in doubt"
           onClick={() => setConfirmReset(true)}
         />
+        <Divider />
+        {/* Always present, never a dead button: with no reports filed this is
+            static text saying where reports come from, because the row used to
+            appear only after the first report and was impossible to find when
+            you went looking for it. */}
         {state.reports.length ? (
-          <>
-            <Divider />
-            <Row
-              label="Export problem reports"
-              sub={`${state.reports.length} item report${state.reports.length === 1 ? '' : 's'} you filed`}
-              onClick={() => download('axiom-lab-reports.json', JSON.stringify(state.reports, null, 2))}
-            />
-          </>
-        ) : null}
+          <Row
+            label="Export problem reports"
+            sub={`${state.reports.length} item report${state.reports.length === 1 ? '' : 's'} you filed`}
+            onClick={() => download('axiom-lab-reports.json', JSON.stringify(state.reports, null, 2))}
+          />
+        ) : (
+          <Row
+            label={<span className="text-muted">Export problem reports</span>}
+            sub="Nothing filed yet. Tap the flag icon at the top of any question to report a wrong answer or confusing wording — reports collect here and stay on this device until you export them."
+          />
+        )}
       </Card>
       {importMsg ? (
         <p className="text-[13px] mt-2 px-1 text-muted" role="status">

@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '3.4',
+    date: '2026-08-06',
+    title: 'First Day of Real Use',
+    points: [
+      'Scrolling past the practice-balance sliders no longer moves them. A swipe that started on a slider was being read as a drag, so passing through Settings could quietly rewrite your targets — and since moving one slider rebalances the rest, a bump you never noticed changed several areas at once. Vertical swipes now scroll and only sideways drags adjust.',
+      'A "Reset to recommended" link sits under those sliders, appearing only once something has actually moved. There was previously no way back from an accidental change.',
+      'Quiet hours for review reminders now read on the 12-hour clock — 9 PM to 7 AM instead of 21:00 to 7:00 — with midnight and noon written out, since "12 AM" is read backwards about half the time.',
+      '"Export problem reports" in Settings → Data used to appear only after you had filed a report, which made it impossible to find when you went looking for it. It is always listed now, and when empty it explains where reports come from: the flag icon at the top of any question.',
+    ],
+  },
+  {
     version: '3.3',
     date: '2026-08-06',
     title: 'Updates Install Themselves Before You Start',

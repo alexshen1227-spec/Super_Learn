@@ -188,9 +188,14 @@ input[type='number'] {
   appearance: textfield;
 }
 
-/* Range slider theming */
+/* Range slider theming.
+   `touch-action: pan-y` hands vertical gestures back to the page. Without it a
+   phone swipe that happens to start on a slider is treated as a drag, so
+   scrolling past the practice-balance sliders silently rewrote the targets.
+   Horizontal drags still adjust the slider; vertical ones scroll. */
 input[type='range'] {
   accent-color: var(--c-accent);
+  touch-action: pan-y;
 }
 
 @keyframes fade-in-up {
