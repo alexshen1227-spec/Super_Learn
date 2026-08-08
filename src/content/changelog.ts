@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '6.1',
+    date: '2026-08-08',
+    title: 'For Everyone Middle School Onward — Courses Up Through College',
+    points: [
+      'Three more courses join the ladder: Geometry (HS), Algebra 2 / Precalc, and College & beyond — a quantitative-fluency refresh for students past high school and adults returning to math. The question is now "what math course are you in right now?", with an honest "None right now" for everyone else, because this app is for anybody middle school onward, in school or not. Grade level gained 12th and a "Not in school" option to match.',
+      'Choosing a course never boxes you in: harder and easier material still flows exactly as before. The course is a small open tilt on top of the same difficulty dial, reviews, and rotation — a 7+ student who is cruising still meets harder problems, and one who is struggling still gets easier ones. That was already true; the copy now says it out loud.',
+      'The app now checks in about your course every few months — one quiet card on Today, because semesters end and classes change, and a stale course selection would quietly mis-tilt the plan. Confirming is one tap; there is no red dot, no nag, and it waits as long as you like.',
+      'New high-school problem families where the shelf was thin: choosing and using trig ratios, composing transformations, similar-figure solving, circle sectors and arcs, sliding function graphs (the backwards inside-shift, tested properly), and logarithm structure — logs turning products into sums.',
+      'A research sweep of the wider landscape — Brilliant, Alcumus, Beast Academy, IXL, DeltaMath, Desmos, OpenStax, Paul\'s Online Math Notes, MIT OpenCourseWare, Math Academy and more — is now in the ledger as a ranked mining list for future content, with licensing notes so inspiration never becomes copying. The standing rule holds: problem KINDS are borrowed, every problem here is original, every answer computed.',
+    ],
+  },
+  {
     version: '6.0',
     date: '2026-08-08',
     title: 'The App Now Knows What Class You Are In',

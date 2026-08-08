@@ -47,6 +47,7 @@ import { MIDDLE_DEPTH_TEMPLATES } from './items/middleDepth'
 import { NON_ROUTINE_TEMPLATES } from './items/nonRoutine'
 import { BEYOND_CORE_TEMPLATES } from './items/beyondCore'
 import { LABS_DEPTH_TEMPLATES } from './items/labsDepth'
+import { HS_DENSITY_TEMPLATES } from './items/hsDensity'
 
 export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...MATH_NUMBER_TEMPLATES,
@@ -90,6 +91,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...NON_ROUTINE_TEMPLATES,
   ...BEYOND_CORE_TEMPLATES,
   ...LABS_DEPTH_TEMPLATES,
+  ...HS_DENSITY_TEMPLATES,
 ]
 
 export function packItemToTemplate(pack: ContentPackJson, i: number): ItemTemplate {

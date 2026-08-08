@@ -99,7 +99,7 @@ export function Onboarding() {
       <div className="mt-5">
         <span className="text-sm font-medium text-muted">Grade level</span>
         <div className="flex gap-2 mt-1.5 flex-wrap">
-          {[6, 7, 8, 9, 10, 11].map((g) => (
+          {[6, 7, 8, 9, 10, 11, 12].map((g) => (
             <button
               type="button"
               key={g}
@@ -112,20 +112,41 @@ export function Onboarding() {
               {g}th
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => set({ gradeLevel: null })}
+            aria-pressed={profile.gradeLevel === null}
+            className={`min-h-11 px-4 rounded-xl border text-[15px] font-medium transition-colors ${
+              profile.gradeLevel === null ? 'bg-accent text-bg border-accent' : 'bg-surface border-line text-muted hover:border-line-strong'
+            }`}
+          >
+            Not in school
+          </button>
         </div>
       </div>
       <div className="mt-5">
-        <span className="text-sm font-medium text-muted">Math course right now (optional)</span>
+        <span className="text-sm font-medium text-muted">What math course are you in right now?</span>
         <p className="text-[12px] text-faint mt-0.5">
-          Course skills get a small, openly-labeled priority bump — nothing outside the course is dropped.
+          Works for any stage, middle school to long-out-of-school. Course skills get a small, openly-labeled priority
+          bump — nothing outside the course is dropped, and harder or easier material still flows in as you earn it.
         </p>
         <div className="flex gap-2 mt-1.5 flex-wrap">
+          <button
+            type="button"
+            className="min-h-11"
+            onClick={() => set({ mathTrack: null, trackConfirmedAt: Date.now() })}
+            aria-pressed={profile.mathTrack === null}
+          >
+            <Chip tone={profile.mathTrack === null ? 'accent' : 'neutral'} className="!py-2 !px-3 !text-sm cursor-pointer">
+              None right now
+            </Chip>
+          </button>
           {MATH_TRACKS.map((t) => (
             <button
               type="button"
               className="min-h-11"
               key={t.id}
-              onClick={() => set({ mathTrack: profile.mathTrack === t.id ? null : t.id })}
+              onClick={() => set({ mathTrack: t.id, trackConfirmedAt: Date.now() })}
               aria-pressed={profile.mathTrack === t.id}
               title={t.blurb}
             >

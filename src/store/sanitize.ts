@@ -68,6 +68,7 @@ function sanitizeProfile(raw: unknown): Profile {
     // Validated against the known track ids — an arbitrary string from an
     // import must not be able to name a track that does not exist.
     mathTrack: typeof p.mathTrack === 'string' && TRACK_BY_ID.has(p.mathTrack) ? p.mathTrack : null,
+    trackConfirmedAt: typeof p.trackConfirmedAt === 'number' && Number.isFinite(p.trackConfirmedAt) ? p.trackConfirmedAt : null,
     goals: strArray(p.goals, 12, 200),
     strongAreas: strArray(p.strongAreas, 12, 80),
     weakAreas: strArray(p.weakAreas, 12, 80),

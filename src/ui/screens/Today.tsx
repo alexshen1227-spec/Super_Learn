@@ -18,6 +18,7 @@ import { WeekReviewModal } from '../WeekReview'
 import { useState } from 'react'
 import { activeMission, missionReadiness } from '../../engine/mission'
 import { checkpointAvailable, checkpointSkills } from '../../engine/checkpoint'
+import { TRACK_BY_ID } from '../../content/tracks'
 import { calendarDaysUntil } from '../../engine/time'
 
 function greeting(name: string): string {
@@ -26,8 +27,11 @@ function greeting(name: string): string {
   return name ? `${part}, ${name}` : part
 }
 
+/** ~3 months. A course check-in cadence, not a nag — see the card below. */
+const TRACK_CHECKIN_MS = 90 * 24 * 60 * 60 * 1000
+
 export function Today() {
-  const { state } = useStore()
+  const { state, dispatch } = useStore()
   const evidence = useEvidence()
   const { go } = useNav()
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
@@ -69,6 +73,17 @@ export function Today() {
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
   const noPlacement = !state.placement && state.sessions.length === 0
   const [weekOpen, setWeekOpen] = useState(false)
+  /*
+   * Course check-in, roughly quarterly. Courses change under people — semesters
+   * end, classes switch — so a stale course selection quietly mis-tilts the
+   * plan. One dismissible card, shown only after ~90 days of silence (a legacy
+   * profile with no stamp counts as silent), never during onboarding, and
+   * confirming is one tap. No urgency theater: it waits as long as you like.
+   */
+  const trackCheckinDue =
+    state.sessions.length > 0 &&
+    !state.sampleMode &&
+    (state.profile.trackConfirmedAt === null || now - state.profile.trackConfirmedAt > TRACK_CHECKIN_MS)
   const isWeekend = [0, 6].includes(new Date().getDay())
   const hasWeekData = state.events.some((e) => e.t > now - 7 * 86_400_000 && e.mode !== 'placement')
 
@@ -122,6 +137,29 @@ export function Today() {
           )}
         </div>
       </Card>
+
+      {trackCheckinDue ? (
+        <Card className="mt-3 p-4">
+          <p className="text-[12px] text-muted font-medium uppercase tracking-wide">Course check-in · every few months</p>
+          <p className="text-[14px] mt-1.5">
+            {state.profile.mathTrack
+              ? `Still in ${TRACK_BY_ID.get(state.profile.mathTrack)?.name ?? 'your math course'}? Courses change — a quick confirm keeps the plan honest.`
+              : 'No math course is set right now. If you have started one, telling the app tilts practice toward it — openly, never exclusively.'}
+          </p>
+          <div className="flex gap-2 mt-3">
+            <Button
+              kind="ghost"
+              className="flex-1"
+              onClick={() => dispatch({ type: 'update-profile', profile: { trackConfirmedAt: Date.now() } })}
+            >
+              {state.profile.mathTrack ? 'Still right' : 'Still none'}
+            </Button>
+            <Button kind="ghost" className="flex-1" onClick={() => go({ name: 'settings' })}>
+              Update course
+            </Button>
+          </div>
+        </Card>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-3 mt-3">
         <Card className="p-4" onClick={() => go(due.length ? { name: 'session', launch: { kind: 'mixed' } } : { name: 'practice' })}>

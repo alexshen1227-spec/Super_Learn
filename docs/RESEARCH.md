@@ -788,3 +788,40 @@ new `count-combinations` family teaches n(n−1)/2, which the network probe's
 handshake question relied on — the probe yielded (rebuilt on the degree-sum
 idea alone), demonstrating the intended direction: when the tree grows into
 probe territory, the probe moves, never the tree.
+
+### §25 addendum (2026-08-08): all-stage tracks + the platform survey
+
+**Tracks extended beyond middle school** — hs-geo (Geometry), hs-alg2
+(Algebra 2/Precalc), college-quant (college & beyond refresh) — reframed
+everywhere as "your CURRENT course" with an explicit "None right now",
+because the app serves any learner middle school onward, including out of
+school. gradeLevel gained 12th and "Not in school" (null; every consumer
+already defaulted safely). A quiet quarterly course check-in card appears on
+Today after ~90 days of silence (`trackConfirmedAt`) — one dismissible card,
+confirming is one tap, no urgency theater; cadence is a HEURISTIC.
+
+**Platform survey** (agent-run, 2026-08-08; full report in the session log)
+of Brilliant, Alcumus, Beast Academy, IXL, DeltaMath, Desmos/Amplify,
+Schoolhouse.world, OpenStax, Paul's Online Math Notes, MIT OCW, Math
+Academy, Khan get-ready tracks, plus ALEKS/Mathspace/Open Middle/NRICH/
+Underground Mathematics/EdReady. Mining shortlist for future content
+sessions — kinds and structures only, never text:
+
+- HS Geometry/A2/Precalc: DeltaMath's parameterized-type census (nearest
+  architectural neighbor: type + seed + computed answer), IXL's per-course
+  skill lists as coverage checklists, Open Middle's constraint problems
+  (brute-force verifiable — same muscle as the chess miner), Desmos
+  mechanics (equation-meets-constraints, discrimination, card sorts),
+  Alcumus for non-routine kinds + per-item difficulty ratings.
+- College/adult: OpenStax (CC BY 4.0 — the only adaptable license; its
+  Elementary→College Algebra sequence is the skeleton of what adults are
+  assumed to have lost), Paul's Notes (prerequisite-resurfacing kinds + a
+  misconception catalog for distractors), Math Academy's structure
+  (diagnostic course-compression, implicit-review multistep tasks), Khan
+  "Get ready for X" packaging as the returning-learner on-ramp, MIT OCW
+  Scholar chained psets (matches `aggregateParts`).
+- Licensing hygiene recorded: OpenStax CC BY; OCW/Open Middle/NRICH are
+  NC/SA (structure only); Brilliant/IXL/DeltaMath/Math Academy/Mathspace/
+  ALEKS/Beast proprietary (public taxonomies only); Paul's Notes forbids
+  incorporation — kinds and error categories only. The app's standing rule
+  (original problems, computed answers) keeps every source safely usable.

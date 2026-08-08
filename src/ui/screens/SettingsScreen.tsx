@@ -116,8 +116,8 @@ export function SettingsScreen() {
           </label>
           <div>
             <span className="text-[13px] font-medium text-muted">Grade level</span>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 mt-1.5">
-              {[6, 7, 8, 9, 10, 11].map((g) => (
+            <div className="flex gap-1.5 mt-1.5 flex-wrap">
+              {[6, 7, 8, 9, 10, 11, 12].map((g) => (
                 <button
                   type="button"
                   key={g}
@@ -128,27 +128,37 @@ export function SettingsScreen() {
                   {g}th
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => dispatch({ type: 'update-profile', profile: { gradeLevel: null } })}
+                aria-pressed={state.profile.gradeLevel === null}
+                className={`min-h-11 px-3 rounded-lg border text-[14px] font-medium ${state.profile.gradeLevel === null ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'}`}
+              >
+                Not in school
+              </button>
             </div>
           </div>
           <div>
-            <span className="text-[13px] font-medium text-muted">Math course</span>
+            <span className="text-[13px] font-medium text-muted">Current math course</span>
             <p className="text-[12px] text-faint mt-0.5">
-              Course skills get a small, openly-labeled priority bump; nothing outside it is dropped. The coach reports course progress from real evidence.
+              Middle school through college and beyond — or none. Course skills get a small, openly-labeled priority
+              bump; nothing outside it is dropped, and the coach reports course progress from real evidence. The app
+              checks in about this every few months, since courses change.
             </p>
             <div className="flex gap-1.5 mt-1.5 flex-wrap">
               <button
                 type="button"
-                onClick={() => dispatch({ type: 'update-profile', profile: { mathTrack: null } })}
+                onClick={() => dispatch({ type: 'update-profile', profile: { mathTrack: null, trackConfirmedAt: Date.now() } })}
                 aria-pressed={state.profile.mathTrack === null}
                 className={`min-h-11 px-3 rounded-lg border text-[14px] font-medium ${state.profile.mathTrack === null ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'}`}
               >
-                None
+                None right now
               </button>
               {MATH_TRACKS.map((t) => (
                 <button
                   type="button"
                   key={t.id}
-                  onClick={() => dispatch({ type: 'update-profile', profile: { mathTrack: t.id } })}
+                  onClick={() => dispatch({ type: 'update-profile', profile: { mathTrack: t.id, trackConfirmedAt: Date.now() } })}
                   aria-pressed={state.profile.mathTrack === t.id}
                   title={t.blurb}
                   className={`min-h-11 px-3 rounded-lg border text-[14px] font-medium ${state.profile.mathTrack === t.id ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'}`}

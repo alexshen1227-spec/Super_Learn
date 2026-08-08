@@ -610,6 +610,13 @@ export interface Profile {
    * progress through the course. Nothing outside the track is dropped.
    */
   mathTrack: string | null
+  /**
+   * When the learner last confirmed (or was asked about) their course. Courses
+   * change — the Today screen offers a QUIET check-in when this is ~3 months
+   * stale: one dismissible card, no urgency, and confirming restamps it. Null
+   * on legacy profiles, which the card treats as "never asked".
+   */
+  trackConfirmedAt: number | null
   goals: string[]
   strongAreas: string[]
   weakAreas: string[]
@@ -774,6 +781,7 @@ export function defaultProfile(): Profile {
     gradeLevel: 8,
     courses: [],
     mathTrack: null,
+    trackConfirmedAt: null,
     goals: [],
     strongAreas: [],
     weakAreas: [],
