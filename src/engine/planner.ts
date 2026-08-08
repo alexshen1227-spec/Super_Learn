@@ -33,6 +33,7 @@ import { calendarDaysUntil } from './time'
 import { calibrationGap } from './calibration'
 import { stretchSignal } from './stretch'
 import { isPflTemplate } from './pfl'
+import { TRACK_BY_ID, type MathTrack } from '../content/tracks'
 
 export interface PlannerContext {
   index: ContentIndex
@@ -299,6 +300,41 @@ export interface SkillScore {
 }
 
 /** Score frontier candidates within a bucket for the core block. */
+/**
+ * The math-course tilt. Same law as onboarding goals: a BOUNDED, OPENLY-STATED
+ * nudge, never a filter. `TRACK_BONUS` sits below a due review (3) and a
+ * mission (2+), so course membership can break ties but cannot crowd out what
+ * the evidence says matters; everything outside the track keeps its full score
+ * and keeps being scheduled. `TRACK_UNIT_BONUS` is a smaller second nudge for
+ * the EARLIEST unit that still has unfinished skills — that is what "where
+ * your class is" means in course terms.
+ */
+export const TRACK_BONUS = 1.2
+export const TRACK_UNIT_BONUS = 0.5
+/**
+ * A course whose skills all sit behind prerequisite chains would otherwise
+ * tilt nothing a beginner can actually reach — measured: a fresh learner on
+ * the algebra-readiness track owned 2 of 18 course skills after a simulated
+ * year, because the tilt pointed only at locked doors. Unmet prereqs of
+ * course skills get this smaller boost, the same move the mission system
+ * makes, so the tilt reaches the learner wherever they stand on the ladder.
+ */
+export const TRACK_PREREQ_BONUS = 0.8
+
+/** The first unit in the track with any skill not yet independent. */
+export function trackFrontierUnit(
+  track: MathTrack,
+  evidence: Map<string, SkillEvidence>,
+): { name: string; skillIds: string[] } | null {
+  for (const unit of track.units) {
+    const unfinished = unit.skillIds.some(
+      (sid) => stateRank(evidenceFor(evidence, sid).state) < stateRank('independent'),
+    )
+    if (unfinished) return unit
+  }
+  return null
+}
+
 export function scoreSkills(
   bucket: BucketId,
   ctx: PlannerContext,
@@ -309,6 +345,9 @@ export function scoreSkills(
   // Is the learner currently cruising? If so, owned skills come back into play
   // for DEPTH rather than being retired.
   const cruising = stretchSignal(state.events, now).adjust > 0
+  const track = state.profile.mathTrack ? TRACK_BY_ID.get(state.profile.mathTrack) ?? null : null
+  const trackSkills = track ? new Set(track.units.flatMap((u) => u.skillIds)) : null
+  const frontierUnit = track ? trackFrontierUnit(track, evidence) : null
   for (const skill of ctx.index.skillList) {
     if (skill.bucket !== bucket) continue
     const ev = evidenceFor(evidence, skill.id)
@@ -387,6 +426,30 @@ export function scoreSkills(
     if (mission.boost > 0) {
       score += mission.boost
       if (mission.reason) reasons.push(mission.reason)
+    }
+    // Course membership: a small open tilt toward the learner's actual class.
+    if (track && trackSkills!.has(skill.id)) {
+      score += TRACK_BONUS
+      if (frontierUnit && frontierUnit.skillIds.includes(skill.id)) {
+        score += TRACK_UNIT_BONUS
+        reasons.push(`up next in your ${track.name} course (${frontierUnit.name})`)
+      } else {
+        reasons.push(`part of your ${track.name} course`)
+      }
+    } else if (track) {
+      // Not in the course, but directly unlocking something that is: the tilt
+      // has to reach learners still climbing toward their course's material.
+      const unlocks = ctx.index.skillList.find(
+        (s2) =>
+          trackSkills!.has(s2.id) &&
+          s2.prereqs.includes(skill.id) &&
+          stateRank(evidenceFor(evidence, s2.id).state) < stateRank('independent') &&
+          !prereqsMet(s2, evidence, state),
+      )
+      if (unlocks) {
+        score += TRACK_PREREQ_BONUS
+        reasons.push(`unlocks ${unlocks.name} in your ${track.name} course`)
+      }
     }
     // Legacy broad-subject deadline relevance.
     for (const d of state.deadlines) {

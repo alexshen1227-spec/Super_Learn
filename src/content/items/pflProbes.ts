@@ -28,7 +28,8 @@
  * skill and cannot advance it.
  */
 import type { ItemTemplate } from '../../domain/types'
-import { mcq, numeric, tpl } from '../lib'
+import { cycle, mcq, numeric, tpl } from '../lib'
+import { rint } from '../../engine/rng'
 
 const study = (s: string) => s
 
@@ -338,9 +339,18 @@ const regressionToMean = tpl(
 )
 
 /**
- * The handshake lemma — counting the same thing two ways. Absent from the tree
- * (no graph theory anywhere); deliberately worded as dots and links so it does
- * not collide with motion graphs or data graphs.
+ * The degree-sum argument — counting the same thing two ways. Absent from the
+ * tree (no graph theory anywhere); deliberately worded as dots and links so it
+ * does not collide with motion graphs or data graphs.
+ *
+ * Coverage correction (2026-08-08): this probe originally closed with the
+ * everyone-shakes-hands formula n(n−1)/2 — and then the curriculum expansion
+ * added `count-combinations`, which TEACHES that formula. The untaught-idea
+ * gate caught the collision, and the probe yielded: the handshake paragraph
+ * and the party question were replaced with a regular-network question that
+ * only the degree-sum idea answers. The probe measures pick-up only while its
+ * idea stays untaught, so when the tree grows into probe territory, the probe
+ * moves — never the other way around.
  */
 const networkDegrees = tpl(
   {
@@ -369,8 +379,13 @@ const networkDegrees = tpl(
     const degrees = [[2, 2, 3, 3], [1, 2, 2, 3, 4], [2, 3, 3, 4, 4, 2], [1, 1, 2, 2, 3, 3]][seed % 4]
     const sum = degrees.reduce((a, b) => a + b, 0)
     const links = sum / 2
-    const party = 5 + (seed % 6)
-    const allPairs = (party * (party - 1)) / 2
+    // A REGULAR network: every dot has the same degree. Chosen so dots × deg
+    // is even (a 3-regular network needs an even dot count to exist).
+    const regular = [
+      [6, 3], [8, 3], [10, 3], [5, 4], [6, 4], [7, 4],
+    ][seed % 6] as [number, number]
+    const [dots, deg] = regular
+    const regLinks = (dots * deg) / 2
     return {
       title: 'Learn it here, then use it',
       prompt: 'A short explanation of something this app has never taught you. Read it, then answer from it.',
@@ -385,7 +400,7 @@ const networkDegrees = tpl(
               `Two consequences follow immediately, and neither needs a drawing:\n\n` +
               `· The sum of the degrees is **always even**. A list of degrees adding to an odd number describes something that cannot be built.\n\n` +
               `· The number of dots with an ODD degree is always even. Odd numbers must pair up to reach an even total.\n\n` +
-              `If everyone links to everyone else, each of n dots has degree n − 1, so the sum is n(n − 1) and the number of links is **n(n − 1) ÷ 2**.`,
+              `The move generalises: whenever every dot has the SAME degree d, the sum of the degrees is (number of dots) × d, so the number of links is **(dots × d) ÷ 2** — one formula from the same two-ends idea.`,
           ),
           studySeconds: 85,
           prompt: `A network has dots with degrees **${degrees.join(', ')}**. How many links does it have?`,
@@ -394,12 +409,12 @@ const networkDegrees = tpl(
           hints: ['Add all the degrees, then halve the total.', `The degrees sum to ${sum}.`],
         },
         {
-          prompt: `**${party}** people are at a party and every person shakes hands with every other person exactly once. How many handshakes happen?`,
-          answer: numeric(allPairs, { tolerance: 0 }),
-          explanation: `Each of the ${party} people shakes ${party - 1} hands, giving ${party} × ${party - 1} = ${party * (party - 1)} ends. Each handshake has two ends, so there are ${allPairs} handshakes.`,
+          prompt: `A relay network has **${dots} stations**, and every station is linked to exactly **${deg}** others. How many links does the network have?`,
+          answer: numeric(regLinks, { tolerance: 0 }),
+          explanation: `The degrees sum to ${dots} × ${deg} = ${dots * deg} ends, and every link owns two ends, so there are ${dots * deg} ÷ 2 = **${regLinks}** links. Counting ends and halving beats trying to draw ${dots} stations.`,
           hints: [
-            `The text gives the formula n(n − 1) ÷ 2 with n = ${party}.`,
-            `${party} × ${party - 1} = ${party * (party - 1)}, then halve it.`,
+            `Every station contributes ${deg} link-ends: ${dots} × ${deg} ends in total.`,
+            `Each link has two ends — halve the ${dots * deg}.`,
           ],
         },
         {
@@ -494,10 +509,243 @@ const leadingDigits = tpl(
 )
 
 /**
- * Six distinct ideas, against a readout that needs four probes. That headroom
+ * Little's law — the queueing identity L = λW. Genuinely untaught anywhere in
+ * the tree; hosted on rates because that is the prerequisite it leans on.
+ */
+const littlesLaw = tpl(
+  {
+    id: 'pfl-littles-law',
+    name: 'New idea: the waiting-line law',
+    skillIds: ['m-ratio'],
+    bucket: 'math',
+    difficulty: 3,
+    variants: 12,
+    minutes: 4,
+    kind: 'multi',
+  },
+  (rng, seed) => {
+    const scene = cycle(seed, [
+      { place: 'a café', item: 'customers', arrive: 'walk in', time: 'minutes' },
+      { place: 'a clinic waiting room', item: 'patients', arrive: 'check in', time: 'minutes' },
+      { place: 'a repair shop', item: 'devices', arrive: 'get dropped off', time: 'days' },
+      { place: 'a busy help desk', item: 'tickets', arrive: 'arrive', time: 'hours' },
+    ] as const)
+    const rate = cycle(Math.floor(seed / 4), [2, 3, 4] as const)
+    const wait = rint(rng, 3, 8)
+    const inside = rate * wait
+    const askInside = seed % 2 === 0
+    return {
+      title: 'Learn it here, then use it',
+      prompt: 'A short explanation of something this app has never taught you. Read it, then answer from it.',
+      parts: [
+        {
+          study: study(
+            `**THE WAITING-LINE LAW**\n\n` +
+              `For any steady flow — a shop, a queue, a help desk — three numbers are locked together:\n\n` +
+              `· **Inside** — how many ${scene.item} are in the system on average.\n\n` +
+              `· **Arrival rate** — how many ${scene.arrive} per ${scene.time.replace(/s$/, '')} on average.\n\n` +
+              `· **Time inside** — how long the average one stays.\n\n` +
+              `**Inside = arrival rate × time inside.** Always, for any steady system, with no assumptions about randomness or order.\n\n` +
+              `Why it must be true: watch one full ${scene.time.replace(/s$/, '')} pass. The ones inside right now are exactly the recent arrivals that have not left yet — arrivals pile up for as long as the average stay lasts.\n\n` +
+              `The power move is solving for the HIDDEN number: count what is easy to count, and the law hands you the number you could not watch directly.`,
+          ),
+          studySeconds: 80,
+          prompt: askInside
+            ? `At ${scene.place}, **${rate} ${scene.item} ${scene.arrive} per ${scene.time.replace(/s$/, '')}**, and the average one stays **${wait} ${scene.time}**. On average, how many are inside?`
+            : `At ${scene.place}, **${rate} ${scene.item} ${scene.arrive} per ${scene.time.replace(/s$/, '')}**, and on average **${inside}** are inside. How long does the average one stay, in ${scene.time}?`,
+          answer: numeric(askInside ? inside : wait, { tolerance: 0 }),
+          explanation: askInside
+            ? `Inside = rate × time = ${rate} × ${wait} = **${inside}**. The arrivals of the last ${wait} ${scene.time} are exactly who is present.`
+            : `Rearranged: time = inside ÷ rate = ${inside} ÷ ${rate} = **${wait} ${scene.time}**. Two countable numbers reveal the one you could not follow individually.`,
+          hints: [
+            'Use the boxed law directly: inside = rate × time.',
+            askInside ? `Multiply the rate by the stay: ${rate} × ${wait}.` : `Divide the inside count by the rate: ${inside} ÷ ${rate}.`,
+          ],
+        },
+        {
+          prompt: `A study hall holds **${rate * 10} students** on average, and students stay **${wait} hours** on average. How many students arrive per hour, on average?`,
+          answer: numeric((rate * 10) / wait % 1 === 0 ? (rate * 10) / wait : Math.round(((rate * 10) / wait) * 100) / 100, { tolerance: 0.01 }),
+          explanation: `Rate = inside ÷ time = ${rate * 10} ÷ ${wait} = **${(rate * 10) / wait % 1 === 0 ? (rate * 10) / wait : Math.round(((rate * 10) / wait) * 100) / 100} per hour** — the same law, solved for its third corner. Any one of the three numbers is recoverable from the other two.`,
+          hints: ['Same law, third arrangement: rate = inside ÷ time.', `Divide the average inside count by the stay: ${rate * 10} ÷ ${wait}.`],
+        },
+        {
+          prompt: 'The explanation claims the law holds "for any steady system". What does STEADY rule out?',
+          answer: mcq(rng, 'A system still filling up or draining — where the inside count is trending, not hovering', [
+            'Systems where people arrive at random times',
+            'Systems with more than one queue or server',
+            'Systems where some stay much longer than others',
+          ]),
+          explanation:
+            'The law needs the inside count to hover around a level rather than trend — a filling or draining system breaks the bookkeeping. Randomness, multiple servers, and unequal stays are all fine: that generality is what makes the law so widely useful.',
+          hints: ['Re-read the sentence about what the law does NOT assume.', 'Think about a shop five minutes after opening.'],
+        },
+      ],
+      hints: ['Everything you need is in the explanation.', 'The three numbers lock together — two known, one derived.'],
+      explanation:
+        'A preparation-for-future-learning probe: how much of a new idea did a short explanation buy you? Recorded apart from your skills, and it never changes a rung.',
+    }
+  },
+)
+
+/**
+ * Condorcet cycles — group preferences can loop even when every individual is
+ * consistent. Untaught anywhere in the tree; hosted on data interpretation.
+ */
+const condorcetCycle = tpl(
+  {
+    id: 'pfl-condorcet',
+    name: 'New idea: when voting loops',
+    skillIds: ['m-data'],
+    bucket: 'math',
+    difficulty: 4,
+    variants: 6,
+    minutes: 4,
+    kind: 'multi',
+  },
+  (rng, seed) => {
+    const options = cycle(seed, [
+      ['Pizza', 'Ramen', 'Tacos'],
+      ['Park', 'Museum', 'Pool'],
+      ['Chess', 'Charades', 'Trivia'],
+      ['Blue', 'Green', 'Red'],
+      ['Comedy', 'Mystery', 'Sci-fi'],
+      ['Monday', 'Wednesday', 'Friday'],
+    ] as const)
+    const [A, B, C] = options
+    return {
+      title: 'Learn it here, then use it',
+      prompt: 'A short explanation of something this app has never taught you. Read it, then answer from it.',
+      parts: [
+        {
+          study: study(
+            `**WHEN A GROUP'S PREFERENCES LOOP**\n\n` +
+              `Three friends rank three options, each with a perfectly consistent personal ranking:\n\n` +
+              `· Friend 1: ${A} > ${B} > ${C}\n\n` +
+              `· Friend 2: ${B} > ${C} > ${A}\n\n` +
+              `· Friend 3: ${C} > ${A} > ${B}\n\n` +
+              `Now run head-to-head votes. ${A} vs ${B}: friends 1 and 3 prefer ${A} — so ${A} wins 2-1. ${B} vs ${C}: friends 1 and 2 prefer ${B} — ${B} wins 2-1.\n\n` +
+              `So the group prefers ${A} over ${B}, and ${B} over ${C}. Surely ${A} beats ${C}?\n\n` +
+              `Count it: friends 2 and 3 both rank ${C} above ${A}. **${C} beats ${A}, 2-1.** The group's preference runs in a circle — ${A} > ${B} > ${C} > ${A} — even though no individual is confused.\n\n` +
+              `This is a preference cycle. Its sting: whoever chooses WHICH two options face off can steer the final outcome, because every option loses to something.`,
+          ),
+          studySeconds: 90,
+          prompt: `From the explanation: in the ${A}-vs-${C} head-to-head, who wins?`,
+          answer: mcq(rng, `${C}, by 2 votes to 1`, [
+            `${A}, by 2 votes to 1`,
+            `It is a tie`,
+            `${B} — the middle option always wins head-to-heads it is not in`,
+          ]),
+          explanation: `Friends 2 (${B} > ${C} > ${A}) and 3 (${C} > ${A} > ${B}) both place ${C} above ${A}, so **${C} wins 2-1** — closing the loop the first two votes opened.`,
+          hints: ['Check each friend\'s ranking: who places ' + C + ' above ' + A + '?', 'Two of the three do.'],
+        },
+        {
+          prompt: `The club votes ${A} vs ${B} first, then the winner faces ${C}. Using the explanation's head-to-head results, which option ends up chosen?`,
+          answer: mcq(rng, C, [A, B]),
+          explanation: `${A} beats ${B} in round one, then meets ${C} — and the explanation showed ${C} beats ${A}. So **${C}** wins this agenda. (Start with ${B} vs ${C} instead and ${A} would win the same club's vote — the ORDER of pairings decides, which is the cycle's practical bite.)`,
+          hints: [`Round one: ${A} wins. Round two is ${A} vs ${C}.`, 'The study text settled that matchup.'],
+        },
+        {
+          prompt: 'What is the honest takeaway of the preference cycle?',
+          answer: mcq(rng, 'A group can have looping preferences even when every member ranks consistently — so agenda order can decide outcomes', [
+            'One of the three friends must secretly have an inconsistent ranking',
+            'Head-to-head voting always finds the true group favorite',
+            'Cycles only happen when voters change their minds between rounds',
+          ]),
+          explanation:
+            'Every individual ranking was a clean, consistent list — the LOOP lives only at the group level. That is the unsettling and useful lesson: "what the group prefers" can be genuinely undefined, and whoever sets the order of votes holds real power. Knowing this is a defense, not a trick: you can now spot when an agenda, not a majority, produced a result.',
+          hints: ['Re-read the last paragraph.', 'The individuals were consistent; something else looped.'],
+        },
+      ],
+      hints: ['Everything you need is in the explanation.', 'Count each head-to-head from the three rankings.'],
+      explanation:
+        'A preparation-for-future-learning probe: how much of a new idea did a short explanation buy you? Recorded apart from your skills, and it never changes a rung.',
+    }
+  },
+)
+
+/**
+ * The maximum-based population estimate (the classic serial-number problem).
+ * Untaught in the tree; hosted on sampling, whose mindset it extends.
+ */
+const serialEstimate = tpl(
+  {
+    id: 'pfl-serial-estimate',
+    name: 'New idea: estimating the biggest number',
+    skillIds: ['m-sampling'],
+    bucket: 'math',
+    difficulty: 4,
+    variants: 12,
+    minutes: 4,
+    kind: 'multi',
+  },
+  (rng, seed) => {
+    const scene = cycle(seed, [
+      { things: 'raffle tickets', made: 'printed' },
+      { things: 'limited-edition posters', made: 'numbered' },
+      { things: 'taxi licenses', made: 'issued' },
+      { things: 'trading-card print runs', made: 'numbered' },
+    ] as const)
+    const k = cycle(Math.floor(seed / 4), [4, 5, 6] as const)
+    // Choose max so that max/k is integral: estimate = max + max/k - 1.
+    const unit = rint(rng, 8, 20)
+    const max = unit * k
+    const est = max + max / k - 1
+    return {
+      title: 'Learn it here, then use it',
+      prompt: 'A short explanation of something this app has never taught you. Read it, then answer from it.',
+      parts: [
+        {
+          study: study(
+            `**GUESSING HOW MANY EXIST FROM THE BIGGEST SERIAL NUMBER SEEN**\n\n` +
+              `Some ${scene.things} are ${scene.made} 1, 2, 3, … up to some unknown total N. You get a small random handful and want to estimate N.\n\n` +
+              `The biggest number in your hand is the key clue — but it is NOT the answer. The true total is at least that big, and almost surely bigger: how likely is it that your little sample happened to include the very last one ${scene.made}?\n\n` +
+              `The fix uses the GAPS. A random sample of k numbers splits the range into roughly equal gaps, so the biggest number you saw sits about one gap short of the top.\n\n` +
+              `**Estimate: N ≈ biggest seen + (biggest seen ÷ k) − 1**, where k is how many you sampled — the biggest number seen, plus one typical gap.\n\n` +
+              `· Sample of 4 with biggest = 60: N ≈ 60 + 15 − 1 = 74.\n\n` +
+              `This one idea — treat the maximum as sitting one average gap below the truth — famously outperformed intelligence reports when statisticians used factory serial numbers to estimate wartime production.`,
+          ),
+          studySeconds: 90,
+          prompt: `You get a random sample of **${k}** ${scene.things}; the biggest number among them is **${max}**. Using the explanation's estimate, about how many were ${scene.made} in total?`,
+          answer: numeric(est, { tolerance: 0 }),
+          explanation: `N ≈ ${max} + ${max}/${k} − 1 = ${max} + ${max / k} − 1 = **${est}**. The biggest seen plus one typical gap of ${max / k}.`,
+          hints: [`The formula is in the box: biggest + biggest/k − 1.`, `${max} + ${max / k} − 1.`],
+        },
+        {
+          prompt: `A friend says: "The biggest ticket in the sample is ${max}, so the best guess is that ${max} were ${scene.made}." What does the explanation say about this guess?`,
+          answer: mcq(rng, 'It is almost surely too LOW — the sample very rarely contains the top number', [
+            'It is almost surely too high — big numbers are oversampled',
+            'It is the best possible guess — the maximum is all you know',
+            'It is too low only when the sample is large',
+          ]),
+          explanation:
+            'The true total can never be below the biggest seen, and it exceeds it unless the sample happened to catch the very top — unlikely for any small handful. So "biggest seen" is a FLOOR, not an estimate, and the gap correction exists precisely to repair its systematic lowness.',
+          hints: ['Could the truth be below the biggest number you hold?', 'How often would a small handful include the single top number?'],
+        },
+        {
+          prompt: 'Why does the estimate divide by k, the sample size?',
+          answer: mcq(rng, 'More samples mean smaller gaps — the biggest seen sits closer to the truth, so less is added', [
+            'Bigger samples contain bigger numbers, so the estimate must shrink to compensate',
+            'Dividing by k converts the answer into a per-ticket rate',
+            'It is an arbitrary convention statisticians agreed on',
+          ]),
+          explanation:
+            'k random numbers cut the range into about k equal gaps, so the typical gap — the amount the maximum falls short — is about (biggest ÷ k). A bigger handful means smaller gaps, a maximum hugging the truth, and a smaller correction. The formula is the gap logic written down, not a memorized rule.',
+          hints: ['Re-read the paragraph about gaps.', 'What happens to the gaps as the handful grows?'],
+        },
+      ],
+      hints: ['Everything you need is in the explanation.', 'Biggest seen is a floor; add one typical gap.'],
+      explanation:
+        'A preparation-for-future-learning probe: how much of a new idea did a short explanation buy you? Recorded apart from your skills, and it never changes a rung.',
+    }
+  },
+)
+
+/**
+ * Nine distinct ideas, against a readout that needs four probes. That headroom
  * is the point: with only three, reaching the threshold forced a repeat, and a
- * repeated probe measures memory rather than pick-up. `retiredGrowthRates` is
- * deliberately absent — see its comment.
+ * repeated probe measures memory rather than pick-up. At one probe a week in
+ * sessions, nine ideas is roughly a school quarter of runway.
+ * `retiredGrowthRates` is deliberately absent — see its comment.
  */
 export const PFL_TEMPLATES: ItemTemplate[] = [
   clockArithmetic,
@@ -506,4 +754,7 @@ export const PFL_TEMPLATES: ItemTemplate[] = [
   regressionToMean,
   networkDegrees,
   leadingDigits,
+  littlesLaw,
+  condorcetCycle,
+  serialEstimate,
 ]

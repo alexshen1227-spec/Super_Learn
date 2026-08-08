@@ -12,6 +12,7 @@ import { validatePack } from '../../engine/contentSchema'
 import { BUCKETS, DEFAULT_ALLOCATIONS, MIN_ALLOCATION_PERCENT, type BucketId, type Deadline } from '../../domain/types'
 import { uid } from '../../engine/rng'
 import { Button, Card, Chip, Confirm, Divider, GrabSlider, Modal, Row, SectionTitle, Segmented, Toggle } from '../components'
+import { MATH_TRACKS } from '../../content/tracks'
 import { IconBack } from '../icons'
 import { CHANGELOG } from '../../content/changelog'
 import { requestNotificationPermission } from '../notify'
@@ -125,6 +126,34 @@ export function SettingsScreen() {
                   className={`min-h-11 px-3 rounded-lg border text-[14px] font-medium ${state.profile.gradeLevel === g ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'}`}
                 >
                   {g}th
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="text-[13px] font-medium text-muted">Math course</span>
+            <p className="text-[12px] text-faint mt-0.5">
+              Course skills get a small, openly-labeled priority bump; nothing outside it is dropped. The coach reports course progress from real evidence.
+            </p>
+            <div className="flex gap-1.5 mt-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => dispatch({ type: 'update-profile', profile: { mathTrack: null } })}
+                aria-pressed={state.profile.mathTrack === null}
+                className={`min-h-11 px-3 rounded-lg border text-[14px] font-medium ${state.profile.mathTrack === null ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'}`}
+              >
+                None
+              </button>
+              {MATH_TRACKS.map((t) => (
+                <button
+                  type="button"
+                  key={t.id}
+                  onClick={() => dispatch({ type: 'update-profile', profile: { mathTrack: t.id } })}
+                  aria-pressed={state.profile.mathTrack === t.id}
+                  title={t.blurb}
+                  className={`min-h-11 px-3 rounded-lg border text-[14px] font-medium ${state.profile.mathTrack === t.id ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'}`}
+                >
+                  {t.name}
                 </button>
               ))}
             </div>

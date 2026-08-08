@@ -11,6 +11,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '6.0',
+    date: '2026-08-08',
+    title: 'The App Now Knows What Class You Are In',
+    points: [
+      'You can tell the app your actual math course: Math 6 (review), Math 7, Math 7+ (accelerated), or 7/8 Algebra — set during onboarding or anytime in Settings. The course maps were built from the real thing: the verbatim Common Core standards California adopted, the state\'s own definition of the accelerated 7+ pathway (all of 7th plus the first half of 8th), district course descriptions, and the placement tests districts actually use for algebra readiness. Sources are in the research ledger.',
+      'What choosing a course does — and deliberately does not do: course skills get a small, openly-labeled priority bump, the same bounded-tilt law your goals follow. Every selection says so in its "why". Nothing outside the course is dropped, the practice-balance sliders still rule, and a due review still outranks course membership. Skills that UNLOCK your course\'s material get a smaller bump too — added after a simulation showed a fresh learner on the algebra track spending a year staring at locked doors.',
+      'The coach now reports course progress honestly: how many course skills are independent-or-better (never "we covered it in class" — guided exposure does not count), and which unit is next. When you finish a course, it names the next one and changes nothing until you choose it.',
+      'About 70 new problem families, built from what those courses actually assign: systems by elimination with the classic mixture/chase/age word problems, every form of a linear equation, two-variable inequalities and their systems, function domain/rate-of-change/inverses, sequences in recursive and explicit form, exponential models from percents and tables, compound probability, sampling and scale drawings, GCF/LCM, and a proper set of AoPS-style non-routine problems (working backwards, invented operations, extremes, digit algebra). Wrong answers are not random: they encode the documented mistakes real students make.',
+      'The ceiling moved up too: quadratics by vertex form and formula, radical arithmetic, rational exponents, finite and infinite series, permutations and combinations, and logarithms as "the exponent finder". And every other part of the app grew — two new hard families each for Observer, Investigator, Strategist, Insight, Meta, science, physics, and coding.',
+      'Three new readiness probes (a waiting-line law, voting cycles, and estimating a total from the biggest serial number seen) bring the pool to nine — about a school quarter of weekly runway. One collision caught by the release gate mid-build: a new counting family teaches the handshake formula an existing probe relied on, so the probe was rebuilt on the part of its idea that stays untaught. The gate exists for exactly this.',
+      'Two honest corrections along the way: variability-and-distributions was labeled an 8th-grade skill when IQR and MAD are verbatim 6th-grade standards (fixed after actually reading them), and one requested source — a "Tapis" Algebra 1 textbook — could not be identified as a real book, so it was flagged rather than silently invented.',
+    ],
+  },
+  {
     version: '5.2',
     date: '2026-08-07',
     title: 'The Readout I Shipped Yesterday Could Never Actually Appear',

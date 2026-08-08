@@ -41,6 +41,12 @@ import { PATH_QUESTION_TEMPLATES } from './items/pathQuestionExpansion'
 import { PATH_DEPTH_TEMPLATES } from './items/pathQuestionDepth'
 import { AUTHENTIC_WORK_TEMPLATES } from './items/authenticWork'
 import { REAL_WORLD_TEMPLATES } from './items/realWorldPractice'
+import { GRADE_CORE_TEMPLATES } from './items/gradeCore'
+import { ALGEBRA_ONE_TEMPLATES } from './items/algebraOne'
+import { MIDDLE_DEPTH_TEMPLATES } from './items/middleDepth'
+import { NON_ROUTINE_TEMPLATES } from './items/nonRoutine'
+import { BEYOND_CORE_TEMPLATES } from './items/beyondCore'
+import { LABS_DEPTH_TEMPLATES } from './items/labsDepth'
 
 export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...MATH_NUMBER_TEMPLATES,
@@ -78,6 +84,12 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...PATH_DEPTH_TEMPLATES,
   ...AUTHENTIC_WORK_TEMPLATES,
   ...REAL_WORLD_TEMPLATES,
+  ...GRADE_CORE_TEMPLATES,
+  ...ALGEBRA_ONE_TEMPLATES,
+  ...MIDDLE_DEPTH_TEMPLATES,
+  ...NON_ROUTINE_TEMPLATES,
+  ...BEYOND_CORE_TEMPLATES,
+  ...LABS_DEPTH_TEMPLATES,
 ]
 
 export function packItemToTemplate(pack: ContentPackJson, i: number): ItemTemplate {

@@ -17,6 +17,7 @@ import { Chess } from 'chess.js'
 import { BUILTIN_TEMPLATES, DEFAULT_INDEX } from './registry'
 import { COURSES, SKILLS, SKILL_BY_ID } from './skills'
 import { DIFFICULTY_INFO } from './difficulty'
+import { MATH_TRACKS, TRACK_BY_ID } from './tracks'
 import { STATE_LABEL } from '../engine/mastery'
 import { KB_BY_SKILL } from './kb'
 import { correctResponse, firstFailedStep, serializeSteps, validate, wrongResponse } from '../engine/validate'
@@ -850,5 +851,44 @@ describe('the difficulty scale and the evidence ladder do not share vocabulary',
         `difficulty ${level} is named "${info.name}", which is also an evidence rung`,
       ).toBe(false)
     }
+  })
+})
+
+/**
+ * Math tracks are course maps: every skill they name must exist, be math, and
+ * be reachable content; broken pointers here would silently hollow out the
+ * course-progress readout and the planner tilt.
+ */
+describe('math tracks resolve against the tree', () => {
+  it('every track skill exists, is math, and has content', () => {
+    for (const track of MATH_TRACKS) {
+      for (const unit of track.units) {
+        expect(unit.skillIds.length, `${track.id}/${unit.name}: empty unit`).toBeGreaterThan(0)
+        for (const sid of unit.skillIds) {
+          const skill = SKILL_BY_ID.get(sid)
+          expect(skill, `${track.id}/${unit.name}: unknown skill ${sid}`).toBeTruthy()
+          expect(skill!.bucket, `${track.id}: ${sid} is not a math skill`).toBe('math')
+          const items = BUILTIN_TEMPLATES.filter((t) => t.skillIds.includes(sid))
+          expect(items.length, `${track.id}: ${sid} has no content`).toBeGreaterThan(0)
+        }
+      }
+    }
+  })
+
+  it('next pointers resolve and do not cycle', () => {
+    for (const track of MATH_TRACKS) {
+      const seen = new Set<string>([track.id])
+      let cur = track.next
+      while (cur) {
+        expect(TRACK_BY_ID.has(cur), `${track.id}: next points at unknown track ${cur}`).toBe(true)
+        expect(seen.has(cur), `${track.id}: next chain cycles at ${cur}`).toBe(false)
+        seen.add(cur)
+        cur = TRACK_BY_ID.get(cur)!.next
+      }
+    }
+  })
+
+  it('track ids are unique', () => {
+    expect(new Set(MATH_TRACKS.map((t) => t.id)).size).toBe(MATH_TRACKS.length)
   })
 })

@@ -44,6 +44,7 @@ const mathFoundations = defineCourse(
         { id: 'm-proportion', name: 'Proportional relationships', bucket: 'math', prereqs: ['m-ratio'], gradeBand: 7, blurb: 'Set up and solve proportions; recognize proportionality.' },
         { id: 'm-percent', name: 'Percent problems', bucket: 'math', prereqs: ['m-proportion', 'm-decimals'], gradeBand: 7, blurb: 'Percent of a number, percent change, discounts, and interest.' },
         { id: 'm-units', name: 'Units & dimensional reasoning', bucket: 'math', prereqs: ['m-ratio'], gradeBand: 7, blurb: 'Convert units with conversion factors; reason about dimensions.' },
+        { id: 'm-scale', name: 'Scale drawings & maps', bucket: 'math', prereqs: ['m-proportion'], gradeBand: 7, blurb: 'Scale factors between drawings and reality; how lengths and areas scale differently.' },
       ],
     },
     {
@@ -51,11 +52,16 @@ const mathFoundations = defineCourse(
       name: 'Data & probability',
       skills: [
         { id: 'm-stats', name: 'Descriptive statistics', bucket: 'math', prereqs: ['m-decimals'], gradeBand: 6, blurb: 'Mean, median, mode, range, and what each summary hides.' },
-        { id: 'm-variability', name: 'Variability & distributions', bucket: 'math', prereqs: ['m-stats'], gradeBand: 8, blurb: 'Spread, quartiles, IQR, and why equal averages can hide very different data.' },
+        // gradeBand corrected 8 → 6 (2026-08-08): IQR/MAD and distribution shape
+        // are 6.SP.5 in the verbatim CCSS text; comparing two populations via
+        // center-vs-spread is then 7.SP.3-4. The 8 was a guess that survived
+        // until the standards were actually read.
+        { id: 'm-variability', name: 'Variability & distributions', bucket: 'math', prereqs: ['m-stats'], gradeBand: 6, blurb: 'Spread, quartiles, IQR, and why equal averages can hide very different data.' },
         { id: 'm-data', name: 'Data interpretation', bucket: 'math', prereqs: ['m-stats'], gradeBand: 7, blurb: 'Read and question tables, bar charts, line graphs, and scatter plots.' },
         { id: 'm-bestfit', name: 'Scatter plots & trend lines', bucket: 'math', prereqs: ['m-data', 'm-linear'], gradeBand: 8, blurb: 'Read association from a scatter plot and use a trend line without overclaiming it.' },
         { id: 'm-counting', name: 'Counting principles', bucket: 'math', prereqs: ['m-integers'], gradeBand: 7, blurb: 'Systematic counting, the multiplication principle, simple arrangements.' },
         { id: 'm-prob', name: 'Probability', bucket: 'math', prereqs: ['m-fractions', 'm-counting'], gradeBand: 7, blurb: 'Single and compound events, complements, and sample spaces.' },
+        { id: 'm-sampling', name: 'Sampling & inference', bucket: 'math', prereqs: ['m-stats', 'm-prob'], gradeBand: 7, blurb: 'What a random sample can and cannot tell you about the whole population.' },
         { id: 'm-ev', name: 'Expected value', bucket: 'math', prereqs: ['m-prob'], gradeBand: 9, blurb: 'Average long-run outcomes; when a bet or plan is worth it.' },
       ],
     },
@@ -84,7 +90,9 @@ const algebra = defineCourse(
         { id: 'm-coord', name: 'Coordinate plane', bucket: 'math', prereqs: ['m-integers'], gradeBand: 7, blurb: 'Plot points, read graphs, and find distances on the grid.' },
         { id: 'm-linear', name: 'Slope & linear patterns', bucket: 'math', prereqs: ['m-coord', 'm-proportion'], gradeBand: 8, blurb: 'Rate of change, slope from points and graphs.' },
         { id: 'm-linfunc', name: 'Linear equations & graphs', bucket: 'math', prereqs: ['m-linear', 'm-lineqmulti'], gradeBand: 8, blurb: 'y = mx + b: build, graph, and interpret linear models.' },
+        { id: 'm-linforms', name: 'Forms of linear equations', bucket: 'math', prereqs: ['m-linfunc'], gradeBand: 9, blurb: 'Slope-intercept, point-slope, and standard form: pick the right one, convert between them.' },
         { id: 'm-systems', name: 'Systems of equations', bucket: 'math', prereqs: ['m-linfunc'], gradeBand: 9, blurb: 'Solve pairs of linear equations; what a solution means.' },
+        { id: 'm-ineq2d', name: 'Two-variable inequalities', bucket: 'math', prereqs: ['m-linfunc', 'm-inequal'], gradeBand: 9, blurb: 'Half-planes, boundary lines, and the region where several inequalities all hold.' },
         { id: 'm-functions', name: 'Functions', bucket: 'math', prereqs: ['m-linfunc'], gradeBand: 9, blurb: 'Function notation, inputs/outputs, and reading f(x).' },
       ],
     },

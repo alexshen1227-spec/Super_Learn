@@ -8,6 +8,7 @@ import { defaultProfile, defaultSettings } from '../../domain/types'
 import { useStore } from '../../store/store'
 import { useNav } from '../nav'
 import { Button, Chip, Segmented } from '../components'
+import { MATH_TRACKS } from '../../content/tracks'
 
 const GOAL_PRESETS = [
   'Raise my grades',
@@ -109,6 +110,28 @@ export function Onboarding() {
               }`}
             >
               {g}th
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-5">
+        <span className="text-sm font-medium text-muted">Math course right now (optional)</span>
+        <p className="text-[12px] text-faint mt-0.5">
+          Course skills get a small, openly-labeled priority bump — nothing outside the course is dropped.
+        </p>
+        <div className="flex gap-2 mt-1.5 flex-wrap">
+          {MATH_TRACKS.map((t) => (
+            <button
+              type="button"
+              className="min-h-11"
+              key={t.id}
+              onClick={() => set({ mathTrack: profile.mathTrack === t.id ? null : t.id })}
+              aria-pressed={profile.mathTrack === t.id}
+              title={t.blurb}
+            >
+              <Chip tone={profile.mathTrack === t.id ? 'accent' : 'neutral'} className="!py-2 !px-3 !text-sm cursor-pointer">
+                {t.name}
+              </Chip>
             </button>
           ))}
         </div>

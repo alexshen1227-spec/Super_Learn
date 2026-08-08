@@ -710,3 +710,81 @@ around day 24.
   instead of teaching them once.
 - **Tier**: EVIDENCE for the direction. No effect size is asserted to the
   learner anywhere in the app.
+
+## 25. Curriculum ledger: math tracks and the 2026-08-08 content expansion
+
+The math tracks (`src/content/tracks.ts`) map real courses onto the skill
+tree so "raise my grades" can mean something concrete. Course contents are
+FACTS about curricula, sourced below; how the app uses them is design, and
+the design constants are HEURISTICS labeled as such.
+
+**Sources for course contents (all fetched 2026-08-08):**
+
+- CCSS-M grade 6 and grade 7 standards, read verbatim (Oregon DOE's official
+  copies of the identical text; corestandards.org 403s automated fetches):
+  https://www.oregon.gov/ode/educator-resources/standards/mathematics/Documents/ccssm6.pdf
+  and …/ccssm7.pdf. California's adopted standards are the CCSS-M
+  (per https://www.cde.ca.gov/ci/ma/cf/ ).
+- CCSS Appendix A "Accelerated 7th Grade" — the compacted-pathway model the
+  CA State Board circulated — defines Math 7+ as ALL of grade 7 plus
+  8.NS.1-2, 8.EE.1-7, 8.G.1-5, and 8.G.9, explicitly RETAINING systems
+  (8.EE.8), functions (8.F), the Pythagorean cluster (8.G.6-8), and
+  bivariate statistics (8.SP) for the accelerated 8th-grade Algebra year:
+  https://www.cde.ca.gov/be/cc/cd/documents/may2012item12catt2.pdf
+- District verification: Cambrian SD follows Appendix A verbatim; Cupertino
+  Union's Math 7+ pulls down MORE (essentially all of grade 8, via CPM
+  CC2+CC3); Irvine runs an integrated compaction; SRVUSD historically
+  accelerates by whole-course skip instead. The track model follows Appendix
+  A — the state's own definition — and places the district-variable topics at
+  the START of the next track, so no district's student finds them missing.
+- Algebra readiness: MDTP Algebra 1/IM1 readiness test strands (integers,
+  fractions, decimals/percents/absolute value, exponents & roots, scientific
+  notation, linear equations & inequalities, function representations,
+  geometry/measurement, data): https://mdtp.ucsd.edu/assessments/readiness-tests.html
+- Algebra 1 course map: Khan Academy Algebra 1 (14 mastery units, read from
+  the live course page), AoPS Introduction to Algebra (official ToC PDF,
+  22 chapters), CPM Core Connections Algebra 2013 (chapter lists via
+  Mathleaks + teacher course sites). The new content families target the
+  consensus core present in all three.
+- Global-typical comparison (England KS3 statutory programme, gov.uk):
+  systems abroad commonly front-load negative-number arithmetic, formal
+  equation solving, nth-term sequences, and inverse proportion about a year
+  before the CCSS placement. Covered in the app by CONTENT DEPTH (sequences,
+  series, non-routine families) rather than by changing the CA course maps.
+- "Tapis Algebra 1": could not be identified as a real textbook after
+  multiple searches (nearest hits are Montessori counting mats — "tapis" is
+  French for mat). Not used as a source; flagged to the user.
+
+**Design rules (HEURISTIC, tested in `engine/tracks.test.ts`):**
+
+- A track is a TILT, never a filter: `TRACK_BONUS` 1.2 + `TRACK_UNIT_BONUS`
+  0.5 for the earliest unfinished unit, both below a due review's weight (3),
+  both stating themselves in the selection's why. Non-course content keeps
+  rotating; allocation sliders and floors still rule.
+- `TRACK_PREREQ_BONUS` 0.8 for unmet prerequisites of course skills — added
+  after measurement, not before: a simulated fresh learner on the
+  algebra-readiness track owned 2 of 18 course skills after a year because
+  the tilt pointed only at locked doors.
+- The coach's course readout counts ONLY independent-or-better — "we did
+  that unit in class" is guided exposure, not ownership — and renders from
+  day one because it claims course coverage, not learner traits.
+- gradeBand correction: m-variability 8 → 6 (IQR/MAD is verbatim 6.SP.5).
+
+**Content added (all original, computed answers, audit-gated):** 4 new
+skills (scale drawings 7.G.1, sampling & inference 7.SP.1-2, forms of linear
+equations, two-variable inequalities); ~70 new template families across
+gradeCore/algebraOne/middleDepth/nonRoutine/beyondCore/labsDepth, targeting
+the researched kinds with the DOCUMENTED mal-rules as distractors
+(transposition slips, flip omission, additive proportional strategy,
+equiprobability bias — the [lit]-tagged patterns; untagged distractors are
+teacher-practice heuristics). Non-math got 16 families (two per Path/lab
+plus science/physics/coding); the ceiling moved up via quadratics-by-method,
+radicals, rational exponents, series, combinatorics, and logarithms.
+
+**Probes:** three added (Little's law, Condorcet cycles, the serial-number
+maximum estimate) → nine total, ~a school quarter of weekly runway. One
+COLLISION caught by the untaught-idea gate during this very expansion: the
+new `count-combinations` family teaches n(n−1)/2, which the network probe's
+handshake question relied on — the probe yielded (rebuilt on the degree-sum
+idea alone), demonstrating the intended direction: when the tree grows into
+probe territory, the probe moves, never the tree.

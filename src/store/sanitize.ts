@@ -36,6 +36,7 @@ import {
 } from '../domain/types'
 import { validatePack } from '../engine/contentSchema'
 import { normalizeAllocationPercentages } from '../engine/allocationTargets'
+import { TRACK_BY_ID } from '../content/tracks'
 
 const BUCKET_IDS = new Set<string>(BUCKETS.map((b) => b.id))
 const MODES = new Set<AttemptMode>(['guided', 'independent', 'review', 'transfer', 'placement', 'exam'])
@@ -64,6 +65,9 @@ function sanitizeProfile(raw: unknown): Profile {
     ageBand: AGE_BANDS.has(p.ageBand as AgeBand) ? (p.ageBand as AgeBand) : d.ageBand,
     gradeLevel: p.gradeLevel === null ? null : num(p.gradeLevel, 5, 12, 8),
     courses: strArray(p.courses, 12, 80),
+    // Validated against the known track ids — an arbitrary string from an
+    // import must not be able to name a track that does not exist.
+    mathTrack: typeof p.mathTrack === 'string' && TRACK_BY_ID.has(p.mathTrack) ? p.mathTrack : null,
     goals: strArray(p.goals, 12, 200),
     strongAreas: strArray(p.strongAreas, 12, 80),
     weakAreas: strArray(p.weakAreas, 12, 80),

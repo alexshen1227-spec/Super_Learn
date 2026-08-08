@@ -599,6 +599,17 @@ export interface Profile {
   ageBand: AgeBand
   gradeLevel: number | null
   courses: string[]
+  /**
+   * The math course the learner is actually in (or preparing for) — a track id
+   * from `content/tracks.ts`, e.g. 'ca-7plus'. Null when not chosen.
+   *
+   * A track is more precise than gradeLevel: California's accelerated pathways
+   * mean two 7th graders can be in different courses. The planner gives track
+   * skills a SMALL, OPENLY-STATED score bonus (same law as goals: a bounded
+   * tilt with a visible reason, never a filter) and the coach can report
+   * progress through the course. Nothing outside the track is dropped.
+   */
+  mathTrack: string | null
   goals: string[]
   strongAreas: string[]
   weakAreas: string[]
@@ -762,6 +773,7 @@ export function defaultProfile(): Profile {
     ageBand: 'unspecified',
     gradeLevel: 8,
     courses: [],
+    mathTrack: null,
     goals: [],
     strongAreas: [],
     weakAreas: [],

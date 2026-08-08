@@ -99,8 +99,11 @@ const CONCEPT_TERMS: Record<string, string[]> = {
   'pfl-simpson': ['overall winner loses'],
   'pfl-pigeonhole': ['pigeonhole'],
   'pfl-regression': ['regression to the mean'],
-  'pfl-network': ['handshake'],
+  'pfl-network': ['sum of all degrees'],
   'pfl-benford': ['first-digit rule'],
+  'pfl-littles-law': ['waiting-line law'],
+  'pfl-condorcet': ['preference cycle'],
+  'pfl-serial-estimate': ['biggest serial number seen'],
 }
 
 describe('probes teach ideas the tree never teaches', () => {

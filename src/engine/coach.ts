@@ -16,7 +16,8 @@ import { evidenceFor, stateRank } from './mastery'
 import { effectiveAllocation } from './allocationPlus'
 import { calibrationGap, highConfidenceErrors } from './calibration'
 import { dueForms, dueReviews } from './scheduler'
-import { prereqLeverage, prereqsMet, scoreSkills } from './planner'
+import { prereqLeverage, prereqsMet, scoreSkills, trackFrontierUnit } from './planner'
+import { TRACK_BY_ID, trackSkillIds } from '../content/tracks'
 import { calendarDaysUntil } from './time'
 import { stretchSignal } from './stretch'
 
@@ -98,6 +99,43 @@ export function coachBeliefs(
   const beliefs: CoachBelief[] = []
   const recent = recentEvents(state.events, now, 28)
   const graded = recent.filter((e) => e.firstCorrect !== null)
+
+  /*
+   * Course progress, when the learner has told us their math course.
+   *
+   * Derived entirely from the evidence ladder: a course skill counts when it
+   * is independent-or-better, because "we did that unit in class" is exactly
+   * the guided/introduced state this app refuses to call ownership. The
+   * readout names the next unit rather than a percentage promise, and it
+   * only exists when a track is chosen — no track, no claim.
+   *
+   * Deliberately ABOVE the sparse-data early return below: unlike the
+   * accuracy beliefs, this one states course coverage, and "0 of 23 owned,
+   * starting at unit 1" is true and useful on day one. It claims nothing
+   * about the learner that zero attempts cannot support.
+   */
+  const track = state.profile.mathTrack ? TRACK_BY_ID.get(state.profile.mathTrack) ?? null : null
+  if (track) {
+    const ids = trackSkillIds(track)
+    const owned = ids.filter((sid) => stateRank(evidenceFor(evidence, sid).state) >= stateRank('independent'))
+    const frontier = trackFrontierUnit(track, evidence)
+    const done = owned.length === ids.length
+    beliefs.push({
+      id: 'course-track',
+      statement: done
+        ? `Your ${track.name} course is fully owned — every skill in it is independent or better.${track.next && TRACK_BY_ID.get(track.next) ? ` ${TRACK_BY_ID.get(track.next)!.name} is the natural next course.` : ''}`
+        : `In your ${track.name} course, ${owned.length} of ${ids.length} skills are independent or better.`,
+      confidence: 'high',
+      evidence: [
+        `Counted from the evidence ladder: a course skill counts only at independent+, never from having seen it in class.`,
+        ...(frontier ? [`Next up in course order: ${frontier.name}.`] : []),
+      ],
+      unknown: 'How your class sequences units — the order here is the typical one, not your teacher\'s.',
+      resolve: done
+        ? 'Pick the next course in Settings when you are ready — nothing changes automatically.'
+        : 'Course skills get a small, openly-labeled priority bump; everything else keeps rotating as usual.',
+    })
+  }
 
   if (graded.length < 5) {
     beliefs.push({
