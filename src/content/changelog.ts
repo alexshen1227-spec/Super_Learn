@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '6.2',
+    date: '2026-08-08',
+    title: 'The Storage Number, Explained by Itself',
+    points: [
+      'Settings → Privacy & storage now breaks the usage number down (on browsers that expose it, like Chrome on Android): how much is the cached app itself, how much is your actual learning data, and that the rest is browser bookkeeping. Prompted by a real question — a barely-used profile showing 75 MB. The answer: almost all of that is the app files kept for offline use plus the browser\'s own overhead; the learning history itself is kilobytes, and grows a few MB per year of daily practice.',
+    ],
+  },
+  {
     version: '6.1',
     date: '2026-08-08',
     title: 'For Everyone Middle School Onward — Courses Up Through College',

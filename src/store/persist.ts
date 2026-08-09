@@ -202,10 +202,20 @@ export async function requestPersistence(): Promise<boolean> {
 export interface StorageInfo {
   persisted: boolean | null
   usageBytes: number | null
+  /**
+   * Chrome-only breakdown (`estimate().usageDetails`, non-standard): how much
+   * of the total is the app-file cache vs the learner's actual data. Worth
+   * surfacing because the headline number confuses people — the estimate
+   * includes precached app files, compiled-code caches, and database overhead,
+   * so it reads tens of MB while the learning data itself is kilobytes.
+   * Null where the browser does not expose the split.
+   */
+  cachesBytes: number | null
+  idbBytes: number | null
 }
 
 export async function storageInfo(): Promise<StorageInfo> {
-  const info: StorageInfo = { persisted: null, usageBytes: null }
+  const info: StorageInfo = { persisted: null, usageBytes: null, cachesBytes: null, idbBytes: null }
   try {
     if (navigator.storage?.persisted) info.persisted = await navigator.storage.persisted()
   } catch {
@@ -215,6 +225,11 @@ export async function storageInfo(): Promise<StorageInfo> {
     if (navigator.storage?.estimate) {
       const est = await navigator.storage.estimate()
       info.usageBytes = est.usage ?? null
+      const details = (est as { usageDetails?: Record<string, number> }).usageDetails
+      if (details) {
+        info.cachesBytes = typeof details.caches === 'number' ? details.caches : null
+        info.idbBytes = typeof details.indexedDB === 'number' ? details.indexedDB : null
+      }
     }
   } catch {
     /* unknown */

@@ -499,6 +499,14 @@ export function SettingsScreen() {
             : 'this app has requested persistent storage; installing it to your home screen strengthens that protection.'}{' '}
           {storage?.usageBytes != null ? `Current usage: ${(storage.usageBytes / 1024 / 1024).toFixed(1)} MB.` : ''}
         </p>
+        {storage?.usageBytes != null && (storage.cachesBytes != null || storage.idbBytes != null) ? (
+          <p className="text-[13px] text-muted leading-relaxed mt-2">
+            What that number is made of: {storage.cachesBytes != null ? `${(storage.cachesBytes / 1024 / 1024).toFixed(1)} MB is the cached app itself (kept so it opens offline and instantly), ` : ''}
+            {storage.idbBytes != null ? `${(storage.idbBytes / 1024 / 1024).toFixed(1)} MB is your actual learning data, ` : ''}
+            and the rest is browser bookkeeping (compiled-code caches and database overhead). The headline reads large
+            because of the app files — your history itself stays tiny, roughly a few MB per year of daily practice.
+          </p>
+        ) : null}
       </Card>
 
       <SectionTitle>About</SectionTitle>
