@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '7.0',
+    date: '2026-08-09',
+    title: 'Five Things That Make You Think Harder',
+    points: [
+      'Constraint puzzles: "using these digits, each at most once, fill the boxes to make the largest sum / closest result / biggest product". The arithmetic is easy; the SEARCH is not — you have to work out which slot carries the most weight. Every answer is a true optimum found by exhaustive search, and the release check re-solves each one from the digits printed in the question, so a wrong "best" cannot ship. Same rule the chess tactics follow.',
+      'Get ready for the next course: a card in Practice that offers only the prerequisites you do not own yet for the course after yours, foundations first. It counts real independence — having seen something in class does not count — and if nothing stands in your way it says so instead of inventing busywork.',
+      'The coach now names your recurring mistakes. Not "you got 12 wrong" but "Misread the problem is a pattern, not a one-off — 9 of your last 12 tagged mistakes, mostly in Percent problems", with the repair that actually fits that cause. Misreads, wrong-method picks, and slips each need a different fix, and none of them is "practise more". It refuses to name a habit from fewer than 8 tagged errors, because two slips is not a habit.',
+      '"Prove me wrong" questions: a claim that sounds right, and you find the single case that kills it — squaring always makes a number bigger (try 1/2), the sum of two primes is always even (try 2 + 3). Then a harder version: repair the broken claim so it is actually true. One counterexample ends a "for all" argument, and a thousand supporting examples never establish one.',
+      'Send to another device: hands your export straight to Nearby Share, AirDrop, or whatever you pick, with no server involved. A QR-code version was considered and rejected on measurement — a year of practice is about 1.75 MB, which is 607 QR codes.',
+      'Bug fixed, found by your own question: your learning goals were being applied one at a time, and each one quietly ate into the ones before it — so picking two goals that pointed different ways cancelled almost to nothing. They now apply together in a single pass. Measured: "Move up in my math course" went from +8 to the full +10 it was supposed to get. The note also stops claiming a big tilt when you pick many goals, because the budget is shared, not multiplied.',
+    ],
+  },
+  {
     version: '6.3',
     date: '2026-08-08',
     title: 'Your Goals, Editable — and Reports You Can Delete',

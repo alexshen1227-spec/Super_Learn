@@ -825,3 +825,62 @@ sessions — kinds and structures only, never text:
   ALEKS/Beast proprietary (public taxonomies only); Paul's Notes forbids
   incorporation — kinds and error categories only. The app's standing rule
   (original problems, computed answers) keeps every source safely usable.
+
+## 26. The 2026-08-09 build: constraint problems, on-ramps, mal-rules, counterexamples
+
+**Goal-tilt correction (measured, then fixed).** Goal deltas were applied one
+bucket at a time via `rebalanceAllocationPercentage`, and each call pulled back
+from the buckets already raised — so the first delta in the list silently
+funded the last. Measured: a request for math +9.6 / meta +2.4 landed at +8 /
++2, and two goals pointing opposite ways cancelled to roughly baseline. New
+`applyAllocationDeltas` raises every boosted bucket in ONE pass and takes the
+cost from the untouched ones by surplus share. After: math +10 / meta +2, and
+opposing goals now both register (math +5 plus each Path +1). Order of
+application is now provably irrelevant (`goals.test.ts`). The user-facing note
+was also corrected: with several goals it now says the budget is SHARED, since
+"your goals tilt ~12 points" was a promise the mechanism does not keep when
+ten goals net about two points of movement.
+
+**Constraint problems — EVIDENCE for the format, HEURISTIC for the selection.**
+Modeled on the Open Middle problem style surveyed in §25 (closed beginning,
+closed end, open middle). Answers are OPTIMA found by exhaustive search in
+`engine/constraintPuzzle.ts`, never authored, and re-derived by the audit from
+the digit pool printed in each prompt — the same discipline that replaced
+authored chess "best moves" with search-verified ones. The solver itself is
+validated against hand-checkable cases (max sum 183, balanced product 96×87 =
+8352 beating the greedy 98×76 = 7448) so it cannot silently relocate the
+"optimum nobody checked" problem into the engine.
+
+**Get-ready mini-courses — DERIVED, not authored.** Inspired by Khan's "Get
+ready for X" packaging (§25). `engine/getReady.ts` walks the prerequisite
+closure of a target track and keeps what the learner does not own, foundations
+first. Two honesty rules, both tested: ownership means independent-or-better
+(guided exposure is not readiness — a mini-course built on hinted evidence
+would send someone into a course they cannot hold), and a ready learner is
+told they are ready rather than handed busywork.
+
+**Mal-rule profile — HEURISTIC repairs, evidence-gated naming.** Sorting errors
+by CAUSE rather than topic is the highest-leverage study move available (it is
+why `x-focus` exists); the coach now does it from tagged misses. Refuses below
+8 tagged errors, requires a pattern to recur 3+ times AND hold ≥20% share
+before naming it, counts untagged misses separately rather than assigning them
+to the nearest cause, and pairs each named cause with a specific repair — never
+"practise more", which only fixes execution gaps. The repairs are HEURISTIC
+study advice consistent with error-analysis practice, not measured effects.
+
+**Counterexample items — the asymmetry of universal claims.** One case kills a
+"for all" claim; no number of supporting cases establishes one. Every claim in
+the bank carries a machine-checkable predicate, and the gate proves the stated
+counterexample really fails the claim while every distractor really satisfies
+it. Two claims (shared-cause reasoning, sampling bias) are refuted by argument
+rather than arithmetic; the gate checks they are marked deliberately rather
+than passing by omission.
+
+**Phone-to-phone handoff — QR REJECTED on measurement.** A year of daily
+practice exports to ~1.75 MB; a maximum-density QR code holds 2,953 bytes,
+i.e. **607 codes**. An animated QR chain would be worse than a file for every
+learner who has actually used the app. Built instead on the Web Share API,
+which hands the export file to the OS share sheet — Nearby Share, AirDrop, or
+any app the learner picks. Still zero servers: this app uploads nothing, and
+the destination is the user's choice. Falls back to plain export where the
+browser does not support file sharing.

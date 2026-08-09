@@ -20,7 +20,7 @@ import type { ContentIndex } from './content-index'
 import { allocationReport, type AllocationReport } from './allocation'
 import { dueReviews } from './scheduler'
 import { calendarDaysUntil } from './time'
-import { normalizeAllocationPercentages, rebalanceAllocationPercentage } from './allocationTargets'
+import { applyAllocationDeltas, normalizeAllocationPercentages, rebalanceAllocationPercentage } from './allocationTargets'
 import { goalTilt } from './goals'
 
 const DEADLINE_BOOST = 8
@@ -53,9 +53,9 @@ export function tuneTargets(
   // per-bucket floor, so nothing a goal points away from can starve.
   const tilt = goalTilt(state.profile.goals)
   if (tilt.note) {
-    for (const [bucket, delta] of Object.entries(tilt.deltas) as [BucketId, number][]) {
-      targets = rebalanceAllocationPercentage(targets, bucket, Math.round(targets[bucket] + delta))
-    }
+    // ONE pass, not a loop of single-bucket rebalances — see
+    // applyAllocationDeltas for why the loop silently ate its own deltas.
+    targets = applyAllocationDeltas(targets, tilt.deltas)
     notes.push(tilt.note)
   }
 

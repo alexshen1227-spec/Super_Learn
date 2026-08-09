@@ -20,6 +20,7 @@ import { prereqLeverage, prereqsMet, scoreSkills, trackFrontierUnit } from './pl
 import { TRACK_BY_ID, trackSkillIds } from '../content/tracks'
 import { calendarDaysUntil } from './time'
 import { stretchSignal } from './stretch'
+import { malRuleProfile } from './malRules'
 
 function recentEvents(events: AttemptEvent[], now: number, days: number): AttemptEvent[] {
   const cutoff = now - days * 86_400_000
@@ -147,6 +148,33 @@ export function coachBeliefs(
       resolve: 'A few sessions of normal practice will replace this with real evidence.',
     })
     return beliefs
+  }
+
+  /*
+   * The mal-rule profile: which mistakes keep coming back, and the repair each
+   * one actually needs. Stated as a belief with its counts like everything
+   * else, and it refuses to name a habit from too few errors — see
+   * engine/malRules.ts for the thresholds and why they exist.
+   */
+  const mal = malRuleProfile(state.events, now)
+  for (const rule of mal.rules.slice(0, 2)) {
+    const where = rule.topSkillIds
+      .map((id) => index.skills.get(id)?.name)
+      .filter(Boolean)
+      .slice(0, 2)
+    beliefs.push({
+      id: `mal-${rule.tag}`,
+      statement: `"${rule.name}" is a recurring pattern, not a one-off — ${rule.count} of your last ${mal.tagged} tagged mistakes.`,
+      confidence: rule.count >= 6 ? 'high' : 'medium',
+      evidence: [
+        `${rule.hint}`,
+        `${Math.round(rule.share * 100)}% of tagged errors in the last 28 days.`,
+        ...(where.length ? [`Showed up most in ${where.join(' and ')}.`] : []),
+        ...(mal.untagged ? [`${mal.untagged} other misses had no cause recorded and are not counted here.`] : []),
+      ],
+      unknown: 'Whether the cause is really the one tagged — the tag comes from the step that broke, and some errors have more than one story.',
+      resolve: rule.repair,
+    })
   }
 
   /*

@@ -14,6 +14,8 @@ import { DIFFICULTY_INFO } from '../../content/difficulty'
 import { KB_BY_SKILL } from '../../content/kb'
 import { openRepairTargets } from '../../engine/errors'
 import { isPflTemplate } from '../../engine/pfl'
+import { MATH_TRACKS, TRACK_BY_ID } from '../../content/tracks'
+import { getReadyReport } from '../../engine/getReady'
 import { effectiveAllocation } from '../../engine/allocationPlus'
 
 const LAB_ORDER: BucketId[] = ['observer', 'investigator', 'strategist', 'puzzle', 'insight', 'meta']
@@ -59,6 +61,20 @@ export function Practice() {
    * record nothing. When they run out, the card disappears rather than
    * pretending there is more to measure.
    */
+  /**
+   * Which course to offer an on-ramp into: the one AFTER the learner's current
+   * course, or the first track when none is set. Only offered when it actually
+   * has unmet prerequisites — "get ready" for a course you are already ready
+   * for is noise, and the report says `ready` in exactly that case.
+   */
+  const readyTarget = useMemo(() => {
+    const current = state.profile.mathTrack ? TRACK_BY_ID.get(state.profile.mathTrack) : null
+    const targetId = current?.next ?? (current ? null : MATH_TRACKS[0]?.id ?? null)
+    if (!targetId) return null
+    const report = getReadyReport(targetId, index.skills, evidence)
+    return report && !report.ready && report.missing.length ? report : null
+  }, [state.profile.mathTrack, index, evidence])
+
   const nextProbe = useMemo(() => {
     const seen = new Set(state.events.filter((e) => isPflTemplate(e.templateId)).map((e) => e.templateId))
     return (
@@ -128,6 +144,16 @@ export function Practice() {
             title="Learn something new"
             sub="An idea this app never teaches, explained once — then questions. Not a rung."
             onClick={() => go({ name: 'session', launch: { kind: 'single', templateId: nextProbe.id } })}
+          />
+        ) : null}
+        {/* The on-ramp into the NEXT course: only the prerequisites you do not
+            own yet, foundations first. Hidden when there is nothing to close,
+            because "get ready" with an empty list is a dead end. */}
+        {readyTarget ? (
+          <ModeCard
+            title={`Get ready for ${readyTarget.track.name}`}
+            sub={`${readyTarget.missing.length} prerequisite${readyTarget.missing.length === 1 ? '' : 's'} to close, starting with ${readyTarget.missing[0].name}`}
+            onClick={() => go({ name: 'session', launch: { kind: 'ready', trackId: readyTarget.track.id } })}
           />
         ) : null}
         <ModeCard

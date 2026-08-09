@@ -34,6 +34,7 @@ import { calibrationGap } from './calibration'
 import { stretchSignal } from './stretch'
 import { isPflTemplate } from './pfl'
 import { TRACK_BY_ID, type MathTrack } from '../content/tracks'
+import { getReadyReport } from './getReady'
 
 export interface PlannerContext {
   index: ContentIndex
@@ -1026,6 +1027,59 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
 // ---------------------------------------------------------------- practice modes
 
 /** Focus-topic plan: a mini-session on one chosen skill. */
+/**
+ * A "get ready for X" session: practice on the unmet prerequisites of a course
+ * the learner is not in yet, foundations first.
+ *
+ * Deliberately a TEACHING session, not an assessment — the point is to close
+ * the gap, so the earliest unowned skill leads and gets guided support if it
+ * is still unfamiliar. Falls back to the ordinary daily plan when nothing is
+ * missing, because a mini-course with no content would be a dead end.
+ */
+export function buildReadyPlan(ctx: PlannerContext, trackId: string): SessionPlan {
+  const { index, evidence, checkIn, state, now } = ctx
+  const report = getReadyReport(trackId, index.skills, evidence)
+  if (!report || report.ready || !report.missing.length) return buildSessionPlan(ctx)
+
+  const used = recentlyUsedForms(state.events, now)
+  const templateUse = recentTemplateUse(state.events, now)
+  const blocks: PlannedBlock[] = []
+  // Two skills at most per session: a mini-course that sprays across six
+  // prerequisites teaches none of them.
+  const perSkill = Math.max(4, Math.floor(checkIn.minutes / 2))
+  for (const skill of report.missing.slice(0, 2)) {
+    const ev = evidenceFor(evidence, skill.id)
+    const diff = targetDifficulty(ev, checkIn.energy, false, placementSignal(state, skill.id))
+    const picks = pickTemplatesForBudget(index.bySkill.get(skill.id) ?? [], diff, perSkill, templateUse, {
+      maxCount: 4,
+      minCount: 2,
+    })
+    if (!picks.length) continue
+    blocks.push({
+      id: uid('b'),
+      kind: blocks.length === 0 ? 'core' : 'rotation',
+      bucket: skill.bucket,
+      label: skill.name,
+      minutes: Math.min(perSkill, minutesOf(picks)),
+      activities: picks.map((t, i) =>
+        act(t, stateRank(ev.state) < stateRank('guided') && i === 0 ? 'guided' : 'independent', used),
+      ),
+      why: `${skill.name} is a prerequisite for ${report.track.name} that you do not own yet.`,
+    })
+  }
+  if (!blocks.length) return buildSessionPlan(ctx)
+  return {
+    id: uid('s'),
+    createdAt: now,
+    targetMinutes: checkIn.minutes,
+    blocks,
+    rationale: [
+      `Getting ready for ${report.track.name}: ${report.summary}`,
+      'Foundations first — the skills nothing else is waiting on come before the ones that build on them.',
+    ],
+  }
+}
+
 export function buildFocusPlan(ctx: PlannerContext, skillId: string): SessionPlan {
   const { index, evidence, checkIn, state } = ctx
   const skill = index.skills.get(skillId)

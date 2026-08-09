@@ -54,6 +54,39 @@ export function SettingsScreen() {
     void storageInfo().then(setStorage)
   }, [])
 
+  /*
+   * Device-to-device handoff, without a server.
+   *
+   * The Web Share API hands the export FILE to the OS share sheet, so the
+   * learner picks Nearby Share / AirDrop / a messaging app themselves and the
+   * data goes straight across. Nothing is uploaded by this app, and the
+   * destination is the user's choice, not ours.
+   *
+   * A QR-code handoff was considered and REJECTED on measurement: a year of
+   * daily practice exports to ~1.75 MB, and a maximum-density QR code holds
+   * 2,953 bytes — about 607 codes. An animated QR chain would be a worse
+   * experience than a file for every learner who has actually used the app.
+   */
+  const canShareFiles =
+    typeof navigator !== 'undefined' && typeof navigator.canShare === 'function' && typeof navigator.share === 'function'
+
+  const sendToDevice = async () => {
+    const name = `axiom-lab-export-${localDateISO()}.json`
+    const file = new File([exportState(state)], name, { type: 'application/json' })
+    if (!navigator.canShare?.({ files: [file] })) {
+      setImportMsg('This browser will not share files — use "Export everything" and move the file yourself.')
+      return
+    }
+    try {
+      await navigator.share({ files: [file], title: 'Axiom Lab data' })
+    } catch (err) {
+      // A cancelled share sheet is a normal outcome, not a failure worth shouting about.
+      if ((err as { name?: string })?.name !== 'AbortError') {
+        setImportMsg('Sharing failed — use "Export everything" and move the file yourself.')
+      }
+    }
+  }
+
   const download = (name: string, text: string) => {
     const blob = new Blob([text], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -436,6 +469,16 @@ export function SettingsScreen() {
           sub="One JSON file: profile, history, evidence — yours"
           onClick={() => download(`axiom-lab-export-${localDateISO()}.json`, exportState(state))}
         />
+        {canShareFiles ? (
+          <>
+            <Divider />
+            <Row
+              label="Send to another device"
+              sub="Hands the export straight to Nearby Share, AirDrop, or any app you pick — still no server, still no account"
+              onClick={() => void sendToDevice()}
+            />
+          </>
+        ) : null}
         <Divider />
         <Row label="Import from export" sub="Replaces current data after a preview" onClick={() => fileRef.current?.click()} />
         <Divider />

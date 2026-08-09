@@ -22,6 +22,7 @@ import {
   buildChallengePlan,
   adaptiveSwap,
   buildCheckpointPlan,
+  buildReadyPlan,
   buildErrorClinicPlan,
   buildExtensionBlock,
   buildFocusPlan,
@@ -221,6 +222,9 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
           break
         case 'checkpoint':
           p = buildCheckpointPlan(ctx, launch.skillIds, launch.unitName)
+          break
+        case 'ready':
+          p = buildReadyPlan(ctx, launch.trackId)
           break
         case 'error-clinic': {
           const repairs = openRepairTargets(state, evidence, Date.now())

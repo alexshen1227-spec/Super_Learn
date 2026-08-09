@@ -62,6 +62,53 @@ export function normalizeAllocationPercentages(
   return asRecord(integer)
 }
 
+/**
+ * Raise SEVERAL buckets at once, taking the cost from the untouched buckets in
+ * proportion to their surplus above the floor.
+ *
+ * Looping `rebalanceAllocationPercentage` does NOT do this: every call pulls
+ * back from the buckets already raised, so a delta set is silently eroded in
+ * list order — the first bucket funds the last one. Measured before the fix: a
+ * goal asking for math +9.6 / meta +2.4 landed at +8 / +2, and two goals
+ * pointing opposite ways cancelled almost entirely. Order of application must
+ * never change the result, which is what this guarantees.
+ */
+export function applyAllocationDeltas(
+  input: Partial<Record<BucketId, number>>,
+  deltas: Partial<Record<BucketId, number>>,
+): Record<BucketId, number> {
+  const current = normalizeAllocationPercentages(input)
+  const boosted = IDS.filter((id) => Math.abs(deltas[id] ?? 0) > 1e-6)
+  const others = IDS.filter((id) => !boosted.includes(id))
+  if (!boosted.length || !others.length) return current
+
+  const floor = MIN_ALLOCATION_PERCENT
+  let want = boosted.map((id) => Math.max(floor, current[id] + (deltas[id] ?? 0)))
+  // The untouched buckets keep their floors, so the boosted set has a ceiling.
+  const cap = 100 - floor * others.length
+  const wantTotal = want.reduce((a, b) => a + b, 0)
+  if (wantTotal > cap) {
+    const scale = cap / wantTotal
+    want = want.map((v) => Math.max(floor, v * scale))
+  }
+  const remaining = 100 - want.reduce((a, b) => a + b, 0)
+  const surplus = others.map((id) => Math.max(0, current[id] - floor))
+  const surplusTotal = surplus.reduce((a, b) => a + b, 0)
+  const flexible = Math.max(0, remaining - floor * others.length)
+  const otherShares = others.map((_, i) =>
+    floor + (surplusTotal > 0 ? (surplus[i] / surplusTotal) * flexible : flexible / others.length),
+  )
+  const ints = exactIntegers([...want, ...otherShares], 100)
+  const out = { ...current }
+  boosted.forEach((id, i) => {
+    out[id] = ints[i]
+  })
+  others.forEach((id, i) => {
+    out[id] = ints[boosted.length + i]
+  })
+  return out
+}
+
 /** Change one real percentage and proportionally rebalance all other surplus. */
 export function rebalanceAllocationPercentage(
   input: Record<BucketId, number>,

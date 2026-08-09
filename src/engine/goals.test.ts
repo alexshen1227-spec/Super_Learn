@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { goalTilt } from './goals'
-import { tuneTargets } from './allocationPlus'
+import { GOAL_PRESETS, goalTilt } from './goals'
+import { effectiveAllocation, tuneTargets } from './allocationPlus'
 import { DEFAULT_INDEX } from '../content/registry'
 import { deriveEvidence } from './mastery'
 import { BUCKETS, MIN_ALLOCATION_PERCENT, initialState, type AppState } from '../domain/types'
@@ -75,7 +75,9 @@ describe('unchosen areas are still taught', () => {
   it('explains itself, since a silent change cannot be checked', () => {
     const tuned = tune(['Improve at chess'])
     expect(tuned.tuned).toBe(true)
-    expect(tuned.notes.join(' ')).toMatch(/goals/i)
+    // Singular or plural: the note reads "Your goal…" for one and "Your N
+    // goals share…" for several, because the budget is shared not multiplied.
+    expect(tuned.notes.join(' ')).toMatch(/goal/i)
     // The promise that matters: choosing a goal does not delete anything else.
     expect(tuned.notes.join(' ')).toMatch(/nothing else is dropped|keeps its floor/i)
   })
@@ -86,5 +88,49 @@ describe('unchosen areas are still taught', () => {
     const t = tuneTargets(s, deriveEvidence([], NOW), DEFAULT_INDEX, NOW)
     expect(t.tuned).toBe(false)
     expect(t.targets).toEqual(s.settings.allocations)
+  })
+})
+
+/**
+ * Deltas used to be applied one bucket at a time, and each single-bucket
+ * rebalance pulled back from the buckets already raised — so the FIRST goal in
+ * the list quietly funded the last one, and two goals pointing opposite ways
+ * cancelled almost to baseline. Measured before the fix: a request for math
+ * +9.6 / meta +2.4 landed at +8 / +2. Order must not matter.
+ */
+describe('goal deltas are applied in one pass, not eroded in list order', () => {
+  const at = (goals: string[]) => {
+    const s = {
+      ...initialState(),
+      profile: { ...initialState().profile, goals },
+    }
+    return effectiveAllocation(s, new Map(), DEFAULT_INDEX, NOW).targets
+  }
+
+  it('gives the same result whichever order the goals were picked in', () => {
+    const a = at(['Move up in my math course', 'Walk the four Paths'])
+    const b = at(['Walk the four Paths', 'Move up in my math course'])
+    expect(a).toEqual(b)
+  })
+
+  it('does not let a later delta cannibalise an earlier one', () => {
+    // 'Move up in my math course' weights math 4 / meta 1 — math must keep the
+    // clearly larger share of the budget, not surrender it to meta.
+    const base = at([])
+    const tilted = at(['Move up in my math course'])
+    const mathGain = tilted.math - base.math
+    const metaGain = tilted.meta - base.meta
+    expect(mathGain).toBeGreaterThan(metaGain * 2)
+    // And the tilt as a whole lands near the declared budget rather than
+    // shrinking on the way through.
+    expect(mathGain + metaGain).toBeGreaterThanOrEqual(10)
+  })
+
+  it('still respects every floor when many goals pull at once', () => {
+    const all = at(GOAL_PRESETS)
+    for (const [bucket, value] of Object.entries(all)) {
+      expect(value, `${bucket} fell through the floor`).toBeGreaterThanOrEqual(MIN_ALLOCATION_PERCENT)
+    }
+    expect(Object.values(all).reduce((a, b) => a + b, 0)).toBe(100)
   })
 })

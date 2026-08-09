@@ -79,8 +79,19 @@ export function goalTilt(goals: string[]): GoalTilt {
   }
   return {
     deltas,
-    // Kept short on purpose: this shows in a list of adjustments, and a
-    // paragraph there reads as an error message rather than an explanation.
-    note: `Your goals tilt the balance ~${GOAL_BUDGET} points. Nothing else is dropped — every area keeps its floor.`,
+    /*
+     * Kept short on purpose: this shows in a list of adjustments, and a
+     * paragraph there reads as an error message rather than an explanation.
+     *
+     * The multi-goal wording is not decoration. The budget is SHARED, so
+     * picking everything lands you near the default — measured: all ten goals
+     * net about two points of movement. Saying "your goals tilt ~12 points"
+     * there would be a promise the mechanism does not keep, and a learner who
+     * picked six goals deserves to know why nothing much moved.
+     */
+    note:
+      known.length === 1
+        ? `Your goal tilts the balance about ${GOAL_BUDGET} points. Nothing else is dropped — every area keeps its floor.`
+        : `Your ${known.length} goals share about ${GOAL_BUDGET} points of tilt — more goals spread it wider rather than pushing harder. Nothing is dropped; every area keeps its floor.`,
   }
 }
