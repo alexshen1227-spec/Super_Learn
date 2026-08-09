@@ -3,7 +3,7 @@
  * (export / import / sample / full reset), storage status, and About with the
  * research grounding. Every claim about data lives here in plain language.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../../store/store'
 import { useNav } from '../nav'
 import { exportState, importState } from '../../engine/exportImport'
@@ -67,23 +67,54 @@ export function SettingsScreen() {
    * 2,953 bytes — about 607 codes. An animated QR chain would be a worse
    * experience than a file for every learner who has actually used the app.
    */
-  const canShareFiles =
-    typeof navigator !== 'undefined' && typeof navigator.canShare === 'function' && typeof navigator.share === 'function'
+  /*
+   * Which file type this browser will actually accept for sharing.
+   *
+   * BUG THIS FIXES (reported from a real device): the button used to appear
+   * whenever the Web Share API merely EXISTED, then always failed. Chrome
+   * enforces an allow-list of shareable MIME types and `application/json` is
+   * not on it, so `canShare` returned false every time and the learner got
+   * "this browser will not share files" from a button that had no business
+   * being there. The type is now PROBED, and the button only renders when a
+   * share will genuinely work.
+   *
+   * `text/plain` is on the allow-list, and the payload is unchanged — the
+   * importer parses either extension, and the input accepts both.
+   *
+   * Probed with a tiny dummy payload on purpose: serialising the real export
+   * (~1.75 MB after a year) on every render to answer "should this button
+   * exist" would be its own performance bug.
+   */
+  const shareType = useMemo((): { mime: string; ext: string } | null => {
+    if (typeof navigator === 'undefined' || typeof navigator.canShare !== 'function' || typeof navigator.share !== 'function') {
+      return null
+    }
+    const candidates = [
+      { mime: 'application/json', ext: 'json' },
+      { mime: 'text/plain', ext: 'txt' },
+    ]
+    for (const c of candidates) {
+      try {
+        if (navigator.canShare({ files: [new File(['{}'], `probe.${c.ext}`, { type: c.mime })] })) return c
+      } catch {
+        /* try the next candidate */
+      }
+    }
+    return null
+  }, [])
 
   const sendToDevice = async () => {
-    const name = `axiom-lab-export-${localDateISO()}.json`
-    const file = new File([exportState(state)], name, { type: 'application/json' })
-    if (!navigator.canShare?.({ files: [file] })) {
-      setImportMsg('This browser will not share files — use "Export everything" and move the file yourself.')
-      return
-    }
+    if (!shareType) return
+    const file = new File([exportState(state)], `axiom-lab-export-${localDateISO()}.${shareType.ext}`, {
+      type: shareType.mime,
+    })
     try {
       await navigator.share({ files: [file], title: 'Axiom Lab data' })
     } catch (err) {
       // A cancelled share sheet is a normal outcome, not a failure worth shouting about.
-      if ((err as { name?: string })?.name !== 'AbortError') {
-        setImportMsg('Sharing failed — use "Export everything" and move the file yourself.')
-      }
+      const name = (err as { name?: string })?.name
+      if (name === 'AbortError' || name === 'NotAllowedError') return
+      setImportMsg('Sharing failed — use "Export everything" and move the file yourself.')
     }
   }
 
@@ -469,7 +500,7 @@ export function SettingsScreen() {
           sub="One JSON file: profile, history, evidence — yours"
           onClick={() => download(`axiom-lab-export-${localDateISO()}.json`, exportState(state))}
         />
-        {canShareFiles ? (
+        {shareType ? (
           <>
             <Divider />
             <Row
@@ -558,7 +589,7 @@ export function SettingsScreen() {
       <input
         ref={fileRef}
         type="file"
-        accept="application/json"
+        accept="application/json,text/plain,.json,.txt"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0]
@@ -569,7 +600,7 @@ export function SettingsScreen() {
       <input
         ref={packRef}
         type="file"
-        accept="application/json"
+        accept="application/json,text/plain,.json,.txt"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0]

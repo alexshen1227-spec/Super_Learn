@@ -322,6 +322,53 @@ export const TRACK_UNIT_BONUS = 0.5
  */
 export const TRACK_PREREQ_BONUS = 0.8
 
+/**
+ * THE GATEWAY BONUS — for a skill that is locking another bucket out entirely.
+ *
+ * Found by simulation, not by reading the code: every physics skill sits behind
+ * a MATH prerequisite (`p-measure` needs `m-units`, four links deep in the math
+ * chain), so a learner promised 8% physics was served 1.2% of it after 180
+ * simulated days — and `m-units` was still `unseen`. It was not blocked; it was
+ * eligible the whole time and scored 2.0, losing the tie-break to twenty other
+ * math skills every single session for six months.
+ *
+ * Nothing looked wrong anywhere: allocation reported a healthy 8% target, the
+ * planner reported a valid choice with a real reason, and the balance card
+ * showed "Physics 8% / 0%" as though it were an ordinary shortfall. The
+ * allocation system cannot fix this on its own, because its nudge applies to
+ * skills in the starved bucket and there were none to nudge.
+ *
+ * So a skill gets this bounded, stated bonus when NOT owning it is what blocks
+ * a bucket that is genuinely behind its target. Below a due review (3), like
+ * every other tilt, and it disappears the moment the gate opens.
+ */
+export const GATEWAY_BONUS = 1.6
+
+/**
+ * A non-math academic bucket served below this fraction of its target claims
+ * the core block outright. `relativeDebt` returns (target − actual) / target,
+ * so 0.5 means "served less than half of what was promised" — a shortfall the
+ * ordinary score nudge has already failed to close. HEURISTIC.
+ */
+export const STARVED_DEBT = 0.5
+
+/** How hard a starved bucket pushes for the core block. Below a due review (3)
+ *  on purpose: retention still outranks balance. HEURISTIC. */
+export const STARVED_BOOST = 3.4
+
+/** Placement-cleared material is deprioritised so the frontier moves on. */
+const CAPABLE_PENALTY = 2
+const CAPABLE_REASON = 'placement already saw this go well, so the next gain is further on'
+
+/**
+ * Math's incumbency on the core block. It carries by far the largest default
+ * allocation (31% against 7-8% for the other academic buckets), so it holds
+ * the core unless another bucket clearly outranks it or is starving. This is
+ * the intent the old early-`break` was serving crudely — stated as a number
+ * now, so it can be reasoned about instead of being a control-flow accident.
+ */
+export const MATH_CORE_MARGIN = 2
+
 /** The first unit in the track with any skill not yet independent. */
 export function trackFrontierUnit(
   track: MathTrack,
@@ -400,8 +447,8 @@ export function scoreSkills(
       // Reported from real use: the first sessions after a diagnostic read as
       // too easy. This was why — the frontier stayed parked on material the
       // placement had already watched the learner handle.
-      score -= 2
-      reasons.push('placement already saw this go well, so the next gain is further on')
+      score -= CAPABLE_PENALTY
+      reasons.push(CAPABLE_REASON)
       // When placement judged EVERYTHING strong, the penalty above is uniform
       // and something still has to be picked. Break that tie upward: prefer
       // the most advanced material the learner is cleared for, capped just
@@ -462,7 +509,50 @@ export function scoreSkills(
     }
     // Small allocation nudge between academic buckets.
     score += relativeDebt(report, skill.bucket) * 0.8
+
+    /*
+     * Cross-bucket gateway (see GATEWAY_BONUS). Only fires while this skill is
+     * unowned AND a dependent in ANOTHER bucket is blocked AND that bucket is
+     * behind its target — so it cannot become a permanent thumb on the scale.
+     */
+    if (stateRank(ev.state) < stateRank('independent')) {
+      let bestDebt = 0
+      let bestBucket: BucketId | null = null
+      for (const dep of index.skillList) {
+        if (dep.bucket === skill.bucket) continue
+        if (!dep.prereqs.includes(skill.id)) continue
+        if (stateRank(evidenceFor(evidence, dep.id).state) >= stateRank('independent')) continue
+        // Already reachable — then this skill is not what is holding it back.
+        if (prereqsMet(dep, evidence, state)) continue
+        const debt = relativeDebt(report, dep.bucket)
+        if (debt > bestDebt) {
+          bestDebt = debt
+          bestBucket = dep.bucket
+        }
+      }
+      if (bestBucket && bestDebt > 0) {
+        score += GATEWAY_BONUS * bestDebt
+        reasons.push(`${BUCKET_BY_ID[bestBucket].name} is behind and every route into it waits on this`)
+      }
+    }
     out.push({ skill, score, reasons })
+  }
+  /*
+   * A UNIFORM penalty reorders nothing — it only handicaps the whole bucket.
+   *
+   * The `alreadyCapable` −2 exists to push the frontier past material the
+   * placement already cleared. When a diagnostic marks EVERY skill in a bucket
+   * strong, that penalty lands on every candidate equally: the ranking within
+   * the bucket is unchanged, but the bucket's best score drops (measured: math
+   * fell to −0.50 while untouched physics sat at 3.20) and the bucket loses the
+   * core block outright. That was invisible while an early `break` in
+   * buildSessionPlan happened to pick math before anything else was scored.
+   *
+   * Cancelling it when it applies to everyone keeps the intended within-bucket
+   * reordering and drops the accidental cross-bucket handicap.
+   */
+  if (out.length > 1 && out.every((s) => s.reasons.includes(CAPABLE_REASON))) {
+    for (const s of out) s.score += CAPABLE_PENALTY
   }
   return out.sort((a, b) => b.score - a.score)
 }
@@ -806,15 +896,55 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   const academicDebtOrder = [...ACADEMIC_BUCKETS].sort(
     (a, b) => relativeDebt(report, b) - relativeDebt(report, a),
   )
+  /*
+   * Pick the academic bucket for the core block.
+   *
+   * This loop used to `break` as soon as math had been considered, which meant
+   * every bucket sitting after math in the debt order was never scored at all —
+   * and because the rotation block only serves LAB buckets, the core block is
+   * the ONLY route physics, coding, and science have. Measured over 365
+   * simulated days: physics served 2.4% against an 8% target.
+   *
+   * Every academic bucket is now scored, math keeps its tie-break (it carries
+   * the largest allocation), and a bucket that has fallen badly behind takes
+   * the core outright — the same "urgency outranks preference" rule reviews
+   * already follow, and what the ≥5% floor promise actually requires.
+   */
   let coreChoice: SkillScore | null = null
   let coreBucket: BucketId = 'math'
+  let coreEffective = -Infinity
+  let starvedPick: BucketId | null = null
+  /*
+   * Starvation is a BONUS, never an override. An override hijacked the core
+   * block away from the placement-informed frontier in the learner's first
+   * sessions — caught by two existing tests, which is exactly what they are
+   * for. As a bonus, a due review (+3) or a mission still outranks it.
+   *
+   * Gated on an hour of real history so a bucket cannot count as "starved"
+   * before the learner has done anything at all.
+   */
+  const historyEnough = report.totalMinutes >= 60
   for (const bucket of academicDebtOrder) {
     const scored = scoreSkills(bucket, ctx, report)
-    if (scored.length && (coreChoice === null || scored[0].score > coreChoice.score + 0.5)) {
-      coreChoice = scored[0]
+    if (!scored.length) continue
+    const best = scored[0]
+    const starved = historyEnough && bucket !== 'math' && relativeDebt(report, bucket) >= STARVED_DEBT
+    const effective = best.score + (starved ? STARVED_BOOST : 0) + (bucket === 'math' ? MATH_CORE_MARGIN : 0)
+    if (
+      coreChoice === null ||
+      effective > coreEffective ||
+      (effective === coreEffective && bucket === 'math')
+    ) {
+      coreChoice = best
       coreBucket = bucket
+      coreEffective = effective
+      starvedPick = starved ? bucket : null
     }
-    if (coreChoice && bucket === 'math') break // math wins ties by allocation weight
+  }
+  if (starvedPick) {
+    rationale.push(
+      `${BUCKET_BY_ID[starvedPick].name} has been served well under its target, so it leads today.`,
+    )
   }
   if (coreChoice) {
     const ev = evidenceFor(evidence, coreChoice.skill.id)

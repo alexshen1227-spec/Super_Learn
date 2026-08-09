@@ -312,8 +312,8 @@ const regressionToMean = tpl(
           prompt: 'A coach praises the top scorers and criticises the bottom ones. Next test, the praised group drops and the criticised group rises. What does the explanation say is going on?',
           answer: mcq(rng, 'Both groups drifted toward the average, which would have happened anyway', [
             'Praise genuinely harms performance and criticism genuinely helps it',
-            'The second test must have been unfairly marked',
-            'The praised group stopped trying because they felt safe',
+            'The second test must have been marked unfairly, or set at a different difficulty',
+            'The praised group stopped trying afterwards because the praise made them feel safe',
           ]),
           explanation:
             'This is the trap named in the text. Selecting an extreme group selects for luck as well as ability, and the luck does not repeat. The coach is reading a drift back to the middle as an effect of their own actions.',
@@ -322,8 +322,8 @@ const regressionToMean = tpl(
         {
           prompt: 'According to the explanation, when would you expect NO drift at all?',
           answer: mcq(rng, 'When the measure carries no luck — it is perfectly reliable', [
-            'When the group is large enough for averages to settle',
-            'When the same people are tested on the very same day',
+            'When the group is large enough that its average has already settled down',
+            'When the very same people are re-tested again on the very same day',
             'When the first scores were below average rather than above',
           ]),
           explanation:
@@ -571,9 +571,9 @@ const littlesLaw = tpl(
         {
           prompt: 'The explanation claims the law holds "for any steady system". What does STEADY rule out?',
           answer: mcq(rng, 'A system still filling up or draining — where the inside count is trending, not hovering', [
-            'Systems where people arrive at random times',
-            'Systems with more than one queue or server',
-            'Systems where some stay much longer than others',
+            'Systems where the arrivals happen at unpredictable, random moments',
+            'Systems that run more than one queue or more than one server at once',
+            'Systems where a few individuals stay very much longer than the rest do',
           ]),
           explanation:
             'The law needs the inside count to hover around a level rather than trend — a filling or draining system breaks the bookkeeping. Randomness, multiple servers, and unequal stays are all fine: that generality is what makes the law so widely useful.',
@@ -712,10 +712,13 @@ const serialEstimate = tpl(
         },
         {
           prompt: `A friend says: "The biggest ticket in the sample is ${max}, so the best guess is that ${max} were ${scene.made}." What does the explanation say about this guess?`,
+          // Option lengths deliberately comparable: a correct answer that is
+          // reliably the longest is a cue a learner can score on without
+          // reading, which would corrupt the very measurement this probe is.
           answer: mcq(rng, 'It is almost surely too LOW — the sample very rarely contains the top number', [
-            'It is almost surely too high — big numbers are oversampled',
-            'It is the best possible guess — the maximum is all you know',
-            'It is too low only when the sample is large',
+            'It is almost surely too high — big numbers get oversampled in a random handful',
+            'It is the best possible guess — the largest number seen is all the information there is',
+            'It is too low only for large samples, and about right for a handful this small',
           ]),
           explanation:
             'The true total can never be below the biggest seen, and it exceeds it unless the sample happened to catch the very top — unlikely for any small handful. So "biggest seen" is a FLOOR, not an estimate, and the gap correction exists precisely to repair its systematic lowness.',
@@ -724,9 +727,9 @@ const serialEstimate = tpl(
         {
           prompt: 'Why does the estimate divide by k, the sample size?',
           answer: mcq(rng, 'More samples mean smaller gaps — the biggest seen sits closer to the truth, so less is added', [
-            'Bigger samples contain bigger numbers, so the estimate must shrink to compensate',
-            'Dividing by k converts the answer into a per-ticket rate',
-            'It is an arbitrary convention statisticians agreed on',
+            'Bigger samples contain bigger numbers, so the estimate has to shrink to compensate for that',
+            'Dividing by k rewrites the answer as a per-item rate rather than a total count of items',
+            'It is an arbitrary convention statisticians agreed on, with no reasoning behind the choice',
           ]),
           explanation:
             'k random numbers cut the range into about k equal gaps, so the typical gap — the amount the maximum falls short — is about (biggest ÷ k). A bigger handful means smaller gaps, a maximum hugging the truth, and a smaller correction. The formula is the gap logic written down, not a memorized rule.',

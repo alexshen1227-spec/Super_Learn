@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '7.1',
+    date: '2026-08-09',
+    title: 'Physics Was Quietly Getting 1% Of Your Time',
+    points: [
+      'The big one, and it was invisible: every physics skill sits behind a maths prerequisite, and the block that could have taught physics was handed to maths before physics was ever considered. Simulated over a year, physics got 1-2% of practice against the 8% it was promised — and the single skill unlocking the whole physics tree had never once been scheduled. Nothing looked wrong: the balance card showed "Physics 8% / 0%" like an ordinary shortfall, and every test passed. Now a skill that is blocking a whole subject gets priority and says so, any subject falling badly behind takes the lead slot, and the worst gap across every subject dropped from 8 points to 3.',
+      'A related one it uncovered: when the placement test judges you strong across a whole subject, every skill in that subject was being pushed DOWN equally — which reorders nothing and just makes the whole subject lose out. Fixed, so a strong diagnostic no longer quietly steers you away from the subject you are good at.',
+      '"Send to another device" now actually works. It was appearing whenever the phone had a share button at all, then failing every time, because Chrome refuses to share .json files. It now checks what your phone will really accept before offering, and sends a format that works.',
+      'An honest correction on my own reporting: I flagged that multiple-choice answers could be guessed by picking the longest option, at 40% versus 25% by chance. That measurement counted "longest by three characters", which nobody can see. Measured properly — longest by a margin you can actually spot — the shortcut scores exactly chance. There was a small real bias in a handful of questions and those were rewritten, and the release check now measures it the right way.',
+      'Also verified this round: 25 simulated learners across every course, session length, ability and drop-off pattern (no crashes, no broken promises), 20,000-attempt histories staying fast, and deliberately malformed data being rejected rather than crashing anything.',
+    ],
+  },
+  {
     version: '7.0',
     date: '2026-08-09',
     title: 'Five Things That Make You Think Harder',

@@ -71,9 +71,9 @@ const measureReliability = tpl(
       title: 'The odd reading',
       prompt: `Five timings of the same pendulum swing (seconds ÷ 10): **${readings.join(', ')}**. The last one was taken while the timer's phone buzzed. What is the best estimate of the true value?`,
       answer: mcq(rng, `About ${mean} — average the four consistent readings and investigate the outlier`, [
-        `${round(readings.reduce((a, b) => a + b, 0) / 5, 2)} — always average everything, no exceptions`,
-        `${base + 12} — the largest value is the most complete swing`,
-        'Impossible to estimate without 100 more readings',
+        `${round(readings.reduce((a, b) => a + b, 0) / 5, 2)} — always average every reading taken, with no exceptions ever made`,
+        `${base + 12} — the largest value must be the one complete, uninterrupted swing`,
+        'Impossible to estimate anything at all without a hundred more readings',
       ]),
       hints: [
         'Why repeat measurements at all? What does the spread tell you?',

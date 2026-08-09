@@ -992,18 +992,18 @@ const decisionStudio = tpl(
         part('Stress-test', {
           prompt: `The break-even use is ${breakEven.toFixed(1)} visits. What should that change in your reasoning?`,
           answer: mcq(rng, 'Usage uncertainty near the break-even could flip the price winner, so test low/likely/high usage', [
-            'Nothing; one forecast is certain once written down',
-            'Always choose the high-fee plan above break-even',
-            'Break-even makes nonfinancial constraints irrelevant',
+            'Nothing at all; a single forecast becomes certain the moment it is written down',
+            'Always pick the higher-fee plan whenever usage sits above the break-even point',
+            'Once break-even is known, every nonfinancial constraint stops mattering to the choice',
           ]),
           explanation: 'A decision is fragile when plausible usage crosses the break-even. Sensitivity analysis reveals whether the recommendation depends on a shaky assumption.',
         }),
         part('Constraint', {
           prompt: 'You do not want attendance history retained. What is the ethical decision move?',
           answer: mcq(rng, 'Treat privacy as an explicit constraint or cost, check retention controls, and do not hide it behind the cheaper price', [
-            'Ignore privacy because it has no dollar amount',
-            'Assume the company will use data responsibly',
-            'Invent a dollar value that guarantees the preferred answer',
+            'Ignore privacy entirely on the grounds that it carries no clear dollar amount to compare',
+            'Assume the company will handle the data responsibly, since most companies generally do',
+            'Invent a dollar value for privacy chosen so that it guarantees the answer already preferred',
           ]),
           explanation: 'Not every value belongs in one fake-precise number. A decision memo can state a threshold: if attendance storage cannot be disabled, choose the alternative.',
         }),
@@ -1026,9 +1026,9 @@ const decisionStudio = tpl(
         part('Review', {
           prompt: 'After one month, what evidence should drive the review?',
           answer: mcq(rng, 'Actual uses, total billed cost, observed data retention, and whether the original objective was met', [
-            'Whether switching now feels embarrassing',
-            'Only the advertised monthly fee',
-            'How many friends chose each plan',
+            'Whether switching plans at this point would feel embarrassing to explain to anyone',
+            'Only the advertised monthly fee, since that is the number the decision was made on',
+            'How many friends ended up choosing each plan once they had heard the reasoning',
           ]),
           explanation: 'The review compares predictions and constraints with observed reality. Sunk pride and popularity do not answer the original decision.',
         }),

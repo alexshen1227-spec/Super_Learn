@@ -892,3 +892,76 @@ describe('math tracks resolve against the tree', () => {
     expect(new Set(MATH_TRACKS.map((t) => t.id)).size).toBe(MATH_TRACKS.length)
   })
 })
+
+/**
+ * NO TEST-WISE SHORTCUT.
+ *
+ * Measured 2026-08-09: the correct option was UNIQUELY the longest in 39.8% of
+ * multiple-choice checkpoints against a 25.3% chance baseline — a learner who
+ * always picked the longest option would have scored ~40% without reading, and
+ * the app would have banked that as independent evidence. Nothing looked wrong
+ * in the code or on screen; the bias came from a writing habit where the right
+ * answer carries its qualifier and the distractors stay terse.
+ *
+ * This caps it PER TEMPLATE, which is where the habit lives and where it is
+ * fixable. Sometimes the true answer genuinely needs more words, so the bar is
+ * not zero — but a template that does it every single time is cueing.
+ */
+describe('multiple choice does not leak the answer through option length', () => {
+  const SAMPLE_SEEDS = 8
+  /**
+   * A length cue is only exploitable if a learner can SEE it. Being longest by
+   * three characters is invisible; being longest by half again is a billboard.
+   * So "cued" means longest by at least this margin over the runner-up.
+   *
+   * Measured 2026-08-09 (and the first attempt at this measurement was wrong,
+   * which is why the margin exists): counting ANY length lead put the exploit
+   * at 38.2% against a 25.3% chance baseline and looked alarming. At a 25%
+   * margin the exploit scores 25.0% — chance exactly. The genuine excess sits
+   * around five points at a 15% margin, which is what this gate holds.
+   */
+  const CUE_MARGIN = 0.15
+  const MAX_GLOBAL_SHARE = 0.32
+
+  it('a learner picking the longest option cannot score far above chance', () => {
+    let n = 0
+    let hits = 0
+    let chance = 0
+    const perTemplate = new Map<string, { n: number; hits: number }>()
+    for (const t of BUILTIN_TEMPLATES) {
+      for (let seed = 0; seed < Math.min(SAMPLE_SEEDS, Math.max(1, t.variants)); seed++) {
+        let item
+        try {
+          item = t.generate(seed)
+        } catch {
+          continue
+        }
+        for (const part of item.parts ?? [{ answer: item.answer }]) {
+          const a = part.answer ?? item.answer
+          if (!a || a.type !== 'mcq' || a.options.length < 3) continue
+          n++
+          chance += 1 / a.options.length
+          const lens = a.options.map((o) => o.length)
+          const runnerUp = Math.max(...lens.filter((_, i) => i !== a.correct))
+          const cued = lens[a.correct] > runnerUp * (1 + CUE_MARGIN)
+          if (cued) hits++
+          const e = perTemplate.get(t.id) ?? { n: 0, hits: 0 }
+          e.n++
+          if (cued) e.hits++
+          perTemplate.set(t.id, e)
+        }
+      }
+    }
+    const share = hits / n
+    const worst = [...perTemplate.entries()]
+      .map(([id, e]) => ({ id, excess: e.hits - e.n / 4 }))
+      .sort((a, b) => b.excess - a.excess)
+      .slice(0, 8)
+      .map((x) => x.id)
+      .join(', ')
+    expect(
+      share,
+      `longest-option shortcut scores ${(100 * share).toFixed(1)}% (chance ${((100 * chance) / n).toFixed(1)}%). Worst offenders: ${worst}`,
+    ).toBeLessThanOrEqual(MAX_GLOBAL_SHARE)
+  })
+})

@@ -884,3 +884,64 @@ which hands the export file to the OS share sheet — Nearby Share, AirDrop, or
 any app the learner picks. Still zero servers: this app uploads nothing, and
 the destination is the user's choice. Falls back to plain export where the
 browser does not support file sharing.
+
+## 27. The 2026-08-09 hunt: three silent failures found by measurement
+
+None of these looked wrong in the code, in the UI, or in any passing test.
+
+**1. A whole bucket starved behind another bucket's prerequisite.** Every
+physics skill sits behind a math gateway (`p-measure` needs `m-units`, four
+links deep in the math chain), and the rotation block only serves LAB buckets —
+so the core block is physics' only route. That loop `break`-ed as soon as math
+had been considered, so buckets after math in the debt order were never scored.
+Measured over 365 simulated days: **physics served 1.2-2.4% against an 8%
+target, with `m-units` still `unseen`.** It was never blocked; it was eligible
+the whole time, scored 2.0, and lost the tie-break to twenty other math skills
+every session for a year. Fixed with three coupled pieces:
+
+- `GATEWAY_BONUS` (1.6 × debt) for a skill whose non-ownership blocks a bucket
+  that is behind target — the allocation nudge could never fix this itself,
+  because it boosts skills IN the starved bucket and there were none eligible.
+- Removing the `break`, so every academic bucket is scored.
+- `STARVED_BOOST` (3.4) when a non-math academic bucket is below half its
+  target, versus `MATH_CORE_MARGIN` (2) for math's incumbency. **These two are
+  coupled**: set at 1.8 against a margin of 2, starvation could never overcome
+  incumbency and physics fell straight back to −8 while every test passed.
+  `starvation.test.ts` pins both the outcome and the ordering.
+
+Result: worst academic gap −8 → −3, math over-service +19 → +4, and every
+simulated learner's independent-skill count rose.
+
+**2. A uniform penalty that reordered nothing and handicapped everything.** The
+`alreadyCapable` −2 exists to push the frontier past placement-cleared
+material. When a diagnostic marks EVERY skill in a bucket strong, it lands on
+every candidate equally — the within-bucket ranking is unchanged, but the
+bucket's best score falls (measured: math −0.50 against untouched physics 3.20)
+and the bucket loses the core block entirely. It was invisible only because the
+`break` above happened to pick math before anything else was scored; fixing one
+bug exposed the other. The penalty is now cancelled when it applies to every
+candidate, which preserves the reordering and drops the accidental handicap.
+
+**3. Length as an answer key — and a correction to the first measurement.**
+Counting ANY length lead put "pick the longest option" at 38.2% against a 25.3%
+chance baseline, which looked alarming. That metric was wrong: it counts being
+longest by three characters, which no learner can see or use. At a 25% margin
+the shortcut scores 25.0% — chance exactly. The genuine excess is ~5 points at
+a 15% margin. The audit now gates the app-wide rate at a visible margin
+(`CUE_MARGIN` 0.15, cap 0.32), and the worst offenders were rebalanced by
+writing distractors as specific as the key rather than by padding.
+
+**Also fixed:** "Send to another device" appeared whenever the Web Share API
+merely existed, then always failed — Chrome enforces an allow-list of shareable
+MIME types and `application/json` is not on it. The type is now probed with a
+dummy payload at render time (probing with the real ~1.75 MB export would be
+its own performance bug), `text/plain` is the fallback, and the import accepts
+both extensions.
+
+**Stress results (clean):** hostile input — null/array/nested-junk state,
+negative and 1e12 numbers, 100k-character strings, unknown track ids, malformed
+JSON — all sanitized or rejected, none crash. Scale: 20,000 events derive in
+12 ms, coach beliefs in 10 ms, an 11.3 MB export round-trips intact. UI: no
+horizontal overflow, no sub-40px tap targets, and no clipped elements on any of
+the five tabs at 375 px, including the relaxed-spacing + reminders combination
+that broke layout once before.
