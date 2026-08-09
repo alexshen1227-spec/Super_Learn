@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '6.3',
+    date: '2026-08-08',
+    title: 'Your Goals, Editable — and Reports You Can Delete',
+    points: [
+      'Learning focus now lives in Settings: the goals you picked during setup are editable anytime, and four new ones joined the list — "Move up in my math course", "Walk the four Paths", "Learn how to learn", and "Stronger science & physics". Same honest rules as always: together your goals tilt the long-run balance by a bounded ~12 points, everything unpicked keeps its floor, and a goal cannot exist in the picker without a real effect wired to it.',
+      'Problem reports can now be deleted: Settings → Data → "Delete problem reports", behind a confirm, with export offered first. Reports are your notes about broken questions, not learning evidence — deleting them touches nothing else.',
+      'The storage breakdown now says what the "learning data" figure includes (its automatic backup copy and database overhead) and that the true history is what Export produces — usually far smaller.',
+    ],
+  },
+  {
     version: '6.2',
     date: '2026-08-08',
     title: 'The Storage Number, Explained by Itself',

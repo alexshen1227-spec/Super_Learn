@@ -27,12 +27,23 @@ const GOAL_BUDGET = 12
  */
 const GOAL_WEIGHTS: Record<string, Partial<Record<BucketId, number>>> = {
   'Raise my grades': { math: 3, science: 1, physics: 1 },
+  'Move up in my math course': { math: 4, meta: 1 },
   'Be ready for high-school math': { math: 4, physics: 1 },
   'Get better at problem solving': { math: 2, investigator: 1, puzzle: 1, strategist: 1 },
   'Sharpen focus and memory': { observer: 2, meta: 2 },
   'Improve at chess': { puzzle: 4 },
   'Think more clearly about people and claims': { insight: 2, observer: 1, science: 1, investigator: 1 },
+  'Walk the four Paths': { observer: 1, investigator: 1, strategist: 1, insight: 1 },
+  'Learn how to learn': { meta: 3, science: 1 },
+  'Stronger science & physics': { science: 2, physics: 2 },
 }
+
+/**
+ * The canonical list shown wherever goals are picked (onboarding, Settings).
+ * Derived from the weights so a preset can never exist without a real effect —
+ * the original sin of goals was being collected and read by nothing.
+ */
+export const GOAL_PRESETS: string[] = Object.keys(GOAL_WEIGHTS)
 
 export interface GoalTilt {
   /** Percentage points to add per bucket (before floors and renormalisation). */

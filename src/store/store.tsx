@@ -59,6 +59,7 @@ export type Action =
   | { type: 'revise-forecast'; id: string; probability: number }
   | { type: 'resolve-forecast'; id: string; outcome: boolean; note: string }
   | { type: 'add-report'; report: ProblemReport }
+  | { type: 'clear-reports' }
   | { type: 'add-plan'; plan: FieldPlan }
   | { type: 'answer-plan'; id: string; outcome: FieldPlan['outcome']; t: number }
   | { type: 'set-placement'; placement: PlacementResult }
@@ -178,6 +179,11 @@ function reducer(state: AppState, action: Action): AppState {
       }
     case 'add-report':
       return { ...state, reports: [...state.reports, action.report].slice(-200) }
+    case 'clear-reports':
+      // Reports are the learner's own notes-to-self about broken items, not
+      // evidence — deleting them touches nothing derived. (Attempt events, by
+      // contrast, are append-only and have no delete action on purpose.)
+      return { ...state, reports: [] }
     case 'set-placement':
       return { ...state, placement: action.placement }
     case 'add-pack': {

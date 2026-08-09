@@ -13,6 +13,7 @@ import { BUCKETS, DEFAULT_ALLOCATIONS, MIN_ALLOCATION_PERCENT, type BucketId, ty
 import { uid } from '../../engine/rng'
 import { Button, Card, Chip, Confirm, Divider, GrabSlider, Modal, Row, SectionTitle, Segmented, Toggle } from '../components'
 import { MATH_TRACKS } from '../../content/tracks'
+import { GOAL_PRESETS } from '../../engine/goals'
 import { IconBack } from '../icons'
 import { CHANGELOG } from '../../content/changelog'
 import { requestNotificationPermission } from '../notify'
@@ -39,6 +40,7 @@ export function SettingsScreen() {
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmReset2, setConfirmReset2] = useState(false)
   const [confirmSample, setConfirmSample] = useState(false)
+  const [confirmReports, setConfirmReports] = useState(false)
   const [importMsg, setImportMsg] = useState<string | null>(null)
   const [pendingImport, setPendingImport] = useState<ReturnType<typeof importState> | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
@@ -164,6 +166,35 @@ export function SettingsScreen() {
                   className={`min-h-11 px-3 rounded-lg border text-[14px] font-medium ${state.profile.mathTrack === t.id ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'}`}
                 >
                   {t.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="text-[13px] font-medium text-muted">Learning focus</span>
+            <p className="text-[12px] text-faint mt-0.5">
+              The goals from setup, editable anytime. Together they tilt the long-run balance by a bounded ~12 points —
+              nothing you leave unpicked is dropped; every area keeps its floor.
+            </p>
+            <div className="flex gap-1.5 mt-1.5 flex-wrap">
+              {GOAL_PRESETS.map((g) => (
+                <button
+                  type="button"
+                  key={g}
+                  onClick={() =>
+                    dispatch({
+                      type: 'update-profile',
+                      profile: {
+                        goals: state.profile.goals.includes(g)
+                          ? state.profile.goals.filter((x) => x !== g)
+                          : [...state.profile.goals, g],
+                      },
+                    })
+                  }
+                  aria-pressed={state.profile.goals.includes(g)}
+                  className={`min-h-11 px-3 rounded-lg border text-[14px] font-medium ${state.profile.goals.includes(g) ? 'bg-good/15 text-good border-good/40' : 'bg-surface2 border-line text-muted'}`}
+                >
+                  {g}
                 </button>
               ))}
             </div>
@@ -444,11 +475,19 @@ export function SettingsScreen() {
             appear only after the first report and was impossible to find when
             you went looking for it. */}
         {state.reports.length ? (
-          <Row
-            label="Export problem reports"
-            sub={`${state.reports.length} item report${state.reports.length === 1 ? '' : 's'} you filed`}
-            onClick={() => download('axiom-lab-reports.json', JSON.stringify(state.reports, null, 2))}
-          />
+          <>
+            <Row
+              label="Export problem reports"
+              sub={`${state.reports.length} item report${state.reports.length === 1 ? '' : 's'} you filed`}
+              onClick={() => download('axiom-lab-reports.json', JSON.stringify(state.reports, null, 2))}
+            />
+            <Divider />
+            <Row
+              label="Delete problem reports"
+              sub="Clears your filed reports from this device. Export first if you want to keep a copy."
+              onClick={() => setConfirmReports(true)}
+            />
+          </>
         ) : (
           <Row
             label={<span className="text-muted">Export problem reports</span>}
@@ -456,6 +495,18 @@ export function SettingsScreen() {
           />
         )}
       </Card>
+      <Confirm
+        open={confirmReports}
+        title="Delete all problem reports?"
+        body={`This removes the ${state.reports.length} report${state.reports.length === 1 ? '' : 's'} you filed — notes about broken or confusing questions. Your learning history is untouched. This cannot be undone (export first to keep a copy).`}
+        confirmLabel="Delete reports"
+        danger
+        onConfirm={() => {
+          dispatch({ type: 'clear-reports' })
+          setConfirmReports(false)
+        }}
+        onCancel={() => setConfirmReports(false)}
+      />
       {importMsg ? (
         <p className="text-[13px] mt-2 px-1 text-muted" role="status">
           {importMsg}
@@ -502,7 +553,7 @@ export function SettingsScreen() {
         {storage?.usageBytes != null && (storage.cachesBytes != null || storage.idbBytes != null) ? (
           <p className="text-[13px] text-muted leading-relaxed mt-2">
             What that number is made of: {storage.cachesBytes != null ? `${(storage.cachesBytes / 1024 / 1024).toFixed(1)} MB is the cached app itself (kept so it opens offline and instantly), ` : ''}
-            {storage.idbBytes != null ? `${(storage.idbBytes / 1024 / 1024).toFixed(1)} MB is your actual learning data, ` : ''}
+            {storage.idbBytes != null ? `${(storage.idbBytes / 1024 / 1024).toFixed(1)} MB is your learning data (that figure includes its automatic backup copy and database overhead — the true history is what Export produces, usually far smaller), ` : ''}
             and the rest is browser bookkeeping (compiled-code caches and database overhead). The headline reads large
             because of the app files — your history itself stays tiny, roughly a few MB per year of daily practice.
           </p>

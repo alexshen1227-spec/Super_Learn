@@ -9,15 +9,8 @@ import { useStore } from '../../store/store'
 import { useNav } from '../nav'
 import { Button, Chip, Segmented } from '../components'
 import { MATH_TRACKS } from '../../content/tracks'
+import { GOAL_PRESETS } from '../../engine/goals'
 
-const GOAL_PRESETS = [
-  'Raise my grades',
-  'Be ready for high-school math',
-  'Get better at problem solving',
-  'Sharpen focus and memory',
-  'Improve at chess',
-  'Think more clearly about people and claims',
-]
 
 const COURSE_PRESETS = ['Math 8', 'Algebra 1', 'Pre-Algebra', 'Physical Science', 'Life Science', 'Computer Science']
 
