@@ -345,3 +345,34 @@ describe('long append-only histories', () => {
     expect(evidenceFor(deriveEvidence(extended, T0 + DAY), 'sk1').attempts).toBe(2)
   })
 })
+
+/**
+ * The incremental replay cache reuses trackers when a history is EXTENDED.
+ * Checking only the last element of the cached prefix is not sound: two
+ * histories of the same length can share a final event and differ earlier,
+ * and the cache would then answer from the wrong past. Found by a differential
+ * test (cached vs from-scratch across interleaved call patterns), which
+ * reported recentMisses 0 where a fresh replay said 1.
+ */
+describe('the replay cache never answers from the wrong history', () => {
+  it('does not reuse trackers when an equal-length history differs earlier', () => {
+    const shared = ev({ templateId: 'tail-shared' })
+    const clean = [ev({ templateId: 'mid-clean' }), shared]
+    const withMiss = [ev({ templateId: 'mid-miss', firstCorrect: false, correct: false }), shared]
+
+    // Warm the cache on the clean history, then ask about a same-length
+    // history that ends with the very same event object.
+    expect(evidenceFor(deriveEvidence(clean, T0 + DAY), 'sk1').recentMisses).toBe(0)
+    const after = evidenceFor(deriveEvidence(withMiss, T0 + DAY), 'sk1')
+    expect(after.recentMisses, 'cache answered from the wrong prefix').toBe(1)
+  })
+
+  it('still extends correctly when the prefix genuinely matches', () => {
+    const a = ev({ templateId: 'grow-a' })
+    const b = ev({ templateId: 'grow-b' })
+    expect(evidenceFor(deriveEvidence([a], T0 + DAY), 'sk1').attempts).toBe(1)
+    expect(evidenceFor(deriveEvidence([a, b], T0 + DAY), 'sk1').attempts).toBe(2)
+    // …and shrinking back is still correct rather than reusing the longer run.
+    expect(evidenceFor(deriveEvidence([a], T0 + DAY), 'sk1').attempts).toBe(1)
+  })
+})

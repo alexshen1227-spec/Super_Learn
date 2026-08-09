@@ -483,9 +483,36 @@ const MINUTE = 60_000
 
 interface IncrementalReplay {
   length: number
-  lastEvent: AttemptEvent | null
+  /**
+   * The exact prefix this cache was built from. Verified element-by-element
+   * before reuse — see `sharesPrefix`.
+   */
+  prefix: AttemptEvent[]
   trackers: Map<string, Tracker>
   lastAt: number
+}
+
+/**
+ * Does `events` begin with exactly the cached prefix, object for object?
+ *
+ * Checking only the LAST element of the prefix is not sound: two histories of
+ * the same length can share a final event and differ earlier, and the cache
+ * would then hand back trackers built from the wrong past. Found by a
+ * differential test (cached vs from-scratch across interleaved call patterns)
+ * which reported `recentMisses: 0` where a fresh replay said `1`. Latent
+ * rather than live — every array the app builds is a prefix or an append of
+ * one canonical list — but this is the evidence engine, and a latent hole here
+ * becomes a live one after any innocuous refactor.
+ *
+ * Reference comparisons only: ~50k pointer checks cost microseconds against
+ * the many milliseconds of the replay this avoids.
+ */
+function sharesPrefix(events: AttemptEvent[], prefix: AttemptEvent[]): boolean {
+  if (events.length < prefix.length) return false
+  for (let i = 0; i < prefix.length; i++) {
+    if (events[i] !== prefix[i]) return false
+  }
+  return true
 }
 
 /**
@@ -534,9 +561,7 @@ function asExposureIfProbe(e: AttemptEvent): AttemptEvent {
 function replayEvidence(events: AttemptEvent[], now: number): Map<string, SkillEvidence> {
   let trackers: Map<string, Tracker>
   const previous = incrementalReplay
-  const prefixMatches = previous !== null &&
-    events.length >= previous.length &&
-    (previous.length === 0 || events[previous.length - 1] === previous.lastEvent)
+  const prefixMatches = previous !== null && sharesPrefix(events, previous.prefix)
   const appendedInOrder = prefixMatches && events.slice(previous!.length).every((event) => event.t >= previous!.lastAt)
 
   let toApply: AttemptEvent[]
@@ -562,7 +587,11 @@ function replayEvidence(events: AttemptEvent[], now: number): Map<string, SkillE
   }
   incrementalReplay = {
     length: events.length,
-    lastEvent: events.at(-1) ?? null,
+    // A snapshot of the array, not the caller's array: the caller may keep
+    // mutating theirs, and the cache must describe the history it actually
+    // replayed. Holding the event objects themselves costs nothing — they are
+    // already alive in the store.
+    prefix: events.slice(),
     trackers,
     lastAt: events.length ? lastAt : 0,
   }

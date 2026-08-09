@@ -4,6 +4,7 @@ import { DEFAULT_INDEX } from '../content/registry'
 import { deriveEvidence } from './mastery'
 import { allocationReport } from './allocation'
 import { initialState, type AppState, type AttemptEvent } from '../domain/types'
+import { MATH_TRACKS } from '../content/tracks'
 
 const DAY = 86_400_000
 const START = Date.UTC(2026, 0, 5, 16)
@@ -14,8 +15,8 @@ const START = Date.UTC(2026, 0, 5, 16)
  * because the bug this pins down was invisible to every unit-level check: each
  * individual decision was defensible and the aggregate was still broken.
  */
-function simulate(days: number, minutes = 30, acc = 0.7) {
-  let state: AppState = { ...initialState(), events: [], sessions: [] }
+function simulate(days: number, minutes = 30, acc = 0.7, mathTrack: string | null = null) {
+  let state: AppState = { ...initialState(), profile: { ...initialState().profile, mathTrack }, events: [], sessions: [] }
   let t = START
   const served: Record<string, number> = {}
   for (let d = 0; d < days; d++) {
@@ -98,4 +99,22 @@ describe('no academic bucket can starve behind another bucket’s prerequisite',
     // And the margin is what does it, not an accident of iteration order.
     expect(scoreSkills('math', ctx, report).length).toBeGreaterThan(0)
   })
+})
+
+/**
+ * The starvation guard has to survive the COURSE TILT too. When the California
+ * tracks landed, a track-boosted math skill sat at +3.7 (incumbency 2 plus
+ * TRACK_BONUS 1.2 plus TRACK_UNIT_BONUS 0.5) against a starving bucket's +3.4,
+ * and physics fell straight back to 0% on ca-8 — the original bug, resurrected
+ * by constants tuned before those tracks existed. Incumbency now stands down
+ * while another academic bucket is starving, so this holds for EVERY course
+ * rather than only the no-track case the first test covered.
+ */
+describe('a chosen course cannot starve another subject', () => {
+  for (const trackId of MATH_TRACKS.map((t) => t.id)) {
+    it(`serves physics on the ${trackId} track`, () => {
+      const run = simulate(150, 30, 0.72, trackId)
+      expect(run.share('physics'), `physics starved on ${trackId}`).toBeGreaterThan(1)
+    })
+  }
 })

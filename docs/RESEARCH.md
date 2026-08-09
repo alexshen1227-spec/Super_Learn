@@ -1051,3 +1051,55 @@ Geometry, and Algebra II. The exact 2/3/4-star cluster challenge floors are a
 **HEURISTIC implementation gate**, not numbers prescribed by CDE. The
 framework also does not support universal middle-school acceleration, so the
 accelerated branch stays explicitly optional rather than replacing Math 8.
+
+## 28. Reviewing the Codex merge (2026-08-09)
+
+The California alignment work is sound and its standard codes check out against
+the verbatim CCSS structure recorded in §25 (6.RP.A.1–3, 6.NS.C.5–8,
+8.G.A.1–5/B.6–8/C.9, 7.SP.A–C). `californiaAlignment.test.ts` is a real gate,
+not menu copy: a cluster may only be claimed when its skills are in the course,
+have reachable question families, an on-ramp no harder than the access ceiling,
+and at least one task at the course's challenge floor. The two audit gates it
+rewrote both got STRICTER — variant inflation now reports every offender rather
+than failing on the first, and transfer reachability now requires an actual
+`transfer` task instead of merely counting families.
+
+**A correction to my own reporting.** My "502 tests green" claims across this
+session were inflated. A stale git worktree at `.claude/worktrees/` held 26
+test files — a frozen snapshot from an earlier session — and vitest's default
+glob was collecting them alongside the 34 real ones. About 194 of those "502"
+tests were duplicates running against OLD source. The suite is 40 files / 319
+tests, all live. Codex's `test: { include: ['src/**/*.test.{ts,tsx}'] }` is the
+right fix; the lesson is that a green count means nothing if you never check
+WHAT ran.
+
+**Two real defects found while reviewing:**
+
+1. *The incremental replay cache could answer from the wrong history.* The new
+   append-only fast path in `deriveEvidence` verified only the LAST element of
+   its cached prefix. Two histories of the same length can share a final event
+   object and differ earlier, and the cache then reuses trackers built from the
+   wrong past — a differential test (cached vs from-scratch across four
+   interleaved call patterns) reported `recentMisses: 0` where a fresh replay
+   said `1`. Latent rather than live, since every array the app builds is a
+   prefix or an append of one canonical list, but this is the evidence engine.
+   The guard now compares the whole prefix by reference: ~50k pointer checks
+   cost microseconds against the milliseconds of replay it avoids.
+
+2. *Physics starved again on the new tracks.* The course tilt (TRACK_BONUS 1.2
+   + TRACK_UNIT_BONUS 0.5) stacks on math's core incumbency (2) for 3.7 against
+   a starving bucket's 3.4, so physics fell back to **0% on ca-8** — §27's bug,
+   resurrected by constants tuned before those tracks existed. Rather than
+   out-bid it (whack-a-mole across four coupled constants), incumbency now
+   stands down entirely while another academic bucket is starving.
+
+   Fixing that exposed a THIRD failure the first fix had masked: physics has
+   one skill reachable with no prerequisite (`p-estimate`), which quietly
+   filled the bucket's MINUTES, cleared the debt, and let the gateway bonus
+   fade while the other ten physics skills stayed locked forever. Minutes-
+   starvation and BREADTH-starvation are different failures, and only the
+   second explains a learner doing the same physics skill for a year. The
+   gateway weight is now `max(minutes debt, locked share of the bucket)`.
+
+   `starvation.test.ts` now runs the simulation for EVERY track, not just the
+   no-track case the original covered — which is why the regression was caught.

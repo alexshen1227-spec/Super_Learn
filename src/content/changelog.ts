@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '7.4',
+    date: '2026-08-09',
+    title: 'Reviewing The Merge: Two Real Bugs In The Engine',
+    points: [
+      'The California work checks out — the standard codes match the official ones exactly, and the new alignment check is a genuine release gate rather than menu copy. Two existing checks were also made stricter in the process, not looser.',
+      'Bug in the new speed-up for your history: it now remembers past work instead of recalculating from scratch every time, but it decided whether that memory still applied by checking only the LAST item. Two different histories can end with the same item and differ earlier, so it could answer from the wrong past. A side-by-side test caught it reporting zero recent misses where a full recalculation said one. It now verifies the whole history, which costs microseconds.',
+      'The physics-starvation bug came back on the new grade-8 course: the course priority stacked on top of maths\' default priority and out-muscled the fix, so physics went to 0% again. Maths now stands down entirely while another subject is starving.',
+      'Fixing that exposed a third layer underneath. Physics has one skill needing no prerequisites, and it was quietly filling physics\' MINUTES while the other ten skills stayed locked — so a learner could do the same physics topic for a year and the app would think physics was healthy. Priority now looks at how much of a subject is still locked, not just how many minutes it got.',
+      'The starvation test now simulates every course rather than only the no-course case, which is exactly why this was caught instead of shipped.',
+    ],
+  },
+  {
     version: '7.3',
     date: '2026-08-09',
     title: 'The Math Courses Now Have A California Floor',

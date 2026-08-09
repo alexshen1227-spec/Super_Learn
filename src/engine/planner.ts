@@ -387,6 +387,29 @@ export function scoreSkills(
   const track = state.profile.mathTrack ? TRACK_BY_ID.get(state.profile.mathTrack) ?? null : null
   const trackSkills = track ? new Set(track.units.flatMap((u) => u.skillIds)) : null
   const frontierUnit = track ? trackFrontierUnit(track, evidence) : null
+
+  /**
+   * What fraction of a bucket is still behind a locked prerequisite. Computed
+   * once per call — the gateway check below needs it per candidate, and
+   * recomputing inside that loop would make scoring quadratic.
+   */
+  const lockedCache = new Map<BucketId, number>()
+  const lockedShare = (b: BucketId): number => {
+    const hit = lockedCache.get(b)
+    if (hit !== undefined) return hit
+    let total = 0
+    let locked = 0
+    for (const s of index.skillList) {
+      if (s.bucket !== b) continue
+      total++
+      if (stateRank(evidenceFor(evidence, s.id).state) < stateRank('independent') && !prereqsMet(s, evidence, state)) {
+        locked++
+      }
+    }
+    const share = total ? locked / total : 0
+    lockedCache.set(b, share)
+    return share
+  }
   for (const skill of ctx.index.skillList) {
     if (skill.bucket !== bucket) continue
     const ev = evidenceFor(evidence, skill.id)
@@ -504,7 +527,15 @@ export function scoreSkills(
     /*
      * Cross-bucket gateway (see GATEWAY_BONUS). Only fires while this skill is
      * unowned AND a dependent in ANOTHER bucket is blocked AND that bucket is
-     * behind its target — so it cannot become a permanent thumb on the scale.
+     * either behind its target OR still mostly locked — so it cannot become a
+     * permanent thumb on the scale.
+     *
+     * Weighting by minutes-debt ALONE was not enough: physics has one skill
+     * reachable without any prerequisite (`p-estimate`), which quietly filled
+     * the bucket's minutes, cleared the debt, and let the gateway bonus fade
+     * while the other ten physics skills stayed locked forever. Minutes-
+     * starvation and BREADTH-starvation are different failures, and only the
+     * second one explains a learner doing the same physics skill for a year.
      */
     if (stateRank(ev.state) < stateRank('independent')) {
       let bestDebt = 0
@@ -515,9 +546,9 @@ export function scoreSkills(
         if (stateRank(evidenceFor(evidence, dep.id).state) >= stateRank('independent')) continue
         // Already reachable — then this skill is not what is holding it back.
         if (prereqsMet(dep, evidence, state)) continue
-        const debt = relativeDebt(report, dep.bucket)
-        if (debt > bestDebt) {
-          bestDebt = debt
+        const need = Math.max(relativeDebt(report, dep.bucket), lockedShare(dep.bucket))
+        if (need > bestDebt) {
+          bestDebt = need
           bestBucket = dep.bucket
         }
       }
@@ -915,12 +946,27 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
    * before the learner has done anything at all.
    */
   const historyEnough = report.totalMinutes >= 60
+  /*
+   * Math's incumbency is a TIE-BREAKER, not a shield. Adding it on top of the
+   * course tilt (TRACK_BONUS + TRACK_UNIT_BONUS = 1.7) put a track-boosted math
+   * skill at +3.7 against a starving bucket's +3.4, and physics fell back to 0%
+   * on the ca-8 track — the same starvation as before, resurrected by constants
+   * that were tuned before those tracks existed. Rather than out-bid it with a
+   * bigger number (whack-a-mole between four coupled constants), incumbency
+   * simply stands down while another academic bucket is starving.
+   */
+  const anyStarving =
+    historyEnough &&
+    ACADEMIC_BUCKETS.some(
+      (b) => b !== 'math' && relativeDebt(report, b) >= STARVED_DEBT && scoreSkills(b, ctx, report).length > 0,
+    )
   for (const bucket of academicDebtOrder) {
     const scored = scoreSkills(bucket, ctx, report)
     if (!scored.length) continue
     const best = scored[0]
     const starved = historyEnough && bucket !== 'math' && relativeDebt(report, bucket) >= STARVED_DEBT
-    const effective = best.score + (starved ? STARVED_BOOST : 0) + (bucket === 'math' ? MATH_CORE_MARGIN : 0)
+    const effective =
+      best.score + (starved ? STARVED_BOOST : 0) + (bucket === 'math' && !anyStarving ? MATH_CORE_MARGIN : 0)
     if (
       coreChoice === null ||
       effective > coreEffective ||
