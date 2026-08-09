@@ -10,7 +10,6 @@ import { useNav } from '../nav'
 import { buildContentIndex } from '../../content/registry'
 import { buildExam, EXAM_SIZES, type ExamItem, type ExamSize } from '../../engine/exam'
 import { describeAnswer, validate, validatorName } from '../../engine/validate'
-import { uid } from '../../engine/rng'
 import type { AttemptEvent, ErrorTag, RenderedItem } from '../../domain/types'
 import { ERROR_TAGS } from '../../domain/types'
 import { Button, Card, Chip, Confirm } from '../components'
@@ -65,7 +64,7 @@ interface GradedItem {
 }
 
 export function ExamScreen() {
-  const { state, dispatch, checkpoint } = useStore()
+  const { state, commit } = useStore()
   const evidence = useEvidence()
   const { go } = useNav()
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
@@ -164,13 +163,13 @@ export function ExamScreen() {
     setPhase('postmortem')
   }
 
-  const finish = () => {
+  const finish = async () => {
     // Evidence lands now, tags included — one honest batch.
     const perItemSec = Math.max(10, Math.round(elapsed / Math.max(1, items.length)))
     const events: AttemptEvent[] = graded.map((g, i) => {
       const t = index.templates.get(items[i].templateId)!
       return {
-        id: uid('e'),
+        id: `e:exam:${startedAt.current}:${i}`,
         t: Date.now(),
         sessionId: 'exam',
         templateId: t.id,
@@ -192,21 +191,22 @@ export function ExamScreen() {
         difficulty: t.difficulty,
       }
     })
-    dispatch({ type: 'append-events', events })
-    dispatch({
-      type: 'log-decision',
-      decision: {
-        id: uid('cd'),
-        t: Date.now(),
-        kind: 'review',
-        summary: `Exam simulator: ${graded.filter((g) => g.correct).length}/${graded.length} under test conditions — misses feed the Error Clinic.`,
-        evidence: [`${Math.round(elapsed / 60)} focused minutes, blind grading, no hints.`],
-        confidence: 'high',
-        wouldChange: 'Exam evidence counts like independent practice: unaided, first-attempt, novel variants.',
+    const saved = await commit([
+      { type: 'append-events', events },
+      {
+        type: 'log-decision',
+        decision: {
+          id: `cd:exam:${startedAt.current}`,
+          t: Date.now(),
+          kind: 'review',
+          summary: `Exam simulator: ${graded.filter((g) => g.correct).length}/${graded.length} under test conditions — misses feed the Error Clinic.`,
+          evidence: [`${Math.round(elapsed / 60)} focused minutes, blind grading, no hints.`],
+          confidence: 'high',
+          wouldChange: 'Exam evidence counts like independent practice: unaided, first-attempt, novel variants.',
+        },
       },
-    })
-    clearExamDraft()
-    checkpoint()
+    ])
+    if (saved) clearExamDraft()
     setPhase('summary')
   }
 

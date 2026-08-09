@@ -160,7 +160,7 @@ const funcShift = tpl(
 )
 
 const logStructure = tpl(
-  { id: 'log-structure', name: 'Logs turn products into sums', skillIds: ['m-exponential'], bucket: 'math', difficulty: 5, variants: 12, minutes: 2.5 },
+  { id: 'log-structure', name: 'Logs turn products into sums', skillIds: ['m-exponential', 'm-logarithms'], bucket: 'math', difficulty: 5, variants: 12, minutes: 2.5 },
   (_rng, seed) => {
     const a = cycle(seed, [2, 3, 4, 5] as const)
     const b = cycle(Math.floor(seed / 4), [3, 5, 7] as const)

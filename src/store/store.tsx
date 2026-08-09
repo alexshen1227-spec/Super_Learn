@@ -29,13 +29,15 @@ import type {
   SessionRecord,
 } from '../domain/types'
 import { initialState } from '../domain/types'
-import { deriveEvidence, STATE_LABEL, stateRank } from '../engine/mastery'
+import { deriveEvidence, formsRequired, STATE_LABEL, stateRank } from '../engine/mastery'
 import { uid } from '../engine/rng'
 import { sanitizeState } from './sanitize'
 import { SKILL_BY_ID } from '../content/skills'
 import {
   checkpointBackup,
+  appendEventJournal,
   clearRealStash,
+  loadEventJournal,
   loadState,
   readRealStash,
   requestPersistence,
@@ -82,7 +84,8 @@ function promotionDecisions(prev: AppState, nextEvents: AttemptEvent[], all: Att
     const a = after.get(skillId)
     if (!a) continue
     const bRank = b ? stateRank(b.state) : 0
-    const skillName = SKILL_BY_ID.get(skillId)?.name ?? skillId
+    const skill = SKILL_BY_ID.get(skillId)
+    const skillName = skill?.name ?? skillId
     if (stateRank(a.state) > bRank && stateRank(a.state) >= 3) {
       out.push({
         id: uid('cd'),
@@ -91,7 +94,7 @@ function promotionDecisions(prev: AppState, nextEvents: AttemptEvent[], all: Att
         summary: `${skillName} advanced to ${STATE_LABEL[a.state]}.`,
         evidence:
           a.state === 'independent'
-            ? [`Two unaided first-attempt successes on distinct forms (${a.independentForms.length} total).`]
+            ? [`${formsRequired(skill?.bucket ?? null)} unaided first-attempt successes on distinct question families (${a.independentForms.length} total).`]
             : a.state === 'retained'
               ? ['An unaided success at least 48 hours after the previous one.']
               : ['Success on a transfer item crossing two kinds of distance.'],
@@ -114,7 +117,7 @@ function promotionDecisions(prev: AppState, nextEvents: AttemptEvent[], all: Att
   return out
 }
 
-function reducer(state: AppState, action: Action): AppState {
+export function reduceState(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'hydrate':
     case 'replace':
@@ -130,9 +133,11 @@ function reducer(state: AppState, action: Action): AppState {
     case 'remove-deadline':
       return { ...state, deadlines: state.deadlines.filter((d) => d.id !== action.id) }
     case 'append-events': {
-      if (!action.events.length) return state
-      const events = [...state.events, ...action.events]
-      const decisions = promotionDecisions(state, action.events, events)
+      const known = new Set(state.events.map((event) => event.id))
+      const fresh = action.events.filter((event) => !known.has(event.id))
+      if (!fresh.length) return state
+      const events = [...state.events, ...fresh]
+      const decisions = promotionDecisions(state, fresh, events)
       return {
         ...state,
         events,
@@ -140,9 +145,13 @@ function reducer(state: AppState, action: Action): AppState {
       }
     }
     case 'complete-session':
-      return { ...state, sessions: [...state.sessions, action.record].slice(-2000) }
+      return state.sessions.some((session) => session.id === action.record.id)
+        ? state
+        : { ...state, sessions: [...state.sessions, action.record].slice(-2000) }
     case 'log-decision':
-      return { ...state, coachLog: [...state.coachLog, action.decision].slice(-300) }
+      return state.coachLog.some((decision) => decision.id === action.decision.id)
+        ? state
+        : { ...state, coachLog: [...state.coachLog, action.decision].slice(-300) }
     case 'add-forecast':
       return { ...state, forecasts: [...state.forecasts, action.forecast].slice(-200) }
     case 'revise-forecast':
@@ -200,17 +209,19 @@ export interface StoreApi {
   ready: boolean
   dispatch: (a: Action) => void
   /** Sample-data mode transitions (stash/restore real data). */
-  enterSample: () => Promise<void>
-  exitSample: () => Promise<void>
+  enterSample: () => Promise<boolean>
+  exitSample: () => Promise<boolean>
   resetAll: () => Promise<void>
   /** Force a durable checkpoint (called after session completion). */
-  checkpoint: () => void
+  checkpoint: () => Promise<boolean>
+  /** Apply related actions as one durable, idempotent state transition. */
+  commit: (actions: Action[]) => Promise<boolean>
 }
 
 const StoreCtx = createContext<StoreApi | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, initialState)
+  const [state, dispatch] = useReducer(reduceState, undefined, initialState)
   const [ready, setReady] = useState(false)
   const stateRef = useRef(state)
   stateRef.current = state
@@ -222,20 +233,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     void (async () => {
       const loaded = await loadState()
+      const journal = await loadEventJournal()
       if (cancelled) return
-      if (loaded) {
-        try {
-          dispatch({ type: 'hydrate', state: sanitizeState(JSON.parse(loaded.json)) })
-        } catch {
-          /* fresh start */
-        }
+      let hydrated = initialState()
+      if (loaded) hydrated = sanitizeState(JSON.parse(loaded.json))
+      // Sample mode is a sealed sandbox. The journal belongs to the real
+      // profile and must never leak real attempts into a persisted demo (or
+      // demo attempts back into the real profile on the next launch).
+      if (journal.length && !hydrated.sampleMode) {
+        const known = new Set(hydrated.events.map((event) => event.id))
+        hydrated = sanitizeState({
+          ...hydrated,
+          events: [...hydrated.events, ...journal.filter((event) => {
+            const id = typeof event === 'object' && event !== null ? (event as { id?: unknown }).id : null
+            return typeof id === 'string' && !known.has(id)
+          })],
+        })
       }
+      dispatch({ type: 'hydrate', state: hydrated })
+      // Upgrade older installs in place: their snapshot events seed the new
+      // append-only journal once, after which writes are incremental.
+      if (!hydrated.sampleMode) void appendEventJournal(hydrated.events)
       setReady(true)
       void requestPersistence()
     })()
     return () => {
       cancelled = true
     }
+  }, [])
+
+  const dispatchSafe = useCallback((action: Action) => {
+    if (action.type === 'append-events' && !stateRef.current.sampleMode) void appendEventJournal(action.events)
+    dispatch(action)
   }, [])
 
   // persist on change (debounced to a macrotask so bursts collapse)
@@ -262,23 +291,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const enterSample = useCallback(async () => {
-    await stashRealState(JSON.stringify(stateRef.current))
+    const stashed = await stashRealState(JSON.stringify(stateRef.current))
+    if (!stashed) return false
     const sample = buildSampleState()
     dispatch({ type: 'replace', state: sample })
+    return true
   }, [])
 
   const exitSample = useCallback(async () => {
     const real = await readRealStash()
-    if (real !== null) {
-      try {
-        dispatch({ type: 'replace', state: sanitizeState(JSON.parse(real)) })
-      } catch {
-        dispatch({ type: 'replace', state: initialState() })
-      }
-    } else {
-      dispatch({ type: 'replace', state: initialState() })
+    if (!real) return false
+    let restored: AppState
+    try {
+      restored = sanitizeState(JSON.parse(real))
+    } catch {
+      return false
     }
+    // Put the real state back into both live persistence and a checkpoint
+    // before deleting the only stash that currently contains it.
+    const saved = await saveState(JSON.stringify(restored))
+    if (!saved) return false
+    await checkpointBackup(JSON.stringify(restored))
+    dispatch({ type: 'replace', state: restored })
     await clearRealStash()
+    return true
   }, [])
 
   const resetAll = useCallback(async () => {
@@ -286,13 +322,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'replace', state: initialState() })
   }, [])
 
-  const checkpoint = useCallback(() => {
-    void checkpointBackup(JSON.stringify(stateRef.current))
+  const checkpoint = useCallback(async () => {
+    const json = JSON.stringify(stateRef.current)
+    const saved = await saveState(json)
+    await checkpointBackup(json)
+    return saved
+  }, [])
+
+  const commit = useCallback(async (actions: Action[]) => {
+    let next = stateRef.current
+    for (const action of actions) next = reduceState(next, action)
+    const appended = actions.flatMap((action) => action.type === 'append-events' ? action.events : [])
+    if (appended.length && !next.sampleMode) await appendEventJournal(appended)
+    const json = JSON.stringify(next)
+    const saved = await saveState(json)
+    await checkpointBackup(json)
+    dispatch({ type: 'replace', state: next })
+    return saved
   }, [])
 
   const api = useMemo<StoreApi>(
-    () => ({ state, ready, dispatch, enterSample, exitSample, resetAll, checkpoint }),
-    [state, ready, enterSample, exitSample, resetAll, checkpoint],
+    () => ({ state, ready, dispatch: dispatchSafe, enterSample, exitSample, resetAll, checkpoint, commit }),
+    [state, ready, dispatchSafe, enterSample, exitSample, resetAll, checkpoint, commit],
   )
   return <StoreCtx.Provider value={api}>{children}</StoreCtx.Provider>
 }

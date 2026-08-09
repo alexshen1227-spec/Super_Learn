@@ -48,7 +48,7 @@ describe('Error Clinic', () => {
       targets,
     )
     expect(plan.blocks).toHaveLength(2)
-    expect(plan.blocks[0].label).toContain('Integer operations')
+    expect(plan.blocks[0].label).toContain('Integers, factors & the number line')
     expect(plan.blocks.every((block) => block.activities.length >= 2)).toBe(true)
     expect(estimatedPlanMinutes(plan)).toBeGreaterThan(10)
   })

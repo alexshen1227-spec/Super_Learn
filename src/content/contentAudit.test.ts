@@ -18,7 +18,7 @@ import { BUILTIN_TEMPLATES, DEFAULT_INDEX } from './registry'
 import { COURSES, SKILLS, SKILL_BY_ID } from './skills'
 import { DIFFICULTY_INFO } from './difficulty'
 import { MATH_TRACKS, TRACK_BY_ID } from './tracks'
-import { STATE_LABEL } from '../engine/mastery'
+import { formsRequired, STATE_LABEL } from '../engine/mastery'
 import { KB_BY_SKILL } from './kb'
 import { correctResponse, firstFailedStep, serializeSteps, validate, wrongResponse } from '../engine/validate'
 import { matingMoves, movesKeepingMate } from '../engine/chessTools'
@@ -638,6 +638,7 @@ describe('items are answerable and fair', () => {
     // it was true of 99 templates before this rule went in.
     let declared = 0
     let actual = 0
+    const inflated: string[] = []
     for (const t of BUILTIN_TEMPLATES) {
       const n = Math.max(1, t.variants)
       const seen = new Set<string>()
@@ -658,11 +659,9 @@ describe('items are answerable and fair', () => {
       actual += seen.size
       // Per-template floor. Some slack is unavoidable: a generator drawing
       // parameters at random will occasionally repeat itself.
-      expect(
-        seen.size / n,
-        `${t.id}: declares ${n} variants but produces only ${seen.size} distinct forms`,
-      ).toBeGreaterThanOrEqual(0.7)
+      if (seen.size / n < 0.7) inflated.push(`${t.id} (${seen.size}/${n})`)
     }
+    expect(inflated, `inflated variant declarations: ${inflated.join(', ')}`).toEqual([])
     expect(actual / declared, `bank-wide: ${actual} real forms against ${declared} declared`).toBeGreaterThanOrEqual(0.9)
   })
 
@@ -809,30 +808,29 @@ describe('content volume targets', () => {
   /**
    * Breadth is only harmful when it outruns depth, so measure depth directly.
    *
-   * Independent needs two distinct FORMS (`templateId:seed`), so a skill needs
-   * at least two reachable variants. Transferred additionally needs a template
-   * family the learner has never practiced on this skill, so a skill whose
-   * every item lives in one family can never reach the top rung — its ladder is
-   * structurally capped no matter how well the learner performs.
+   * Independent needs distinct template FAMILIES: two for ordinary skills and
+   * three for the four Paths. Randomised variants of one generator do not add
+   * a family. Transfer additionally needs a planner-reachable transfer task;
+   * where that does not exist yet, the UI states Retained as the honest ceiling.
    */
   it('gives every skill a reachable evidence ladder', () => {
     const shallow: string[] = []
-    const cappedAtIndependent: string[] = []
+    const withoutTransferRoute: string[] = []
     for (const s of SKILLS) {
       const templates = DEFAULT_INDEX.bySkill.get(s.id) ?? []
-      const forms = templates.reduce((a, t) => a + Math.max(1, t.variants), 0)
-      if (forms < 2) shallow.push(`${s.id} (${forms} form)`)
-      if (templates.length < 2) cappedAtIndependent.push(`${s.id} (${templates.length} family)`)
+      const required = formsRequired(s.bucket)
+      if (templates.length < required) shallow.push(`${s.id} (${templates.length}/${required} families)`)
+      if (!templates.some((template) => template.transfer)) withoutTransferRoute.push(s.id)
     }
     expect(shallow, `these skills cannot reach Independent: ${shallow.join(', ')}`).toEqual([])
-    // Transfer reachability is reported as a ratio rather than an absolute:
-    // a brand-new skill legitimately starts with one family, but the bank as a
-    // whole must not drift toward single-family skills.
-    const reach = 1 - cappedAtIndependent.length / SKILLS.length
+    // Transfer coverage is still a bank-health ratio rather than an overclaim
+    // that every current skill supports the top rung. `nextProofForSkill`
+    // exposes the per-skill ceiling, while this floor prevents coverage drift.
+    const reach = 1 - withoutTransferRoute.length / SKILLS.length
     expect(
       reach,
-      `${cappedAtIndependent.length}/${SKILLS.length} skills cannot reach Transferred: ${cappedAtIndependent.join(', ')}`,
-    ).toBeGreaterThanOrEqual(0.8)
+      `${withoutTransferRoute.length}/${SKILLS.length} skills have no transfer route: ${withoutTransferRoute.join(', ')}`,
+    ).toBeGreaterThanOrEqual(0.65)
   })
 })
 

@@ -177,7 +177,12 @@ export function CoachScreen() {
                 .reverse()
                 .slice(0, 4)
                 .map((f) => (
-                  <ForecastRow key={f.id} f={f} onResolve={(outcome) => dispatch({ type: 'resolve-forecast', id: f.id, outcome, note: '' })} />
+                  <ForecastRow
+                    key={f.id}
+                    f={f}
+                    onResolve={(outcome) => dispatch({ type: 'resolve-forecast', id: f.id, outcome, note: '' })}
+                    onRevise={(probability) => dispatch({ type: 'revise-forecast', id: f.id, probability })}
+                  />
                 ))}
             </div>
             {openForecasts.length === 0 && state.forecasts.length > 0 ? (
@@ -231,8 +236,18 @@ export function CoachScreen() {
   )
 }
 
-function ForecastRow({ f, onResolve }: { f: Forecast; onResolve: (outcome: boolean) => void }) {
+function ForecastRow({
+  f,
+  onResolve,
+  onRevise,
+}: {
+  f: Forecast
+  onResolve: (outcome: boolean) => void
+  onRevise: (probability: number) => void
+}) {
   const overdue = !f.resolved && calendarDaysUntil(f.dueISO, Date.now()) < 0
+  const [editing, setEditing] = useState(false)
+  const [nextProbability, setNextProbability] = useState(Math.round(f.probability * 100))
   return (
     <div className="border border-line rounded-xl p-3">
       <div className="flex items-start justify-between gap-2">
@@ -247,15 +262,52 @@ function ForecastRow({ f, onResolve }: { f: Forecast; onResolve: (outcome: boole
           {f.resolved.note ? ` · ${f.resolved.note}` : ''}
         </p>
       ) : (
-        <div className="flex gap-2 mt-2">
-          <button type="button" className="text-[13px] text-good underline min-h-11" onClick={() => onResolve(true)}>
-            It happened
-          </button>
-          <button type="button" className="text-[13px] text-bad underline min-h-11" onClick={() => onResolve(false)}>
-            It didn't
-          </button>
-          <span className="text-[12px] text-faint ml-auto">due {f.dueISO}</span>
-        </div>
+        <>
+          {editing ? (
+            <div className="mt-2 p-2.5 rounded-lg bg-surface2 border border-line">
+              <div className="flex items-center justify-between text-[12px] text-muted">
+                <span>Revised estimate</span>
+                <span className="font-mono text-ink">{nextProbability}%</span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={95}
+                step={5}
+                value={nextProbability}
+                aria-label="Revised forecast probability"
+                onChange={(event) => setNextProbability(Number(event.target.value))}
+                className="w-full mt-2 accent-accent"
+              />
+              <div className="flex gap-3 mt-1">
+                <button
+                  type="button"
+                  className="text-[12px] text-accent underline min-h-11"
+                  onClick={() => {
+                    onRevise(nextProbability / 100)
+                    setEditing(false)
+                  }}
+                >
+                  Save revision
+                </button>
+                <button type="button" className="text-[12px] text-faint underline min-h-11" onClick={() => setEditing(false)}>Cancel</button>
+              </div>
+            </div>
+          ) : null}
+          <div className="flex gap-2 mt-2 flex-wrap items-center">
+            <button type="button" className="text-[13px] text-good underline min-h-11" onClick={() => onResolve(true)}>
+              It happened
+            </button>
+            <button type="button" className="text-[13px] text-bad underline min-h-11" onClick={() => onResolve(false)}>
+              It didn't
+            </button>
+            <button type="button" className="text-[12px] text-accent underline min-h-11" onClick={() => setEditing(true)}>
+              Revise estimate
+            </button>
+            <span className="text-[12px] text-faint ml-auto">due {f.dueISO}</span>
+          </div>
+          {f.revisions.length ? <p className="text-[11px] text-faint">{f.revisions.length} earlier revision{f.revisions.length === 1 ? '' : 's'} kept in the ledger</p> : null}
+        </>
       )}
     </div>
   )

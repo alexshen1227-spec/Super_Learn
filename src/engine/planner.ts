@@ -35,6 +35,13 @@ import { stretchSignal } from './stretch'
 import { isPflTemplate } from './pfl'
 import { TRACK_BY_ID, type MathTrack } from '../content/tracks'
 import { getReadyReport } from './getReady'
+import {
+  buildTemplateCoverage,
+  coverageAdjustment,
+  dailyRoute,
+  dailyTemplateScore,
+  type TemplateCoverage,
+} from './plannerPolicy'
 
 export interface PlannerContext {
   index: ContentIndex
@@ -82,14 +89,7 @@ function recentlyUsedForms(events: AttemptEvent[], now: number): Set<string> {
   return used
 }
 
-function recentTemplateUse(events: AttemptEvent[], now: number): Map<string, number> {
-  const cutoff = now - 3 * 86_400_000
-  const m = new Map<string, number>()
-  for (const e of events) {
-    if (e.t >= cutoff) m.set(e.templateId, (m.get(e.templateId) ?? 0) + 1)
-  }
-  return m
-}
+const recentTemplateUse = buildTemplateCoverage
 
 /** Pick a seed whose rendered form was not used recently (best effort). */
 export function pickSeed(template: ItemTemplate, used: Set<string>): number {
@@ -167,8 +167,8 @@ function pickTemplates(
   candidates: ItemTemplate[],
   wantDifficulty: number,
   count: number,
-  templateUse: Map<string, number>,
-  opts: { transferOnly?: boolean; excludeKinds?: string[]; preferCalibration?: boolean } = {},
+  templateUse: Map<string, TemplateCoverage>,
+  opts: { transferOnly?: boolean; excludeKinds?: string[]; preferCalibration?: boolean; prioritizeTemplateId?: string } = {},
 ): ItemTemplate[] {
   const pool = candidates
     .filter((t) => (opts.transferOnly ? t.transfer : true))
@@ -176,7 +176,7 @@ function pickTemplates(
     // Long-form simulations have their own Practice mode. Quietly squeezing a
     // 20-minute project into a 7-minute daily block breaks both the plan and
     // the realism of the work.
-    .filter((t) => !t.authentic)
+    .filter((t) => dailyRoute(t) === 'daily-practice')
     // Preparation-for-future-learning probes are excluded from ordinary pools
     // for two reasons. They teach an idea the tree never covers, so serving one
     // as practice for the skill it is attached to would be teaching the wrong
@@ -187,21 +187,11 @@ function pickTemplates(
     .map((t) => ({
       t,
       score:
-        // ASYMMETRIC on purpose. A symmetric distance penalty treats "one rung
-        // too easy" and "one rung too hard" as equally bad, but they are not:
-        // slightly-too-hard is where learning happens, while too-easy produces
-        // a pleasant session that teaches nothing. Erring upward is the whole
-        // point of aiming at the frontier.
-        -(t.difficulty < wantDifficulty ? 2.6 : 1.4) * Math.abs(t.difficulty - wantDifficulty) -
-        (templateUse.get(t.id) ?? 0) * 1.5 +
-        Math.min(1, t.variants / 4) * 0.5 +
-        // Confidence data was being collected and displayed but never acted on.
-        // When the learner is measurably miscalibrated, favour items that ask
-        // for a confidence rating so the gap has a chance to close.
-        (opts.preferCalibration && t.calibration ? 1.2 : 0) +
-        // A worked chain locates WHERE reasoning broke rather than only whether
-        // it did, so it is worth a nudge when a skill is being repaired.
-        (t.kind === 'single' ? 0 : 0),
+        // ASYMMETRIC on purpose: slightly hard is productive; repeatedly easy
+        // is pleasant but does not move the frontier. Coverage debt only breaks
+        // the fair fight among work that is already near the right level.
+        dailyTemplateScore(t, wantDifficulty, templateUse.get(t.id), opts.preferCalibration) +
+        (opts.prioritizeTemplateId === t.id ? 100 : 0),
     }))
     .sort((a, b) => b.score - a.score)
   const out: ItemTemplate[] = []
@@ -218,13 +208,14 @@ function pickTemplatesForBudget(
   candidates: ItemTemplate[],
   wantDifficulty: number,
   budgetMinutes: number,
-  templateUse: Map<string, number>,
+  templateUse: Map<string, TemplateCoverage>,
   opts: {
     maxCount: number
     minCount?: number
     transferOnly?: boolean
     excludeKinds?: string[]
     preferCalibration?: boolean
+    prioritizeTemplateId?: string
     maxPerTemplate?: number
   },
 ): ItemTemplate[] {
@@ -270,7 +261,7 @@ function pickAuthenticApplication(
   ctx: PlannerContext,
   report: AllocationReport,
   availableMinutes: number,
-  templateUse: Map<string, number>,
+  templateUse: Map<string, TemplateCoverage>,
 ): ItemTemplate | null {
   const candidates = [...ctx.index.templates.values()].filter((template) => {
     if (!template.authentic) return false
@@ -285,8 +276,8 @@ function pickAuthenticApplication(
     .map((template) => ({
       template,
       score:
-        relativeDebt(report, template.bucket) * 8 -
-        (templateUse.get(template.id) ?? 0) * 2 -
+        relativeDebt(report, template.bucket) * 8 +
+        coverageAdjustment(templateUse.get(template.id)) -
         Math.abs(availableMinutes - template.minutes) * 0.15,
     }))
     .sort((a, b) => b.score - a.score)[0]?.template ?? null
@@ -1148,6 +1139,17 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     }
   }
 
+  const firstSeenFamilies = blocks
+    .flatMap((block) => block.activities)
+    .map((activity) => index.templates.get(activity.templateId))
+    .filter((template): template is ItemTemplate => Boolean(template))
+    .filter((template) => dailyRoute(template) === 'daily-practice' && !templateUse.has(template.id))
+  if (firstSeenFamilies.length) {
+    rationale.push(
+      `Coverage rotation: ${firstSeenFamilies.slice(0, 3).map((template) => template.name).join(', ')} ${firstSeenFamilies.length === 1 ? 'is a question family' : 'are question families'} you have not met yet at this level.`,
+    )
+  }
+
   if (!blocks.length) {
     rationale.push('Not enough content matches your current state — showing mixed practice instead.')
   }
@@ -1264,10 +1266,10 @@ export function buildErrorClinicPlan(ctx: PlannerContext, targets: RepairTarget[
       ? [failedTemplate, ...candidates.filter((t) => t.id !== failedTemplate.id)]
       : candidates
     const repairUse = new Map(templateUse)
-    if (failedTemplate) repairUse.set(failedTemplate.id, -100)
     const picks = pickTemplatesForBudget(preferred, Math.max(1, targetDifficulty(ev, checkIn.energy, false, placementSignal(state, target.skillId)) - 0.5), perTargetBudget, repairUse, {
       maxCount: Math.min(6, Math.max(2, Math.ceil(perTargetBudget / 2))),
       minCount: Math.min(2, preferred.length),
+      prioritizeTemplateId: failedTemplate?.id,
     })
     if (!picks.length) continue
     const conceptual = target.tags.some((tag) => tag === 'concept' || tag === 'strategy' || tag === 'representation')

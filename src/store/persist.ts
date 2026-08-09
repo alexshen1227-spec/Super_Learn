@@ -17,6 +17,28 @@ const KEY_BACKUP = 'state-backup'
 export const KEY_REAL_STASH = 'state-real-stash' // real data while sample mode is on
 const LS_MIRROR = 'axiomlab.mirror'
 const LS_MIRROR_MAX = 1_500_000
+const EVENT_PREFIX = 'event-v1:'
+
+export type LoadSource = 'primary' | 'backup' | 'mirror' | 'journal'
+let lastLoadSource: LoadSource | null = null
+
+/** A candidate must at least be parseable state-shaped JSON before it can win load priority. */
+export function isLoadableStateJson(json: string | null): json is string {
+  if (!json) return false
+  try {
+    const value = JSON.parse(json) as unknown
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+    const state = value as Record<string, unknown>
+    return typeof state.version === 'number' &&
+      typeof state.createdAt === 'number' &&
+      typeof state.onboarded === 'boolean' &&
+      typeof state.profile === 'object' && state.profile !== null &&
+      typeof state.settings === 'object' && state.settings !== null &&
+      Array.isArray(state.events)
+  } catch {
+    return false
+  }
+}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -70,9 +92,37 @@ function idbDelete(db: IDBDatabase, key: string): Promise<void> {
   })
 }
 
+function idbClear(db: IDBDatabase): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite')
+    tx.objectStore(STORE).clear()
+    tx.oncomplete = () => resolve()
+    tx.onabort = () => reject(tx.error ?? new Error('clear aborted'))
+    tx.onerror = () => reject(tx.error ?? new Error('clear failed'))
+  })
+}
+
+function idbPrefixValues(db: IDBDatabase, prefix: string): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    const values: string[] = []
+    const tx = db.transaction(STORE, 'readonly')
+    const range = IDBKeyRange.bound(prefix, `${prefix}\uffff`)
+    const req = tx.objectStore(STORE).openCursor(range)
+    req.onsuccess = () => {
+      const cursor = req.result
+      if (!cursor) return
+      if (typeof cursor.value === 'string') values.push(cursor.value)
+      cursor.continue()
+    }
+    tx.oncomplete = () => resolve(values)
+    tx.onabort = () => reject(tx.error ?? new Error('prefix read aborted'))
+    tx.onerror = () => reject(tx.error ?? new Error('prefix read failed'))
+  })
+}
+
 let writesSinceBackup = 0
 
-/** Persist serialized state. Never throws; returns whether the primary write landed. */
+/** Persist serialized state. Never throws; returns whether any durable copy landed. */
 export async function saveState(json: string): Promise<boolean> {
   let ok = false
   try {
@@ -89,7 +139,10 @@ export async function saveState(json: string): Promise<boolean> {
     /* fall through to mirror */
   }
   try {
-    if (json.length <= LS_MIRROR_MAX) localStorage.setItem(LS_MIRROR, json)
+    if (json.length <= LS_MIRROR_MAX) {
+      localStorage.setItem(LS_MIRROR, json)
+      ok = true
+    }
   } catch {
     /* mirror is best-effort */
   }
@@ -97,35 +150,87 @@ export async function saveState(json: string): Promise<boolean> {
 }
 
 /** Force a backup write (called at session completion — a known-good moment). */
-export async function checkpointBackup(json: string): Promise<void> {
+export async function checkpointBackup(json: string): Promise<boolean> {
   try {
     await withDb((db) => idbPut(db, KEY_BACKUP, json))
     writesSinceBackup = 0
+    return true
   } catch {
-    /* best effort */
+    return false
   }
 }
 
-export async function loadState(): Promise<{ json: string; source: 'primary' | 'backup' | 'mirror' } | null> {
+export async function loadState(): Promise<{ json: string; source: Exclude<LoadSource, 'journal'> } | null> {
   try {
     const main = await withDb((db) => idbGet(db, KEY_MAIN))
-    if (main) return { json: main, source: 'primary' }
+    if (isLoadableStateJson(main)) {
+      lastLoadSource = 'primary'
+      return { json: main, source: 'primary' }
+    }
   } catch {
     /* try backup */
   }
   try {
     const backup = await withDb((db) => idbGet(db, KEY_BACKUP))
-    if (backup) return { json: backup, source: 'backup' }
+    if (isLoadableStateJson(backup)) {
+      lastLoadSource = 'backup'
+      return { json: backup, source: 'backup' }
+    }
   } catch {
     /* try mirror */
   }
   try {
     const mirror = localStorage.getItem(LS_MIRROR)
-    if (mirror) return { json: mirror, source: 'mirror' }
+    if (isLoadableStateJson(mirror)) {
+      lastLoadSource = 'mirror'
+      return { json: mirror, source: 'mirror' }
+    }
   } catch {
     /* nothing */
   }
   return null
+}
+
+/**
+ * Append-only per-event journal. Whole-state snapshots remain convenient, but
+ * a damaged snapshot can no longer erase the evidence created after a backup.
+ */
+export async function appendEventJournal(events: readonly { id: string }[]): Promise<boolean> {
+  if (!events.length) return true
+  try {
+    await withDb(async (db) => {
+      const txDone = new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(STORE, 'readwrite')
+        const store = tx.objectStore(STORE)
+        for (const event of events) store.put(JSON.stringify(event), `${EVENT_PREFIX}${event.id}`)
+        tx.oncomplete = () => resolve()
+        tx.onabort = () => reject(tx.error ?? new Error('journal write aborted'))
+        tx.onerror = () => reject(tx.error ?? new Error('journal write failed'))
+      })
+      await txDone
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function loadEventJournal(): Promise<unknown[]> {
+  try {
+    const rows = await withDb((db) => idbPrefixValues(db, EVENT_PREFIX))
+    const events: unknown[] = []
+    for (const row of rows) {
+      try {
+        const event = JSON.parse(row) as unknown
+        if (typeof event === 'object' && event !== null) events.push(event)
+      } catch {
+        /* one damaged event must not hide the rest of the journal */
+      }
+    }
+    return events
+  } catch {
+    return []
+  }
 }
 
 export async function stashRealState(json: string): Promise<boolean> {
@@ -156,12 +261,7 @@ export async function clearRealStash(): Promise<void> {
 /** Full wipe: IDB keys + mirrors. Used by "Delete everything". */
 export async function wipeAll(): Promise<void> {
   try {
-    await withDb(async (db) => {
-      await idbDelete(db, KEY_MAIN)
-      await idbDelete(db, KEY_BACKUP)
-      await idbDelete(db, KEY_REAL_STASH)
-      await idbDelete(db, 'draft')
-    })
+    await withDb((db) => idbClear(db))
   } catch {
     /* best effort */
   }
@@ -212,10 +312,27 @@ export interface StorageInfo {
    */
   cachesBytes: number | null
   idbBytes: number | null
+  primaryHealthy: boolean | null
+  backupHealthy: boolean | null
+  mirrorHealthy: boolean | null
+  journalEvents: number | null
+  realDataStashed: boolean | null
+  lastLoadSource: LoadSource | null
 }
 
 export async function storageInfo(): Promise<StorageInfo> {
-  const info: StorageInfo = { persisted: null, usageBytes: null, cachesBytes: null, idbBytes: null }
+  const info: StorageInfo = {
+    persisted: null,
+    usageBytes: null,
+    cachesBytes: null,
+    idbBytes: null,
+    primaryHealthy: null,
+    backupHealthy: null,
+    mirrorHealthy: null,
+    journalEvents: null,
+    realDataStashed: null,
+    lastLoadSource,
+  }
   try {
     if (navigator.storage?.persisted) info.persisted = await navigator.storage.persisted()
   } catch {
@@ -233,6 +350,21 @@ export async function storageInfo(): Promise<StorageInfo> {
     }
   } catch {
     /* unknown */
+  }
+  try {
+    await withDb(async (db) => {
+      info.primaryHealthy = isLoadableStateJson(await idbGet(db, KEY_MAIN))
+      info.backupHealthy = isLoadableStateJson(await idbGet(db, KEY_BACKUP))
+      info.realDataStashed = (await idbGet(db, KEY_REAL_STASH)) !== null
+      info.journalEvents = (await idbPrefixValues(db, EVENT_PREFIX)).length
+    })
+  } catch {
+    /* unavailable */
+  }
+  try {
+    info.mirrorHealthy = isLoadableStateJson(localStorage.getItem(LS_MIRROR))
+  } catch {
+    /* unavailable */
   }
   return info
 }

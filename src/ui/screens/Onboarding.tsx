@@ -22,6 +22,7 @@ export function Onboarding() {
   const [step, setStep] = useState(0)
   const [profile, setProfile] = useState<Profile>(defaultProfile())
   const set = (p: Partial<Profile>) => setProfile((prev) => ({ ...prev, ...p }))
+  const selectedMathTrack = MATH_TRACKS.find((track) => track.id === profile.mathTrack) ?? null
 
   const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v])
 
@@ -149,6 +150,12 @@ export function Onboarding() {
             </button>
           ))}
         </div>
+        {selectedMathTrack ? (
+          <div className="mt-2.5 rounded-xl border border-line bg-surface px-3 py-2.5">
+            <p className="text-[12px] font-semibold text-accent">{selectedMathTrack.standard ?? 'Beyond the California high-school course floor'}</p>
+            <p className="text-[12px] text-muted mt-0.5">{selectedMathTrack.blurb}</p>
+          </div>
+        ) : null}
       </div>
       <div className="mt-5">
         <span className="text-sm font-medium text-muted">Current courses (tap any that apply)</span>

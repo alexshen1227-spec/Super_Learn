@@ -331,3 +331,17 @@ describe('ungraded work produces no evidence', () => {
     expect(after.independentForms).toEqual(before.independentForms)
   })
 })
+
+describe('long append-only histories', () => {
+  it('extends cached evidence without double-applying the old prefix', () => {
+    const first = ev({ templateId: 'incremental-a' })
+    const base = [first]
+    expect(evidenceFor(deriveEvidence(base, T0 + DAY), 'sk1').attempts).toBe(1)
+
+    const extended = [...base, ev({ templateId: 'incremental-b' })]
+    const after = evidenceFor(deriveEvidence(extended, T0 + DAY), 'sk1')
+    expect(after.attempts).toBe(2)
+    expect(after.independentForms).toEqual(['incremental-a', 'incremental-b'])
+    expect(evidenceFor(deriveEvidence(extended, T0 + DAY), 'sk1').attempts).toBe(2)
+  })
+})

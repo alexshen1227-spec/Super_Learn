@@ -10,6 +10,9 @@ import { writeDraftMirror, readDraftMirror } from './persist'
 const KEY = 'axiomlab.draft'
 /** Older than this and it is yesterday's session, not an interruption. */
 const MAX_AGE_MS = 18 * 3_600_000
+const DRAFT_VERSION = 2 as const
+const PHASES = new Set<SessionPhase>(['item', 'feedback', 'repair-note', 'bridge', 'exit-reflect', 'summary'])
+const MODES = new Set(['guided', 'independent', 'review', 'transfer', 'placement', 'exam'])
 
 export type SessionPhase = 'item' | 'feedback' | 'repair-note' | 'bridge' | 'exit-reflect' | 'summary'
 
@@ -34,7 +37,7 @@ export interface ActivityRecord {
 }
 
 export interface SessionDraft {
-  v: 1
+  v: 2
   savedAt: number
   startedAt: number
   plan: SessionPlan
@@ -50,7 +53,7 @@ export interface SessionDraft {
 }
 
 export function saveDraft(draft: Omit<SessionDraft, 'v' | 'savedAt'>): void {
-  const full: SessionDraft = { ...draft, v: 1, savedAt: Date.now() }
+  const full: SessionDraft = { ...draft, v: DRAFT_VERSION, savedAt: Date.now() }
   const json = JSON.stringify(full)
   try {
     localStorage.setItem(KEY, json)
@@ -63,16 +66,52 @@ export function saveDraft(draft: Omit<SessionDraft, 'v' | 'savedAt'>): void {
 function parseDraft(raw: string | null): SessionDraft | null {
   if (!raw) return null
   try {
-    const d = JSON.parse(raw) as SessionDraft
-    if (d?.v !== 1 || typeof d.savedAt !== 'number') return null
-    if (!d.plan || !Array.isArray(d.plan.blocks) || d.plan.blocks.length === 0) return null
-    if (typeof d.blockIndex !== 'number' || typeof d.actIndex !== 'number') return null
+    const candidate = JSON.parse(raw) as unknown
+    if (typeof candidate !== 'object' || candidate === null) return null
+    const d = candidate as Record<string, unknown>
+    // V1 is intentionally readable: the upgrade changes validation, not the
+    // learner's ability to resume a draft made immediately before an update.
+    if ((d.v !== 1 && d.v !== DRAFT_VERSION) || typeof d.savedAt !== 'number' || !Number.isFinite(d.savedAt)) return null
+    if (typeof d.plan !== 'object' || d.plan === null) return null
+    const plan = d.plan as Record<string, unknown>
+    if (typeof plan.id !== 'string' || !Array.isArray(plan.blocks) || plan.blocks.length === 0) return null
+    const validBlocks = plan.blocks.every((rawBlock) => {
+      if (typeof rawBlock !== 'object' || rawBlock === null) return false
+      const block = rawBlock as Record<string, unknown>
+      if (!Array.isArray(block.activities) || block.activities.length === 0) return false
+      return block.activities.every((rawActivity) => {
+        if (typeof rawActivity !== 'object' || rawActivity === null) return false
+        const activity = rawActivity as Record<string, unknown>
+        return typeof activity.templateId === 'string' && activity.templateId.length > 0 &&
+          typeof activity.seed === 'number' && Number.isFinite(activity.seed) && MODES.has(String(activity.mode))
+      })
+    })
+    if (!validBlocks) return null
+    if (!Number.isInteger(d.blockIndex) || !Number.isInteger(d.actIndex)) return null
+    const blockIndex = d.blockIndex as number
+    const actIndex = d.actIndex as number
+    if (blockIndex < 0 || blockIndex >= plan.blocks.length) return null
+    const activeBlock = plan.blocks[blockIndex] as { activities: unknown[] }
+    if (actIndex < 0 || actIndex >= activeBlock.activities.length) return null
+    if (typeof d.phase !== 'string' || !PHASES.has(d.phase as SessionPhase)) return null
+    if (typeof d.checkIn !== 'object' || d.checkIn === null) return null
+    const checkIn = d.checkIn as Record<string, unknown>
+    if (typeof checkIn.minutes !== 'number' || checkIn.minutes < 1 || checkIn.minutes > 180) return null
+    if (!['low', 'ok', 'high'].includes(String(checkIn.energy))) return null
+    if (typeof d.records !== 'object' || d.records === null || Array.isArray(d.records)) return null
+    if (typeof d.startedAt !== 'number' || !Number.isFinite(d.startedAt)) return null
+    if (typeof d.activeSec !== 'number' || !Number.isFinite(d.activeSec) || d.activeSec < 0) return null
+    if (typeof d.scratch !== 'string' || typeof d.principle !== 'string') return null
     if (d.phase === 'summary') return null // finished sessions never resume
-    if (Date.now() - d.savedAt > MAX_AGE_MS) return null
+    if (Date.now() - (d.savedAt as number) > MAX_AGE_MS) return null
     // Nothing answered and still on the first item = nothing to lose.
-    const anySubmitted = Object.values(d.records ?? {}).some((r) => r?.submitted || r?.firstResponse)
-    if (!anySubmitted && d.blockIndex === 0 && d.actIndex === 0 && d.phase === 'item') return null
-    return d
+    const anySubmitted = Object.values(d.records).some((rawRecord) => {
+      if (typeof rawRecord !== 'object' || rawRecord === null) return false
+      const record = rawRecord as Record<string, unknown>
+      return record.submitted === true || (typeof record.firstResponse === 'string' && record.firstResponse.length > 0)
+    })
+    if (!anySubmitted && blockIndex === 0 && actIndex === 0 && d.phase === 'item') return null
+    return { ...(d as unknown as SessionDraft), v: DRAFT_VERSION }
   } catch {
     return null
   }

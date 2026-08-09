@@ -27,6 +27,7 @@ jobs:
       # The content audit is the release gate: every item re-validated,
       # every chess tactic re-searched, every puzzle re-proven.
       - run: npm test
+      - run: npm run test:e2e
       - run: npm run build
         env:
           GITHUB_PAGES: '1'

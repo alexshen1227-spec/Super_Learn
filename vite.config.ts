@@ -1,4 +1,5 @@
-import { defineConfig, type Plugin } from 'vite'
+import type { Plugin } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -55,6 +56,11 @@ export default defineConfig({
   define: {
     __BUILD_ID__: JSON.stringify(buildId),
   },
+  // Keep Vitest inside this worktree. Developer-tool scratch worktrees can sit
+  // below the repo root, and discovering their copied tests doubled the suite.
+  test: {
+    include: ['src/**/*.test.{ts,tsx}'],
+  },
   build: {
     rollupOptions: {
       output: {
@@ -69,7 +75,18 @@ export default defineConfig({
           if (path.includes('/node_modules/react/') || path.includes('/node_modules/react-dom/') || path.includes('/node_modules/scheduler/')) return 'react-vendor'
           if (path.includes('/node_modules/chess.js/')) return 'chess-vendor'
           if (path.endsWith('/src/content/items/authenticWork.ts') || path.endsWith('/src/content/items/realWorldPractice.ts')) return 'authentic-work-items'
-          if (path.includes('/src/content/items/')) return 'learning-items'
+          if (path.includes('/src/content/items/')) {
+            const file = path.split('/').pop()?.replace(/\.ts$/, '') ?? ''
+            const math = new Set(['mathNumber', 'mathAlgebra', 'algebraOne', 'algebraDepth', 'gradeCore', 'middleDepth', 'nonRoutine', 'workedChains', 'hsBridge', 'hsDensity'])
+            const stem = new Set(['physics', 'physicsDepth', 'science', 'coding', 'advancedScience', 'advancedStem', 'advancedCurriculum'])
+            const paths = new Set(['observer', 'investigator', 'strategist', 'insight', 'gameTheory', 'abduction', 'counterexamples', 'pathQuestionDepth', 'pathQuestionExpansion', 'labsDepth', 'generatedLabs'])
+            const puzzles = new Set(['chessTactics', 'constraintPuzzles', 'logicPuzzles', 'polyominoPuzzles', 'generatedPuzzles'])
+            if (math.has(file)) return 'learning-math'
+            if (stem.has(file)) return 'learning-stem'
+            if (paths.has(file)) return 'learning-paths'
+            if (puzzles.has(file)) return 'learning-puzzles'
+            return 'learning-meta'
+          }
         },
       },
     },

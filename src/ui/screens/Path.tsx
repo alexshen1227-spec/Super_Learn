@@ -8,8 +8,9 @@ import { useNav } from '../nav'
 import { COURSES } from '../../content/skills'
 import { buildContentIndex } from '../../content/registry'
 import { KB_BY_SKILL } from '../../content/kb'
-import { evidenceFor, stateRank, STATE_LABEL } from '../../engine/mastery'
+import { evidenceFor, formsRequired, stateRank, STATE_LABEL } from '../../engine/mastery'
 import { prereqsMet } from '../../engine/planner'
+import { nextProofForSkill } from '../../engine/nextProof'
 import type { BucketId, SkillNode } from '../../domain/types'
 import { BUCKET_BY_ID } from '../../domain/types'
 import { Button, Card, Chip, DifficultyBadge, Divider, HeaderBar, Modal, ProgressBar, Row, StateBadge } from '../components'
@@ -353,10 +354,12 @@ function SkillDetail({ skill, onClose, onPractice }: { skill: SkillNode | null; 
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
   if (!skill) return null
   const ev = evidenceFor(evidence, skill.id)
+  const requiredForms = formsRequired(skill.bucket)
   const kb = KB_BY_SKILL.get(skill.id)
   const unlocked = prereqsMet(skill, evidence, state)
   const placementSignal = state.placement?.signals.find((s) => s.skillId === skill.id)
   const templates = index.bySkill.get(skill.id) ?? []
+  const nextProof = nextProofForSkill(ev, skill.bucket, templates)
   return (
     <Modal open={true} onClose={onClose} title={skill.name} wide>
       <div className="flex items-center gap-2 flex-wrap">
@@ -365,6 +368,12 @@ function SkillDetail({ skill, onClose, onPractice }: { skill: SkillNode | null; 
         {placementSignal ? <Chip tone={placementSignal.signal === 'gap' ? 'warn' : 'accent'}>placement: {placementSignal.signal}</Chip> : null}
       </div>
       <p className="text-muted text-[14px] mt-3 leading-relaxed">{skill.blurb}</p>
+
+      <Card className="p-4 mt-3 border-accent/25 bg-accent-soft/40">
+        <p className="text-[11px] font-semibold text-accent uppercase tracking-wide">Next proof</p>
+        <p className="text-[14px] font-semibold mt-1">{nextProof.title}</p>
+        <p className="text-[12px] text-muted mt-1 leading-relaxed">{nextProof.detail}</p>
+      </Card>
 
       {kb ? (
         <Card className="p-4 mt-3 bg-surface2">
@@ -385,7 +394,9 @@ function SkillDetail({ skill, onClose, onPractice }: { skill: SkillNode | null; 
             <span className="text-muted">Attempts</span>
             <span className="font-mono">{ev.attempts}</span>
             <span className="text-muted">Unaided first-try successes</span>
-            <span className="font-mono">{ev.independentForms.length} distinct form{ev.independentForms.length === 1 ? '' : 's'}</span>
+            <span className="font-mono">
+              {ev.independentForms.length}/{requiredForms} distinct question families
+            </span>
             <span className="text-muted">Guided successes</span>
             <span className="font-mono">{ev.guidedSuccesses}</span>
             <span className="text-muted">Delayed retention</span>
@@ -412,7 +423,7 @@ function SkillDetail({ skill, onClose, onPractice }: { skill: SkillNode | null; 
           </p>
         ) : null}
         <p className="text-[11px] text-faint mt-2">
-          Promotion rules are heuristics, stated plainly: 2 unaided first-try successes on distinct forms → Independent;
+          Promotion rules are heuristics, stated plainly: {requiredForms} unaided first-try successes on distinct question families → Independent;
           a later success ≥48h after the previous → Retained. Transferred needs distance on{' '}
           <span className="font-medium">two</span> counts at once — an unfamiliar question form plus a different
           subject, a different answer format, or a real delay. A new question form on its own is near transfer, and

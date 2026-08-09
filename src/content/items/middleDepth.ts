@@ -147,7 +147,7 @@ const probAtLeast = tpl(
 )
 
 const probNoReplace = tpl(
-  { id: 'prob-no-replace', name: 'Without putting it back', skillIds: ['m-prob', 'm-counting'], bucket: 'math', difficulty: 4, variants: 32, minutes: 2.5 },
+  { id: 'prob-no-replace', name: 'Without putting it back', skillIds: ['m-prob', 'm-counting', 'm-conditionalprob'], bucket: 'math', difficulty: 4, variants: 32, minutes: 2.5 },
   (rng, seed) => {
     const c = cycle(seed, [
       ['marbles', 'red', 'bag'],
@@ -288,7 +288,7 @@ const trendPredict = tpl(
 // ---------------------------------------------------------------- geometry
 
 const volConeSphere = tpl(
-  { id: 'vol-cone-sphere', name: 'Cones, spheres, cylinders', skillIds: ['m-volume'], bucket: 'math', difficulty: 3, variants: 23, minutes: 2.5 },
+  { id: 'vol-cone-sphere', name: 'Cones, spheres, cylinders', skillIds: ['m-volume', 'm-solidgeometry'], bucket: 'math', difficulty: 3, variants: 23, minutes: 2.5 },
   (rng, seed) => {
     const r = cycle(seed, [1, 2, 3, 4] as const)
     const h = rint(rng, 2, 6) * 3 // divisible by 3 so cone volume is exact in π

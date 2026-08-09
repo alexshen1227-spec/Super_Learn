@@ -12,7 +12,7 @@ const intOps = tpl(
   {
     id: 'int-ops',
     name: 'Signed arithmetic',
-    skillIds: ['m-integers'],
+    skillIds: ['m-rationalops'],
     bucket: 'math',
     difficulty: 1,
     variants: 24,
@@ -82,7 +82,7 @@ const intWord = tpl(
   {
     id: 'int-word',
     name: 'Integers in context',
-    skillIds: ['m-integers'],
+    skillIds: ['m-rationalops'],
     bucket: 'math',
     difficulty: 2,
     variants: 12,

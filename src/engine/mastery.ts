@@ -481,6 +481,20 @@ function finalize(tr: Tracker, now: number): SkillEvidence {
 const replayCache = new WeakMap<AttemptEvent[], Map<number, Map<string, SkillEvidence>>>()
 const MINUTE = 60_000
 
+interface IncrementalReplay {
+  length: number
+  lastEvent: AttemptEvent | null
+  trackers: Map<string, Tracker>
+  lastAt: number
+}
+
+/**
+ * One strong cache for the append-only history. A WeakMap avoids repeated work
+ * within one render; this additionally avoids replaying 50,000 old events when
+ * one new answer is appended in the next render.
+ */
+let incrementalReplay: IncrementalReplay | null = null
+
 export function deriveEvidence(events: AttemptEvent[], now: number): Map<string, SkillEvidence> {
   const bucket = Math.floor(now / MINUTE)
   let perArray = replayCache.get(events)
@@ -518,9 +532,25 @@ function asExposureIfProbe(e: AttemptEvent): AttemptEvent {
 
 /** Uncached replay. Events must be time-ordered. */
 function replayEvidence(events: AttemptEvent[], now: number): Map<string, SkillEvidence> {
-  const trackers = new Map<string, Tracker>()
-  const sorted = [...events].map(asExposureIfProbe).sort((a, b) => a.t - b.t)
-  for (const e of sorted) {
+  let trackers: Map<string, Tracker>
+  const previous = incrementalReplay
+  const prefixMatches = previous !== null &&
+    events.length >= previous.length &&
+    (previous.length === 0 || events[previous.length - 1] === previous.lastEvent)
+  const appendedInOrder = prefixMatches && events.slice(previous!.length).every((event) => event.t >= previous!.lastAt)
+
+  let toApply: AttemptEvent[]
+  if (previous && appendedInOrder) {
+    trackers = previous.trackers
+    toApply = events.slice(previous.length).map(asExposureIfProbe)
+  } else {
+    trackers = new Map<string, Tracker>()
+    toApply = [...events].map(asExposureIfProbe).sort((a, b) => a.t - b.t)
+  }
+
+  let lastAt = previous && appendedInOrder ? previous.lastAt : 0
+  for (const e of toApply) {
+    lastAt = Math.max(lastAt, e.t)
     for (const skillId of e.skillIds) {
       let tr = trackers.get(skillId)
       if (!tr) {
@@ -529,6 +559,12 @@ function replayEvidence(events: AttemptEvent[], now: number): Map<string, SkillE
       }
       applyEvent(tr, e)
     }
+  }
+  incrementalReplay = {
+    length: events.length,
+    lastEvent: events.at(-1) ?? null,
+    trackers,
+    lastAt: events.length ? lastAt : 0,
   }
   const out = new Map<string, SkillEvidence>()
   for (const [id, tr] of trackers) out.set(id, finalize(tr, now))

@@ -945,3 +945,109 @@ JSON — all sanitized or rejected, none crash. Scale: 20,000 events derive in
 horizontal overflow, no sub-40px tap targets, and no clipped elements on any of
 the five tabs at 375 px, including the relaxed-spacing + reminders combination
 that broke layout once before.
+
+## 28. Daily question coverage: varied after acquisition, blocked at first — EVIDENCE; exact rotation HEURISTIC
+
+- **Claim**: once learners have enough familiarity to identify a method,
+  interleaving different problem types improves delayed performance and trains
+  method selection. It can feel worse during practice even when the later test
+  is better. Initial induction is a boundary condition: blocking closely
+  related examples can help while a category is first being formed.
+- **Sources (re-accessed 2026-08-08)**:
+  - Taylor & Rohrer (2010), *The Effects of Interleaved Practice*, Applied
+    Cognitive Psychology 24. DOI: 10.1002/acp.1598.
+    https://onlinelibrary.wiley.com/doi/10.1002/acp.1598
+  - Rohrer, Dedrick & Burgess (2014), *The benefit of interleaved mathematics
+    practice is not limited to superficially similar kinds of problems*.
+    Grade-7 classroom experiment; delayed test 72% interleaved vs 38% blocked.
+    https://pubmed.ncbi.nlm.nih.gov/24578089/
+  - Sana & Yan (2022), *Interleaving Retrieval Practice Promotes Science
+    Learning*. High-school classroom quizzes; delayed performance was higher
+    after interleaved than blocked retrieval. DOI: 10.1177/09567976211057507.
+    https://pubmed.ncbi.nlm.nih.gov/35436145/
+  - Sorensen & Woltz (2016), *Blocking as a friend of induction in verbal
+    category learning*. Initial blocked exposure outperformed interleaving for
+    these verbal categories, which is why the app does not mix a brand-new core
+    skill immediately. https://pubmed.ncbi.nlm.nih.gov/27115608/
+- **Product behavior**: every template has an explicit Today route. Ordinary
+  question families compete only when they are near the learner's current
+  difficulty; unseen comparable families get a bounded coverage nudge,
+  recently repeated families step back, and old families gradually return.
+  Authentic projects keep whole application days, and preparation-for-future-
+  learning probes remain one-time and at most weekly. The core stays blocked
+  for first acquisition and interleaves only after ownership begins.
+- **What is heuristic**: the 3-day recent window, the size of the coverage
+  nudge, the 14-day stale-return slope, application every fourth established
+  session, and the weekly probe interval. No paper establishes those numbers.
+  Tests therefore pin the intended ordering and reachability, not a claim that
+  the constants are optimal.
+
+## 29. California mathematics course floor — AUTHORITATIVE STANDARD; mapping and difficulty gates are implementation safeguards
+
+**Question researched.** Do the learner-facing math courses include every major
+topic cluster California requires at the right stage, with “more is okay, less
+is not” as the product rule?
+
+**Primary sources (accessed 2026-08-08):**
+
+- California Department of Education, *California Common Core State Standards:
+  Mathematics* (adopted 2010, modified January 2013). This is the controlling
+  content specification. Grade overviews and the traditional Algebra I,
+  Geometry, and Algebra II model-course overviews were used; California-added
+  standards marked “CA” were retained.
+  https://www.cde.ca.gov/be/st/ss/documents/ccssmathstandardaug2013.pdf
+- California Department of Education, *2023 Mathematics Framework for
+  California Public Schools*, SBE-adopted July 12, 2023. The framework is
+  implementation guidance, not a replacement standards list.
+  https://www.cde.ca.gov/ci/ma/cf/index.asp
+- Framework Chapter 7, grades six through eight. Used to cross-check the
+  current big-idea organization and the intended connections among content
+  clusters.
+  https://www.cde.ca.gov/ci/ma/cf/documents/mathframeworkch7.pdf
+- Framework Chapter 8, high school. Used for the traditional/integrated
+  pathway context, the Grade 6–7–8 foundation, and the readiness boundary on
+  middle-school acceleration.
+  https://www.cde.ca.gov/ci/ma/cf/documents/mathframeworkch8.pdf
+- CDE Mathematics Framework FAQ. Used to verify that California affirms both
+  traditional and integrated pathways, that Math 8 is a rigorous foundation,
+  and that Algebra I in eighth grade is an option for ready students rather
+  than the default destination for everyone.
+  https://www.cde.ca.gov/ci/ma/cf/mathfwfaqs.asp
+
+**Measured before changing.** The selector had seven tracks but no standard
+Math 8 and no ordinary high-school Algebra I. Its default Math 7 “next course”
+was accelerated Math 7+, so the normal California 6→7→8 foundation was not
+representable. The Algebra II/Precalculus label named logarithms, but the
+skill map lacked explicit complex numbers, rational functions, radical/rational
+equations, polynomial division and zeros, unit-circle trigonometry, conics, and
+study-design inference. Geometry lacked explicit congruence/construction,
+circle-theorem, coordinate-proof, solid/cross-section, conditional-probability,
+and general-triangle clusters. Grade 6 also routed signed-number operations too
+early because one broad “integer operations” skill mixed Grade 6 number-line
+concepts with Grade 7 arithmetic.
+
+**Product behavior.** The standard route is now Math 6 → Math 7 → Math 8 →
+Algebra I → Geometry → Algebra II. The readiness-dependent accelerated branch
+remains Math 7+ → accelerated Algebra I → Geometry, and accelerated Algebra I
+keeps the same Algebra I content floor regardless of the learner’s age. Twenty-
+one explicit skills and 37 original generated question families close the
+measured gaps. Existing signed-operation questions were not deleted; they were
+remapped into the new Grade 7 rational-operations skill and remain in normal
+adaptive practice. `californiaAlignment.ts` records every course cluster and
+official code family. A release test now refuses to ship if a standards-labeled
+course omits a mapped skill, lacks normal-flow content, has no accessible
+on-ramp, or never reaches its declared course-level reasoning demand. Extra
+topics and harder tasks are allowed by design.
+
+**Limits / what this does not support.** This is a standards-aligned adaptive
+practice map, not a claim that Axiom Lab is a complete state-adopted textbook or
+instructional-materials program. A topic-to-skill mapping does not by itself
+prove instructional quality or learner mastery; the content audit checks
+correctness and reachability, while mastery still comes only from independent,
+delayed evidence. California permits local course organization and both
+traditional and integrated high-school pathways; the app currently presents
+the traditional pathway because its learner-facing courses are Algebra I,
+Geometry, and Algebra II. The exact 2/3/4-star cluster challenge floors are a
+**HEURISTIC implementation gate**, not numbers prescribed by CDE. The
+framework also does not support universal middle-school acceleration, so the
+accelerated branch stays explicitly optional rather than replacing Math 8.

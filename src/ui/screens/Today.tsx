@@ -129,9 +129,14 @@ export function Today() {
                   </Button>
                 </>
               ) : (
-                <Button className="w-full mt-4" onClick={() => go({ name: 'session', launch: { kind: 'daily' } })}>
-                  Start today's session
-                </Button>
+                <>
+                  <Button className="w-full mt-4" onClick={() => go({ name: 'session', launch: { kind: 'daily' } })}>
+                    Start today's session
+                  </Button>
+                  <p className="text-[11px] text-faint mt-2 leading-snug">
+                    Question families rotate as they become appropriate. Long projects get a whole application day; one-time readiness probes appear at most weekly.
+                  </p>
+                </>
               )}
             </>
           )}

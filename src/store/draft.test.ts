@@ -116,6 +116,20 @@ describe('session drafts', () => {
     localStorage.setItem('axiomlab.draft', JSON.stringify(raw))
     expect(loadDraftSync()).toBeNull()
   })
+  it('rejects out-of-range positions instead of crashing on resume', () => {
+    saveDraft(baseDraft())
+    const raw = JSON.parse(localStorage.getItem('axiomlab.draft')!)
+    raw.blockIndex = 99
+    localStorage.setItem('axiomlab.draft', JSON.stringify(raw))
+    expect(loadDraftSync()).toBeNull()
+  })
+  it('reads a valid V1 draft and upgrades it in memory', () => {
+    saveDraft(baseDraft())
+    const raw = JSON.parse(localStorage.getItem('axiomlab.draft')!)
+    raw.v = 1
+    localStorage.setItem('axiomlab.draft', JSON.stringify(raw))
+    expect(loadDraftSync()?.v).toBe(2)
+  })
   it('clearDraft removes everything', () => {
     saveDraft(baseDraft())
     clearDraft()

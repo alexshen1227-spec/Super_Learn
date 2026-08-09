@@ -421,6 +421,43 @@ const orderMagnitude = tpl(
   },
 )
 
+/** A construction task, distinct from merely recognising a plausible scale. */
+const backOfEnvelopeMass = tpl(
+  {
+    id: 'p-back-of-envelope-mass',
+    name: 'Back-of-the-envelope mass',
+    skillIds: ['p-estimate'],
+    bucket: 'physics',
+    difficulty: 3,
+    variants: 36,
+    minutes: 2.5,
+    transfer: true,
+    calibration: true,
+  },
+  (_rng, seed) => {
+    const length = 4 + (seed % 4)
+    const width = 3 + (Math.floor(seed / 4) % 3)
+    const height = 2 + (Math.floor(seed / 12) % 3)
+    const volume = length * width * height
+    const mass = round(volume * 1.2, 1)
+    return {
+      title: 'Estimate the mass of the air',
+      prompt:
+        `A room is about **${length} m × ${width} m × ${height} m**. Use **1.2 kg/m³** as the density of air. ` +
+        'About how many kilograms of air are in the room?',
+      answer: numeric(mass, { tolerance: 0.1, unit: 'kg' }),
+      hints: [
+        'First estimate the room volume. Keep the units attached.',
+        `Volume ≈ ${length} × ${width} × ${height} = ${volume} m³. Then multiply by about 1.2 kg for each cubic meter.`,
+        `Worked path: ${volume} × 1.2 ≈ **${mass} kg**.`,
+      ],
+      explanation:
+        `The room volume is about **${volume} m³**. At about **1.2 kg per m³**, the air mass is ` +
+        `**${volume} × 1.2 ≈ ${mass} kg**. Back-of-the-envelope physics turns dimensions into a scale before worrying about precision.`,
+    }
+  },
+)
+
 export const PHYSICS_TEMPLATES: ItemTemplate[] = [
   measureUnits,
   dimensionalCheck,
@@ -437,4 +474,5 @@ export const PHYSICS_TEMPLATES: ItemTemplate[] = [
   density,
   ohmsLaw,
   orderMagnitude,
+  backOfEnvelopeMass,
 ]

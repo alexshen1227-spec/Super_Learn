@@ -11,6 +11,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '7.3',
+    date: '2026-08-09',
+    title: 'The Math Courses Now Have A California Floor',
+    points: [
+      'The normal course ladder no longer skips two entire California courses. Math 7 now leads to Math 8, then a full high-school Algebra I course, Geometry, and Algebra II. Math 7+ still leads to accelerated Algebra I for a learner who is genuinely ready; acceleration is an option, not the default route.',
+      'The actual question bank—not just the course names—was checked against California’s official Grade 6, Grade 7, Grade 8, Algebra I, Geometry, and Algebra II standards and the 2023 Mathematics Framework. Twenty-one explicit skills and 37 original generated question families fill the missing work: early inequalities and variable relationships; geometric construction and slicing; piecewise functions, residuals, and standard deviation; congruence and circle/coordinate proofs; conditional probability; complex numbers; polynomial division; rational and radical equations; logarithms; unit-circle trigonometry; conics; and statistical inference.',
+      'Difficulty starts in the right place. Sixth-grade integer ideas are now separate from seventh-grade signed-number operations, while percent, unit conversion, coordinate work, expressions, first equations, and simple inequalities begin where California places them. No old problem was thrown away: later-level signed-operation questions remain in ordinary adaptive practice under their correct Grade 7 skill.',
+      'A new release gate treats California coverage as the minimum floor. Every official topic cluster must be present in its course, every mapped skill must have normal-flow questions, every cluster needs an approachable entry task, and every cluster must reach the course’s intended challenge level. Extra useful and advanced material is still allowed.',
+      'Course selection now shows the California standards label and a plain-language topic summary, so choosing “Math 8” or “Geometry” says what the course actually contains instead of asking you to trust a short name.',
+    ],
+  },
+  {
+    version: '7.2',
+    date: '2026-08-09',
+    title: 'Every Question Gets A Fair Route Into Today',
+    points: [
+      'Today no longer lets a fixed tie-break quietly favor the same question families forever. Normal questions rotate when they are near the right difficulty: unseen families get a turn, recent repeats step back, and older work returns. Projects still get a proper whole application day, and one-time readiness probes stay rare, because “everything can appear” should not mean “anything appears randomly.” A release audit now proves every built-in question has an explicit Today route and every ordinary family can win its turn.',
+      'Two skills could never reach Independent no matter how well you answered: Physics Estimation and Choosing a Method each had only one question family, while the evidence rule requires two. Both now have a genuinely different second family, the release gate checks the real family requirement used by the evidence engine, and every skill page tells you plainly what proof is needed next—including when the honest ceiling is Retained because no sufficiently different transfer task exists yet.',
+      'Saving is harder to lose and easier to inspect. A corrupt main save now falls back to the backup or mirror instead of silently starting over; each attempt also enters an append-only recovery journal; completed sessions are written before their resumable draft is cleared; double taps and resumed finishes cannot duplicate attempts or sessions; and sample mode refuses to switch unless your real data was safely stashed. Settings now shows live-save, checkpoint, journal, recovery-source, and sample-stash health.',
+      'Large histories now extend the existing evidence calculation with only new attempts instead of replaying the whole log after every answer. Session navigation and draft validation moved into tested, versioned pure logic, malformed resume positions are rejected safely, and forecast probabilities can finally be revised from the Coach while keeping the revision history the data model already stored.',
+      'The test runner is pinned to this worktree so hidden developer scratch copies no longer run twice. The curriculum is split into smaller math, STEM, Path, puzzle, meta, and authentic-work cache boundaries, and a mobile Chromium smoke test now checks the five-tab shell, daily-session launch, console errors, and horizontal overflow before deployment.',
+    ],
+  },
+  {
     version: '7.1',
     date: '2026-08-09',
     title: 'Physics Was Quietly Getting 1% Of Your Time',

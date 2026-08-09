@@ -37,6 +37,7 @@ export function hourLabel(h: number): string {
 export function SettingsScreen() {
   const { state, dispatch, enterSample, exitSample, resetAll } = useStore()
   const { back, go } = useNav()
+  const selectedMathTrack = MATH_TRACKS.find((track) => track.id === state.profile.mathTrack) ?? null
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmReset2, setConfirmReset2] = useState(false)
   const [confirmSample, setConfirmSample] = useState(false)
@@ -47,12 +48,33 @@ export function SettingsScreen() {
   const [deadlineOpen, setDeadlineOpen] = useState(false)
   const [authorOpen, setAuthorOpen] = useState(false)
   const [storage, setStorage] = useState<StorageInfo | null>(null)
+  const [sampleMsg, setSampleMsg] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const packRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     void storageInfo().then(setStorage)
   }, [])
+
+  const loadSampleSafely = async () => {
+    const ok = await enterSample()
+    if (!ok) {
+      setSampleMsg('Sample mode was not opened because the browser could not safely stash your real data.')
+      return
+    }
+    setSampleMsg(null)
+    go({ name: 'today' })
+  }
+
+  const restoreRealDataSafely = async () => {
+    const ok = await exitSample()
+    if (!ok) {
+      setSampleMsg('Your real-data stash could not be verified, so the app left sample mode unchanged instead of risking your data.')
+      return
+    }
+    setSampleMsg('Your real profile and history were restored.')
+    void storageInfo().then(setStorage)
+  }
 
   /*
    * Device-to-device handoff, without a server.
@@ -233,6 +255,12 @@ export function SettingsScreen() {
                 </button>
               ))}
             </div>
+            {selectedMathTrack ? (
+              <div className="mt-2.5 rounded-lg border border-line bg-surface2 px-3 py-2.5">
+                <p className="text-[12px] font-semibold text-accent">{selectedMathTrack.standard ?? 'Beyond the California high-school course floor'}</p>
+                <p className="text-[12px] text-muted mt-0.5">{selectedMathTrack.blurb}</p>
+              </div>
+            ) : null}
           </div>
           <div>
             <span className="text-[13px] font-medium text-muted">Learning focus</span>
@@ -535,8 +563,9 @@ export function SettingsScreen() {
         <Row
           label={state.sampleMode ? 'Exit sample data' : 'Load sample data'}
           sub={state.sampleMode ? 'Restore your real profile' : 'Preview weeks of plausible use — your data is kept safe aside'}
-          onClick={() => (state.sampleMode ? void exitSample() : setConfirmSample(true))}
+          onClick={() => (state.sampleMode ? void restoreRealDataSafely() : setConfirmSample(true))}
         />
+        {sampleMsg ? <p className="px-4 py-2 text-[12px] text-muted" role="status">{sampleMsg}</p> : null}
         <Divider />
         <Row
           label={<span className="text-bad">Delete everything</span>}
@@ -632,6 +661,30 @@ export function SettingsScreen() {
             because of the app files — your history itself stays tiny, roughly a few MB per year of daily practice.
           </p>
         ) : null}
+        {storage ? (
+          <div className="mt-4 pt-3 border-t border-line">
+            <p className="text-[11px] font-semibold text-muted uppercase tracking-wide">Data health</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-2 text-[12px]">
+              <span className="text-muted">Live save</span>
+              <span className="font-mono">{storage.primaryHealthy ? 'healthy' : 'not created yet'}</span>
+              <span className="text-muted">Recovery checkpoint</span>
+              <span className="font-mono">{storage.backupHealthy ? 'ready' : 'after first finish'}</span>
+              <span className="text-muted">Event journal</span>
+              <span className="font-mono">{storage.journalEvents ?? 0} protected</span>
+              <span className="text-muted">This launch loaded</span>
+              <span className="font-mono">{storage.lastLoadSource ?? 'fresh state'}</span>
+              {storage.realDataStashed ? (
+                <>
+                  <span className="text-muted">Real-data stash</span>
+                  <span className="font-mono">protected</span>
+                </>
+              ) : null}
+            </div>
+            {storage.lastLoadSource === 'backup' || storage.lastLoadSource === 'mirror' ? (
+              <p className="text-[12px] text-warn mt-2">The normal save was unavailable, so this launch recovered from the {storage.lastLoadSource} copy.</p>
+            ) : null}
+          </div>
+        ) : null}
       </Card>
 
       <SectionTitle>About</SectionTitle>
@@ -646,8 +699,7 @@ export function SettingsScreen() {
         onCancel={() => setConfirmSample(false)}
         onConfirm={() => {
           setConfirmSample(false)
-          void enterSample()
-          go({ name: 'today' })
+          void loadSampleSafely()
         }}
         title="Load sample data?"
         body="A demo profile with weeks of plausible history will load so you can explore every screen. Your real data is stashed safely and restored the moment you exit sample mode."

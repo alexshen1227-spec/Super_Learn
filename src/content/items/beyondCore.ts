@@ -71,7 +71,7 @@ const quadFormula = tpl(
 )
 
 const radicalSimplify = tpl(
-  { id: 'root-simplify', name: 'Pull out the square', skillIds: ['m-roots'], bucket: 'math', difficulty: 4, variants: 36, minutes: 2.5 },
+  { id: 'root-simplify', name: 'Pull out the square', skillIds: ['m-roots', 'm-radicals'], bucket: 'math', difficulty: 4, variants: 36, minutes: 2.5 },
   (rng, seed) => {
     const k = cycle(seed, [2, 3, 5, 6, 7, 10] as const)
     const sq = cycle(Math.floor(seed / 6), [2, 3, 4, 5] as const)
@@ -108,7 +108,7 @@ const radicalSimplify = tpl(
 )
 
 const rationalExponent = tpl(
-  { id: 'exp-rational', name: 'Fractional exponents', skillIds: ['m-exponents'], bucket: 'math', difficulty: 5, variants: 15, minutes: 2.5 },
+  { id: 'exp-rational', name: 'Fractional exponents', skillIds: ['m-exponents', 'm-radicals'], bucket: 'math', difficulty: 5, variants: 15, minutes: 2.5 },
   (rng, seed) => {
     const bases: [number, number][] = [[4, 2], [9, 3], [16, 4], [25, 5], [27, 3], [8, 2]]
     const [base, root] = bases[rint(rng, 0, bases.length - 1)]
@@ -249,7 +249,7 @@ const combinations = tpl(
 )
 
 const logIntro = tpl(
-  { id: 'exp-log', name: 'The exponent finder', skillIds: ['m-exponential'], bucket: 'math', difficulty: 5, variants: 13, minutes: 2.5 },
+  { id: 'exp-log', name: 'The exponent finder', skillIds: ['m-exponential', 'm-logarithms'], bucket: 'math', difficulty: 5, variants: 13, minutes: 2.5 },
   (rng, seed) => {
     const evalMode = seed % 2 === 0
     const pairs: [number, number][] = [[2, 5], [2, 6], [3, 3], [3, 4], [10, 3], [5, 3], [2, 8], [10, 4]]

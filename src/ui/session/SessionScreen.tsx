@@ -15,7 +15,7 @@ import type {
   SessionPlan,
 } from '../../domain/types'
 import { BUCKET_BY_ID } from '../../domain/types'
-import { useEvidence, useStore } from '../../store/store'
+import { useEvidence, useStore, type Action } from '../../store/store'
 import { useNav, type SessionLaunch } from '../nav'
 import { buildContentIndex } from '../../content/registry'
 import {
@@ -46,6 +46,7 @@ import { activeMission } from '../../engine/mission'
 import { openRepairTargets } from '../../engine/errors'
 import { IconClock } from '../icons'
 import { calendarDaysUntil } from '../../engine/time'
+import { nextSessionStep } from '../../engine/sessionFlow'
 
 export interface ActivityResult {
   firstResponse: string
@@ -92,7 +93,7 @@ function emptyRecord(key: string): ActivityRecord {
 }
 
 export function SessionScreen({ launch }: { launch: SessionLaunch }) {
-  const { state, dispatch, checkpoint } = useStore()
+  const { state, dispatch, commit } = useStore()
   const evidence = useEvidence()
   const { go } = useNav()
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
@@ -106,6 +107,8 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
   const [records, setRecords] = useState<Record<string, ActivityRecord>>({})
   const [scratch, setScratch] = useState('')
   const [principle, setPrinciple] = useState('')
+  const [finishing, setFinishing] = useState(false)
+  const [finishSaved, setFinishSaved] = useState<boolean | null>(null)
   const [showLeave, setShowLeave] = useState(false)
   const [parkOpen, setParkOpen] = useState(false)
   const [parkText, setParkText] = useState('')
@@ -343,7 +346,7 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
       const mode: AttemptMode = activity.mode
       const probe = isPflTemplate(template.id)
       const event: AttemptEvent = {
-        id: uid('e'),
+        id: `e:${plan?.id ?? 'session'}:${blockIndex}:${actIndex}`,
         t: Date.now(),
         sessionId: plan?.id ?? null,
         templateId: template.id,
@@ -391,7 +394,7 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
       dispatch({ type: 'append-events', events: [event] })
       updateRecord({ eventLogged: true })
     },
-    [template, activity, block, plan, records, actKey, dispatch, updateRecord],
+    [template, activity, block, plan, blockIndex, actIndex, records, actKey, dispatch, updateRecord],
   )
 
   /**
@@ -448,14 +451,15 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
   const advance = useCallback(() => {
     if (!plan || !block) return
     setAdaptNote(null)
-    if (actIndex + 1 < block.activities.length) {
-      adaptNext(blockIndex, actIndex + 1)
-      setActIndex(actIndex + 1)
+    const next = nextSessionStep(plan, blockIndex, actIndex)
+    if (next.kind === 'activity') {
+      adaptNext(next.blockIndex, next.actIndex)
+      setActIndex(next.actIndex)
       setPhase('item')
-    } else if (blockIndex + 1 < plan.blocks.length) {
-      adaptNext(blockIndex + 1, 0)
-      setBlockIndex(blockIndex + 1)
-      setActIndex(0)
+    } else if (next.kind === 'block') {
+      adaptNext(next.blockIndex, next.actIndex)
+      setBlockIndex(next.blockIndex)
+      setActIndex(next.actIndex)
       setPhase('interstitial')
     } else {
       // The plan is out of work — but planned minutes are only estimates, and
@@ -482,8 +486,8 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
   }, [plan, block, actIndex, blockIndex, adaptNext, checkIn, index, evidence, state])
 
   const finishSession = useCallback(
-    (interrupted: boolean) => {
-      if (!plan || !checkIn) return
+    async (interrupted: boolean, extraActions: Action[] = []) => {
+      if (!plan || !checkIn) return false
       const after = deriveEvidence(state.events, Date.now())
       const before = evidenceBefore.current
       const learned: string[] = []
@@ -512,9 +516,11 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
           }
         }),
       )
-      dispatch({
-        type: 'complete-session',
-        record: {
+      const saved = await commit([
+        ...extraActions,
+        {
+          type: 'complete-session',
+          record: {
           id: plan.id,
           startedAt: startedAt.current,
           endedAt: Date.now(),
@@ -525,13 +531,16 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
           bucketMinutes,
           learned: learned.slice(0, 8),
           exitPrinciple: principle.trim() ? principle.trim().slice(0, 400) : null,
-          interrupted,
+            interrupted,
+          },
         },
-      })
-      clearDraft()
-      checkpoint()
+      ])
+      // If every durable store rejected the write, keep the resumable draft.
+      // Re-finishing is safe because session IDs and event IDs are idempotent.
+      if (saved) clearDraft()
+      return saved
     },
-    [plan, checkIn, state.events, records, principle, index, dispatch, checkpoint],
+    [plan, checkIn, state.events, records, principle, index, commit],
   )
 
   // ---------- screens ----------
@@ -543,29 +552,37 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
   }
 
   if (phase === 'exit-reflect') {
-    const done = () => {
-      finishSession(false)
+    const done = async (extraActions: Action[] = []) => {
+      if (finishing) return
+      setFinishing(true)
+      const saved = await finishSession(false, extraActions)
+      setFinishSaved(saved)
       setPhase('summary')
     }
     return (
       <ExitScreen
         principle={principle}
         setPrinciple={setPrinciple}
-        onDone={done}
+        onDone={() => void done()}
+        busy={finishing}
         planFor={planSkillId ? (index.skills.get(planSkillId)?.name ?? null) : null}
         onPlan={(cue, action) => {
           if (planSkillId) {
-            dispatch({
+            void done([{
               type: 'add-plan',
               plan: { id: uid('fp'), t: Date.now(), skillId: planSkillId, cue, action, askedAt: null, outcome: null },
-            })
+            }])
+            return
           }
-          done()
+          void done()
         }}
         followUp={followUp}
         onFollowUp={(outcome) => {
-          if (followUp) dispatch({ type: 'answer-plan', id: followUp.id, outcome, t: Date.now() })
-          done()
+          if (followUp) {
+            void done([{ type: 'answer-plan', id: followUp.id, outcome, t: Date.now() }])
+            return
+          }
+          void done()
         }}
       />
     )
@@ -613,6 +630,13 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
             </div>
           </div>
         </Card>
+        {finishSaved === false ? (
+          <Card className="mt-3 p-4 border-warn/30 bg-warn-soft">
+            <p className="text-[13px] text-warn leading-relaxed">
+              The browser did not confirm a durable save. Your resumable session draft was kept, so this work can be recovered and finishing it again will not duplicate the record.
+            </p>
+          </Card>
+        ) : null}
         {last?.exitPrinciple ? (
           <Card className="mt-3 p-4">
             <p className="text-[13px] text-muted">Principle you banked:</p>
@@ -941,6 +965,7 @@ function ExitScreen({
   onPlan,
   followUp,
   onFollowUp,
+  busy,
 }: {
   principle: string
   setPrinciple: (s: string) => void
@@ -950,6 +975,7 @@ function ExitScreen({
   onPlan: (cue: string, action: string) => void
   followUp: FieldPlan | null
   onFollowUp: (outcome: FieldPlan['outcome']) => void
+  busy: boolean
 }) {
   const [cue, setCue] = useState('')
   const [action, setAction] = useState('')
@@ -970,13 +996,13 @@ function ExitScreen({
               <span className="text-accent font-medium">{followUp.action}</span>.
             </p>
           </Card>
-          <Button className="w-full mt-5" onClick={() => onFollowUp('used')}>
+          <Button className="w-full mt-5" disabled={busy} onClick={() => onFollowUp('used')}>
             It came up, and I did it
           </Button>
-          <Button kind="secondary" className="w-full mt-2" onClick={() => onFollowUp('noticed-too-late')}>
+          <Button kind="secondary" className="w-full mt-2" disabled={busy} onClick={() => onFollowUp('noticed-too-late')}>
             It came up — I saw it afterwards
           </Button>
-          <Button kind="ghost" className="w-full mt-2" onClick={() => onFollowUp('not-yet')}>
+          <Button kind="ghost" className="w-full mt-2" disabled={busy} onClick={() => onFollowUp('not-yet')}>
             Has not come up yet
           </Button>
         </div>
@@ -1016,10 +1042,10 @@ function ExitScreen({
             Not scored, and it changes no rung — real life cannot be machine-checked, so it is never treated as
             evidence. The app will ask once, in a couple of weeks, whether the situation came up.
           </p>
-          <Button className="w-full mt-4" disabled={!ready} onClick={() => onPlan(cue.trim(), action.trim())}>
+          <Button className="w-full mt-4" disabled={!ready || busy} onClick={() => onPlan(cue.trim(), action.trim())}>
             Save the plan and finish
           </Button>
-          <Button kind="ghost" className="w-full mt-2" onClick={onDone}>
+          <Button kind="ghost" className="w-full mt-2" disabled={busy} onClick={onDone}>
             Not now
           </Button>
         </div>
@@ -1041,10 +1067,10 @@ function ExitScreen({
           rows={3}
           className="mt-4 w-full bg-surface border border-line rounded-xl px-4 py-3 text-[16px] outline-none focus:border-accent resize-none"
         />
-        <Button className="w-full mt-5" onClick={onDone}>
+        <Button className="w-full mt-5" disabled={busy} onClick={onDone}>
           Finish session
         </Button>
-        <Button kind="ghost" className="w-full mt-2" onClick={onDone}>
+        <Button kind="ghost" className="w-full mt-2" disabled={busy} onClick={onDone}>
           Skip the note
         </Button>
       </div>

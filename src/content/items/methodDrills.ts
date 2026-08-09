@@ -24,6 +24,7 @@ import { SKILLS } from '../skills'
 import { KB_BY_SKILL } from '../kb'
 import { stateRank } from '../../engine/mastery'
 import type { SkillEvidence } from '../../domain/types'
+import { cycle, mcq, tpl } from '../lib'
 
 /** The method name a skill's problems call for — the drill's answer key. */
 export const STRATEGY_LABELS: Record<string, string> = {
@@ -142,6 +143,88 @@ export const methodDrill: ItemTemplate = {
   },
 }
 
+/**
+ * A second question family for method selection. The mixed drill asks learners
+ * to label a whole problem; this family asks which STRUCTURAL CUE separates two
+ * tempting methods. Repeating randomised versions of one drill is not
+ * independent evidence.
+ */
+const methodContrast = tpl(
+  {
+    id: 'x-method-contrast',
+    name: 'Which clue chooses the method?',
+    skillIds: ['x-method'],
+    bucket: 'meta',
+    difficulty: 3,
+    variants: 8,
+    minutes: 2.5,
+    calibration: true,
+  },
+  (rng, seed) => {
+    const scenario = cycle(seed, [
+      {
+        prompt: 'Two price problems both mention 20%. One asks for 20% of $60; the other says $60 is 20% of an unknown price. What clue changes the method?',
+        correct: 'Whether the whole (the percent base) is known or unknown',
+        wrong: ['Whether the dollar sign appears', 'Whether 20 is even', 'Whether the answer will be larger than 100'],
+        why: '“Percent of” gives the base; reverse percent hides the base and asks you to reconstruct it.',
+      },
+      {
+        prompt: 'One motion problem gives speed and time. Another gives starting speed, ending speed, and time. What clue separates their methods?',
+        correct: 'Whether the speed is steady or changing',
+        wrong: ['Whether time is measured in seconds', 'Whether the object is a vehicle', 'Whether distance is mentioned in the story'],
+        why: 'Steady motion uses distance = speed × time; changing velocity points to acceleration.',
+      },
+      {
+        prompt: 'Two geometry problems show triangles. One marks a right angle and asks for a missing side; the other gives angles and asks for an exterior angle. What selects the method?',
+        correct: 'The marked relationships: right angle versus angle sums',
+        wrong: ['The drawing size', 'Which side looks longest', 'Whether the triangle points upward'],
+        why: 'The diagram’s structure—not its appearance—selects Pythagoras or an angle-sum fact.',
+      },
+      {
+        prompt: 'One probability problem asks for exactly one red draw. Another asks for at least one red draw over several draws. What clue suggests using a complement?',
+        correct: '“At least one” is often easier as 1 minus none',
+        wrong: ['The color red', 'Having more than two numbers', 'The word “draw”'],
+        why: '“At least one” bundles several cases; its opposite, “none,” is often one clean calculation.',
+      },
+      {
+        prompt: 'Two equations contain x. In one, x appears once; in the other, x appears on both sides. What clue changes the first move?',
+        correct: 'x on both sides means collect the x-terms first',
+        wrong: ['The equation with more digits is always harder', 'A negative sign means use a graph', 'The side containing the equals sign'],
+        why: 'The location of the variable terms determines whether ordinary undoing is enough or collection comes first.',
+      },
+      {
+        prompt: 'One data question asks for a typical value. Another asks which group is more consistent. What clue chooses mean/median versus spread?',
+        correct: '“Typical” asks about center; “consistent” asks about spread',
+        wrong: ['Whichever list has more values', 'Whether decimals appear', 'Always calculate the mean first'],
+        why: 'Center and spread answer different questions even when they use the same data.',
+      },
+      {
+        prompt: 'One physics problem gives mass and volume. Another gives voltage and resistance. Both require division. Why are their methods still different?',
+        correct: 'The quantities and units identify the governing relationship',
+        wrong: ['Any division problem uses the same physics law', 'The larger number must be divided by the smaller', 'Physics methods are chosen by the final unit only'],
+        why: 'Surface arithmetic can match while the relationship—density or Ohm’s law—does not.',
+      },
+      {
+        prompt: 'One word problem describes equal groups. Another describes a fixed starting amount plus the same increase each hour. What clue separates multiplication from a linear model?',
+        correct: 'A starting value plus repeated additive change needs a linear model',
+        wrong: ['Longer stories always need equations', 'The word “each” always means multiplication only', 'Hours can never be multiplied'],
+        why: 'A fixed intercept plus a constant rate has two parts; equal groups alone has one multiplication structure.',
+      },
+    ] as const)
+    return {
+      title: 'Find the deciding clue',
+      prompt: scenario.prompt,
+      answer: mcq(rng, scenario.correct, [...scenario.wrong]),
+      hints: [
+        'Ignore the topic nouns. Compare what is known, what changes, and what the question asks you to produce.',
+        'The deciding clue is a relationship in the problem, not a visual detail or a particular number.',
+        `The deciding clue is: **${scenario.correct}**.`,
+      ],
+      explanation: `${scenario.why} Method choice comes from structure, not from a chapter label or a familiar-looking number.`,
+    }
+  },
+)
+
 // ---------------------------------------------------------------- explain-back
 
 /**
@@ -258,4 +341,4 @@ export function pickExplainTarget(evidence: Map<string, SkillEvidence>): string 
   return best
 }
 
-export const METHOD_DRILL_TEMPLATES: ItemTemplate[] = [methodDrill, explainBack]
+export const METHOD_DRILL_TEMPLATES: ItemTemplate[] = [methodDrill, methodContrast, explainBack]
