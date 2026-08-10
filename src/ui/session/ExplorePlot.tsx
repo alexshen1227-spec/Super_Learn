@@ -31,14 +31,13 @@ import { DOT_R, PLOT_PAD, PLOT_W, plotLayout } from '../../engine/plotGeometry'
 const W = PLOT_W
 const PAD_L = PLOT_PAD.l
 const PAD_B = PLOT_PAD.b
-const PAD_T = PLOT_PAD.t
 const PAD_R = PLOT_PAD.r
 
 function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
   // A plot with no vertical scale is a strip, not a square: keeping the full
   // height leaves a large empty band above the data that reads as missing
   // content rather than as breathing room.
-  const { H, sx, sy } = plotLayout(spec)
+  const { H, padT, sx, sy } = plotLayout(spec)
 
   // Gridlines at whole-number-ish intervals, capped so they never turn to mush.
   const xStep = niceStep(spec.xMin, spec.xMax)
@@ -57,7 +56,7 @@ function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
       preserveAspectRatio="xMidYMid meet"
     >
       {xTicks.map((v) => (
-        <line key={`gx${v}`} x1={sx(v)} y1={PAD_T} x2={sx(v)} y2={H - PAD_B} className="stroke-line" strokeWidth={1} />
+        <line key={`gx${v}`} x1={sx(v)} y1={padT} x2={sx(v)} y2={H - PAD_B} className="stroke-line" strokeWidth={1} />
       ))}
       {(spec.hideY ? [] : yTicks).map((v) => (
         <line key={`gy${v}`} x1={PAD_L} y1={sy(v)} x2={W - PAD_R} y2={sy(v)} className="stroke-line" strokeWidth={1} />
@@ -75,7 +74,7 @@ function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
       {spec.hideY ? null : (
         <line
           x1={sx(clamp(0, spec.xMin, spec.xMax))}
-          y1={PAD_T}
+          y1={padT}
           x2={sx(clamp(0, spec.xMin, spec.xMax))}
           y2={H - PAD_B}
           className="stroke-line-strong"
@@ -173,7 +172,7 @@ function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
         <g key={`mk${i}`}>
           <line
             x1={sx(mk.x)}
-            y1={PAD_T}
+            y1={padT}
             x2={sx(mk.x)}
             y2={H - PAD_B}
             className={mk.tone === 1 ? 'stroke-warn' : 'stroke-accent'}
@@ -188,7 +187,7 @@ function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
           */}
           <text
             x={sx(mk.x) > W / 2 ? sx(mk.x) - 4 : sx(mk.x) + 4}
-            y={PAD_T + 9 + i * 11}
+            y={padT + 9 + i * 11}
             textAnchor={sx(mk.x) > W / 2 ? 'end' : 'start'}
             className={`${mk.tone === 1 ? 'fill-warn' : 'fill-accent'} text-[9px] font-semibold`}
           >
@@ -203,7 +202,7 @@ function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
         </text>
       ) : null}
       {spec.yLabel ? (
-        <text x={2} y={PAD_T + 2} className="fill-muted text-[9px]">
+        <text x={2} y={PLOT_PAD.t + 2} className="fill-muted text-[9px]">
           {spec.yLabel}
         </text>
       ) : null}

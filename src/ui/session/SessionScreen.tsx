@@ -37,6 +37,8 @@ import { clearDraft, loadDraftSync, saveDraft, type ActivityRecord, type Session
 import { useWakeLock } from '../useWakeLock'
 import { isPflTemplate } from '../../engine/pfl'
 import { planCandidate, planNeedingFollowUp } from '../../engine/fieldPlan'
+import { AuthoredColdRead, CreatorInvite } from './AuthoredOutro'
+import { coldReadBacklog, dueForColdRead, shouldInviteCreator } from '../../engine/authoredReview'
 import { Button, Card, Chip, Confirm, Modal, Segmented } from '../components'
 import { ItemPlayer } from './ItemPlayer'
 import { ChessPlayer } from './ChessPlayer'
@@ -621,6 +623,14 @@ const EMPTY_MODE_NOTE: Record<string, string> = {
   if (phase === 'summary') {
     const last = state.sessions[state.sessions.length - 1]
     const nextDue = nextReviewAt(deriveEvidence(state.events, Date.now()), Date.now())
+    // Your own problems, handed back. The review wins over the invitation:
+    // clearing something owed beats being asked for more. Both sit above
+    // "Leave the lab" and neither blocks it.
+    const summaryNow = Date.now()
+    const coldRead = dueForColdRead(state.authored, summaryNow)
+    const invite =
+      !coldRead &&
+      shouldInviteCreator({ sessionCount: state.sessions.length, authored: state.authored, now: summaryNow })
     return (
       <div className="pt-safe anim-in">
         <div className="pt-10 text-center">
@@ -679,6 +689,10 @@ const EMPTY_MODE_NOTE: Record<string, string> = {
             <p className="text-[14px] mt-1 whitespace-pre-wrap">{scratch}</p>
           </Card>
         ) : null}
+        {coldRead ? (
+          <AuthoredColdRead problem={coldRead} backlog={coldReadBacklog(state.authored, summaryNow)} />
+        ) : null}
+        {invite ? <CreatorInvite onOpen={() => go({ name: 'practice', openCreator: true })} /> : null}
         <p className="text-center text-sm text-muted mt-4">
           {nextDue ? `Next review lands ${describeWhen(nextDue)}.` : 'Reviews will schedule as skills firm up.'}
         </p>

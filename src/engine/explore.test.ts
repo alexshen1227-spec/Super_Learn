@@ -15,6 +15,7 @@ import { DEFAULT_INDEX } from '../content/registry'
 import { buildSessionPlan } from './planner'
 import { deriveEvidence } from './mastery'
 import { EXPLORE_SERVE_LIMIT, isExploreTemplate } from './plannerPolicy'
+import { clippedMarks, overlappingDots, overlappingLabels, plotLayout } from './plotGeometry'
 
 type P = 'study' | 'answer' | 'wrong'
 const F = { study: 'study', answer: 'answer' } as const
@@ -173,7 +174,9 @@ describe('diagrams do not repeat like retrieval items', () => {
       const { worstInOneSession } = run(120, acc)
       expect(worstInOneSession, `accuracy ${acc}: a session repeated a diagram`).toBeLessThanOrEqual(1)
     }
-  })
+    // Two 120-day plan simulations. Slow by nature, so it gets a real budget
+    // rather than flaking the release gate under parallel load.
+  }, 60_000)
 
   it('stops offering a diagram once it has been explored a few times', () => {
     for (const acc of [0.3, 0.7]) {
@@ -186,5 +189,49 @@ describe('diagrams do not repeat like retrieval items', () => {
         EXPLORE_SERVE_LIMIT * 3,
       )
     }
+  }, 120_000)
+})
+
+/**
+ * Canaries for the pixel-space detectors.
+ *
+ * A gate that passes might be checking nothing. Each of these hands the
+ * detector a picture with the defect deliberately present, so a future change
+ * that quietly breaks the detector fails here rather than shipping silently.
+ */
+describe('the pixel-space checks actually detect things', () => {
+  const base = { xMin: 0, xMax: 10, yMin: 0, yMax: 100, series: [] }
+
+  it('sees two dots drawn on the same spot', () => {
+    expect(overlappingDots({ ...base, dots: [{ x: 5, y: 50 }, { x: 5, y: 50 }] })).toHaveLength(1)
+    expect(overlappingDots({ ...base, dots: [{ x: 1, y: 50 }, { x: 9, y: 50 }] })).toEqual([])
+  })
+
+  /**
+   * The real case: a y-axis name in the top-left corner and the topmost tick
+   * label on the same line, which rendered as "test1(0core". The fix is a
+   * reserved band, so what this guards is that the band still exists — take it
+   * away and the two print on top of each other again.
+   */
+  it('reserves a band for the y-axis name, which is what stops the collision', () => {
+    const withName = plotLayout({ ...base, yLabel: 'test score' })
+    const without = plotLayout({ ...base })
+    expect(withName.padT, 'the headroom that prevents the collision is gone').toBeGreaterThan(without.padT)
+    expect(overlappingLabels({ ...base, yLabel: 'test score' })).toEqual([])
+  })
+
+  /**
+   * Marker labels point inward from their own line, so they leave the frame
+   * only when the text is longer than half the plot is wide. That is the
+   * condition worth detecting — and writing this canary is what showed the
+   * first version of it was asserting the wrong thing.
+   */
+  it('sees a marker label too long to fit inside the frame', () => {
+    const off = clippedMarks({
+      ...base,
+      marks: [{ x: 5, label: 'a marker label so long that it could not possibly fit inside the frame' }],
+    })
+    expect(off.length).toBeGreaterThan(0)
+    expect(clippedMarks({ ...base, marks: [{ x: 5, label: 'mean 50' }] })).toEqual([])
   })
 })

@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '8.4',
+    date: '2026-08-10',
+    title: 'Your Own Problems Come Back To You',
+    points: [
+      'Problems you write no longer sit in a tab waiting to be remembered. One comes back to you at the end of a session, with the two buttons on it: it makes sense, or it does not and gets deleted (with an "are you sure" first). Ignoring it costs nothing — it simply comes back next time.',
+      'One change to how you described it, and it is the important one: a problem only comes back after it has sat for at least three days. Handed back at the end of the session you wrote it in, you would still have the whole thing in your head and would just agree with yourself. The point is reading your own question COLD, after you have forgotten which numbers you picked and why — that is when you actually notice it does not hold up.',
+      'Only ever one at a time, oldest first. Six of them queued up to be judged would be a chore, and a chore at the end of a session is exactly what this app refuses to manufacture.',
+      'Every seventh finished session, it also offers to let you write one — with a "Not today" that costs one tap. It stays quiet if you already have one waiting to be looked at, and quiet for a week after you write one. Declining is not recorded and changes nothing about when it next asks, so it cannot turn into nagging.',
+      'Two more picture faults found by looking at the finished charts. A y-axis label was printing on top of the top number, so "test score" and "100" came out as "test1(0core". And the zero-force line in the trolley activity was drawn in the amber warning colour — the wrong signal entirely for the one state that whole activity exists to show. Its being flat is the highlight; it does not need a colour.',
+    ],
+  },
+  {
     version: '8.3',
     date: '2026-08-10',
     title: 'Fifteen Draggable Diagrams, And You Can Write Your Own Problems',

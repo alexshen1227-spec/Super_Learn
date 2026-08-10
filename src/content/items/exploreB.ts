@@ -191,7 +191,12 @@ const exploreNetForce = tpl(
                 [tMax, r2(vEnd)],
               ] as [number, number][],
               label: `net force ${f} N`,
-              tone: f === 0 ? 1 : 0,
+              // All five are the same trolley at different forces, so all
+              // five are the subject colour. An earlier version drew the zero
+              // case in the amber "warn" tone to highlight it, which in this
+              // palette reads as caution — the wrong signal for the one state
+              // the whole item exists to show. Its flatness is the highlight.
+              tone: 0,
             },
           ],
         },

@@ -2389,6 +2389,51 @@ The limit is a HEURISTIC. Three is "an initial meeting plus two spaced
 revisits", reasoned from the graded checkpoints attached to each diagram being
 ordinary retrieval that does benefit from spacing. No study fixes it.
 
+### 37h. Returning a learner's own problem (2026-08-10)
+
+Challenge Creator (§37f) shipped with the review living in a tab the learner
+had to go and open, which realistically means three problems written and the
+tab never opened again. Now one comes back at the end of a session.
+
+**The delay is the mechanism, not a detail.** A problem is only handed back
+after `COLD_READ_DAYS = 3`. Returned at the end of the session it was written
+in, the learner still holds the whole construction in working memory and simply
+agrees with themselves — which measures nothing and teaches nothing. The value
+is in reading your own question after the specifics have faded, which is the
+same spacing argument the rest of the app runs on, applied to self-critique.
+HEURISTIC: three days is "long enough to lose the details, short enough that
+the loop still closes". No study fixes it.
+
+**Restraint, encoded.** One at a time, oldest first — a queue of six waiting to
+be judged is a chore, and a chore at the end of a session is the obligation the
+founding brief refuses to manufacture. Neither card blocks "Leave the lab", and
+neither records being ignored.
+
+**The invitation cadence is keyed to finished sessions, deliberately.** Every
+seventh, suppressed while a problem is waiting to be re-read and for a week
+after one is written. It is NOT keyed to a stored "last asked" timestamp,
+because a cadence that responds to refusals — backing off, or pressing harder —
+is the shape of a nag. Declining changes nothing, and `authoredReview.test.ts`
+asserts that the same session count always produces the same answer.
+
+**Two more defects only looking could find**, both in the diagram renderer:
+
+1. A y-axis name and the topmost tick label shared a line, printing as
+   `test1(0core`. Fixed by reserving a band (`Y_LABEL_HEADROOM`), and now
+   caught by `overlappingLabels` — a general text-collision check built on the
+   same shared projection as the dot-overlap gate.
+2. The zero-net-force line was drawn in the amber `warn` tone to highlight it.
+   In this palette amber means caution, which is the wrong signal for the one
+   correct state the whole item exists to demonstrate — and it made the line
+   lower-contrast than the four it was meant to stand out from. All five states
+   are now the subject colour; flatness is the highlight.
+
+**Canaries added.** Each pixel-space detector now has a test that hands it the
+defect deliberately, because a gate that passes might be checking nothing.
+Writing them immediately showed the first clipped-label canary was asserting
+the wrong condition — marker labels anchor inward, so they escape the frame
+only when the text is wider than half the plot.
+
 **Licensing unchanged from §25**: Brilliant, IXL, DeltaMath, Alcumus, Beast and
 Math Academy are proprietary. Nothing here is text, artwork, a scoring constant
 or a taxonomy lifted from them — only mechanisms described in their own public

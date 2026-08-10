@@ -35,11 +35,12 @@ const FORMAT_LABEL: Record<AuthenticFormat, string> = {
 export function Practice() {
   const { state } = useStore()
   const evidence = useEvidence()
-  const { go } = useNav()
+  const { go, view } = useNav()
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
   const [browse, setBrowse] = useState<BucketId | null>(null)
   const [homework, setHomework] = useState(false)
-  const [creator, setCreator] = useState(false)
+  // Opened directly when the end-of-session invitation was accepted.
+  const [creator, setCreator] = useState(() => view.name === 'practice' && view.openCreator === true)
   const [workOpen, setWorkOpen] = useState(false)
   const [query, setQuery] = useState('')
   const searchResults = useMemo(() => {

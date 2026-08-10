@@ -26,7 +26,7 @@ import { correctResponse, firstFailedStep, serializeSteps, validate, wrongRespon
 import { matingMoves, movesKeepingMate } from '../engine/chessTools'
 import { puzzleValid } from '../engine/logicGrid'
 import { solutionValid } from '../engine/polyomino'
-import { clippedMarks, overlappingDots } from '../engine/plotGeometry'
+import { clippedMarks, overlappingDots, overlappingLabels } from '../engine/plotGeometry'
 import type { AnswerSpec, RenderedItem } from '../domain/types'
 import { MATH_LADDER, BREADTH_PROBES } from '../engine/placement'
 
@@ -1277,6 +1277,10 @@ describe('manipulable diagrams', () => {
               `${at}: ${hidden.length} pair(s) of dots drawn on top of each other — the chart shows fewer values than it has`,
             ).toEqual([])
             expect(clippedMarks(stop.plot), `${at}: a marker label runs off the frame`).toEqual([])
+            expect(
+              overlappingLabels(stop.plot),
+              `${at}: text printed on top of other text`,
+            ).toEqual([])
           }
         }
       }

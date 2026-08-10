@@ -74,7 +74,9 @@ describe('creator shapes', () => {
       }
       expect(checked, `${shape.id}: generated no combinations`).toBeGreaterThan(4)
     }
-  })
+    // Exhaustive on purpose — ~70k combinations across four shapes — so it
+    // needs more than vitest's 5s default when the suite runs in parallel.
+  }, 60_000)
 
   /**
    * The prediction is the graded-feeling moment, so its stated correct option
@@ -94,7 +96,7 @@ describe('creator shapes', () => {
         expect(p.why.length, `${shape.id}: prediction needs an explanation`).toBeGreaterThan(40)
       }
     }
-  })
+  }, 60_000)
 
   it('opens on a combination that is not already broken', () => {
     for (const shape of CREATOR_SHAPES) {
@@ -124,7 +126,7 @@ describe('creator shapes', () => {
         `${shape.id} blocks ${blocked}/${total} (${Math.round(share * 100)}%) of its own space — move the advisory cases to note()`,
       ).toBeLessThanOrEqual(0.25)
     }
-  })
+  }, 60_000)
 
   /** An advisory must never also block: that would be a flaw wearing a hat. */
   it('advisory notes never coincide with a block', () => {
@@ -136,7 +138,7 @@ describe('creator shapes', () => {
         if (n !== null) expect(n.length, `${shape.id}: empty note`).toBeGreaterThan(20)
       }
     }
-  })
+  }, 60_000)
 
   it('can still recognise a broken problem when the learner makes one', () => {
     // A shape that never complains is not checking anything. At least one
@@ -147,7 +149,7 @@ describe('creator shapes', () => {
       return false
     })
     expect(canComplain.length, 'no shape can detect a degenerate problem').toBeGreaterThanOrEqual(2)
-  })
+  }, 60_000)
 })
 
 describe('authored problems never become evidence', () => {
