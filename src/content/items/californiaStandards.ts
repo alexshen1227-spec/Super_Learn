@@ -80,16 +80,17 @@ const introInequalityModel = tpl(
     const cap = entry + each * count
     const atMost = seed % 2 === 0
     const correct = `${entry} + ${each}x ${atMost ? '≤' : '≥'} ${cap}`
-    const { answer, distractorNotes } = mcqNoted(rng, correct, [
-      [`${entry} + ${each}x ${atMost ? '≥' : '≤'} ${cap}`, 'the direction reverses the meaning of the limit'],
-      [`${entry}x + ${each} ${atMost ? '≤' : '≥'} ${cap}`, 'the one-time amount and per-item amount have traded jobs'],
-      [`${entry} + ${each}x ${atMost ? '<' : '>'} ${cap}`, 'the strict sign wrongly excludes reaching the limit exactly'],
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
+      [`${entry} + ${each}x ${atMost ? '≥' : '≤'} ${cap}`, 'the direction reverses the meaning of the limit', 'misread'],
+      [`${entry}x + ${each} ${atMost ? '≤' : '≥'} ${cap}`, 'the one-time amount and per-item amount have traded jobs', 'representation'],
+      [`${entry} + ${each}x ${atMost ? '<' : '>'} ${cap}`, 'the strict sign wrongly excludes reaching the limit exactly', 'misread'],
     ])
     return {
       title: 'Write the limit',
       prompt: `A plan has a one-time cost of **${entry}** plus **${each}** per item x. The total must be **${atMost ? 'at most' : 'at least'} ${cap}**. Which inequality models it?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: ['Build the total first: one-time amount + rate × count.', `“${atMost ? 'At most' : 'At least'}” includes equality.`],
       explanation: `The total is ${entry} + ${each}x, and “${atMost ? 'at most' : 'at least'} ${cap}” means **${correct}**. An inequality models every allowed count, not just one answer.`
     }

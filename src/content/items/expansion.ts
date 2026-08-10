@@ -147,15 +147,16 @@ const negExponents = tpl(
             [`1/${base}`, 'One reciprocal step too far — that is x⁻¹; x⁰ sits exactly at 1.'],
           ])
         : mcqNoted(rng, correct, [
-            [`-${base ** n}`, 'Negative exponent read as negative VALUE — the minus means reciprocal, so the result is small, never negative.'],
+            [`-${base ** n}`, 'Negative exponent read as negative VALUE — the minus means reciprocal, so the result is small, never negative.', 'concept'],
             [`-${base * n}`, 'Two mix-ups at once: the minus is a reciprocal, and the exponent multiplies factors, not the base.'],
-            [String(base ** n), 'The minus vanished — the reciprocal step is the whole point of a negative exponent.'],
+            [String(base ** n), 'The minus vanished — the reciprocal step is the whole point of a negative exponent.', 'slip'],
           ])
     return {
       title: 'Below zero exponents',
       prompt: `Evaluate: **${base}^${kind === 'zero' ? 0 : -n}**`,
       answer: noted.answer,
       distractorNotes: noted.distractorNotes,
+      distractorTags: noted.distractorTags,
       hints: [
         `Follow the pattern downward: ${base}³, ${base}², ${base}¹ — each step DIVIDES by ${base}. Keep going past ${base}¹.`,
         `${base}¹ = ${base}, so ${base}⁰ = ${base}/${base} = 1, and each negative step divides again.`,

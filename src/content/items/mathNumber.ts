@@ -2,7 +2,7 @@
  * Math items — number sense, proportional reasoning, data & probability.
  * Every answer is computed from the generated values.
  */
-import type { ItemTemplate } from '../../domain/types'
+import type { ErrorTag, ItemTemplate } from '../../domain/types'
 import { pick, rint, type Rng } from '../../engine/rng'
 import { cycle, fracStr, fraction, gcd, mcq, mcqNoted, money, numeric, round, tpl} from '../lib'
 
@@ -424,15 +424,16 @@ const expRules = tpl(
               [`1/x^${b}`, 'Reciprocal reflex — the larger power is on top here, so the result stays above the line.'],
             ])
           : mcqNoted(rng, correct, [
-              [`x^${a + b}`, 'Adding belongs to multiplying two powers; a power OF a power repeats whole groups, so counts multiply.'],
-              [`x^${a ** b > 999 ? a + b + 1 : a ** b}`, 'Exponentiating the exponents — the group of factors repeats, it does not tower.'],
-              [`${b}x^${a}`, 'The outer exponent became a coefficient — it repeats the whole group, it never multiplies out front.'],
+              [`x^${a + b}`, 'Adding belongs to multiplying two powers; a power OF a power repeats whole groups, so counts multiply.', 'strategy'],
+              [`x^${a ** b > 999 ? a + b + 1 : a ** b}`, 'Exponentiating the exponents — the group of factors repeats, it does not tower.', 'strategy'],
+              [`${b}x^${a}`, 'The outer exponent became a coefficient — it repeats the whole group, it never multiplies out front.', 'concept'],
             ])
     return {
       title: 'Simplify with exponent rules',
       prompt: `Simplify: **${promptExpr}** (x ≠ 0)`,
       answer: noted.answer,
       distractorNotes: noted.distractorNotes,
+      distractorTags: noted.distractorTags,
       hints: [
         'Write a tiny example out in full — x·x·x style — and count the factors.',
         kind === 'product'
@@ -725,15 +726,16 @@ const propIdentify = tpl(
     const addTable = xs.map((x) => `(${x}, ${k * x + shift})`).join(', ')
     const correct = `${propTable}`
     const noted = mcqNoted(rng, correct, [
-      [addTable, `Additive ≠ proportional — adding ${shift} keeps a constant DIFFERENCE, but proportionality needs a constant RATIO through (0, 0).`],
-      [xs.map((x) => `(${x}, ${x * x})`).join(', '), 'Squaring — the ratio y/x changes every row, so no single scale factor exists.'],
-      [xs.map((x) => `(${x}, ${k * x + (x === 1 ? 0 : 1)})`).join(', '), 'Almost-proportional — one broken row breaks it; proportionality is an every-row property.'],
+      [addTable, `Additive ≠ proportional — adding ${shift} keeps a constant DIFFERENCE, but proportionality needs a constant RATIO through (0, 0).`, 'concept'],
+      [xs.map((x) => `(${x}, ${x * x})`).join(', '), 'Squaring — the ratio y/x changes every row, so no single scale factor exists.', 'concept'],
+      [xs.map((x) => `(${x}, ${k * x + (x === 1 ? 0 : 1)})`).join(', '), 'Almost-proportional — one broken row breaks it; proportionality is an every-row property.', 'incomplete'],
     ])
     return {
       title: 'Spot the proportional table',
       prompt: `Which table shows y **proportional** to x?`,
       answer: noted.answer,
       distractorNotes: noted.distractorNotes,
+      distractorTags: noted.distractorTags,
       hints: [
         'Proportional means y ÷ x is the SAME for every row (and (0,0) would fit the pattern).',
         `Check y/x row by row — the proportional table gives ${k} every time.`,
@@ -1307,17 +1309,17 @@ const dataChartChoose = tpl(
           ['Bar chart', 'Bar charts compare separate categories. Sleep hours are not categories, and a bar chart would hide the pairing between the two numbers.'],
           ['Line graph', 'A line graph implies the horizontal axis is an ordered sequence you travel along, usually time. These 40 students are not a sequence.'],
           ['Pie chart', 'Pie charts show parts of one whole. Nothing here adds up to a whole.'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         q: 'You want to show how one city\'s rainfall changed across the twelve months of last year.',
         correct: 'Line graph',
         why: 'One measurement over an ordered time sequence: the line between points is meaningful because the months really do follow one another.',
         wrong: [
-          ['Pie chart', 'A pie would treat the months as slices of a total and throw away the order — you could no longer see when the wet season was.'],
-          ['Scatter plot', 'A scatter plot is for the relationship between two measured variables; here time is the axis, not a second measurement.'],
-          ['Histogram', 'A histogram bins one variable to show its distribution. It would tell you how often each rainfall amount happened, not when.'],
-        ] as [string, string][],
+          ['Pie chart', 'A pie would treat the months as slices of a total and throw away the order — you could no longer see when the wet season was.', 'concept'],
+          ['Scatter plot', 'A scatter plot is for the relationship between two measured variables; here time is the axis, not a second measurement.', 'concept'],
+          ['Histogram', 'A histogram bins one variable to show its distribution. It would tell you how often each rainfall amount happened, not when.', 'concept'],
+        ] as [string, string, ErrorTag?][],
       },
       {
         q: 'You want to compare total recycling collected by four different schools last term.',
@@ -1327,7 +1329,7 @@ const dataChartChoose = tpl(
           ['Line graph', 'Connecting the schools with a line would suggest school B sits "between" A and C in some real sequence. It does not; the order is arbitrary.'],
           ['Scatter plot', 'A scatter plot needs two numeric measurements per case. There is only one number per school.'],
           ['Histogram', 'A histogram bins a numeric variable. School name is a label, not a quantity to bin.'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         q: 'You want to see the shape of 200 reaction times — whether most cluster together and whether there is a long tail.',
@@ -1337,7 +1339,7 @@ const dataChartChoose = tpl(
           ['Bar chart', 'A bar chart compares categories. Two hundred individual reaction times are not two hundred categories, and the bars would carry no shape.'],
           ['Line graph', 'A line graph would imply the 200 measurements arrived in a meaningful order and that the values between them mean something.'],
           ['Scatter plot', 'A scatter plot needs a second variable to plot against. Here there is only one.'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         q: 'You want to show what share of a school\'s budget goes to each of five departments.',
@@ -1347,7 +1349,7 @@ const dataChartChoose = tpl(
           ['Line graph', 'There is no sequence to travel along; the departments do not follow one another in any order.'],
           ['Scatter plot', 'A scatter plot needs two numeric measurements per case, and there is one number per department.'],
           ['Histogram', 'A histogram bins a numeric variable to show a distribution. Department is a label.'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         q: 'You want to know whether a town\'s daily high temperature and its ice-cream sales rise and fall together across one summer.',
@@ -1357,16 +1359,17 @@ const dataChartChoose = tpl(
           ['Line graph', 'Two lines over time would show each series, but reading the relationship off two lines is guesswork — pairing the values directly is what answers the question.'],
           ['Bar chart', 'Bar charts compare categories; days are ordered and there are far too many of them.'],
           ['Pie chart', 'Nothing here is a share of a whole.'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
     ]
     const c = cycle(seed, cases)
-    const { answer, distractorNotes } = mcqNoted(rng, c.correct, c.wrong)
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, c.correct, c.wrong)
     return {
       title: 'Choosing the display',
       prompt: `${c.q}\n\nWhich display answers that question best?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Ask what KIND of data you have before you think about pictures: how many variables, are they numbers or labels, and is there a real order?',
         'One number per category → bars. One number over time → line. Two numbers per case → scatter. One number, many cases, shape → histogram. Parts of one whole → pie.',

@@ -3,7 +3,7 @@
  * These items cite the evidence tier honestly: study-technique content is
  * EVIDENCE-backed (see docs/RESEARCH.md); specific routines are heuristics.
  */
-import type { ItemTemplate } from '../../domain/types'
+import type { ErrorTag, ItemTemplate } from '../../domain/types'
 import { draft, mcq, tpl } from '../lib'
 
 const studyChoice = tpl(
@@ -177,7 +177,7 @@ const compression = tpl(
           ['The average of the numbers in the set.', 'Circular — it renames the idea instead of saying what it does.'],
           ['The number that appears most often in the set.', 'Near neighbour — that is the MODE, the commonest confusion here.'],
           ['The number sitting in the middle when the set is put in order.', 'Near neighbour — that is the MEDIAN, which is exactly why outliers behave differently.'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
         model:
           'One sentence: the mean is the value every data point would have if the total were shared out equally. Example: test scores 70, 80, 90 → mean 80. Non-example: the mean of 1, 1, 1, 97 is 25 — which describes NO ONE (that is what outliers do to means, and why medians exist). Trap: the mean need not be a possible value (2.4 children).',
       },
@@ -188,7 +188,7 @@ const compression = tpl(
           ['A letter used instead of a number in algebra.', 'Circular and hollow — it describes the notation, not what the notation buys you.'],
           ['A quantity that keeps changing while you solve.', 'Near neighbour — that is a variable in the everyday sense; within one equation it holds still.'],
           ['A symbol whose value you are free to choose.', 'Near neighbour — that is a parameter you set, not an unknown the equation pins down.'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
         model:
           'One sentence: a variable is a named placeholder that stands for a number you haven\'t pinned down yet — and it means the SAME number everywhere it appears in one problem. Example: in 2x + 3 = 11, x is 4 in both places. Non-example: x in one equation and x in a totally different problem need not match. Trap: reading 2x as "2 and x" (twenty-something) instead of 2 × x.',
       },
@@ -199,7 +199,7 @@ const compression = tpl(
           ['An experiment that is properly controlled by the scientist.', 'Circular — it reuses the word being defined.'],
           ['An experiment run carefully, with accurate measurements.', 'Near neighbour — care improves precision but does not isolate a cause.'],
           ['An experiment repeated enough times for a reliable result.', 'Near neighbour — repetition fights noise; only holding variables steady fights confounding.'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
         model:
           'One sentence: change one thing, hold everything else steady, and compare — so any difference in outcome has only one available cause. Example: same plant, soil, water; only the fertilizer differs. Non-example: comparing this year\'s grades (new teacher, new schedule, new textbook) with last year\'s and crediting the textbook. Trap: a "control group" is not a lazy group — it is the baseline that gives the comparison meaning.',
       },

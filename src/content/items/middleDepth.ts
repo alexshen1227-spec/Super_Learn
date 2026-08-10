@@ -216,16 +216,17 @@ const evCompare = tpl(
     const midInt = Math.round(mid)
     const evA = evA4 / 4
     const better = evA > midInt ? c.a : c.b
-    const { answer, distractorNotes } = mcqNoted(rng, `${better} — its long-run average is higher`, [
-      [`${better === c.a ? c.b : c.a} — its long-run average is higher`, `compute both: A averages ${evA} and B averages ${midInt}`],
-      [`${c.a} — its best case (${big}) is the biggest number on offer`, 'the best case ignores how OFTEN it happens; expected value weights outcomes by probability'],
-      [`They are equal in the long run`, `${evA} and ${midInt} differ — close is not equal`],
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, `${better} — its long-run average is higher`, [
+      [`${better === c.a ? c.b : c.a} — its long-run average is higher`, `compute both: A averages ${evA} and B averages ${midInt}`, 'slip'],
+      [`${c.a} — its best case (${big}) is the biggest number on offer`, 'the best case ignores how OFTEN it happens; expected value weights outcomes by probability', 'concept'],
+      [`They are equal in the long run`, `${evA} and ${midInt} differ — close is not equal`, 'slip'],
     ])
     return {
       title: 'Expected value, head to head',
       prompt: `${c.a} gives **${big} ${c.unit}** with probability 1/4, otherwise **${small}**. ${c.b} gives **${midInt} ${c.unit}** every time. Over many plays, which earns more per play?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         `EV(A) = (1/4)(${big}) + (3/4)(${small}).`,
         `That is ${evA}; compare with ${c.b}'s certain ${midInt}.`,
@@ -262,13 +263,13 @@ const trendPredict = tpl(
       }
     }
     const far = rint(rng, 40, 80)
-    const { answer, distractorNotes } = mcqNoted(
+    const { answer, distractorNotes, distractorTags } = mcqNoted(
       rng,
       `Not trustworthy — ${far} is far outside the data, and the straight-line pattern may not continue`,
       [
-        [`${m * far + b} ${c.unit}, exactly as the line says`, 'the arithmetic is right but the LINE has no evidence out there — extrapolation is the trap'],
-        [`Trustworthy, because the line fit the data well`, 'good fit inside the range says nothing about behavior far outside it'],
-        [`Not trustworthy, because best-fit lines only work at the exact measured points`, 'too strict the other way — interpolation between observed points is legitimate'],
+        [`${m * far + b} ${c.unit}, exactly as the line says`, 'the arithmetic is right but the LINE has no evidence out there — extrapolation is the trap', 'inference'],
+        [`Trustworthy, because the line fit the data well`, 'good fit inside the range says nothing about behavior far outside it', 'inference'],
+        [`Not trustworthy, because best-fit lines only work at the exact measured points`, 'too strict the other way — interpolation between observed points is legitimate', 'inference'],
       ],
     )
     return {
@@ -276,6 +277,7 @@ const trendPredict = tpl(
       prompt: `The same line (fitted on ${c.x} from 0 to 10) predicts y = ${m * far + b} at **${far}**. How much should you trust that?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Where does the DATA live, and where is the question asking?',
         'A line fitted on 0-10 has evidence about 0-10.',

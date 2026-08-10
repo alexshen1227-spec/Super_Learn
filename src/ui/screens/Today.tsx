@@ -9,7 +9,7 @@ import { buildContentIndex } from '../../content/registry'
 import { dueReviews, nextReviewAt } from '../../engine/scheduler'
 import { effectiveAllocation } from '../../engine/allocationPlus'
 import { todayInsight, weeklyObjective } from '../../engine/coach'
-import { scoreSkills } from '../../engine/planner'
+import { reviewsPerSession, scoreSkills } from '../../engine/planner'
 import { clearDraft, loadDraftSync } from '../../store/draft'
 import { ACADEMIC_BUCKETS, BUCKET_BY_ID, BUCKETS } from '../../domain/types'
 import { Button, Card, Chip, HeaderBar, SectionTitle, StateBadge } from '../components'
@@ -70,6 +70,7 @@ export function Today() {
     [state, index, evidence, now],
   )
   const nextDue = nextReviewAt(evidence, now)
+  const reviewsToday = reviewsPerSession(due.length, mission?.dailyMinutes ?? state.profile.sessionMinutes)
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
   const noPlacement = !state.placement && state.sessions.length === 0
   const [weekOpen, setWeekOpen] = useState(false)
@@ -170,11 +171,23 @@ export function Today() {
         <Card className="p-4" onClick={() => go(due.length ? { name: 'session', launch: { kind: 'mixed' } } : { name: 'practice' })}>
           <p className="text-[12px] text-muted font-medium uppercase tracking-wide">Reviews due</p>
           <p className="font-display text-2xl font-bold mt-1">{due.length}</p>
+          {/*
+            The raw count stays visible — hiding it would be its own dishonesty
+            — but it is not a to-do list, and left bare it reads as one. A
+            learner who owns seventy skills carries a standing queue of roughly
+            forty that no single session could clear, and presenting that as
+            work outstanding is the manufactured urgency the founding brief
+            rules out. So once the queue is longer than a session can take, say
+            how many today will actually pick up. `reviewsPerSession` is the
+            planner's own rule, imported rather than restated.
+          */}
           <p className="text-[12px] text-faint mt-0.5">
             {due.length
               ? due[0].reason === 'misconception'
                 ? 'incl. a confident error to repair'
-                : 'retrieval keeps it yours'
+                : due.length > reviewsToday
+                  ? `today takes the ${reviewsToday} most urgent — the rest keep their own dates`
+                  : 'retrieval keeps it yours'
               : nextDue
                 ? `next ${new Date(nextDue).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
                 : 'none scheduled yet'}

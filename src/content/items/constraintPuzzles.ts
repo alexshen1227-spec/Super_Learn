@@ -164,20 +164,23 @@ const fractionSum = tpl(
     const { value, arrangement } = solveConstraint(puzzle)
     const [p, q, r, s] = arrangement
     const shown = Math.round(value * 1000) / 1000
-    const { answer, distractorNotes } = mcqNoted(rng, `${p}/${q} + ${r}/${s}`, [
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, `${p}/${q} + ${r}/${s}`, [
       [
         `${q}/${p} + ${s}/${r}`,
         wantMax
           ? 'flipping every fraction makes each piece smaller here — a big denominator is what shrinks a fraction'
           : 'flipping every fraction makes each piece larger, the opposite of the goal',
+        'concept',
       ],
       [
         `${Math.max(...digits)}/${Math.min(...digits)} + ${p}/${q}`,
         'reuses a digit — each digit may be used at most once across all four boxes',
+        'misread',
       ],
       [
         `${p}/${s} + ${r}/${q}`,
         'right digits, swapped denominators — the pairing is exactly what the puzzle is asking you to choose',
+        'strategy',
       ],
     ])
     return {
@@ -188,6 +191,7 @@ const fractionSum = tpl(
         `Which placement makes the ${wantMax ? 'LARGEST' : 'SMALLEST'} total?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'A fraction grows when its top grows OR its bottom shrinks.',
         wantMax

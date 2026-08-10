@@ -224,15 +224,16 @@ const ineqSolve = tpl(
     const correct = `x ${resultDir} ${x}`
     const bStr = b >= 0 ? `+ ${b}` : `− ${-b}`
     const noted = mcqNoted(rng, correct, [
-      [`x ${resultDir === '<' ? '>' : '<'} ${x}`, neg ? 'The forgotten flip — dividing by a negative reverses the direction (multiply 2 < 3 by −1: −2 > −3).' : 'The phantom flip — the direction only reverses for NEGATIVE multipliers, and this divisor is positive.'],
-      [`x ${resultDir} ${x + (a > 0 ? b : -b)}`, 'The constant never moved — solve the inequality exactly like the equation first, sign logic second.'],
-      [`x ${resultDir === '<' ? '>' : '<'} ${-x === x ? x + 1 : -x}`, 'Sign confusion on the value itself — the flip changes the DIRECTION symbol, never the number.'],
+      [`x ${resultDir === '<' ? '>' : '<'} ${x}`, neg ? 'The forgotten flip — dividing by a negative reverses the direction (multiply 2 < 3 by −1: −2 > −3).' : 'The phantom flip — the direction only reverses for NEGATIVE multipliers, and this divisor is positive.', 'concept'],
+      [`x ${resultDir} ${x + (a > 0 ? b : -b)}`, 'The constant never moved — solve the inequality exactly like the equation first, sign logic second.', 'incomplete'],
+      [`x ${resultDir === '<' ? '>' : '<'} ${-x === x ? x + 1 : -x}`, 'Sign confusion on the value itself — the flip changes the DIRECTION symbol, never the number.', 'slip'],
     ])
     return {
       title: 'Solve the inequality',
       prompt: `Solve: **${a}x ${bStr} ${dir} ${c}**`,
       answer: noted.answer,
       distractorNotes: noted.distractorNotes,
+      distractorTags: noted.distractorTags,
       hints: [
         'Solve like an equation — but watch what division does to the direction.',
         `${a}x ${dir} ${c - b}. Now divide by ${a}${neg ? ' — a NEGATIVE' : ''}.`,
@@ -556,15 +557,16 @@ const polyMultiply = tpl(
     const aStr = a >= 0 ? `+ ${a}` : `− ${-a}`
     const bStr = b >= 0 ? `+ ${b}` : `− ${-b}`
     const noted = mcqNoted(rng, correct, [
-      [wrong1, 'Sum and product swapped — the MIDDLE term carries the sum of the constants; the LAST carries their product.'],
-      [wrong2, 'The missing middle — x·(inner) and (outer)·x were skipped; every term must multiply every term.'],
-      [wrong3, 'Sign slip on the product — multiply the constants WITH their signs.'],
+      [wrong1, 'Sum and product swapped — the MIDDLE term carries the sum of the constants; the LAST carries their product.', 'concept'],
+      [wrong2, 'The missing middle — x·(inner) and (outer)·x were skipped; every term must multiply every term.', 'incomplete'],
+      [wrong3, 'Sign slip on the product — multiply the constants WITH their signs.', 'slip'],
     ])
     return {
       title: 'Expand',
       prompt: `Expand: **(x ${aStr})(x ${bStr})**`,
       answer: noted.answer,
       distractorNotes: noted.distractorNotes,
+      distractorTags: noted.distractorTags,
       hints: [
         'Every term in the first factor multiplies every term in the second.',
         `Four products: x·x, x·(${b}), (${a})·x, (${a})(${b}).`,

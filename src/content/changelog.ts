@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '7.8',
+    date: '2026-08-09',
+    title: 'The Named Wrong Answers Never Reached The Coach',
+    points: [
+      'Many questions have a written explanation for each wrong option — "the prices swapped owners", "the forgotten flip", "self-selection". Those were meant to tell the coach WHY you got it wrong, which is the most precise thing it can know. They were being calculated and then thrown away before they reached you: 39 places in the code took the explanation and dropped the cause. So the feature had never actually worked outside three questions written after it. Now all 39 deliver, and 106 wrong options carry a real reason instead of 10.',
+      'Honest about the size of that: it makes the coach more PRECISE, not much broader. You only benefit when your wrong answer is one of the named ones — about 19 times in 312 mistakes in a simulated year. Those 19 now say "misread the constraint" or "the equation did not match the situation" instead of just "slip" or "gap".',
+      '"Reviews due: 48" was a wall, not a number. Once you own a lot of skills the queue settles around 40 and no single session could ever clear it, so showing a bare count made ordinary progress look like falling behind — the exact kind of manufactured pressure this app is supposed to refuse. The count is still shown, but now it says how many today will actually take: "today takes the 5 most urgent — the rest keep their own dates."',
+      'The easy end of the question bank went from 6% to 11% of everything, and no topic starts hard any more. It is still top-heavy — there is roughly three times as much hard material as gentle material — which is worth knowing if you are working below your grade.',
+    ],
+  },
+  {
     version: '7.7',
     date: '2026-08-09',
     title: 'Every Topic Now Has A Way In, And The Guardian Path Stopped Rewarding Suspicion',

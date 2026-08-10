@@ -8,7 +8,7 @@
  * daylight. All original; every answer computed.
  */
 import { rint } from '../../engine/rng'
-import type { ItemTemplate } from '../../domain/types'
+import type { ErrorTag, ItemTemplate } from '../../domain/types'
 import { cycle, mcq, mcqNoted, numeric, tpl } from '../lib'
 
 // ---------------------------------------------------------------- observer
@@ -25,17 +25,17 @@ const sourceMemory = tpl(
           ['River — the signal comment implies the van had priority', 'River described the van\'s signal, said nothing about the cyclist'],
           ['Park — "too fast" implies the van was at fault', 'fault and right-of-way are different claims; Park spoke only to speed'],
           ['All three said so in different words', 'only one witness mentioned the light at all'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         scene: 'Three group-chat messages about a project. ANA: "The deadline moved to Thursday." BEN: "The rubric now counts sources double." CARA: "Ms. Ortiz said slides are optional."',
         q: 'Who reported a change to how the work is GRADED?',
         correct: 'Ben — double-counting sources is a grading change',
         bads: [
-          ['Ana — a deadline is part of the grade', 'a deadline changes when, not how points are awarded'],
-          ['Cara — optional slides change the requirements', 'requirements changed, but nothing about scoring weights'],
-          ['Ana and Cara both did', 'neither mentioned scoring at all'],
-        ] as [string, string][],
+          ['Ana — a deadline is part of the grade', 'a deadline changes when, not how points are awarded', 'misread'],
+          ['Cara — optional slides change the requirements', 'requirements changed, but nothing about scoring weights', 'misread'],
+          ['Ana and Cara both did', 'neither mentioned scoring at all', 'misread'],
+        ] as [string, string, ErrorTag?][],
       },
       {
         scene: 'Overheard while leaving practice. COACH: "Scrimmage moved to the east field." TEAM CAPTAIN: "Bring both jerseys tomorrow." A PARENT: "The east field floods when it rains."',
@@ -45,7 +45,7 @@ const sourceMemory = tpl(
           ['The coach — moving the scrimmage is an order', 'the coach reported a fact about location; no action was requested of the listener'],
           ['The parent — the flood comment is a warning to act', 'it describes the field; any action is inferred, not asked'],
           ['All three gave instructions', 'only one sentence asks the listener to do anything'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         scene: 'Lab debrief. DEV: "Trial 2 used the warmer water." MIRA: "I logged trial 3 twice by mistake." SOL: "The thermometer was reading high all day."',
@@ -55,15 +55,16 @@ const sourceMemory = tpl(
           ['Sol — a high-reading thermometer corrupts the records', 'the instrument was faulty; the records faithfully recorded its bad readings'],
           ['Dev — warmer water invalidates the data', 'that is a setup difference between trials, not a record-keeping error'],
           ['Sol and Dev both did', 'neither described the log itself'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
     ] as const)
-    const { answer, distractorNotes } = mcqNoted(rng, c.correct, c.bads.map(([t, n]) => [t, n] as [string, string]))
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, c.correct, c.bads.map((b) => [...b] as [string, string, ErrorTag?]))
     return {
       title: 'Source memory',
       prompt: `${c.scene}\n\n${c.q}`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Re-read each speaker\'s EXACT words — the question is who said what, not what is plausible.',
         'Reject any option that attributes an inference to a speaker who stated only a fact.',
@@ -84,16 +85,16 @@ const paraphraseFidelity = tpl(
           ['They will arrive at 4 to work on the lab report', '"after 4" became "at 4", and a preference became a plan'],
           ['They do not really want to study together', 'invents a reluctance the speaker never voiced'],
           ['They can only stay briefly after 4', 'duration was never mentioned'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         said: '"The tryout results are not final — coach said the roster gets one more look on Monday."',
         correct: 'The roster is provisional until a review on Monday',
         bads: [
-          ['Someone will be cut on Monday', 'a review does not promise cuts'],
-          ['The tryouts were unfair, so there is a re-do', 'no complaint was made; a scheduled review is not a re-do'],
-          ['The roster is final unless someone appeals', 'reverses the stated status — it is NOT final by default'],
-        ] as [string, string][],
+          ['Someone will be cut on Monday', 'a review does not promise cuts', 'inference'],
+          ['The tryouts were unfair, so there is a re-do', 'no complaint was made; a scheduled review is not a re-do', 'inference'],
+          ['The roster is final unless someone appeals', 'reverses the stated status — it is NOT final by default', 'misread'],
+        ] as [string, string, ErrorTag?][],
       },
       {
         said: '"Grandpa\'s okay — the doctor is keeping him overnight just to watch the medication change."',
@@ -102,7 +103,7 @@ const paraphraseFidelity = tpl(
           ['He got worse, so they kept him', 'adds a deterioration the speaker denied'],
           ['The medication caused a bad reaction', 'a change being watched is not a reaction that happened'],
           ['He is fine and coming home tonight', 'drops the overnight stay entirely'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         said: '"I didn\'t lose your charger — I left it in the band room, and the room was locked when I went back."',
@@ -111,15 +112,16 @@ const paraphraseFidelity = tpl(
           ['They lost the charger and are making excuses', 'assumes bad faith the words do not contain'],
           ['They will bring the charger tomorrow', 'no promise was made'],
           ['The charger is gone from the band room', 'the speaker claims it is IN the band room'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
     ] as const)
-    const { answer, distractorNotes } = mcqNoted(rng, c.correct, c.bads.map(([t, n]) => [t, n] as [string, string]))
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, c.correct, c.bads.map((b) => [...b] as [string, string, ErrorTag?]))
     return {
       title: 'Faithful paraphrase',
       prompt: `Someone says: ${c.said}\n\nWhich restatement adds nothing and drops nothing?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Check each option twice: once for smuggled additions, once for dropped qualifiers.',
         'Words like "only", "but", and "yet" carry load — a paraphrase that loses them changes the claim.',
@@ -226,12 +228,12 @@ const evThreshold = tpl(
     const fastBad = safe + rint(rng, 20, 40)
     const cutoff = safe + 5
     const evFast = (fastGood + fastBad) / 2
-    const { answer, distractorNotes } = mcqNoted(
+    const { answer, distractorNotes, distractorTags } = mcqNoted(
       rng,
       `${c[2]} — it is the only option that makes the cutoff for certain`,
       [
-        [`${c[1]} — its average time (${evFast} min) is better`, `the average is meaningless here: miss the cutoff and the whole trip fails; a coin-flip ${fastBad}-minute outcome blows it`],
-        [`${c[1]} — its best case (${fastGood} min) is the fastest on offer`, 'best-case planning bets the outcome on luck'],
+        [`${c[1]} — its average time (${evFast} min) is better`, `the average is meaningless here: miss the cutoff and the whole trip fails; a coin-flip ${fastBad}-minute outcome blows it`, 'strategy'],
+        [`${c[1]} — its best case (${fastGood} min) is the fastest on offer`, 'best-case planning bets the outcome on luck', 'strategy'],
         [`Either — they are close enough`, `one arrives by ${safe} min for certain; the other misses the ${cutoff}-minute cutoff half the time`],
       ],
     )
@@ -240,6 +242,7 @@ const evThreshold = tpl(
       prompt: `You must ${c[0]} — hard cutoff **${cutoff} min** from now. ${c[1]}: 50/50 between **${fastGood}** and **${fastBad}** min. ${c[2]}: **${safe} min** for certain. Which do you take?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'When a threshold exists, ask of each option: what is the chance of ENOUGH?',
         `The certain route lands at ${safe} < ${cutoff}. The gamble misses whenever it rolls ${fastBad}.`,
@@ -300,16 +303,16 @@ const boundaryQuality = tpl(
           ['"Maybe, I\'ll see — I\'m pretty busy tonight…"', 'a soft maybe invites the same ask tomorrow; the limit never gets stated'],
           ['"You always do this. You\'re using me and everyone knows it."', 'attacks the person instead of stating the limit — now it\'s a fight about character'],
           ['"Fine, but only this once (again)."', 'a boundary that yields when pushed teaches that pushing works'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         setup: 'A friend pressures you to share your streaming password "since you trust me".',
         correct: '"No — I don\'t share passwords, that one\'s a rule for everyone. Happy to watch together at mine."',
         bads: [
-          ['"My parents would kill me, sorry, it\'s them not me."', 'outsourcing the no makes it negotiable — the friend now argues with your parents\' rule, not yours'],
-          ['"If you were a real friend you wouldn\'t ask."', 'returns pressure with pressure; the limit gets lost in the counterattack'],
-          ['"Ugh, fine, just don\'t change anything."', 'consent under pressure is the outcome the pressure was for'],
-        ] as [string, string][],
+          ['"My parents would kill me, sorry, it\'s them not me."', 'outsourcing the no makes it negotiable — the friend now argues with your parents\' rule, not yours', 'strategy'],
+          ['"If you were a real friend you wouldn\'t ask."', 'returns pressure with pressure; the limit gets lost in the counterattack', 'strategy'],
+          ['"Ugh, fine, just don\'t change anything."', 'consent under pressure is the outcome the pressure was for', 'concept'],
+        ] as [string, string, ErrorTag?][],
       },
       {
         setup: 'A group chat keeps roasting one member and tags you to join in.',
@@ -318,7 +321,7 @@ const boundaryQuality = tpl(
           ['(Leave the chat silently)', 'exits the situation but leaves the norm untouched and the target alone'],
           ['"You\'re all bullies and I\'m reporting everyone."', 'may escalate past what the situation needs before a plain refusal was even tried — and threats you don\'t mean erode the ones you do'],
           ['(Join with a mild roast so it stays friendly)', 'participation IS endorsement, however gentle the line'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         setup: 'An online "friend" of two weeks asks for a photo you\'re not comfortable sharing, "to prove you trust me".',
@@ -327,15 +330,16 @@ const boundaryQuality = tpl(
           ['"Not yet — maybe when we\'ve talked longer."', '"not yet" schedules a future yes; discomfort deserves a full no'],
           ['"Why would you even want that? What\'s wrong with you?"', 'debating motives opens a negotiation; the ask itself is the problem'],
           ['(Block instantly and tell no one)', 'blocking is right — telling no one leaves you carrying it alone, and adults exist for exactly this'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
     ] as const)
-    const { answer, distractorNotes } = mcqNoted(rng, c.correct, c.bads.map(([t, n]) => [t, n] as [string, string]))
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, c.correct, c.bads.map((b) => [...b] as [string, string, ErrorTag?]))
     return {
       title: 'Boundary under pressure',
       prompt: `${c.setup}\n\nWhich response sets a boundary that actually holds?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'A boundary that holds is: clear, owned by you, and not an attack.',
         'Offering an alternative you ARE comfortable with is strength, not weakness.',
@@ -358,16 +362,16 @@ const interleaving = tpl(
           ['Blocked — it felt smoother, and smooth practice means strong learning', 'fluency during practice is the classic false signal; the smoothness comes from already knowing which method applies'],
           ['Blocked — switching wastes time that could be spent drilling', 'the "wasted" switching is the retrieval the test will demand'],
           ['They are equal if total time matches', 'time matched, demands differ: one practices execution only, the other execution plus selection'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         q: 'A learner reports: "Blocked practice felt great, mixed practice felt rough — so blocked must be working better." What is the honest reading?',
         correct: 'Feeling of ease is not learning: mixed practice usually feels worse and tests better',
         bads: [
-          ['They are right — struggle is a sign the method is failing', 'desirable difficulty predicts retention; effortless practice often predicts forgetting'],
-          ['They are right about themselves — feelings track learning for the person having them', 'the metacognitive illusion is precisely that it feels true from inside'],
-          ['Neither method matters compared to total hours', 'hours matter, but the same hours produce measurably different retention by structure'],
-        ] as [string, string][],
+          ['They are right — struggle is a sign the method is failing', 'desirable difficulty predicts retention; effortless practice often predicts forgetting', 'concept'],
+          ['They are right about themselves — feelings track learning for the person having them', 'the metacognitive illusion is precisely that it feels true from inside', 'concept'],
+          ['Neither method matters compared to total hours', 'hours matter, but the same hours produce measurably different retention by structure', 'concept'],
+        ] as [string, string, ErrorTag?][],
       },
       {
         q: 'When is BLOCKED practice actually the right call?',
@@ -376,7 +380,7 @@ const interleaving = tpl(
           ['Never — mixing is always better', 'a skill you cannot yet execute once has nothing to interleave'],
           ['Whenever the test is more than a week away', 'distance to the test favors MORE mixing, not less'],
           ['When the skills being practiced are easily confused', 'confusable skills are exactly where mixing pays most — it forces the discrimination'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         q: 'A quiz will show quadratics all of one type. A final, months later, mixes everything. What does the evidence recommend?',
@@ -385,15 +389,16 @@ const interleaving = tpl(
           ['Block for the quiz, then re-block before the final', 're-blocking never practices selection, which is what the final tests'],
           ['Mixing is only for math, so it does not apply here', 'interleaving evidence spans categories from math to art styles'],
           ['Block everything; use the saved time for rereading', 'rereading is among the weakest strategies measured'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
     ] as const)
-    const { answer, distractorNotes } = mcqNoted(rng, c.correct, c.bads.map(([t, n]) => [t, n] as [string, string]))
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, c.correct, c.bads.map((b) => [...b] as [string, string, ErrorTag?]))
     return {
       title: 'Interleaving',
       prompt: c.q,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Ask what the TEST will demand: executing a method, or choosing one?',
         'Distrust "it felt smooth" as evidence — ease during practice routinely misleads.',
@@ -443,13 +448,13 @@ const effectSize = tpl(
     ] as const)
     const tiny = rint(rng, 1, 2)
     const n = cycle(Math.floor(seed / 3), [20000, 50000] as const)
-    const { answer, distractorNotes } = mcqNoted(
+    const { answer, distractorNotes, distractorTags } = mcqNoted(
       rng,
       `Probably real but too small to matter — judge the SIZE, not just the certainty`,
       [
-        ['Fake — a difference that small must be chance', `with n = ${n.toLocaleString()}, even tiny true differences are detected reliably; small ≠ chance`],
-        ['Important — a proven difference is a difference worth acting on', 'statistical detectability and practical importance are different questions; this conflates them'],
-        ['Impossible to say anything without the raw data', 'the two numbers given — effect size and sample size — are exactly the ones needed for this judgment'],
+        ['Fake — a difference that small must be chance', `with n = ${n.toLocaleString()}, even tiny true differences are detected reliably; small ≠ chance`, 'concept'],
+        ['Important — a proven difference is a difference worth acting on', 'statistical detectability and practical importance are different questions; this conflates them', 'concept'],
+        ['Impossible to say anything without the raw data', 'the two numbers given — effect size and sample size — are exactly the ones needed for this judgment', 'incomplete'],
       ],
     )
     return {
@@ -457,6 +462,7 @@ const effectSize = tpl(
       prompt: `A study of **${n.toLocaleString()} people** finds ${c[0]} improves ${c[1]} by **${tiny} ${c[2]}**, and the difference is "statistically significant". What is the right take?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Huge samples can certify differences too small to feel.',
         `Ask two separate questions: is it real? is ${tiny} ${c[2].split(' ')[0]} worth anything?`,
@@ -478,17 +484,17 @@ const confoundHunt = tpl(
           ['Survey students about why they chose their seats', 'answers describe the confound; only breaking the choice removes it'],
           ['Compare the same students\' grades before and after they chose seats', 'motivation changes over time too; the confound rides along'],
           ['Study a bigger sample of self-chosen seats', 'more data measures the same tangled thing more precisely'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         claim: 'A cafe owner notes customers who order oat milk stay longer, so oat milk must make people linger.',
         fix: 'Note laptop use and visit purpose FIRST, then compare within each group',
         confound: 'remote workers both order trend drinks and camp for hours — the drink is a marker, not a motor',
         bads: [
-          ['Offer free oat milk for a week and watch stay times', 'the freebie changes who shows up — a new confound replaces the old'],
-          ['Interview oat-milk drinkers about their plans', 'self-reports of the confound do not remove it from the comparison'],
-          ['Track stay times across more cafes', 'replicating a confounded design replicates its confound'],
-        ] as [string, string][],
+          ['Offer free oat milk for a week and watch stay times', 'the freebie changes who shows up — a new confound replaces the old', 'inference'],
+          ['Interview oat-milk drinkers about their plans', 'self-reports of the confound do not remove it from the comparison', 'inference'],
+          ['Track stay times across more cafes', 'replicating a confounded design replicates its confound', 'inference'],
+        ] as [string, string, ErrorTag?][],
       },
       {
         claim: 'Players who own the premium racket win more league matches; the shop cites this as proof the racket wins games.',
@@ -498,7 +504,7 @@ const confoundHunt = tpl(
           ['Compare win rates only among players who can afford the racket', 'affordability was never the confound; dedication was'],
           ['Ask premium owners whether the racket helps', 'owners who paid are the last people who can judge it neutrally'],
           ['Check whether winners recommend the racket', 'reverses the question and keeps the tangle'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         claim: 'Kids who do music lessons have better vocabularies, so a headline says music BUILDS vocabulary.',
@@ -508,15 +514,16 @@ const confoundHunt = tpl(
           ['Control for family income statistically', 'income is one thread of many; adjustment cannot name them all'],
           ['Compare musical vs non-musical siblings', 'closer, but which sibling gets lessons is still a choice made for reasons'],
           ['Find more studies with the same design', 'a stack of confounded studies is a taller confounded study'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
     ] as const)
-    const { answer, distractorNotes } = mcqNoted(rng, c.fix, c.bads.map(([t, n]) => [t, n] as [string, string]))
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, c.fix, c.bads.map((b) => [...b] as [string, string, ErrorTag?]))
     return {
       title: 'Break the tangle',
       prompt: `${c.claim}\n\nThe worry: ${c.confound}. Which redesign actually removes that worry?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'The confound lives in WHO ENDS UP IN WHICH GROUP. Which option changes that?',
         'Measuring or describing a confound is not removing it — only assignment does that.',
@@ -659,16 +666,16 @@ const invariantSpot = tpl(
           ['`sum` equals the total of the whole array at every step', 'only true at the END — an invariant must hold every iteration'],
           ['`i` is always less than the array length inside the loop body', 'true, but it is the loop CONDITION, and it says nothing about what sum means'],
           ['`sum` is always positive', 'false with negative elements — and never the point'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         code: 'let best = arr[0];\nfor (let i = 1; i < arr.length; i++) {\n  if (arr[i] > best) best = arr[i];\n}',
         correct: 'After each pass: best is the largest of the elements examined so far',
         bads: [
-          ['`best` is the largest element of the array throughout', 'only guaranteed after the FINAL pass'],
-          ['`best` only changes on the first iteration', 'best changes whenever a new maximum appears'],
-          ['`arr[i]` is always greater than `best`', 'usually false — that is the condition being TESTED, not maintained'],
-        ] as [string, string][],
+          ['`best` is the largest element of the array throughout', 'only guaranteed after the FINAL pass', 'concept'],
+          ['`best` only changes on the first iteration', 'best changes whenever a new maximum appears', 'concept'],
+          ['`arr[i]` is always greater than `best`', 'usually false — that is the condition being TESTED, not maintained', 'concept'],
+        ] as [string, string, ErrorTag?][],
       },
       {
         code: 'let lo = 0, hi = arr.length - 1; // arr is sorted\nwhile (lo <= hi) {\n  const mid = Math.floor((lo + hi) / 2);\n  if (arr[mid] === target) return mid;\n  if (arr[mid] < target) lo = mid + 1;\n  else hi = mid - 1;\n}',
@@ -677,7 +684,7 @@ const invariantSpot = tpl(
           ['`mid` is always the exact middle of the whole array', 'mid is the middle of the CURRENT window, which shrinks'],
           ['`arr[lo]` is always less than `arr[hi]`', 'can fail as the window narrows to one element'],
           ['The loop always runs log(n) times exactly', 'that is its cost ceiling, not a truth maintained each pass'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         code: 'let open = 0;\nfor (const ch of text) {\n  if (ch === "(") open++;\n  if (ch === ")") open--;\n  if (open < 0) return false;\n}\nreturn open === 0;',
@@ -686,15 +693,16 @@ const invariantSpot = tpl(
           ['`open` counts all parentheses of either kind', 'it counts the DIFFERENCE, which is why zero at the end means balanced'],
           ['`open` is always at least 1 inside the loop', 'open starts at 0 and legitimately returns to 0 after each balanced pair'],
           ['The function returns true whenever the text contains "()"', 'the check is global balance, not the presence of one pair'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
     ] as const)
-    const { answer, distractorNotes } = mcqNoted(rng, c.correct, c.bads.map(([t, n]) => [t, n] as [string, string]))
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, c.correct, c.bads.map((b) => [...b] as [string, string, ErrorTag?]))
     return {
       title: 'Find the invariant',
       prompt: `\`\`\`\n${c.code}\n\`\`\`\nWhich statement stays true after EVERY pass of the loop?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'An invariant must hold after pass 1, pass 2, … not just at the end.',
         'Test each candidate against the very first iteration — most impostors die there.',

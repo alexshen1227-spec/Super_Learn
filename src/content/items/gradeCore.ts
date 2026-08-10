@@ -9,7 +9,7 @@
  * every answer is computed from the generator's own values.
  */
 import { rint, rnz } from '../../engine/rng'
-import type { ItemTemplate } from '../../domain/types'
+import type { ErrorTag, ItemTemplate } from '../../domain/types'
 import { cycle, fraction, mcq, mcqNoted, numeric, tpl } from '../lib'
 
 // ---------------------------------------------------------------- m-scale
@@ -75,16 +75,17 @@ const scaleArea = tpl(
     const h = rint(rng, 4, 8)
     const area = w * h
     const bigArea = area * k * k
-    const { answer, distractorNotes } = mcqNoted(rng, `${bigArea} cm²`, [
-      [`${area * k} cm²`, 'scaled the area by k — but BOTH dimensions grow, so area scales by k²'],
-      [`${bigArea * k} cm²`, 'cubed the factor — that is what volume does, not area'],
-      [`${area + k * k} cm²`, 'added instead of multiplied — scaling is multiplicative'],
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, `${bigArea} cm²`, [
+      [`${area * k} cm²`, 'scaled the area by k — but BOTH dimensions grow, so area scales by k²', 'concept'],
+      [`${bigArea * k} cm²`, 'cubed the factor — that is what volume does, not area', 'strategy'],
+      [`${area + k * k} cm²`, 'added instead of multiplied — scaling is multiplicative', 'strategy'],
     ])
     return {
       title: 'Area under scaling',
       prompt: `A ${w} cm × ${h} cm sticker (area ${area} cm²) is enlarged by scale factor **${k}**. What is the area of the enlarged sticker?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Width AND height each get multiplied by the factor.',
         `New sides: ${w * k} × ${h * k}.`,
@@ -138,16 +139,16 @@ const sampleBias = tpl(
           ['Ask the first 50 students arriving at zero period', 'early arrivers are exactly the students whose sleep differs — the method selects on the thing being measured'],
           ['Post a survey link and count whoever answers', 'self-selected respondents care more about the topic than the average student'],
           ['Ask everyone on the morning swim team', 'one team is a cluster with shared habits, not a miniature of the school'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         question: 'what fraction of a city supports a new bike lane',
         good: 'Dial randomly generated phone numbers across every neighborhood',
         bads: [
-          ['Survey people at the bike shop', 'the location pre-filters for people who already cycle'],
-          ['Let a cycling forum vote in an online poll', 'self-selection plus a cycling audience double-filters the sample'],
-          ['Ask drivers stuck at one downtown intersection', 'one location at one time of day is a cluster, not a cross-section'],
-        ] as [string, string][],
+          ['Survey people at the bike shop', 'the location pre-filters for people who already cycle', 'inference'],
+          ['Let a cycling forum vote in an online poll', 'self-selection plus a cycling audience double-filters the sample', 'inference'],
+          ['Ask drivers stuck at one downtown intersection', 'one location at one time of day is a cluster, not a cross-section', 'inference'],
+        ] as [string, string, ErrorTag?][],
       },
       {
         question: 'the average battery life of a phone model',
@@ -156,7 +157,7 @@ const sampleBias = tpl(
           ['Test the units customers returned as faulty', 'returned units are selected precisely because something was wrong'],
           ['Test the first 30 units off the line on launch day', 'one production run shares its conditions — early units are their own cluster'],
           ['Average the battery ratings users post in reviews', 'people review when unusually pleased or unusually annoyed — the middle stays silent'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         question: 'how often the trains on a line run late',
@@ -165,15 +166,16 @@ const sampleBias = tpl(
           ['Time the trains during your own commute each day', 'one time slot has its own traffic pattern — rush hour is not the timetable'],
           ['Count complaints posted about the line', 'nobody posts "train arrived as scheduled" — complaints select for lateness'],
           ['Check the first ten trains of the day', 'the early-morning cluster runs before congestion builds'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
     ] as const)
-    const { answer, distractorNotes } = mcqNoted(rng, c.good, c.bads.map(([t, n]) => [t, n] as [string, string]))
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, c.good, c.bads.map((b) => [...b] as [string, string, ErrorTag?]))
     return {
       title: 'Sampling method',
       prompt: `You want to estimate ${c.question}. Which sampling method gives every member a fair chance of being included?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Ask of each method: who gets systematically left out or over-included?',
         'Random selection from the WHOLE group is the only method where no trait raises your chance of being picked.',
@@ -191,13 +193,13 @@ const sampleVariability = tpl(
     const a = base
     const b = base + gap
     const mid = (a + b) / 2
-    const { answer, distractorNotes } = mcqNoted(
+    const { answer, distractorNotes, distractorTags } = mcqNoted(
       rng,
       `Both are legitimate estimates — random samples vary, and the truth is likely near this range`,
       [
-        [`The second sample must have been done incorrectly`, 'disagreement between random samples is expected, not evidence of a mistake'],
+        [`The second sample must have been done incorrectly`, 'disagreement between random samples is expected, not evidence of a mistake', 'inference'],
         [`The class should keep sampling until a sample hits ${mid}% exactly`, 'no single sample is "the right one" — stopping when you like the number is a bias machine'],
-        [`The true value must be exactly ${mid}%, the average of the two`, 'averaging two samples improves the estimate but cannot pin the truth to one exact number'],
+        [`The true value must be exactly ${mid}%, the average of the two`, 'averaging two samples improves the estimate but cannot pin the truth to one exact number', 'inference'],
       ],
     )
     return {
@@ -205,6 +207,7 @@ const sampleVariability = tpl(
       prompt: `Two classes each take a fair random sample of the same school. One estimates **${a}%** of students bring lunch; the other estimates **${b}%**. What is the right conclusion?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Would two fair random samples of the same school give identical numbers?',
         'Variation between honest samples is normal; its size shrinks as samples grow.',
@@ -378,16 +381,17 @@ const ineq2dRegion = tpl(
     const strict = kind === '>' || kind === '<'
     const aboveSide = kind === '>' || kind === '≥'
     const correct = `${aboveSide ? 'Above' : 'Below'} a ${strict ? 'dashed' : 'solid'} line`
-    const { answer, distractorNotes } = mcqNoted(rng, correct, [
-      [`${aboveSide ? 'Below' : 'Above'} a ${strict ? 'dashed' : 'solid'} line`, 'the side flipped — test one point instead of guessing from the symbol'],
-      [`${aboveSide ? 'Above' : 'Below'} a ${strict ? 'solid' : 'dashed'} line`, strict ? 'strict inequalities (<, >) exclude the boundary, so the line is dashed' : 'with ≤ or ≥ the boundary itself qualifies, so the line is solid'],
-      [`Only the line itself`, 'that describes the EQUATION y = mx + b; an inequality claims a whole side of it'],
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
+      [`${aboveSide ? 'Below' : 'Above'} a ${strict ? 'dashed' : 'solid'} line`, 'the side flipped — test one point instead of guessing from the symbol', 'strategy'],
+      [`${aboveSide ? 'Above' : 'Below'} a ${strict ? 'solid' : 'dashed'} line`, strict ? 'strict inequalities (<, >) exclude the boundary, so the line is dashed' : 'with ≤ or ≥ the boundary itself qualifies, so the line is solid', 'concept'],
+      [`Only the line itself`, 'that describes the EQUATION y = mx + b; an inequality claims a whole side of it', 'concept'],
     ])
     return {
       title: 'Graph of an inequality',
       prompt: `Which describes the graph of **y ${kind} ${m}x ${b >= 0 ? '+ ' + b : '− ' + Math.abs(b)}**?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Two decisions: is the boundary included (solid vs dashed), and which side holds?',
         `"y ${kind} …" means the points whose y-value is ${aboveSide ? 'bigger than' : 'smaller than'}${strict ? '' : ' or equal to'} the line's.`,
@@ -448,16 +452,17 @@ const ineq2dWrite = tpl(
     const atMost = c.cap === 'at most'
     const sym = atMost ? '≤' : '≥'
     const correct = `${c.pa}x + ${c.pb}y ${sym} ${limit}`
-    const { answer, distractorNotes } = mcqNoted(rng, correct, [
-      [`${c.pa}x + ${c.pb}y ${atMost ? '≥' : '≤'} ${limit}`, `"${c.cap}" points the other way — this reverses the constraint`],
-      [`${c.pa}x + ${c.pb}y ${atMost ? '<' : '>'} ${limit}`, `"${c.cap} ${limit}" INCLUDES hitting ${limit} exactly — the strict symbol wrongly excludes it`],
-      [`${c.pb}x + ${c.pa}y ${sym} ${limit}`, 'the coefficients swapped owners — each rate must multiply its own variable'],
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
+      [`${c.pa}x + ${c.pb}y ${atMost ? '≥' : '≤'} ${limit}`, `"${c.cap}" points the other way — this reverses the constraint`, 'misread'],
+      [`${c.pa}x + ${c.pb}y ${atMost ? '<' : '>'} ${limit}`, `"${c.cap} ${limit}" INCLUDES hitting ${limit} exactly — the strict symbol wrongly excludes it`, 'misread'],
+      [`${c.pb}x + ${c.pa}y ${sym} ${limit}`, 'the coefficients swapped owners — each rate must multiply its own variable', 'representation'],
     ])
     return {
       title: 'Write the constraint',
       prompt: `Each of the x ${c.a} takes **${c.pa}** and each of the y ${c.b} takes **${c.pb}** (dollars or minutes). The ${c.verb} allows **${c.cap} ${limit}**. Which inequality states the constraint?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         `Total used = ${c.pa}·x + ${c.pb}·y.`,
         `"${c.cap} ${limit}" means the total ${atMost ? 'may not exceed' : 'must reach'} ${limit}, boundary included.`,

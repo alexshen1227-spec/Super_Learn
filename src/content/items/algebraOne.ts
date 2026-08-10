@@ -14,7 +14,7 @@
  * of a wrong option is to catch a real habit, not to fill space.
  */
 import { rint, rnz } from '../../engine/rng'
-import type { ItemTemplate } from '../../domain/types'
+import type { ErrorTag, ItemTemplate } from '../../domain/types'
 import { cycle, fraction, mcq, mcqNoted, numeric, tpl } from '../lib'
 
 // ---------------------------------------------------------------- systems
@@ -64,7 +64,7 @@ const sysClassify = tpl(
       `${-mm * scale}x + ${scale}y = ${bb * scale}`
     const correct =
       kind === 'one' ? 'Exactly one solution' : kind === 'none' ? 'No solution' : 'Infinitely many solutions'
-    const { answer, distractorNotes } = mcqNoted(rng, correct, [
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
       [kind === 'none' ? 'Infinitely many solutions' : 'No solution',
         kind === 'none'
           ? 'same slope with DIFFERENT intercepts is parallel lines — they never meet'
@@ -74,13 +74,14 @@ const sysClassify = tpl(
       [kind === 'one' ? 'Infinitely many solutions' : 'Exactly one solution',
         kind === 'one'
           ? 'different slopes cannot coincide everywhere'
-          : 'equal slopes mean the lines never cross just once'],
+          : 'equal slopes mean the lines never cross just once', 'concept'],
     ])
     return {
       title: 'Classify the system',
       prompt: `How many solutions does this system have?\n\n${line(m, b, 1)}\n\n${line(m2, b2, kind === 'many' ? k : 1)}`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Compare slopes first; compare intercepts only if the slopes match.',
         kind === 'many' ? 'Try dividing the second equation by its common factor.' : 'Put both in y = mx + b if unsure.',
@@ -224,16 +225,17 @@ const sysConstruct = tpl(
     const total = na + nb
     const totalVal = c.pa * na + c.pb * nb
     const correct = `x + y = ${total} and ${c.pa}x + ${c.pb}y = ${totalVal}`
-    const { answer, distractorNotes } = mcqNoted(rng, correct, [
-      [`x + y = ${totalVal} and ${c.pa}x + ${c.pb}y = ${total}`, 'the totals swapped homes — the plain count belongs with x + y'],
-      [`x + y = ${total} and ${c.pb}x + ${c.pa}y = ${totalVal}`, 'the prices swapped owners — each price must multiply its own count'],
-      [`${c.pa}x + ${c.pb}y = ${total + totalVal}`, 'one equation cannot carry two separate facts; a system needs both'],
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
+      [`x + y = ${totalVal} and ${c.pa}x + ${c.pb}y = ${total}`, 'the totals swapped homes — the plain count belongs with x + y', 'representation'],
+      [`x + y = ${total} and ${c.pb}x + ${c.pa}y = ${totalVal}`, 'the prices swapped owners — each price must multiply its own count', 'representation'],
+      [`${c.pa}x + ${c.pb}y = ${total + totalVal}`, 'one equation cannot carry two separate facts; a system needs both', 'concept'],
     ])
     return {
       title: 'Translate, then stop',
       prompt: `${total} ${c.count} were sold: x ${c.a} at ${c.pa} ${c.value} each and y ${c.b} at ${c.pb} ${c.value} each, for ${totalVal} ${c.value} in all. Which system says exactly that?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'One equation counts things; the other adds up value.',
         `The count fact: x + y = ${total}. The value fact: ${c.pa}x + ${c.pb}y = ${totalVal}.`,
@@ -253,16 +255,17 @@ const funcDomain = tpl(
       const a = rnz(rng, 8)
       const k = rnz(rng, 6)
       const bad = a / 1 // the excluded input for denominator x - a
-      const { answer, distractorNotes } = mcqNoted(rng, `All numbers except x = ${bad}`, [
-        [`All numbers except x = ${-bad}`, 'sign slipped — the denominator is zero where x − a equals zero, at x = a'],
+      const { answer, distractorNotes, distractorTags } = mcqNoted(rng, `All numbers except x = ${bad}`, [
+        [`All numbers except x = ${-bad}`, 'sign slipped — the denominator is zero where x − a equals zero, at x = a', 'slip'],
         [`All numbers except x = 0`, 'x = 0 is only forbidden when it actually zeroes the denominator — check, don\'t assume'],
-        [`All numbers except x = ${k}`, 'that zeroes the NUMERATOR, which is allowed — a fraction may equal zero'],
+        [`All numbers except x = ${k}`, 'that zeroes the NUMERATOR, which is allowed — a fraction may equal zero', 'concept'],
       ])
       return {
         title: 'Domain from a formula',
         prompt: `For f(x) = (x ${k >= 0 ? '− ' + k : '+ ' + Math.abs(k)})/(x ${bad >= 0 ? '− ' + bad : '+ ' + Math.abs(bad)}), which inputs are allowed?`,
         answer,
         distractorNotes,
+        distractorTags,
         hints: [
           'Only one thing breaks a formula like this: dividing by zero.',
           `The denominator is zero when x = ${bad}.`,
@@ -326,16 +329,17 @@ const funcNotation = tpl(
     const x = rint(rng, 2, 9)
     const y = rint(rng, 10, 60)
     const correct = `${x} ${c.inp} correspond to ${y} ${c.out.replace(/ in .*/, '')}`
-    const { answer, distractorNotes } = mcqNoted(rng, correct, [
-      [`${y} ${c.inp} correspond to ${x} ${c.out.replace(/ in .*/, '')}`, 'input and output swapped roles — the number in the parentheses is always the input'],
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
+      [`${y} ${c.inp} correspond to ${x} ${c.out.replace(/ in .*/, '')}`, 'input and output swapped roles — the number in the parentheses is always the input', 'representation'],
       [`${c.f} multiplied by ${x} equals ${y}`, `function notation is not multiplication: ${c.f}(${x}) means "${c.f} evaluated at ${x}"`],
-      [`The function has the value ${x} everywhere`, `one input-output pair says nothing about other inputs`],
+      [`The function has the value ${x} everywhere`, `one input-output pair says nothing about other inputs`, 'inference'],
     ])
     return {
       title: 'Read the notation',
       prompt: `${c.f}(x) gives ${c.out} after x ${c.inp}. What does **${c.f}(${x}) = ${y}** say?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'The number inside the parentheses is the INPUT.',
         `So ${x} is the ${c.inp} and ${y} is the resulting ${c.out}.`,
@@ -409,10 +413,10 @@ const seqRecursive = tpl(
     const a1 = rint(rng, 2, 9)
     const d = rnz(rng, 6)
     const correct = `a₁ = ${a1}, aₙ = aₙ₋₁ ${d >= 0 ? '+ ' + d : '− ' + Math.abs(d)}`
-    const { answer, distractorNotes } = mcqNoted(rng, correct, [
-      [`aₙ = aₙ₋₁ ${d >= 0 ? '+ ' + d : '− ' + Math.abs(d)}`, 'no starting value — a recursion without a base case describes infinitely many sequences'],
-      [`a₁ = ${a1}, aₙ = ${d >= 0 ? d : Math.abs(d)}·aₙ₋₁`, 'that multiplies each term — a geometric rule for an arithmetic pattern'],
-      [`a₁ = ${a1}, aₙ = aₙ₋₁ ${d >= 0 ? '− ' + d : '+ ' + Math.abs(d)}`, 'the step runs the wrong direction'],
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
+      [`aₙ = aₙ₋₁ ${d >= 0 ? '+ ' + d : '− ' + Math.abs(d)}`, 'no starting value — a recursion without a base case describes infinitely many sequences', 'incomplete'],
+      [`a₁ = ${a1}, aₙ = ${d >= 0 ? d : Math.abs(d)}·aₙ₋₁`, 'that multiplies each term — a geometric rule for an arithmetic pattern', 'strategy'],
+      [`a₁ = ${a1}, aₙ = aₙ₋₁ ${d >= 0 ? '− ' + d : '+ ' + Math.abs(d)}`, 'the step runs the wrong direction', 'slip'],
     ])
     const terms = [a1, a1 + d, a1 + 2 * d, a1 + 3 * d]
     return {
@@ -420,6 +424,7 @@ const seqRecursive = tpl(
       prompt: `Which recursive definition produces **${terms.join(', ')}, …**?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Two pieces are mandatory: where it starts, and how each term comes from the last.',
         `Each term is the previous ${d >= 0 ? 'plus' : 'minus'} ${Math.abs(d)}.`,
@@ -437,16 +442,17 @@ const seqConvert = tpl(
     const toExplicit = seed % 2 === 0
     if (toExplicit) {
       const correct = `aₙ = ${a1} ${d >= 0 ? '+ ' + d : '− ' + Math.abs(d)}(n − 1)`
-      const { answer, distractorNotes } = mcqNoted(rng, correct, [
+      const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
         [`aₙ = ${a1} ${d >= 0 ? '+ ' + d : '− ' + Math.abs(d)}n`, 'the canonical off-by-one: at n = 1 this gives ' + (a1 + d) + ', not the actual first term ' + a1],
-        [`aₙ = ${d >= 0 ? d : '−' + Math.abs(d)} ${a1 >= 0 ? '+ ' + a1 : '− ' + Math.abs(a1)}(n − 1)`, 'start value and step swapped seats'],
-        [`aₙ = ${a1}·${Math.abs(d)}ⁿ⁻¹`, 'that is the geometric shape — this sequence ADDS each step'],
+        [`aₙ = ${d >= 0 ? d : '−' + Math.abs(d)} ${a1 >= 0 ? '+ ' + a1 : '− ' + Math.abs(a1)}(n − 1)`, 'start value and step swapped seats', 'representation'],
+        [`aₙ = ${a1}·${Math.abs(d)}ⁿ⁻¹`, 'that is the geometric shape — this sequence ADDS each step', 'strategy'],
       ])
       return {
         title: 'Make it explicit',
         prompt: `A sequence is defined by a₁ = ${a1}, aₙ = aₙ₋₁ ${d >= 0 ? '+ ' + d : '− ' + Math.abs(d)}. Which explicit formula matches?`,
         answer,
         distractorNotes,
+        distractorTags,
         hints: [
           `Reaching term n takes n − 1 steps from a₁ — count GAPS, not terms.`,
           `Check n = 1: the formula must return ${a1}.`,
@@ -532,9 +538,9 @@ const expModel = tpl(
       : cycle(seed, ['a medicine dose in the blood', 'a car\'s value', 'a lake\'s algae cover', 'a phone battery\'s capacity'] as const)
     const correct = `y = ${a}(${factor.toFixed(2).replace(/0$/, '')})ᵗ`
     const wrongFactor = grow ? (p / 100).toFixed(2).replace(/^0\./, '0.') : (1 + p / 100).toFixed(2)
-    const { answer, distractorNotes } = mcqNoted(rng, correct, [
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
       [`y = ${a}(${wrongFactor})ᵗ`, grow ? `the factor is 1 + rate — ${(p / 100).toFixed(2)} alone would SHRINK it to ${p}% of its size each step` : 'that factor grows — decay keeps 1 − rate'],
-      [`y = ${a} + ${grow ? '' : '−'}${(a * p) / 100}t`, 'that is linear — the same absolute amount each step, not the same PERCENT'],
+      [`y = ${a} + ${grow ? '' : '−'}${(a * p) / 100}t`, 'that is linear — the same absolute amount each step, not the same PERCENT', 'strategy'],
       [`y = ${a}(${grow ? 1 + p : 1 - p / 1000})ᵗ`, 'the percent was never converted — a rate of ' + p + '% is ' + p / 100 + ', not ' + p],
     ])
     return {
@@ -542,6 +548,7 @@ const expModel = tpl(
       prompt: `${thing[0].toUpperCase()}${thing.slice(1)} starts at **${a}** and ${grow ? 'grows' : 'shrinks'} **${p}% per period**. Which model gives its size after t periods?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         `Each period multiplies by the same factor: 1 ${grow ? '+' : '−'} ${p}/100.`,
         `That factor is ${factor}.`,
@@ -559,10 +566,10 @@ const expRead = tpl(
     const b = decay ? (100 - pct) / 100 : (100 + pct) / 100
     const a = cycle(seed, [120, 340, 900, 2500] as const)
     const correct = decay ? `It shrinks ${pct}% per step, starting from ${a}` : `It grows ${pct}% per step, starting from ${a}`
-    const { answer, distractorNotes } = mcqNoted(rng, correct, [
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
       [decay ? `It shrinks ${100 - pct}% per step, starting from ${a}` : `It grows ${100 + pct}% per step, starting from ${a}`,
         decay ? `${b} means ${100 - pct}% REMAINS — the loss is the other ${pct}%` : `${b} is the whole factor; the growth is only the part above 1`],
-      [decay ? `It grows ${pct}% per step, starting from ${a}` : `It shrinks ${pct}% per step, starting from ${a}`, 'direction read backwards — compare the factor with 1'],
+      [decay ? `It grows ${pct}% per step, starting from ${a}` : `It shrinks ${pct}% per step, starting from ${a}`, 'direction read backwards — compare the factor with 1', 'misread'],
       [`It ${decay ? 'shrinks' : 'grows'} ${pct}% per step, starting from ${b}`, `a and b swapped jobs: ${a} is the start, ${b} is the per-step factor`],
     ])
     return {
@@ -570,6 +577,7 @@ const expRead = tpl(
       prompt: `A quantity follows **y = ${a}(${b})ᵗ**. What does that say?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'Compare the factor with 1: above grows, below shrinks.',
         `${b} = 1 ${decay ? '−' : '+'} ${pct / 100}, so the per-step change is ${pct}%.`,
@@ -691,17 +699,18 @@ const literalSolve = tpl(
   { id: 'eq-literal', name: 'Solve for the letter asked', skillIds: ['m-lineqmulti', 'm-model'], bucket: 'math', difficulty: 4, variants: 4, minutes: 2.5 },
   (rng, seed) => {
     const c = cycle(seed, [
-      { formula: 'P = 2l + 2w', target: 'w', correct: 'w = (P − 2l)/2', bads: [['w = P/2 − 2l', 'only P was divided by 2 — the whole side must be divided'], ['w = (P + 2l)/2', 'the 2l crossed the equals sign without changing sign'], ['w = 2(P − l)', 'multiplied instead of divided at the last step']] },
-      { formula: 'A = (1/2)bh', target: 'h', correct: 'h = 2A/b', bads: [['h = A/(2b)', 'the 1/2 must be UNDONE — multiply by 2, not divide again'], ['h = 2Ab', 'b crossed over as multiplication instead of division'], ['h = A/2 − b', 'subtraction cannot undo multiplication']] },
-      { formula: 'd = rt', target: 't', correct: 't = d/r', bads: [['t = r/d', 'the division ran upside down'], ['t = d − r', 'subtraction cannot undo multiplication'], ['t = dr', 'that computes a distance-rate product, not a time']] },
-      { formula: 'C = (5/9)(F − 32)', target: 'F', correct: 'F = (9/5)C + 32', bads: [['F = (9/5)(C + 32)', 'the 32 must be added AFTER undoing the fraction — order of undoing is reversed'], ['F = (5/9)C + 32', 'the fraction was never inverted'], ['F = (9/5)C − 32', 'undoing "subtract 32" means ADDING 32']] },
+      { formula: 'P = 2l + 2w', target: 'w', correct: 'w = (P − 2l)/2', bads: [['w = P/2 − 2l', 'only P was divided by 2 — the whole side must be divided', 'incomplete'], ['w = (P + 2l)/2', 'the 2l crossed the equals sign without changing sign', 'slip'], ['w = 2(P − l)', 'multiplied instead of divided at the last step', 'strategy']] },
+      { formula: 'A = (1/2)bh', target: 'h', correct: 'h = 2A/b', bads: [['h = A/(2b)', 'the 1/2 must be UNDONE — multiply by 2, not divide again', 'strategy'], ['h = 2Ab', 'b crossed over as multiplication instead of division', 'slip'], ['h = A/2 − b', 'subtraction cannot undo multiplication', 'strategy']] },
+      { formula: 'd = rt', target: 't', correct: 't = d/r', bads: [['t = r/d', 'the division ran upside down', 'representation'], ['t = d − r', 'subtraction cannot undo multiplication', 'strategy'], ['t = dr', 'that computes a distance-rate product, not a time', 'strategy']] },
+      { formula: 'C = (5/9)(F − 32)', target: 'F', correct: 'F = (9/5)C + 32', bads: [['F = (9/5)(C + 32)', 'the 32 must be added AFTER undoing the fraction — order of undoing is reversed', 'strategy'], ['F = (5/9)C + 32', 'the fraction was never inverted', 'incomplete'], ['F = (9/5)C − 32', 'undoing "subtract 32" means ADDING 32', 'slip']] },
     ] as const)
-    const { answer, distractorNotes } = mcqNoted(rng, c.correct, c.bads.map(([t, n]) => [t, n] as [string, string]))
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, c.correct, c.bads.map((b) => [...b] as [string, string, ErrorTag?]))
     return {
       title: 'Rearrange the formula',
       prompt: `Solve **${c.formula}** for **${c.target}**.`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         `Treat every other letter as a known number and undo operations in reverse order.`,
         `Isolate the term containing ${c.target} first, then strip its coefficient.`,
@@ -772,9 +781,9 @@ const compareRates = tpl(
     const step = rint(rng, 2, 4)
     const rows = [0, 1, 2].map((i) => ({ x: x1 + i * step, y: 100 + mB * (x1 + i * step) }))
     const correct = fasterIsB ? `${c.b}, at ${mB} vs ${mA} ${c.unit}` : `${c.a.split(' ')[0]} ${c.a.split(' ')[1]}, at ${mA} vs ${mB} ${c.unit}`
-    const { answer, distractorNotes } = mcqNoted(rng, correct, [
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
       [fasterIsB ? `${c.a.split(' ')[0]} ${c.a.split(' ')[1]}, at ${mA} vs ${mB} ${c.unit}` : `${c.b}, at ${mB} vs ${mA} ${c.unit}`, 'the rates compare the other way — recompute the table\'s per-step change'],
-      [`${c.b}, because its y-values are larger`, 'bigger CURRENT values are the head start (intercept), not the rate — the question asks which grows faster'],
+      [`${c.b}, because its y-values are larger`, 'bigger CURRENT values are the head start (intercept), not the rate — the question asks which grows faster', 'concept'],
       [`They grow at the same rate`, `the table's rate works out to ${mB}, which differs from ${mA}`],
     ])
     return {
@@ -782,6 +791,7 @@ const compareRates = tpl(
       prompt: `${c.a.replace('RATE', String(mA)).replace('BASE', String(bA))}. ${c.b} is a table — x: ${rows.map((r) => r.x).join(', ')}; y: ${rows.map((r) => r.y).join(', ')}. **Which grows faster**, and at what rates?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         `The equation's rate is its x-coefficient: ${mA}.`,
         `The table's rate is Δy/Δx = ${mB * step}/${step} — mind that x steps by ${step}, not 1.`,

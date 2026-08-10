@@ -626,6 +626,24 @@ function act(t: ItemTemplate, mode: AttemptMode, used: Set<string>): PlannedActi
   return { templateId: t.id, seed, mode }
 }
 
+/**
+ * How many reviews one session actually retrieves.
+ *
+ * Exported because the Today screen states this number to the learner, and a
+ * second copy of the rule would drift. The warm-up widens under pressure (see
+ * `warmBudget`), so the answer depends on how long the queue is.
+ *
+ * This is what makes the "reviews due" figure honest. Left as a bare count it
+ * reads as a to-do list, and a learner who owns seventy skills has a permanent
+ * queue of roughly forty that no session could ever clear — a wall of debt,
+ * which is exactly the fake urgency the founding brief rules out. Saying how
+ * many today will take turns it back into a queue the app is working through.
+ */
+export function reviewsPerSession(dueCount: number, sessionMinutes: number): number {
+  if (sessionMinutes <= 12) return 2
+  return dueCount / 20 >= 0.75 ? 5 : 3
+}
+
 export function estimatedPlanMinutes(plan: SessionPlan): number {
   return plan.blocks.reduce((sum, block) => sum + block.minutes, 0)
 }
@@ -898,7 +916,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
    * first item is always allowed — a warm-up with nothing in it is not a
    * warm-up — but nothing after it may cross the line.
    */
-  const warmCap = short ? 2 : duePressure >= 0.75 ? 5 : 3
+  const warmCap = reviewsPerSession(due.length, total)
   const warmFits = (cost: number): boolean => warmActs.length === 0 || warmMin + cost <= warmBudget
   for (const f of forms) {
     if (warmActs.length >= warmCap || warmMin >= warmBudget) break

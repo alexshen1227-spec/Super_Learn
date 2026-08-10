@@ -1808,3 +1808,83 @@ measurement:
   held by a gate: curriculum coverage, session length, difficulty easing, entry
   points, promotion reachability, grader robustness, practice modes, hostile
   input, session recovery, unsupported markup, and benign-answer coverage.
+
+## 34. Closing §33g — and one thing that was never wired up
+
+The three items §33g left open, each measured before and after.
+
+### 34a. The named distractors never reached the coach
+
+`mcqNoted` has produced a `distractorTags` map since §30 — the machine-readable
+cause behind each named wrong answer, the most precise diagnosis the app can
+make. **Thirty-nine call sites destructured `{ answer, distractorNotes }` and
+dropped it on the floor.** The tags were computed on every render and thrown
+away before they reached the item, so the feature had never once fired outside
+the three templates written after it.
+
+That is the more useful half of this entry. Authoring tags was the visible
+work; the reason "3 of 39" looked like an authoring backlog was that the
+plumbing was missing, and no amount of authoring would have changed the number.
+Several case tables also mapped their own data through
+`([t, n]) => [t, n]`, discarding the third element a second time.
+
+Fixed at every site, and every named distractor now carries an **authored**
+cause — never inferred from the note text, which would repeat the mistake §13
+corrected when an authoring flag decided a rung.
+
+**Measured:** templates delivering machine-readable causes **3 → 39 of 39**;
+wrong multiple-choice options carrying a cause **1.0% → 10.9%** (106 of 976).
+
+**Honest about the size of the win.** Overall machine-derived diagnosis did NOT
+move much — 51.3% → 48.7% across a fresh 120-day simulation, within the noise
+of a different random seed. A learner only benefits when their wrong pick lands
+on a *named* option, which happened 19 times in 312 misses. What improved is
+PRECISION, not coverage: those 19 now carry `misread`, `representation`,
+`strategy` or `inference` instead of the repair path's coarse slip-or-concept.
+The profile still names only `concept` and `slip` as recurring patterns,
+because the finer causes each fall below `MIN_OCCURRENCES`. That is the refusal
+working, not a defect.
+
+### 34b. "Reviews due: 48" was a wall, not a number
+
+The Today card printed the raw due count. §32c stabilised the queue at roughly
+forty for a learner who owns a lot of skills — a standing figure no session
+could ever clear, presented as work outstanding. That is the manufactured
+urgency the founding brief rules out, produced by accident rather than design.
+
+The count stays visible (hiding it would be its own dishonesty), but once the
+queue is longer than a session can take, the card now says how many today will
+actually pick up: *"today takes the 5 most urgent — the rest keep their own
+dates."* The number comes from `reviewsPerSession`, extracted from the planner
+so the screen cannot drift from what the planner really does.
+
+### 34c. The bottom of the difficulty range
+
+Thirty on-ramps (§33a) took the 1★ share of the daily pool from **6% to 11%**
+and skills with no sub-3★ entry from **44 to 0**. The distribution is still
+top-heavy — 11% at 1★ against 32% at 4-5★ — and that remains the honest
+description: a learner well below grade level runs out of gentle material
+faster than a strong learner runs out of hard material. It is no longer a hole,
+which is what §32a called it; it is a slope.
+
+### 34d. Standing position on "are there bugs left"
+
+Four hunts, each finding what the previous missed. The rational expectation is
+that a fifth would too, and nothing here should be read as a claim otherwise.
+What can be said precisely is what is now *held*, rather than merely *checked
+once* — each of these fails the build:
+
+| Gate | What it holds |
+| --- | --- |
+| `frontier.test.ts` | curriculum coverage and no single-topic monopoly over a simulated year |
+| `easing.test.ts` | the difficulty dial can actually lower difficulty |
+| `sessionLength.test.ts` | a plan never exceeds the chosen length plus grace |
+| `starvation.test.ts` | no academic bucket starves, on every course |
+| `graderFuzz.test.ts` | the grader never throws, never accepts junk, ignores padding |
+| `practiceModes.test.ts` | every mode, five learner shapes, usable-or-empty |
+| `hostileInput.test.ts` | malformed imports and impossible clocks reach no reader |
+| `sessionRecovery.test.ts` | sixteen corrupt drafts, hostile storage, no lost work |
+| `contentAudit.test.ts` | computed answers, entry points, promotion reachability, unsupported markup, benign-answer coverage, variant honesty |
+
+The measurement harnesses that found each defect were kept as those gates
+rather than deleted, which is the only durable part of any of this.

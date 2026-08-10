@@ -40,15 +40,16 @@ const variabilityCompare = tpl(
     const b = [center - 2, center - 1, center, center + 1, center + 2]
     const correct = 'Group B is more consistent: it has the same mean but much less spread'
     const noted = mcqNoted(rng, correct, [
-      ['They are equally consistent because their means match', 'center-only trap — equal averages do not imply equal variability'],
-      ['Group A is more consistent because it contains the center value three times', 'frequency trap — the extreme values still create much larger spread'],
-      ['No comparison is possible unless both groups have at least 100 values', 'sample-size overreach — small samples limit certainty but their observed spreads remain comparable'],
+      ['They are equally consistent because their means match', 'center-only trap — equal averages do not imply equal variability', 'concept'],
+      ['Group A is more consistent because it contains the center value three times', 'frequency trap — the extreme values still create much larger spread', 'concept'],
+      ['No comparison is possible unless both groups have at least 100 values', 'sample-size overreach — small samples limit certainty but their observed spreads remain comparable', 'inference'],
     ])
     return {
       title: 'What the average hides',
       prompt: `Two machines fill boxes to a target of ${center} g.\n\n**Machine A:** ${a.join(', ')}\n\n**Machine B:** ${b.join(', ')}\n\nBoth means are ${center} g. Which conclusion is supported by these data?`,
       answer: noted.answer,
       distractorNotes: noted.distractorNotes,
+      distractorTags: noted.distractorTags,
       hints: [
         'The mean only locates the center. Compare how far values wander from it.',
         `A spans ${a[4] - a[0]} g; B spans ${b[4] - b[0]} g.`,
@@ -209,15 +210,16 @@ const designAssignment = tpl(
   (rng) => {
     const correct = 'Randomly assign the volunteers to the two methods, then compare outcomes'
     const noted = mcqNoted(rng, correct, [
-      ['Let each volunteer choose the method they prefer', 'self-selection — motivation and prior beliefs can differ between groups'],
-      ['Put the strongest students in the new-method group', 'baseline imbalance — the groups differ before treatment begins'],
-      ['Use the new method first and the old method next year', 'time confound — different cohorts and conditions replace a fair comparison'],
+      ['Let each volunteer choose the method they prefer', 'self-selection — motivation and prior beliefs can differ between groups', 'inference'],
+      ['Put the strongest students in the new-method group', 'baseline imbalance — the groups differ before treatment begins', 'inference'],
+      ['Use the new method first and the old method next year', 'time confound — different cohorts and conditions replace a fair comparison', 'inference'],
     ])
     return {
       title: 'Build a causal comparison',
       prompt: 'A school has 80 volunteers and wants to test whether a new study method causes better quiz performance. What is the strongest next step?',
       answer: noted.answer,
       distractorNotes: noted.distractorNotes,
+      distractorTags: noted.distractorTags,
       hints: ['The groups should differ systematically in only one thing: the assigned method.', 'Selection by preference or ability creates a difference before treatment.', `Worked path: **${correct}**.`],
       explanation: `**${correct}**. Random assignment does not guarantee perfectly equal groups, but it prevents systematic assignment bias on average and makes a causal comparison defensible.`,
     }

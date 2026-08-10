@@ -124,7 +124,7 @@ const funcShift = tpl(
     if (inside) {
       const dir = cycle(Math.floor(seed / 2), ['minus', 'plus'] as const)
       const correct = dir === 'minus' ? `${h} units to the RIGHT` : `${h} units to the LEFT`
-      const { answer, distractorNotes } = mcqNoted(rng, correct, [
+      const { answer, distractorNotes, distractorTags } = mcqNoted(rng, correct, [
         [dir === 'minus' ? `${h} units to the LEFT` : `${h} units to the RIGHT`, 'inside changes run OPPOSITE to their sign — the x that used to do the job is now x ∓ ' + h],
         [`${h} units UP`, 'inside the parentheses moves the graph horizontally; vertical moves are added OUTSIDE'],
         [`Nothing — the shape absorbs it`, 'the shape is preserved but the position is not; every point slides'],
@@ -134,6 +134,7 @@ const funcShift = tpl(
         prompt: `Compared with the graph of f(x), where does the graph of **f(x ${dir === 'minus' ? '−' : '+'} ${h})** sit?`,
         answer,
         distractorNotes,
+        distractorTags,
         hints: [
           'Ask: what input now produces the value f(0) used to produce?',
           dir === 'minus' ? `x = ${h} does — so the graph moved right.` : `x = −${h} does — so the graph moved left.`,

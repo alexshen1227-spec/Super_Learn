@@ -11,7 +11,7 @@
  * each claim against each offered option numerically. A "counterexample" that
  * does not actually break the claim would teach the opposite of the lesson.
  */
-import type { ItemTemplate } from '../../domain/types'
+import type { ErrorTag, ItemTemplate } from '../../domain/types'
 import { cycle, mcqNoted, tpl } from '../lib'
 
 /**
@@ -156,16 +156,22 @@ const proveMeWrong = tpl(
   },
   (rng, seed) => {
     const c = cycle(seed, FALSE_CLAIMS)
-    const { answer, distractorNotes } = mcqNoted(
+    const { answer, distractorNotes, distractorTags } = mcqNoted(
       rng,
       c.counter.label,
-      c.supporters.slice(0, 3).map((s) => [s.label, 'this case SATISFIES the claim — a supporting example can never refute one'] as [string, string]),
+      // Picking a supporting case to refute a claim is a misunderstanding of
+      // what refutation IS, not a slip — so every distractor here is the same
+      // cause, and saying so is honest rather than lazy.
+      c.supporters
+        .slice(0, 3)
+        .map((s) => [s.label, 'this case SATISFIES the claim — a supporting example can never refute one', 'concept'] as [string, string, ErrorTag]),
     )
     return {
       title: 'One case is enough',
       prompt: `Someone claims:\n\n**"${c.claim}"**\n\nWhich single case proves them wrong?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'You are hunting for ONE case where the claim fails — not for cases where it works.',
         'Check each option against the claim and ask: does this obey it, or break it?',
@@ -195,17 +201,17 @@ const repairTheClaim = tpl(
           ['Squaring makes a number bigger when the number is positive', 'fails at x = 1/2, which is positive and shrinks'],
           ['Squaring always makes a number bigger or equal', 'still false: 1/4 is strictly smaller than 1/2'],
           ['Squaring never changes a number', 'far too strong — it is false for almost every number'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         claim: 'The sum of two primes is always even.',
         counter: '2 + 3 = 5',
         fix: 'The sum of two ODD primes is always even',
         bads: [
-          ['The sum of two primes is always odd', 'now false in the other direction — 3 + 5 = 8'],
-          ['The sum of two primes greater than 1 is even', 'every prime is greater than 1, so this changes nothing'],
-          ['Primes are never even', '2 is prime and even — this contradicts a fact rather than repairing the claim'],
-        ] as [string, string][],
+          ['The sum of two primes is always odd', 'now false in the other direction — 3 + 5 = 8', 'concept'],
+          ['The sum of two primes greater than 1 is even', 'every prime is greater than 1, so this changes nothing', 'incomplete'],
+          ['Primes are never even', '2 is prime and even — this contradicts a fact rather than repairing the claim', 'concept'],
+        ] as [string, string, ErrorTag?][],
       },
       {
         claim: 'If a number is divisible by 2 and by 4, it is divisible by 8.',
@@ -215,7 +221,7 @@ const repairTheClaim = tpl(
           ['If a number is divisible by 2 and 4, it is divisible by 6', 'still false — 4 itself passes both and fails 6'],
           ['Only even numbers are divisible by 4', 'true but unrelated — it does not repair the broken implication'],
           ['Divisibility rules only work for prime divisors', 'too strong: divisibility by 6 and 12 works fine'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
       {
         claim: 'The average of two class averages is the average of everyone.',
@@ -225,15 +231,16 @@ const repairTheClaim = tpl(
           ['The average of two class averages is always too high', 'it can land either side depending on which class is bigger'],
           ['You should always use the median instead', 'changes the tool rather than repairing the claim'],
           ['Averages of averages work when the averages are close together', 'closeness reduces the error but never makes the rule exact'],
-        ] as [string, string][],
+        ] as [string, string, ErrorTag?][],
       },
     ] as const)
-    const { answer, distractorNotes } = mcqNoted(rng, c.fix, c.bads.map(([t, note]) => [t, note] as [string, string]))
+    const { answer, distractorNotes, distractorTags } = mcqNoted(rng, c.fix, c.bads.map((b) => [...b] as [string, string, ErrorTag?]))
     return {
       title: 'Repair, do not discard',
       prompt: `The claim **"${c.claim}"** is false — ${c.counter} breaks it.\n\nWhich repaired version is actually TRUE?`,
       answer,
       distractorNotes,
+      distractorTags,
       hints: [
         'A good repair excludes exactly the broken cases and keeps everything else.',
         'Test each candidate against the counterexample first — a repair that still fails it is not a repair.',

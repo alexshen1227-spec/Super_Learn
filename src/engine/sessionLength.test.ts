@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildExtensionBlock, buildSessionPlan, estimatedPlanMinutes, SESSION_GRACE_MIN } from './planner'
+import { buildExtensionBlock, buildSessionPlan, estimatedPlanMinutes, reviewsPerSession, SESSION_GRACE_MIN } from './planner'
 import { DEFAULT_INDEX } from '../content/registry'
 import { deriveEvidence } from './mastery'
 import { initialState, type AppState, type CheckIn } from '../domain/types'
@@ -118,6 +118,52 @@ describe('a session runs to the length that was chosen', () => {
     for (const a of extra!.activities) {
       const skills = DEFAULT_INDEX.templates.get(a.templateId)?.skillIds ?? []
       expect(skills.some((s) => touched.has(s)), `${a.templateId} is unrelated to this session`).toBe(true)
+    }
+  })
+})
+
+/**
+ * The Today screen states how many reviews a session will take, so that number
+ * has to be the planner's own — a second copy of the rule would drift, and the
+ * whole point is that the figure shown is true.
+ *
+ * Why it is shown at all: §32c stabilised the review queue at roughly forty for
+ * a learner who owns a lot of skills. Printed as a bare count that is a wall no
+ * session can clear, which reads as falling behind — the manufactured urgency
+ * the founding brief rules out, arrived at by accident.
+ */
+describe('the reviews-per-session figure the learner is shown', () => {
+  it('widens under pressure and never exceeds what a warm-up can hold', () => {
+    // A short session takes fewer, whatever the queue.
+    expect(reviewsPerSession(0, 10)).toBe(2)
+    expect(reviewsPerSession(80, 10)).toBe(2)
+    // A normal session takes more once the queue is genuinely long.
+    expect(reviewsPerSession(0, 30)).toBe(3)
+    expect(reviewsPerSession(5, 30)).toBe(3)
+    expect(reviewsPerSession(40, 30)).toBe(5)
+    // Monotonic, and bounded — a longer queue never makes the session shorter,
+    // and never turns the whole session into review.
+    let previous = 0
+    for (const due of [0, 5, 10, 14, 15, 20, 40, 200]) {
+      const n = reviewsPerSession(due, 30)
+      expect(n, `queue ${due} served fewer than a shorter queue`).toBeGreaterThanOrEqual(previous)
+      expect(n, `queue ${due} would take over the session`).toBeLessThanOrEqual(5)
+      previous = n
+    }
+  })
+
+  it('the triage line is only ever shown when it is true', () => {
+    // Today renders "today takes the N most urgent" only while `due > N`.
+    // Mirroring that guard here is what stops the screen ever claiming to take
+    // five when three are waiting — the figure itself is allowed to exceed a
+    // short queue, the SENTENCE is not.
+    for (const due of [0, 1, 2, 3, 4, 6, 12, 30, 80]) {
+      const n = reviewsPerSession(due, 30)
+      const shown = due > n
+      if (shown) {
+        expect(n, `with ${due} due the line would claim ${n}`).toBeLessThan(due)
+        expect(n, 'the line must name a real number of reviews').toBeGreaterThan(0)
+      }
     }
   })
 })
