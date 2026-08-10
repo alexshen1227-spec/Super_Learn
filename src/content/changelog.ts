@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '8.0',
+    date: '2026-08-09',
+    title: 'The App Now Knows What You Can Do, Not Just What You Have Proved',
+    points: [
+      'Until now, the question you got next was picked from your RANK on a skill — "you own this, so have a 4-star problem". That answers the wrong question. Owning a skill and being comfortable with its hardest problems are different things, and the old system could not tell those two learners apart. It now keeps a proper estimate of what you can actually solve on each skill, learned from your real results at real difficulty levels, and aims at problems you should get right about 6 times in 10.',
+      'Measured across a simulated year at five different ability levels, the share of questions answered right first try went up at every single level — and for mid-to-strong learners the number of skills reached went UP too, from 76 to 84. Better-aimed questions did not cost breadth; they bought it.',
+      'The estimate refuses to exist until it has at least four unaided answers to work from, and falls back to the old behaviour until then. Hints and the placement test do not feed it, for the same reason they never counted as proof.',
+      'This came from studying how the best learning platforms actually work — Brilliant, AoPS Alcumus, Beast Academy, IXL, DeltaMath, Desmos, Khan and Mathigon. The idea is closest to how Alcumus rates you, which is the same maths as a chess rating.',
+      'What was deliberately NOT taken: Brilliant\'s streaks, IXL\'s SmartScore (above 90, a right answer adds 1-2 points and a wrong one removes 3-8 — one mistake erases four), and DeltaMath\'s "N correct in a row or start over". Those are all the same shape, and it is the single most damaging reward structure in the research on motivation — worse than no reward at all. This app will keep refusing it.',
+    ],
+  },
+  {
     version: '7.9',
     date: '2026-08-09',
     title: 'Two Tabs Could Quietly Undo Each Other',

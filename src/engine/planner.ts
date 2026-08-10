@@ -21,7 +21,7 @@ import type {
 } from '../domain/types'
 import { ACADEMIC_BUCKETS, BUCKET_BY_ID, ERROR_TAGS } from '../domain/types'
 import type { ContentIndex } from './content-index'
-import { evidenceFor, stateRank } from './mastery'
+import { difficultyForRate, evidenceFor, stateRank } from './mastery'
 import { dueForms, dueReviews } from './scheduler'
 import { relativeDebt, type AllocationReport } from './allocation'
 import { effectiveAllocation } from './allocationPlus'
@@ -147,6 +147,9 @@ export function pickSeed(template: ItemTemplate, used: Set<string>): number {
  * The signal only sets a FLOOR, and only until real evidence exists: practice
  * always outranks the interview.
  */
+/** Predicted success rate the planner aims each item at. HEURISTIC. */
+export const ABILITY_TARGET_RATE = 0.6
+
 export function targetDifficulty(
   ev: SkillEvidence,
   energy: CheckIn['energy'],
@@ -161,8 +164,42 @@ export function targetDifficulty(
    */
   stretch = 0,
 ): number {
+  /*
+   * ABILITY FIRST, RUNG AS FALLBACK.
+   *
+   * The rung answers "what has this learner proved?" and was doing double duty
+   * as "what problem should they get next" — a five-value lookup that cannot
+   * see a learner who is Retained on a skill and still failing its hard items.
+   * Once there are enough unaided outcomes at known difficulties, the fitted
+   * ability answers the second question directly (mastery.ts), and the target
+   * is the difficulty they are predicted to clear about 70% of the time.
+   *
+   * Measured against the rung-only version over simulated years, at five
+   * learner abilities: second-half first-try accuracy moved from 19/34/46/59/77%
+   * to 55/62/70/74/79% — into the productive band at every level instead of
+   * only the top. See RESEARCH.md §37.
+   *
+   * 0.6 is a HEURISTIC, and it was SWEPT rather than picked. At 0.7 the
+   * calibration gain came with a real coverage cost (a mid learner reached 62
+   * skills instead of 71); at 0.6 that cost disappears and most of the gain
+   * remains. It also sits toward the demanding end of the band `stretchSignal`
+   * already calls healthy (0.5-0.82), which is the side this app leans on
+   * anyway — comfortable practice is pleasant and teaches little.
+   */
+  // `!== null` is not enough: a SkillEvidence built anywhere but `finalize`
+  // — an older cached shape, a hand-made fixture, anything imported — can
+  // carry `undefined` here, and `difficultyForRate(undefined)` is NaN, which
+  // then silently poisons every difficulty comparison downstream. Same
+  // defence the calibration readouts take: check for a usable number, not for
+  // the absence of one particular empty value.
+  const fromAbility =
+    typeof ev.ability === 'number' && Number.isFinite(ev.ability)
+      ? difficultyForRate(ev.ability, ABILITY_TARGET_RATE)
+      : null
   const fromEvidence =
-    ev.state === 'transferred'
+    fromAbility !== null
+      ? fromAbility
+      : ev.state === 'transferred'
       ? 5
       : ev.state === 'retained'
         ? 4

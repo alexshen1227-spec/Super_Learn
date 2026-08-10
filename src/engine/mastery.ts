@@ -131,6 +131,41 @@ export function formsRequired(bucket: string | null): number {
  */
 export const TRANSFER_DIMENSIONS_REQUIRED = 2
 
+/**
+ * Per-skill ABILITY, fitted from real outcomes at known difficulties.
+ *
+ * The evidence ladder answers "what has this learner PROVED?". It is the wrong
+ * instrument for "what is the right problem to hand them next", and it was
+ * being used for both: `targetDifficulty` read the rung and mapped it through a
+ * five-value lookup (unseen 1.5, guided 2, independent 3, retained 4). A
+ * learner can hold `retained` on a skill and still fail 4-star items on it, and
+ * the ladder cannot see that.
+ *
+ * So this tracks the other quantity directly. It is the model AoPS Alcumus
+ * uses — a logistic ability against problem difficulty, updated as outcomes
+ * arrive, which is the chess-rating family:
+ *
+ *   P(correct at difficulty d) = 1 / (1 + e^(d − ability))
+ *
+ * Only UNAIDED FIRST attempts feed it, for the same reason nothing else in this
+ * file counts hinted work. `K` decays with experience so the first few attempts
+ * move the estimate quickly and later ones only refine it.
+ *
+ * HEURISTIC in its constants (start point, decay, the 0.7 target rate the
+ * planner asks for); EVIDENCE-shaped in its form, which is the standard item-
+ * response model. It refuses to exist below `ABILITY_MIN_SAMPLES` rather than
+ * reporting a number built from two answers.
+ */
+export const ABILITY_MIN_SAMPLES = 4
+const ABILITY_START = 2
+const ABILITY_K = 0.9
+const ABILITY_K_DECAY = 6
+
+/** Difficulty at which a learner of this ability succeeds `rate` of the time. */
+export function difficultyForRate(ability: number, rate: number): number {
+  return ability - Math.log(rate / (1 - rate))
+}
+
 export interface CrossedDimensions {
   family: boolean
   domain: boolean
@@ -163,6 +198,9 @@ function describeCrossed(c: CrossedDimensions): string[] {
 
 interface Tracker {
   skillId: string
+  /** Logistic ability estimate and how many graded, unaided attempts back it. */
+  ability: number
+  abilitySamples: number
   /** Bucket of the first event seen — sets how strict this skill's ladder is. */
   bucket: string | null
   exposure: number
@@ -202,6 +240,8 @@ interface Tracker {
 function newTracker(skillId: string): Tracker {
   return {
     skillId,
+    ability: ABILITY_START,
+    abilitySamples: 0,
     bucket: null,
     exposure: 0,
     guidedSuccesses: 0,
@@ -312,6 +352,15 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
 
   tr.hintedRecent.push(e.hintLevel > 0)
   if (tr.hintedRecent.length > 10) tr.hintedRecent.shift()
+
+  // Ability update. Placement routes rather than proves, and hinted work is
+  // not evidence of what this learner can do alone, so neither feeds it.
+  if (e.mode !== 'placement' && e.hintLevel === 0 && Number.isFinite(e.difficulty)) {
+    const expected = 1 / (1 + Math.exp(e.difficulty - tr.ability))
+    const k = ABILITY_K / (1 + tr.abilitySamples / ABILITY_K_DECAY)
+    tr.ability += k * ((e.firstCorrect === true ? 1 : 0) - expected)
+    tr.abilitySamples++
+  }
 
   // Misconception tracking: a confident wrong first answer arms the block;
   // a later unaided first-attempt success on the skill repairs it.
@@ -455,6 +504,9 @@ function finalize(tr: Tracker, now: number): SkillEvidence {
     recentMisses: tr.recentMisses,
     blockedByMisconception: blocked,
     hintDependence: hinted.length >= 3 ? hinted.filter(Boolean).length / hinted.length : null,
+    // Refuses to exist under a handful of attempts, like every other number here.
+    ability: tr.abilitySamples >= ABILITY_MIN_SAMPLES ? tr.ability : null,
+    abilitySamples: tr.abilitySamples,
     review: tr.reviewDue !== null ? { due: tr.reviewDue, intervalIndex: tr.reviewIndex } : null,
     forms: [...tr.forms.entries()].map(([templateId, f]) => ({
       templateId,
@@ -622,6 +674,8 @@ export function evidenceFor(
       recentMisses: 0,
       blockedByMisconception: false,
       hintDependence: null,
+      ability: null,
+      abilitySamples: 0,
       review: null,
       forms: [],
       attempts: 0,

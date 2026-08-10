@@ -7,8 +7,8 @@ function evidence(overrides: Partial<SkillEvidence> = {}): SkillEvidence {
     skillId: 'skill', state: 'unseen', needsReview: false, bestState: 'unseen', exposure: 0,
     guidedSuccesses: 0, independentForms: [], retainedAt: null, transferredAt: null,
     transferCrossed: null, lastCorrectAt: null, lastAttemptAt: null, lastOutcomeCorrect: null,
-    recentMisses: 0, blockedByMisconception: false, hintDependence: null, review: null,
-    forms: [], attempts: 0, ...overrides,
+    recentMisses: 0, blockedByMisconception: false, hintDependence: null, ability: null,
+    abilitySamples: 0, review: null, forms: [], attempts: 0, ...overrides,
   }
 }
 

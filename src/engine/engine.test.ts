@@ -362,7 +362,8 @@ describe('five-level difficulty routing', () => {
       skillId: 'o-obsinf', state: 'unseen', bestState: 'unseen', needsReview: false, exposure: 0,
       guidedSuccesses: 0, independentForms: [], retainedAt: null, transferredAt: null, transferCrossed: null,
       lastCorrectAt: null, lastAttemptAt: null, lastOutcomeCorrect: null, recentMisses: 0,
-      blockedByMisconception: false, hintDependence: null, review: null, forms: [], attempts: 0,
+      blockedByMisconception: false, hintDependence: null, ability: null, abilitySamples: 0,
+      review: null, forms: [], attempts: 0,
     }
     expect(targetDifficulty({ ...base, state: 'independent', bestState: 'independent' }, 'ok', false)).toBe(3)
     expect(targetDifficulty({ ...base, state: 'retained', bestState: 'retained' }, 'ok', false)).toBe(4)

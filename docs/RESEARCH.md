@@ -2032,3 +2032,119 @@ planner repeatedly. Nothing regressed:
 
 Rendering all 607 families once takes 67ms, which happens only in the Practice
 browser and the audit.
+
+## 37. Learning from the competition (2026-08-09): what to take, what to refuse
+
+§25's platform survey catalogued what these products TEACH. This one looks at
+how the experience WORKS, which is where the transferable design is. Every one
+of them is a paid or school-sold product, so the first job is separating
+pedagogy from retention machinery.
+
+### 37a. The machinery to keep refusing — now with three named examples
+
+- **Brilliant** runs daily streaks, bonus points and unlockable content. Its own
+  gamification case study names the mechanism: *fear of breaking a streak* as
+  the motivator, and "dopamine loops similar to mobile games".
+  https://trophy.so/blog/brilliant-gamification-case-study
+- **IXL SmartScore** is 0-100 per skill, and above 90 it enters a "Challenge
+  Zone" where a correct answer adds 1-2 points and a wrong one removes 3-8.
+  One mistake erases four right answers. IXL documents this as intended
+  design. https://www.ixl.com/materials/SmartScore_Guide.pdf
+- **DeltaMath** requires N correct IN A ROW, and one wrong answer resets the
+  streak to zero; teachers can configure it to reset the whole module.
+
+All three are the same shape, and §29d already carries the number that
+condemns it: Deci, Koestner & Ryan's 128-experiment meta-analysis finds
+performance-contingent rewards where the learner receives LESS than the maximum
+at **d = −0.80** on intrinsic motivation — the single worst structure in the
+whole literature, and worse than no reward at all. A SmartScore falling from 96
+to 90, or a streak resetting to zero, is precisely that structure.
+
+Recorded so this is a decision with a citation behind it rather than a taste.
+Reports from families of anxious and neurodivergent students describe exactly
+the predicted effect, which is corroboration rather than evidence.
+
+### 37b. Alcumus's ability model — TAKEN, and measured
+
+AoPS Alcumus keeps a per-topic rating that is explicitly *"the probability that
+she will correctly answer the average problem in the topic"*, computed from a
+logistic comparison of a hidden student score against a hidden problem score —
+the chess-rating family — and updated as outcomes arrive. It prefers problems
+at the learner's level while mixing in some easier and some harder, and
+down-weights problems already seen.
+https://artofproblemsolving.com/blog/articles/alcumus-a-peek-under-the-hood-of-our-adaptive-learning-tool
+
+**Why this app needed it.** `targetDifficulty` derived the next problem's
+difficulty from the evidence RUNG through a five-value lookup (unseen 1.5,
+guided 2, independent 3, retained 4, transferred 5). The rung answers *what has
+this learner proved*; it was being asked *what can they currently do*, and
+those are different questions. A learner can hold Retained on a skill and still
+fail its 4-star items, and nothing in the ladder can see that.
+
+**Built** in `mastery.ts`, derived by replay like everything else:
+`P(correct at difficulty d) = 1 / (1 + e^(d − ability))`, updated per unaided
+first attempt with a decaying step so early answers move it and later ones
+refine it. Placement and hinted work are excluded, for the same reasons they
+are excluded everywhere else. It reports `null` below four samples rather than
+a number built from two answers, and the rung remains the fallback.
+
+**Measured** over simulated years against learners of five true abilities,
+second-half first-try accuracy and end-of-year coverage:
+
+| true ability | accuracy before → after | skills touched | skills owned |
+| --- | --- | --- | --- |
+| 1.0 | 19% → 22% | 47 → 45 | 35 → 33 |
+| 2.0 | 34% → **42%** | 57 → **64** | 49 → **53** |
+| 3.0 | 46% → **55%** | 71 → 69 | 62 → 61 |
+| 4.0 | 59% → **66%** | 76 → **84** | 71 → **80** |
+| 5.0 | 77% → 77% | 94 → 92 | 93 → 90 |
+
+Accuracy rises at every level, into the productive band rather than only at the
+top, and coverage rises with it at the two mid-to-high levels instead of being
+traded for it.
+
+**The target rate was swept, not chosen.** At 0.7 the calibration gain came
+with a real coverage cost (a mid learner reached 62 skills instead of 71). At
+0.6 that cost disappears and most of the gain remains, so 0.6 ships. It also
+sits toward the demanding end of the band `stretchSignal` already calls healthy
+(0.5-0.82), which is the side this app leans on anyway. Still a HEURISTIC: no
+study fixes it.
+
+**A latent hole found while wiring it.** The first guard tested
+`ev.ability !== null`, and a `SkillEvidence` built anywhere but `finalize` — an
+older cached shape, a hand-made fixture, anything imported — carries
+`undefined`, making `difficultyForRate` return NaN and silently lose every
+difficulty comparison downstream. Five existing tests caught it immediately.
+The guard now checks for a usable number rather than the absence of one
+particular empty value, which is the same correction the calibration readouts
+needed in §33.
+
+### 37c. Taken already, or deliberately not
+
+- **Brilliant: no video, manipulate before explanation.** The app is already
+  retrieval-first everywhere. What it does NOT have is a manipulable
+  visualisation, which is Brilliant's real distinctive. Open work, and honest
+  to say the polyomino and logic-grid players are the only things close.
+- **Beast Academy: three tiers per chapter** (foundation → practice → starred
+  10-15 minute multi-step) and productive struggle taught as a NAMED skill.
+  The tiers now exist as the 1-5 star scale with an entry point on every skill
+  (§33a). Naming the struggle itself is not done.
+- **Desmos: card sorts, marbleslides, Challenge Creator.** The card sort is our
+  `classify` answer type; marbleslides ("make an equation satisfy a visual
+  constraint") is the same muscle as the constraint puzzles from §26. Challenge
+  Creator — the learner AUTHORS a problem — has no equivalent here and is the
+  most interesting gap, with support from the invention literature (§29c,
+  Schwartz & Martin).
+- **Khan: mastery levels gated on ALL questions right**, not a percentage, and
+  their own analysis that reaching proficient on fewer skills beats familiar on
+  many. Our ladder is already stricter (two unaided first-attempt successes on
+  distinct FAMILIES, three for the Paths).
+- **Mathigon/Polypad: manipulatives and interactive narrative** — and, per
+  review, *no spaced repetition or adaptive retesting at all; once a course
+  ends nothing brings it back*. Worth recording as the thing this app has that
+  the prettiest product in the category does not.
+
+**Licensing unchanged from §25**: Brilliant, IXL, DeltaMath, Alcumus, Beast and
+Math Academy are proprietary. Nothing here is text, artwork, a scoring constant
+or a taxonomy lifted from them — only mechanisms described in their own public
+writing, reimplemented from scratch against this app's own measurements.

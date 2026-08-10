@@ -493,6 +493,15 @@ export interface SkillEvidence {
   /** Unrepaired high-confidence misconception blocks promotion. */
   blockedByMisconception: boolean
   hintDependence: number | null
+  /**
+   * Logistic ability on THIS skill, fitted from unaided outcomes at known
+   * difficulties (see mastery.ts). Null under a handful of samples. Distinct
+   * from the rung: the rung says what was proved, this says what is currently
+   * winnable — a learner can be Retained and still fail the hardest items.
+   */
+  ability: number | null
+  /** How many unaided graded attempts the estimate rests on. */
+  abilitySamples: number
   /** Review scheduling state for the skill as a whole. */
   review: { due: number; intervalIndex: number } | null
   /**

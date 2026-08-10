@@ -24,13 +24,13 @@
  *     half is gated in `contentAudit.test.ts`.
  */
 import { describe, expect, it } from 'vitest'
-import { buildSessionPlan } from './planner'
+import { buildSessionPlan, targetDifficulty } from './planner'
 import { DEFAULT_INDEX } from '../content/registry'
 import { deriveEvidence } from './mastery'
 import { stretchSignal } from './stretch'
 import { dailyTemplateScore } from './plannerPolicy'
 import { mulberry32 } from './rng'
-import { initialState, type AppState, type AttemptEvent, type ItemTemplate, type SessionRecord } from '../domain/types'
+import { initialState, type AppState, type AttemptEvent, type ItemTemplate, type SessionRecord, type SkillEvidence } from '../domain/types'
 
 const DAY = 86_400_000
 const START = Date.UTC(2026, 0, 5, 16)
@@ -121,5 +121,57 @@ describe('the difficulty dial can actually lower the difficulty', () => {
     const unseenHardNormal = dailyTemplateScore(tpl(4), 2, undefined, false, false)
     const rightLevelNormal = dailyTemplateScore(tpl(2), 2, { lifetime: 10, recent: 0, daysSince: 7 }, false, false)
     expect(unseenHardNormal, 'documents the old behaviour this replaced').toBeGreaterThan(rightLevelNormal)
+  })
+})
+
+/**
+ * ABILITY, not rung, decides what problem comes next.
+ *
+ * The evidence ladder answers "what has this learner PROVED?" and was doing
+ * double duty as "what should they get next" — a five-value lookup that cannot
+ * tell a learner who is Retained on a skill and comfortable there from one who
+ * is Retained and still failing its hard items.
+ *
+ * `mastery.ts` now fits a logistic ability per skill from unaided outcomes at
+ * known difficulties (the model AoPS Alcumus uses), and the planner targets the
+ * difficulty that learner clears about 60% of the time. Measured over simulated
+ * years at five ability levels, second-half first-try accuracy rose at every
+ * one — 19/34/46/59/77% to 22/42/55/66/77% — and coverage rose with it rather
+ * than being traded away (see RESEARCH.md §37).
+ */
+describe('the planner aims at what the learner can currently do', () => {
+  const base = (over: Partial<SkillEvidence> = {}): SkillEvidence => ({
+    skillId: 's', state: 'retained', bestState: 'retained', needsReview: false, exposure: 10,
+    guidedSuccesses: 0, independentForms: ['a', 'b'], retainedAt: 1, transferredAt: null,
+    transferCrossed: null, lastCorrectAt: 1, lastAttemptAt: 1, lastOutcomeCorrect: true,
+    recentMisses: 0, blockedByMisconception: false, hintDependence: null,
+    ability: null, abilitySamples: 0, review: null, forms: [], attempts: 10, ...over,
+  })
+
+  it('separates two learners the rung cannot tell apart', () => {
+    // Both Retained. One is comfortable at 4-star work, one is not.
+    const strong = targetDifficulty(base({ ability: 4.5, abilitySamples: 20 }), 'ok', false)
+    const shaky = targetDifficulty(base({ ability: 1.8, abilitySamples: 20 }), 'ok', false)
+    expect(strong, 'a strong learner on a Retained skill should be stretched').toBeGreaterThan(shaky + 1)
+    // The rung alone gives both of them exactly the same number.
+    const rungOnly = targetDifficulty(base(), 'ok', false)
+    expect(rungOnly, 'rung fallback still applies when ability has no samples').toBe(4)
+  })
+
+  it('refuses to use an ability estimate built from too little', () => {
+    // Below the sample floor `mastery.ts` reports null, and the rung takes over.
+    expect(targetDifficulty(base({ ability: null, abilitySamples: 2 }), 'ok', false)).toBe(4)
+  })
+
+  it('never lets a missing or broken estimate produce NaN', () => {
+    // A SkillEvidence from an older cached shape or a hand-built fixture can
+    // carry `undefined` here; `difficultyForRate(undefined)` is NaN, and NaN
+    // silently loses every difficulty comparison downstream.
+    for (const bad of [undefined, Number.NaN, Number.POSITIVE_INFINITY] as unknown[]) {
+      const d = targetDifficulty(base({ ability: bad as number }), 'ok', false)
+      expect(Number.isFinite(d), `ability=${String(bad)} produced ${d}`).toBe(true)
+      expect(d).toBeGreaterThanOrEqual(1)
+      expect(d).toBeLessThanOrEqual(5)
+    }
   })
 })
