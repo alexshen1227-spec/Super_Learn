@@ -239,11 +239,80 @@ export interface AuthenticWorkSpec {
 
 export type ItemKind = 'single' | 'multi' | 'chess' | 'polyomino' | 'logicgrid'
 
+// ------------------------------------------------- manipulable diagrams
+
+/** One drawn curve, in data coordinates. */
+export interface PlotSeries {
+  /** Ordered [x, y] pairs. The player joins them; it does not interpolate. */
+  points: [number, number][]
+  /** Legend text, e.g. "y = 2x + 1". */
+  label: string
+  /** Palette slot, not a colour — themes stay in CSS. */
+  tone?: 0 | 1
+}
+
+/** A small declarative diagram. No code, so the audit can check every frame. */
+export interface PlotSpec {
+  xMin: number
+  xMax: number
+  yMin: number
+  yMax: number
+  xLabel?: string
+  yLabel?: string
+  series: PlotSeries[]
+  /** Optional filled rectangle in data coords — for area and scaling work. */
+  rect?: { x: number; y: number; w: number; h: number; label: string }
+}
+
+/** One position of the control, and the picture at that position. */
+export interface ExploreStop {
+  /** Shown on the control, e.g. "m = 2". */
+  value: string
+  /**
+   * One line describing THIS state — never the conclusion. The learner is
+   * meant to notice the pattern across stops; a caption that announces it
+   * turns manipulation back into reading.
+   */
+  caption: string
+  plot: PlotSpec
+}
+
+/**
+ * A diagram the learner drags before being asked anything.
+ *
+ * Brilliant's distinctive move is that you manipulate a thing and watch it
+ * respond, building intuition before any explanation (RESEARCH.md §37c). This
+ * app was retrieval-first everywhere but had nothing manipulable outside the
+ * puzzle players.
+ *
+ * Deliberately PRECOMPUTED rather than a live formula: the generator produces
+ * one finished picture per stop, so the whole activity stays deterministic
+ * data, needs no expression evaluator, and the content audit can render and
+ * check every frame the learner could ever see.
+ *
+ * It never carries evidence. Exploration is a study phase; the rung comes from
+ * the graded checkpoint that follows it, which is the same rule drafts follow.
+ */
+export interface ExploreSpec {
+  /** What the control changes, e.g. "the slope m". */
+  label: string
+  stops: ExploreStop[]
+  /** Which stop to open on. */
+  initial: number
+  /** What to try, shown with the control. Not what to conclude. */
+  invitation: string
+}
+
 export interface ItemPart {
   /** Authentic-work checkpoint label, e.g. Brief, Test, Draft, Revise. */
   stage?: string
   /** Optional study phase (scene text, data table) shown before the prompt. */
   study?: string
+  /**
+   * A manipulable diagram for the study phase. Shown with `study` when both
+   * are present; the learner drags it before the prompt appears.
+   */
+  explore?: ExploreSpec
   /** Suggested study seconds (user-adjustable, never a hard cutoff). */
   studySeconds?: number
   prompt: string

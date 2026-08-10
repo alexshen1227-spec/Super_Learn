@@ -11,6 +11,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '8.1',
+    date: '2026-08-09',
+    title: 'Diagrams You Can Actually Move',
+    points: [
+      'Three new activities give you a picture with a slider instead of a picture. Drag the slope of a line and watch what refuses to move. Grow a rectangle and watch its area grow much faster than its sides. Turn up a growth rate and watch a curve chase a straight line down the chart. This is the one thing the big learning apps do that this one had no answer to — everything here was "read, then answer", and none of it let you poke something and see it push back.',
+      'Each one is built so watching is not enough. First you get a question you can only answer if you noticed what stayed still while everything else moved. Then you get a second question at a value the slider could not reach — sides multiplied by 10, a slope of 10 — with the picture gone. That second question is the point: it is the difference between "I saw it move" and "I know what it does".',
+      'Playing with the slider earns you nothing, and it cannot. It is a study phase, the same as reading a scene before a case file. Only the two questions afterwards count, and only a first-try answer with no hints counts as proof, exactly as everywhere else.',
+      'You can always skip straight to the question. The button just tells the truth about which one you are pressing — "Skip the exploring" or "I have seen what it does". There is no counter to fill in and nothing to complete: a progress meter was built for this and then removed, because it turned noticing into a chore to finish.',
+      'It works with a keyboard (arrow keys move the slider) and reads correctly aloud, announcing "m = 2" rather than "position 4". The numbers on the axes were too pale to read against the background and have been darkened to a properly legible level.',
+      'Twelve new automatic checks now run on every release, because a diagram is the one kind of content that can be drawn wrong while its answer is right. Two real faults were caught the first time they ran: a line steep enough to leave the chart at both the top and the bottom was drawing nothing at all, and one of the three activities promised five different versions but only had two. The strongest check is the one that has never fired — it refuses any diagram whose axes rescale as you drag it, which would make a rectangle growing to nine times its area look like it was standing still.',
+      'Measuring the finished thing in a real browser found three more, which no test would have: the fastest growth rate claimed the curve "passes the straight line at step 4" when at step 4 the two are less than one pixel apart, so the wording now asks whether it catches up rather than exactly where; the back and next buttons announced themselves to a screen reader as "Previous the slope m"; and a half-finished activity resumed from a saved session could land on a study screen with nothing on it and no way forward.',
+    ],
+  },
+  {
     version: '8.0',
     date: '2026-08-09',
     title: 'The App Now Knows What You Can Do, Not Just What You Have Proved',

@@ -84,3 +84,25 @@ export function verdictMessage({
   if (hintsUsed > 0) return 'Correct — with hints, so this counts as guided evidence (independence comes next).'
   return 'Corrected. The repair is real learning; a fresh version of this idea will come back later.'
 }
+
+/**
+ * Which phase a resumed activity should open in.
+ *
+ * A draft records the phase the learner was in, but content can change
+ * between sessions and a saved index can land on a part built differently
+ * from the one that was saved. Replaying `'study'` onto a part with nothing
+ * to study renders an empty screen whose only button is missing — the learner
+ * is stuck with a parked session they cannot finish.
+ *
+ * Lives here rather than in the player for the same reason `aggregateParts`
+ * does: it is a rule about activities, and it should be provable without a DOM.
+ */
+export function resumePhase<P extends string>(
+  saved: P | undefined,
+  hasStudy: boolean,
+  fallbacks: { study: P; answer: P },
+): P {
+  if (saved === fallbacks.study && !hasStudy) return fallbacks.answer
+  if (saved) return saved
+  return hasStudy ? fallbacks.study : fallbacks.answer
+}

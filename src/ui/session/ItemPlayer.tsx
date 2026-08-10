@@ -18,9 +18,10 @@ import { IconFlag, IconHint } from '../icons'
 import { useStore } from '../../store/store'
 import { uid } from '../../engine/rng'
 import type { ActivityResult } from './SessionScreen'
-import { aggregateParts, verdictMessage, type PartOutcome } from '../../engine/activity'
+import { aggregateParts, resumePhase, verdictMessage, type PartOutcome } from '../../engine/activity'
 import { isPflTemplate } from '../../engine/pfl'
 import { diagnose, type RepairPath } from '../../engine/diagnose'
+import { ExplorePlot } from './ExplorePlot'
 
 type Phase = 'study' | 'answer' | 'wrong' | 'retry' | 'revealed' | 'final'
 
@@ -78,9 +79,13 @@ export function ItemPlayer({
   const initialPartIndex = parts ? Math.max(0, Math.min(parts.length - 1, saved?.partIndex ?? 0)) : 0
   const [partIndex, setPartIndex] = useState(initialPartIndex)
   const spec: AnswerSpec = parts ? parts[partIndex].answer : item.answer!
-  const hasStudy = parts ? Boolean(parts[partIndex].study) : false
+  const hasStudy = parts ? Boolean(parts[partIndex].study || parts[partIndex].explore) : false
 
-  const [phase, setPhase] = useState<Phase>(() => saved?.phase ?? (hasStudy ? 'study' : 'answer'))
+  // A resumed draft can name a phase the resumed part cannot show, which would
+  // strand the learner on an empty study screen. `resumePhase` is the rule.
+  const [phase, setPhase] = useState<Phase>(() =>
+    resumePhase<Phase>(saved?.phase, hasStudy, { study: 'study', answer: 'answer' }),
+  )
   const [response, setResponse] = useState(saved?.response ?? '')
   const [hintsShown, setHintsShown] = useState(record.hintsUsed ?? 0)
   const [hintOpen, setHintOpen] = useState(false)
@@ -384,7 +389,7 @@ export function ItemPlayer({
       setPartWasWrongFirst(false)
       setFormatError(null)
       missSignal.current = null
-      setPhase(parts[partIndex + 1].study ? 'study' : 'answer')
+      setPhase(parts[partIndex + 1].study || parts[partIndex + 1].explore ? 'study' : 'answer')
     } else {
       // Evidence rules live in engine/activity.ts so they can be tested
       // without a DOM — see activity.test.ts.
@@ -479,7 +484,16 @@ export function ItemPlayer({
         </Card>
       ) : null}
 
-      {phase === 'study' && parts ? (
+      {phase === 'study' && parts && parts[partIndex].explore ? (
+        <ExplorePlot
+          // Remount per part: two explore parts in a row would otherwise
+          // inherit the previous one's slider position and "seen" count.
+          key={`explore-${partIndex}`}
+          spec={parts[partIndex].explore!}
+          study={parts[partIndex].study}
+          onDone={() => setPhase('answer')}
+        />
+      ) : phase === 'study' && parts ? (
         <StudyPhase
           study={parts[partIndex].study!}
           seconds={parts[partIndex].studySeconds ?? 30}

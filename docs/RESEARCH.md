@@ -2122,9 +2122,9 @@ needed in §33.
 ### 37c. Taken already, or deliberately not
 
 - **Brilliant: no video, manipulate before explanation.** The app is already
-  retrieval-first everywhere. What it does NOT have is a manipulable
-  visualisation, which is Brilliant's real distinctive. Open work, and honest
-  to say the polyomino and logic-grid players are the only things close.
+  retrieval-first everywhere. What it did NOT have is a manipulable
+  visualisation, which is Brilliant's real distinctive. **Now built — see
+  §37d.**
 - **Beast Academy: three tiers per chapter** (foundation → practice → starred
   10-15 minute multi-step) and productive struggle taught as a NAMED skill.
   The tiers now exist as the 1-5 star scale with an entry point on every skill
@@ -2143,6 +2143,94 @@ needed in §33.
   review, *no spaced repetition or adaptive retesting at all; once a course
   ends nothing brings it back*. Worth recording as the thing this app has that
   the prettiest product in the category does not.
+
+### 37d. The manipulable diagram — BUILT, and what it is not allowed to be
+
+Three families ship (`content/items/explore.ts`): slope/intercept invariance on
+`m-linfunc`, k versus k² on `m-scale`, and linear versus compounding on
+`m-exponential`. Each is a slider over precomputed stops, followed by two
+graded checkpoints.
+
+**Evidence status: EXPOSURE ONLY, enforced.** Manipulation is a study phase and
+carries no rung, exactly like a draft or a PFL probe. The spec has no field
+that could express a correct position, and `engine/explore.test.ts` asserts the
+absence by walking the whole object — an interactive that could be *scored*
+would be a graded item wearing a diagram's clothes.
+
+**Structure: Notice, then Predict.** The first checkpoint asks what stayed
+fixed while everything moved; the second asks the same relationship at a value
+the slider could not reach, with the picture gone. Only the second one
+separates "I watched it move" from "I know what it does", and without it the
+activity would be exposure billed as evidence.
+
+**Evidence tier: EVIDENCE for the structure, HEURISTIC for this instance —
+and the evidence says the questions are not optional.**
+
+Alfieri, Brooks, Aldrich & Tenenbaum (2011), 164 studies across two
+meta-analyses in *Journal of Educational Psychology* 103(1), 1–18:
+
+| comparison | comparisons | d |
+| --- | --- | --- |
+| unassisted discovery vs explicit instruction | 580 | **−0.38** [−.44, −.31] |
+| enhanced/assisted discovery vs other instruction | 360 | **+0.30** |
+
+https://physics.uwyo.edu/~rudim/S14_JEduPsych_DoesDiscoveryLrngEnhance.pdf
+
+Read the sign on the first row. **Letting a learner play with a slider and
+work it out for themselves is worse than simply telling them** — not neutral,
+worse, and by a decent margin. The effect only turns positive once the
+discovery is *assisted*: scaffolded, with feedback, with the learner made to
+commit to something.
+
+This is the finding that shaped the build rather than decorating it. A
+manipulable diagram on its own is the −0.38 condition. Notice-then-Predict,
+each with a graded answer, an explanation and the corrective fork, is the
++0.30 condition. Had the diagram shipped as a pretty thing you drag before
+moving on — which is the obvious way to copy Brilliant — it would have made
+this app measurably worse at its one job.
+
+**What is NOT claimed.** A frequently cited meta-analysis puts PhET simulations
+at d = 0.83, but the comparator is "traditional approaches", which bundles
+novelty, extra time on task and teacher enthusiasm into the estimate; it is not
+evidence for a five-stop slider inside a spaced-retrieval app, and it is not
+relied on here. No claim is made that these three diagrams transfer to
+untaught graph reading. The transfer questions test that directly, per §8, and
+until they report, the honest statement is that the structure is supported and
+this instance of it is unmeasured.
+
+**Deliberately refused.** A "3 of 6 seen" counter was built and removed: it read
+as a completion meter, which converts noticing into a chore and is the exact
+machinery §37a rejects. Continuing is never blocked either; the button names
+what you are doing ("Skip the exploring") instead of preventing it.
+
+**Nine release gates, and what they caught.** A diagram is the only content
+whose FRAMES can be wrong while its ANSWER is right, so the ordinary answer
+checks say nothing about it. The new gates in the content audit found three
+real defects on first run:
+
+1. A line steep enough to exit the plot at BOTH ends produced an empty
+   polyline, because the clipper tested endpoint-insideness — and a segment
+   crossing the whole visible band is outside at both ends. Replaced with a
+   proper parametric (Liang–Barsky) clip returning each visible run separately,
+   so a curve that leaves and re-enters can never be joined by a chord the
+   function does not contain.
+2. `explore-line` declared five variants and produced two, because the
+   parameters were drawn with `rint` instead of an explicit table. The same
+   correction `cycle` exists for (see its docstring).
+3. At ×1.5 the caption claimed "it passes the steady line at step 4" while the
+   two curves were under a pixel apart there. Arithmetically true, visually
+   unreadable. The invitation now asks *whether* it catches up rather than
+   *where* — which is also the question the item actually grades.
+
+The strongest gate is the one that fires on nothing today: **all stops must
+share identical axis bounds**. A grid that rescales with its drawing makes a
+tripling rectangle look motionless, and it is the easiest possible thing to
+introduce by accident.
+
+**Measured, not assumed.** Axis tick labels rendered at 2.61:1 contrast against
+the card in light mode — below the 4.5:1 AA floor for small text, on 9px digits
+the learner must read to interpret the graph. Now 5.35:1 light and 6.82:1 dark.
+Found by computing the ratio in a browser, not by looking at it.
 
 **Licensing unchanged from §25**: Brilliant, IXL, DeltaMath, Alcumus, Beast and
 Math Academy are proprietary. Nothing here is text, artwork, a scoring constant

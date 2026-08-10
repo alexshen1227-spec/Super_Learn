@@ -1136,3 +1136,172 @@ describe('multiple choice does not leak the answer through option length', () =>
     ).toBeLessThanOrEqual(MAX_GLOBAL_SHARE)
   })
 })
+
+/**
+ * MANIPULABLE DIAGRAMS.
+ *
+ * A diagram the learner drags is the only content in the app whose *frames*
+ * can be wrong while its *answer* is right, so the ordinary answer checks say
+ * nothing about it. These gates cover the ways a slider lies:
+ *
+ *  - a point outside the plot box, which the renderer would clamp and thereby
+ *    draw a straight line as a bent one;
+ *  - axes that rescale between stops, which makes a growing rectangle appear
+ *    not to grow — the most misleading thing an interactive graph can do, and
+ *    easy to introduce by accident;
+ *  - two stops that draw the same picture, so dragging does nothing;
+ *  - a caption that hands over the answer, turning manipulation back into
+ *    reading;
+ *  - and the evidence law: exploring is a study phase, so it must be attached
+ *    to a graded checkpoint and followed by one that has no diagram at all.
+ */
+describe('manipulable diagrams', () => {
+  const withExplore = BUILTIN_TEMPLATES.filter((t) =>
+    Array.from({ length: Math.max(1, t.variants) }, (_, s) => t.generate(s)).some((r) =>
+      (r.parts ?? []).some((p) => p.explore),
+    ),
+  )
+
+  it('there is at least one, and it is registered like any other template', () => {
+    expect(withExplore.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('every frame the learner can reach is drawable and inside its own axes', () => {
+    for (const t of withExplore) {
+      for (let seed = 0; seed < Math.max(1, t.variants); seed++) {
+        const item = t.generate(seed)
+        for (const [pi, p] of (item.parts ?? []).entries()) {
+          if (!p.explore) continue
+          const where = `${t.id} seed ${seed} part ${pi}`
+          const spec = p.explore
+          expect(spec.stops.length, `${where}: a slider needs at least 3 positions`).toBeGreaterThanOrEqual(3)
+          expect(Number.isInteger(spec.initial), `${where}: initial must be an index`).toBe(true)
+          expect(spec.initial, `${where}: initial out of range`).toBeGreaterThanOrEqual(0)
+          expect(spec.initial, `${where}: initial out of range`).toBeLessThan(spec.stops.length)
+          expect(spec.label.length, `${where}: the control needs a label`).toBeGreaterThan(2)
+          expect(spec.invitation.length, `${where}: say what to try`).toBeGreaterThan(10)
+
+          for (const [si, stop] of spec.stops.entries()) {
+            const at = `${where} stop ${si}`
+            const pl = stop.plot
+            expect(stop.value.length, `${at}: needs a readable value`).toBeGreaterThan(0)
+            expect(stop.caption.length, `${at}: needs a caption`).toBeGreaterThan(4)
+            for (const n of [pl.xMin, pl.xMax, pl.yMin, pl.yMax]) {
+              expect(Number.isFinite(n), `${at}: non-finite axis bound`).toBe(true)
+            }
+            expect(pl.xMax, `${at}: x axis has no width`).toBeGreaterThan(pl.xMin)
+            expect(pl.yMax, `${at}: y axis has no height`).toBeGreaterThan(pl.yMin)
+
+            const EPS = 1e-6
+            for (const s of pl.series) {
+              expect(s.points.length, `${at}: series "${s.label}" has nothing to draw`).toBeGreaterThanOrEqual(2)
+              for (const [x, y] of s.points) {
+                expect(Number.isFinite(x) && Number.isFinite(y), `${at}: non-finite point`).toBe(true)
+                expect(
+                  x >= pl.xMin - EPS && x <= pl.xMax + EPS && y >= pl.yMin - EPS && y <= pl.yMax + EPS,
+                  `${at}: point (${x}, ${y}) falls outside the box — clip it in the generator, or the renderer draws a bend that is not in the function`,
+                ).toBe(true)
+              }
+            }
+            if (pl.rect) {
+              const rc = pl.rect
+              expect(rc.w, `${at}: rect has no width`).toBeGreaterThan(0)
+              expect(rc.h, `${at}: rect has no height`).toBeGreaterThan(0)
+              expect(
+                rc.x >= pl.xMin - EPS &&
+                  rc.x + rc.w <= pl.xMax + EPS &&
+                  rc.y >= pl.yMin - EPS &&
+                  rc.y + rc.h <= pl.yMax + EPS,
+                `${at}: rect escapes the box`,
+              ).toBe(true)
+            }
+          }
+        }
+      }
+    }
+  })
+
+  it('the axes never move while the learner drags', () => {
+    for (const t of withExplore) {
+      for (let seed = 0; seed < Math.max(1, t.variants); seed++) {
+        for (const p of t.generate(seed).parts ?? []) {
+          if (!p.explore) continue
+          const boxes = new Set(
+            p.explore.stops.map((s) => `${s.plot.xMin},${s.plot.xMax},${s.plot.yMin},${s.plot.yMax}`),
+          )
+          expect(
+            boxes.size,
+            `${t.id} seed ${seed}: the axes change between stops (${[...boxes].join(' | ')}). A grid that rescales with the drawing hides the very change the learner is meant to see`,
+          ).toBe(1)
+        }
+      }
+    }
+  })
+
+  it('every stop draws something different, and says something different', () => {
+    for (const t of withExplore) {
+      for (let seed = 0; seed < Math.max(1, t.variants); seed++) {
+        for (const p of t.generate(seed).parts ?? []) {
+          if (!p.explore) continue
+          const stops = p.explore.stops
+          const drawings = stops.map((s) => JSON.stringify([s.plot.series, s.plot.rect ?? null]))
+          expect(
+            new Set(drawings).size,
+            `${t.id} seed ${seed}: two positions of the slider draw an identical picture`,
+          ).toBe(stops.length)
+          expect(new Set(stops.map((s) => s.value)).size, `${t.id} seed ${seed}: duplicate stop labels`).toBe(
+            stops.length,
+          )
+          expect(new Set(stops.map((s) => s.caption)).size, `${t.id} seed ${seed}: duplicate captions`).toBe(
+            stops.length,
+          )
+        }
+      }
+    }
+  })
+
+  it('no caption hands over the answer to its own question', () => {
+    for (const t of withExplore) {
+      for (let seed = 0; seed < Math.max(1, t.variants); seed++) {
+        for (const p of t.generate(seed).parts ?? []) {
+          if (!p.explore || p.answer.type !== 'mcq') continue
+          const correct = p.answer.options[p.answer.correct].toLowerCase()
+          // Compare on content words: an accidental shared "the" is not a leak.
+          const key = correct.split(/\W+/).filter((w) => w.length > 4)
+          for (const stop of p.explore.stops) {
+            const cap = stop.caption.toLowerCase()
+            const hits = key.filter((w) => cap.includes(w))
+            expect(
+              hits.length,
+              `${t.id} seed ${seed}: caption "${stop.caption}" repeats ${hits.join('/')} from the correct option — describe the state, not the conclusion`,
+            ).toBeLessThan(Math.max(2, Math.ceil(key.length / 2)))
+          }
+        }
+      }
+    }
+  })
+
+  it('exploring earns nothing on its own, and is always followed by a question without a diagram', () => {
+    for (const t of withExplore) {
+      for (let seed = 0; seed < Math.max(1, t.variants); seed++) {
+        const parts = t.generate(seed).parts ?? []
+        const exploreAt = parts.findIndex((p) => p.explore)
+        expect(exploreAt, `${t.id}: explore must live on a part`).toBeGreaterThanOrEqual(0)
+        // The diagram is a study phase bolted to a graded checkpoint, exactly
+        // like a scene description. It cannot be a checkpoint by itself.
+        expect(
+          parts[exploreAt].answer.type,
+          `${t.id}: the exploring part must still be graded — a draft would make the whole activity evidence-free`,
+        ).not.toBe('draft')
+        expect(
+          parts.length,
+          `${t.id}: needs a second checkpoint so the learner is tested away from the picture`,
+        ).toBeGreaterThanOrEqual(2)
+        expect(
+          parts.slice(exploreAt + 1).some((p) => !p.explore),
+          `${t.id}: every later checkpoint still has a diagram — nothing tests whether the intuition survives without it`,
+        ).toBe(true)
+      }
+    }
+  })
+})
