@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '8.2',
+    date: '2026-08-10',
+    title: 'Four More Diagrams You Can Move',
+    points: [
+      'Squash a pen while the fence stays exactly the same length, and watch the area go from 11 m² up to 36 m² and back down. "Same perimeter means same area" is one of the most stubborn wrong ideas in school geometry, and it does not survive watching this.',
+      'Push and brake a trolley, then set the force to exactly zero — and see the speed line go flat WITHOUT going to zero. It keeps rolling at 12 m/s forever. That "no push means it stops" instinct is the single most documented wrong idea in physics, and it is very hard to hold onto once you have seen the flat line sitting up there.',
+      'Drag one person\'s answer further and further out and watch the average chase after it while the middle value refuses to move. Then a question about a room with eight ordinary salaries and one of £10 million.',
+      'Turn up the number of people in a survey and watch twelve results pull in tight around the truth. At 10 tries per survey they scatter across 60 percentage points; at 500 they scatter across 8. The truth never moves — only the spread does. That is why a striking result from a tiny survey is a reason to doubt it, not to believe it.',
+      'Two of these needed a kind of picture the app could not draw before — individual dots on a line with labelled markers — so that was built too, and the automatic checks were extended to cover it.',
+      'Three faults found and fixed before release: the trolley\'s speed was going NEGATIVE at the hardest braking, which is not a thing speed can do (the numbers were rebuilt so the hardest brake brings it exactly to rest); a long-thin pen and a wide-flat pen showed identical text so the slider looked broken; and the dot charts had a vertical scale reading 0, 0.5, 1, 1.5, 2, which measures nothing and invited you to read a quantity that was not there.',
+    ],
+  },
+  {
     version: '8.1',
     date: '2026-08-09',
     title: 'Diagrams You Can Actually Move',

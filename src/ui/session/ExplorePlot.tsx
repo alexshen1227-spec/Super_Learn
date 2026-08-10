@@ -56,7 +56,7 @@ function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
       {xTicks.map((v) => (
         <line key={`gx${v}`} x1={sx(v)} y1={PAD_T} x2={sx(v)} y2={H - PAD_B} className="stroke-line" strokeWidth={1} />
       ))}
-      {yTicks.map((v) => (
+      {(spec.hideY ? [] : yTicks).map((v) => (
         <line key={`gy${v}`} x1={PAD_L} y1={sy(v)} x2={W - PAD_R} y2={sy(v)} className="stroke-line" strokeWidth={1} />
       ))}
 
@@ -69,21 +69,23 @@ function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
         className="stroke-line-strong"
         strokeWidth={1.5}
       />
-      <line
-        x1={sx(clamp(0, spec.xMin, spec.xMax))}
-        y1={PAD_T}
-        x2={sx(clamp(0, spec.xMin, spec.xMax))}
-        y2={H - PAD_B}
-        className="stroke-line-strong"
-        strokeWidth={1.5}
-      />
+      {spec.hideY ? null : (
+        <line
+          x1={sx(clamp(0, spec.xMin, spec.xMax))}
+          y1={PAD_T}
+          x2={sx(clamp(0, spec.xMin, spec.xMax))}
+          y2={H - PAD_B}
+          className="stroke-line-strong"
+          strokeWidth={1.5}
+        />
+      )}
 
       {xTicks.map((v) => (
         <text key={`tx${v}`} x={sx(v)} y={H - PAD_B + 13} textAnchor="middle" className="fill-muted text-[9px]">
           {v}
         </text>
       ))}
-      {yTicks.map((v) => (
+      {(spec.hideY ? [] : yTicks).map((v) => (
         <text key={`ty${v}`} x={PAD_L - 5} y={sy(v) + 3} textAnchor="end" className="fill-muted text-[9px]">
           {v}
         </text>
@@ -110,6 +112,17 @@ function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
         </>
       ) : null}
 
+      {(spec.dots ?? []).map((d, i) => (
+        <circle
+          key={`d${i}`}
+          cx={sx(d.x)}
+          cy={sy(d.y)}
+          r={3.5}
+          className={d.tone === 1 ? 'fill-warn' : 'fill-accent'}
+          opacity={0.75}
+        />
+      ))}
+
       {spec.series.map((s, i) => (
         <polyline
           key={`${s.label}-${i}`}
@@ -120,6 +133,30 @@ function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
           strokeLinejoin="round"
           strokeLinecap="round"
         />
+      ))}
+
+      {/* Markers last, so a mean line is never buried under the data. */}
+      {(spec.marks ?? []).map((mk, i) => (
+        <g key={`mk${i}`}>
+          <line
+            x1={sx(mk.x)}
+            y1={PAD_T}
+            x2={sx(mk.x)}
+            y2={H - PAD_B}
+            className={mk.tone === 1 ? 'stroke-warn' : 'stroke-accent'}
+            strokeWidth={2}
+            strokeDasharray="4 3"
+          />
+          {/* Label x is clamped so a marker near an edge stays readable. */}
+          <text
+            x={clamp(sx(mk.x), PAD_L + 24, W - PAD_R - 24)}
+            y={PAD_T + 9 + i * 11}
+            textAnchor="middle"
+            className={`${mk.tone === 1 ? 'fill-warn' : 'fill-accent'} text-[9px] font-semibold`}
+          >
+            {mk.label}
+          </text>
+        </g>
       ))}
 
       {spec.xLabel ? (

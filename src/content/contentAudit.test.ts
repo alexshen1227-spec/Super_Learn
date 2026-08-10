@@ -1215,6 +1215,21 @@ describe('manipulable diagrams', () => {
                 `${at}: rect escapes the box`,
               ).toBe(true)
             }
+            for (const d of pl.dots ?? []) {
+              expect(Number.isFinite(d.x) && Number.isFinite(d.y), `${at}: non-finite dot`).toBe(true)
+              expect(
+                d.x >= pl.xMin - EPS && d.x <= pl.xMax + EPS && d.y >= pl.yMin - EPS && d.y <= pl.yMax + EPS,
+                `${at}: dot (${d.x}, ${d.y}) falls outside the box and would be drawn over the axes`,
+              ).toBe(true)
+            }
+            for (const mk of pl.marks ?? []) {
+              expect(Number.isFinite(mk.x), `${at}: non-finite marker`).toBe(true)
+              expect(mk.label.length, `${at}: an unlabelled marker is a mystery line`).toBeGreaterThan(0)
+              expect(
+                mk.x >= pl.xMin - EPS && mk.x <= pl.xMax + EPS,
+                `${at}: marker "${mk.label}" at ${mk.x} sits outside the box`,
+              ).toBe(true)
+            }
           }
         }
       }
@@ -1244,7 +1259,9 @@ describe('manipulable diagrams', () => {
         for (const p of t.generate(seed).parts ?? []) {
           if (!p.explore) continue
           const stops = p.explore.stops
-          const drawings = stops.map((s) => JSON.stringify([s.plot.series, s.plot.rect ?? null]))
+          const drawings = stops.map((s) =>
+            JSON.stringify([s.plot.series, s.plot.rect ?? null, s.plot.dots ?? null, s.plot.marks ?? null]),
+          )
           expect(
             new Set(drawings).size,
             `${t.id} seed ${seed}: two positions of the slider draw an identical picture`,

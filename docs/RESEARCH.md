@@ -2232,6 +2232,52 @@ the card in light mode — below the 4.5:1 AA floor for small text, on 9px digit
 the learner must read to interpret the graph. Now 5.35:1 light and 6.82:1 dark.
 Found by computing the ratio in a browser, not by looking at it.
 
+### 37e. Four more, and what the second pass caught (2026-08-10)
+
+Extended to seven families, choosing targets by *misconception* rather than by
+topic — a draggable diagram earns its minutes only where a learner holds a
+belief that reading does not shift:
+
+| skill | control | belief it attacks |
+| --- | --- | --- |
+| `m-area` | pen shape, perimeter fixed | "same perimeter ⇒ same area" |
+| `p-forces` | net force, including zero | "no force ⇒ it stops" |
+| `m-stats` | one outlier's value | "mean and median are interchangeable" |
+| `m-sampling` | tries per survey | "a small sample is a smaller big sample" |
+
+The physics one exists for a single stop. At zero net force the line is flat
+and sitting at 12 m/s, not at zero — putting a genuinely flat, genuinely
+non-zero velocity on screen is the most direct attack available on the
+best-documented misconception in mechanics.
+
+**A new primitive, and the defect it brought.** Dot plots needed `dots` and
+labelled `marks` on `PlotSpec`. The first render put a vertical axis beside
+them reading 0, 0.5, 1, 1.5, 2 — the dots are staggered vertically only so
+equal values stay countable, so that axis measured nothing while inviting a
+learner to read a quantity off it. Now suppressed by `hideY`. Worth recording
+as a general shape: a new mark type inherits the old chart's furniture, and the
+furniture can lie even when the data does not.
+
+**Caught in the second pass:**
+
+1. **Negative speed.** The trolley's axis was labelled "speed" and the hardest
+   brake drove the line to −10. Speed has no sign; the graph was teaching a
+   vocabulary error in passing while teaching a physics idea on purpose. The
+   numbers are now chosen so the hardest brake reaches exactly zero at the end
+   of the window — which also gives a better picture, since coming to rest
+   contrasts with the flat line instead of muddying it with reversal.
+2. **A fixed perimeter makes w × h and h × w equal**, so a 1×11 pen and an
+   11×1 pen produced identical captions and the slider looked broken. The
+   caption now names the shape, which surfaces the symmetry as a bonus.
+3. Means printed to three decimals (`31.429` minutes of homework).
+
+**Sample data is illustrative, and says so.** The twelve surveys per sample
+size are written down rather than drawn at render time, because a picture that
+differs per device is one the audit cannot check. They are not decorative: the
+ranges are 60, 34, 16 and 8 percentage points at n = 10, 30, 100, 500 — a 7.5×
+narrowing where 1/√n predicts √50 ≈ 7.1. A learner who measured them would
+find the relationship the item claims.
+
 **Licensing unchanged from §25**: Brilliant, IXL, DeltaMath, Alcumus, Beast and
 Math Academy are proprietary. Nothing here is text, artwork, a scoring constant
 or a taxonomy lifted from them — only mechanisms described in their own public

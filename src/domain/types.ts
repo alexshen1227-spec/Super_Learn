@@ -262,6 +262,24 @@ export interface PlotSpec {
   series: PlotSeries[]
   /** Optional filled rectangle in data coords — for area and scaling work. */
   rect?: { x: number; y: number; w: number; h: number; label: string }
+  /**
+   * Loose dots rather than a joined line — a dot plot of individual values.
+   * A polyline through sample data would imply an order the data does not
+   * have, which is why these are a separate field and not a series.
+   */
+  dots?: { x: number; y: number; tone?: 0 | 1 }[]
+  /**
+   * Labelled vertical markers, e.g. where a mean and a median sit. Drawn over
+   * everything else so a marker can never be hidden behind a dot.
+   */
+  marks?: { x: number; label: string; tone?: 0 | 1 }[]
+  /**
+   * Drop the vertical scale entirely. A dot plot spreads its dots up and down
+   * only so they stay countable; that height means nothing, and an axis
+   * reading 0, 0.5, 1, 1.5, 2 beside it invites the learner to read a quantity
+   * that is not there.
+   */
+  hideY?: boolean
 }
 
 /** One position of the control, and the picture at that position. */
