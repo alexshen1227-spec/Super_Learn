@@ -11,6 +11,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '7.5',
+    date: '2026-08-09',
+    title: 'The Frontier Stopped Moving For Learners Doing Well',
+    points: [
+      'The worst bug this app has had, and it punished you for doing well. Simulated over a year at high accuracy, a learner reached only 58 of 122 skills — and spent 215 of 365 daily focus blocks on "Integers, factors & the number line", the very first skill in the tree, long after they had mastered it. Two causes. A skill kept claiming credit for "unlocking" the skills after it even once you already owned it and nothing was waiting on it any more, so the root of the tree out-scored everything forever. And three skills had fewer question types than the app\'s own rule requires to call something Independent, so they could never graduate off the frontier and kept their priority permanently. After the fix: 120 of 122 skills reached, 119 owned instead of 34, and no single skill takes more than a sixth of your focus blocks.',
+      'The reason you were told for a choice is now true as well. "4 skills are waiting on it" used to be printed for a skill that exactly 1 was waiting on.',
+      'The coach can finally name what keeps going wrong. It sorts your mistakes by CAUSE — a slip is a different problem from a gap and needs a different fix — but it could only work that out from 4% of your mistakes, so it said "not enough yet" forever unless you tagged every error by hand. It now reads the cause from what you actually did: which step of a chain broke, which specific wrong answer you picked, or how the repair went (fixing it yourself reads as a slip; needing the explanation reads as a gap). That is 51% of mistakes, and it deliberately stays silent on multiple choice, where a lucky second guess would look like knowing.',
+      'Case files, work studios and the method drill used to throw away every cause they diagnosed. They now carry the first checkpoint that broke.',
+      'Data interpretation promised "tables, bar charts, line graphs, and scatter plots" and shipped one table question. It now has bar charts, line graphs, and choosing the right display for a question. Chart defence gained two questions that make you recompute the honest number a truncated axis or a cherry-picked window is hiding, instead of picking the sceptical-sounding option. Forecasting gained Brier scoring — the app has always computed it for your forecasts and never taught what it means.',
+      'Physics was the thinnest subject in the app and almost every question was "put the numbers in the formula". Six new kinds, built on a published physics-teaching taxonomy of tasks that cannot be answered by substitution: rank four carts by momentum, spot what is wrong with a calculation (and sometimes nothing is), match a position table to the motion it describes, work backwards from the answer, judge which of two students arguing is right, and find the one broken link in an estimate.',
+      'Two new release gates so none of this can quietly come back: every skill must be able to reach Independent through ordinary daily practice, and a simulated year must still cover most of the curriculum without parking on one topic.',
+      'The research ledger gained a large landscape review and, more importantly, five corrections to claims already in it — including that spacing has NOT been shown to help for mathematical procedures specifically, that Bloom\'s famous "two sigma" does not survive scrutiny, and that immediate feedback has no measured advantage over feedback a few days later.',
+    ],
+  },
+  {
     version: '7.4',
     date: '2026-08-09',
     title: 'Reviewing The Merge: Two Real Bugs In The Engine',

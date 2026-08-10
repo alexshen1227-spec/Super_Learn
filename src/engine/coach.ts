@@ -74,7 +74,7 @@ export function findBottleneck(
     const ev = evidenceFor(evidence, s.id)
     if (stateRank(ev.state) >= stateRank('independent') && !ev.needsReview) continue
     if (!prereqsMet(s, evidence, state)) continue
-    const dependents = prereqLeverage(s.id, index, evidence)
+    const dependents = prereqLeverage(s.id, index, evidence, state)
     if (dependents === 0) continue
     if (!best || dependents > best.dependents) {
       best = {
@@ -172,7 +172,8 @@ export function coachBeliefs(
         ...(where.length ? [`Showed up most in ${where.join(' and ')}.`] : []),
         ...(mal.untagged ? [`${mal.untagged} other misses had no cause recorded and are not counted here.`] : []),
       ],
-      unknown: 'Whether the cause is really the one tagged — the tag comes from the step that broke, and some errors have more than one story.',
+      unknown:
+        'Whether the cause is really the one tagged. Causes come from the work — the step that broke, the specific wrong answer you picked, or how the repair went (fixing it unaided reads as a slip, needing the explanation reads as a gap) — never from a self-rating. That last route is a rule of thumb, and some errors have more than one story.',
       resolve: rule.repair,
     })
   }

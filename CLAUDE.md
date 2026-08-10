@@ -5,6 +5,30 @@ No backend, no router lib, no state lib: one reducer, IndexedDB primary with
 backup + localStorage mirror, nav via pushState. Nothing a user does ever
 leaves their device.
 
+## Talking to the person who owns this app
+
+**Write your summaries in plain English, not developer English.** The owner of
+this app is a student, not a programmer. They can read code if they have to,
+but they should never have to in order to understand what you did or whether it
+was worth doing.
+
+- Say what CHANGED FOR THE LEARNER first, and why it matters. The file you
+  edited is a detail; the fact that a whole subject was getting 1% of their
+  practice time is the point.
+- Explain any technical thing you have to mention. Not "the planner's
+  tie-break was unstable" but "when two topics scored equally, the app always
+  picked the same one, so it kept teaching the same thing forever."
+- Skip the jargon by default: no "refactor", "closure", "regression",
+  "invariant", "DAG", "heuristic tier" without a plain-language gloss beside
+  it. Function and file names are fine as a pointer, never as the explanation.
+- Numbers are welcome — they are usually the clearest part. "It went from
+  reaching 58 of 122 topics to 120 of 122" needs no translation.
+- Be honest in plain language too. If something is unproven, say "no study
+  backs this, it's my best guess", not "HEURISTIC tier".
+- This is about the SUMMARY you write back, not the code. Comments, commit
+  messages, and `docs/RESEARCH.md` stay as precise and technical as they need
+  to be — the next agent reads those.
+
 ## Commands
 
 - `npm run dev` — dev server (port 5199, strictPort)

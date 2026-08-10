@@ -171,6 +171,113 @@ const graphClaim = tpl(
   },
 )
 
+/*
+ * `s-graphs` shipped one family. Independent requires two DISTINCT families, so
+ * the skill could not clear its own bar through ordinary practice however well
+ * the learner did — and the one family it had was a four-option judgement call,
+ * the easiest kind of item to pass by elimination.
+ *
+ * These two make the defence arithmetical. `s-graph-honest` asks the learner to
+ * RECOMPUTE the real change a truncated axis is hiding, which cannot be
+ * eliminated toward; `s-graph-window` gives the full series and asks what the
+ * cherry-picked window left out. Both answers are computed from the generated
+ * values.
+ */
+const graphHonest = tpl(
+  {
+    id: 's-graph-honest',
+    name: 'Recompute what the axis hides',
+    skillIds: ['s-graphs'],
+    bucket: 'science',
+    difficulty: 3,
+    variants: 10,
+    minutes: 3,
+    calibration: true,
+  },
+  (rng) => {
+    const before = rint(rng, 40, 90) * 10
+    const rise = rint(rng, 2, 9) * 10
+    const after = before + rise
+    // A truncated axis starting just under the smaller bar: the visual ratio is
+    // (after − base) : (before − base), which is wildly larger than the truth.
+    const base = before - rint(rng, 1, 3) * 10
+    const visualRatio = (after - base) / (before - base)
+    const realPct = round((rise / before) * 100, 1)
+    return {
+      title: 'Truncated axis',
+      prompt:
+        `A chart compares two months of orders. The vertical axis starts at **${base}**, not at zero.\n\n` +
+        `| Month | Orders |\n| --- | --- |\n| March | ${before} |\n| April | ${after} |\n\n` +
+        `On the page, April's bar looks about **${round(visualRatio, 1)}×** as tall as March's, and the caption says orders "multiplied".\n\n` +
+        `What is the **real** percent increase from March to April? (Give the number only, to one decimal place.)`,
+      answer: numeric(realPct, { tolerance: 0.05 }),
+      hints: [
+        'Ignore the picture completely and work from the two numbers in the table.',
+        `Percent increase = (increase ÷ ORIGINAL) × 100, and the original is March = ${before}.`,
+        `Worked path: (${after} − ${before}) ÷ ${before} × 100 = ${rise} ÷ ${before} × 100 = **${realPct}**.`,
+      ],
+      explanation:
+        `Real increase: (${after} − ${before}) ÷ ${before} × 100 = **${realPct}%**.\n\n` +
+        `The bar looked ${round(visualRatio, 1)}× taller because the axis starts at ${base}, so each bar only draws the part ABOVE ${base} — March shows ${before - base} units of height instead of ${before}. ` +
+        `The trick is not that the chart lied about the numbers; it is that the eye reads bar LENGTH as quantity, and a truncated axis breaks that correspondence. ` +
+        `First thing to check on any bar chart: does the axis start at zero?`,
+    }
+  },
+)
+
+const graphWindow = tpl(
+  {
+    id: 's-graph-window',
+    name: 'What the window left out',
+    skillIds: ['s-graphs'],
+    bucket: 'science',
+    difficulty: 3,
+    variants: 8,
+    minutes: 3,
+    transfer: true,
+  },
+  (rng, seed) => {
+    // A series that wobbles with no real trend, plus one genuinely rising pair
+    // the press release will quote.
+    const base = rint(rng, 50, 70)
+    const wobble = [0, rint(rng, 3, 7), -rint(rng, 4, 9), rint(rng, 2, 6), -rint(rng, 3, 8), rint(rng, 6, 12)]
+    const series = wobble.map((w) => base + w)
+    const years = [2019, 2020, 2021, 2022, 2023, 2024]
+    const lastPair = series[5] - series[4]
+    const fullChange = series[5] - series[0]
+    const table = `| Year | ${years.join(' | ')} |\n| --- | ${years.map(() => '---').join(' | ')} |\n| Index | ${series.join(' | ')} |`
+    const q = cycle(seed, ['fullchange', 'verdict'] as const)
+    const correct = 'Over the whole series the index barely moved; only the last step is large'
+    return {
+      title: 'Cherry-picked window',
+      prompt:
+        `A press release shows ONLY ${years[4]}→${years[5]} and says: "The index is climbing fast — up ${lastPair} points in a single year."\n\nHere is the full series:\n\n${table}\n\n` +
+        (q === 'fullchange'
+          ? `What is the change across the **whole** series, ${years[0]} to ${years[5]}? (Negative if it fell.)`
+          : 'What does the full series actually show?'),
+      answer:
+        q === 'fullchange'
+          ? numeric(fullChange)
+          : mcq(rng, correct, [
+              `The release is right: a ${lastPair}-point rise proves a strong upward trend`,
+              'The index fell every year, so the release inverted the data',
+              'A six-point series is too short to say anything at all',
+            ]),
+      hints: [
+        'The quoted number is true. The question is what it leaves out.',
+        `Line up all six values and look at the whole shape: ${series.join(', ')}.`,
+        q === 'fullchange'
+          ? `Worked path: ${series[5]} − ${series[0]} = **${fullChange}**.`
+          : `Worked path: **${correct}**.`,
+      ],
+      explanation:
+        q === 'fullchange'
+          ? `Whole-series change = ${series[5]} − ${series[0]} = **${fullChange}**, against the ${lastPair}-point jump the release quoted. Both numbers are accurate; only one of them answers "is it climbing?". Cherry-picking a window does not require lying — it only requires choosing where to start.`
+          : `**${correct}**. The values run ${series.join(', ')}: up, down, up, down, then up. The release's ${lastPair}-point rise is real, and it is one step in a series that has spent six years going nowhere in particular. The defence is always the same: ask what happens to the claim if you move the start date.`,
+    }
+  },
+)
+
 const fermi = tpl(
   { id: 's-fermi', name: 'Fermi estimate', skillIds: ['s-fermi'], bucket: 'science', difficulty: 3, variants: 8, minutes: 3.5, transfer: true, calibration: true },
   (_rng, seed) => {
@@ -456,6 +563,8 @@ export const SCIENCE_TEMPLATES: ItemTemplate[] = [
   measureReliability,
   corrCause,
   graphClaim,
+  graphHonest,
+  graphWindow,
   fermi,
   fermiAudit,
   statsTrap,

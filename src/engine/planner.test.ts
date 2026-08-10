@@ -40,7 +40,22 @@ describe('core block interleaves only after acquisition', () => {
 
   it('an acquired skill due for review is interleaved with its neighbours', () => {
     const events: AttemptEvent[] = []
-    for (const s of ['m-integers', 'm-fractions', 'm-decimals', 'm-ratio', 'm-percent']) {
+    /*
+     * The subject here is INTERLEAVING, so the setup has to guarantee that an
+     * acquired skill actually wins the core block — otherwise the test silently
+     * measures skill selection instead.
+     *
+     * The extra skills below are the CROSS-BUCKET GATEWAYS — the math skills
+     * that physics, coding and scientific reasoning are waiting behind. While
+     * one of those is unowned it correctly outranks a skill the learner already
+     * holds (a door nobody can get through beats a door already open; see
+     * `prereqLeverage` and GATEWAY_BONUS), so the test opens them first and
+     * leaves the acquired skill on top.
+     */
+    for (const s of [
+      'm-integers', 'm-fractions', 'm-decimals', 'm-ratio', 'm-percent',
+      'm-exponents', 'm-proportion', 'm-stats', 'm-units', 'm-data', 'm-expressions',
+    ]) {
       events.push(ev(s, `${s}-a`), ev(s, `${s}-b`))
     }
     // Two recent misses make m-integers the top-scoring skill while leaving it

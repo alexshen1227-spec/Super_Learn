@@ -345,6 +345,17 @@ export interface RenderedItem {
    */
   distractorNotes?: Record<number, string>
   /**
+   * The error CAUSE each named distractor represents (option index → tag).
+   *
+   * `distractorNotes` explains a wrong pick to the learner; this makes the same
+   * information machine-readable, so the coach's cause profile can be built
+   * from which wrong idea attracted them rather than from asking them to
+   * classify their own mistake. See `engine/diagnose.ts` for why that
+   * distinction is load-bearing. Indexes are post-shuffle and are produced by
+   * `mcqNoted`, never hand-written.
+   */
+  distractorTags?: Record<number, ErrorTag>
+  /**
    * Per-VARIANT context skills (e.g. the explain-back target). Carried on the
    * event as `aboutSkillIds` — visible context, NEVER mastery evidence, so a
    * self-scored explanation can't fake independence on an academic skill.

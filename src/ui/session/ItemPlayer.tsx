@@ -20,6 +20,7 @@ import { uid } from '../../engine/rng'
 import type { ActivityResult } from './SessionScreen'
 import { aggregateParts, verdictMessage, type PartOutcome } from '../../engine/activity'
 import { isPflTemplate } from '../../engine/pfl'
+import { diagnose, type RepairPath } from '../../engine/diagnose'
 
 type Phase = 'study' | 'answer' | 'wrong' | 'retry' | 'revealed' | 'final'
 
@@ -156,7 +157,15 @@ export function ItemPlayer({
     setHintOpen(true)
   }
 
-  const finishSingle = (opts: { firstOk: boolean; eventualOk: boolean | null; score: number | null; finalResp: string }) => {
+  const finishSingle = (opts: {
+    firstOk: boolean
+    eventualOk: boolean | null
+    score: number | null
+    finalResp: string
+    /** Diagnosis resolved at THIS moment; state updates are async, so the tag
+     *  cannot be read back out of `errorTag` in the same tick. */
+    tag?: ErrorTag | null
+  }) => {
     if (finished.current) return
     finished.current = true
     onFinish(
@@ -168,7 +177,7 @@ export function ItemPlayer({
         score: opts.score,
         hintLevel: hintsShown,
         confidence,
-        errorTag,
+        errorTag: opts.tag !== undefined ? opts.tag : errorTag,
         validator: validatorName(spec),
       },
       activeSec.current || (Date.now() - startAt.current) / 1000,
@@ -186,6 +195,47 @@ export function ItemPlayer({
     return i === null ? null : activeSpec.steps[i].diagnoses
   }
 
+  /** The cause authored on the option the learner actually picked, if any. */
+  const distractorTagFor = (submitted: string): ErrorTag | null => {
+    if (activeSpec.type !== 'mcq') return null
+    const tags = (twinItem ?? item).distractorTags
+    if (!tags) return null
+    const i = Number(submitted)
+    return Number.isInteger(i) ? (tags[i] ?? null) : null
+  }
+
+  /**
+   * What the first submission on THIS checkpoint told us, captured at the miss.
+   * `diagnose` combines it with how the repair then went — see engine/diagnose.
+   */
+  const missSignal = useRef<{ stepTag: ErrorTag | null; distractorTag: ErrorTag | null; validator: string } | null>(null)
+
+  /** Every cause observed across a multi-part activity, earliest first. */
+  const activityTags = useRef<ErrorTag[]>([])
+
+  /**
+   * Resolve the cause once the repair has played out.
+   *
+   * `hintsShown === 0` is the test for "unaided" rather than a separate flag:
+   * every route that shows help — the hint sheet and "Walk me through it" alike
+   * — raises it, so a zero here means the learner re-derived the answer with
+   * nothing revealed.
+   */
+  const resolveCause = (repair: RepairPath): ErrorTag | null => {
+    const signal = missSignal.current
+    if (!signal) return null
+    const { tag } = diagnose({ ...signal, repair })
+    if (tag) {
+      setErrorTag(tag)
+      activityTags.current.push(tag)
+      onSnapshot({ errorTag: tag })
+    }
+    return tag
+  }
+
+  const repairPath = (succeeded: boolean): RepairPath =>
+    !succeeded ? 'still-wrong' : hintsShown === 0 ? 'unaided-retry' : 'after-hints'
+
   // ----- submit handlers -----
   const submitFirst = () => {
     const verdict = validate(activeSpec, response)
@@ -202,6 +252,11 @@ export function ItemPlayer({
       finishSingle({ firstOk: true, eventualOk: true, score: verdict.score, finalResp: response })
     } else {
       const derived = diagnoseFrom(response)
+      missSignal.current = {
+        stepTag: derived,
+        distractorTag: distractorTagFor(response),
+        validator: validatorName(activeSpec),
+      }
       if (derived) {
         setErrorTag(derived)
         onSnapshot({ errorTag: derived })
@@ -219,7 +274,8 @@ export function ItemPlayer({
     setFormatError(null)
     setRetryVerdictOk(verdict.ok)
     setPhase('final')
-    finishSingle({ firstOk: false, eventualOk: verdict.ok, score: verdict.score, finalResp: response })
+    const tag = resolveCause(repairPath(verdict.ok))
+    finishSingle({ firstOk: false, eventualOk: verdict.ok, score: verdict.score, finalResp: response, tag })
   }
 
   /**
@@ -285,6 +341,11 @@ export function ItemPlayer({
     // than revealing the answer and moving on. The corrected attempt is the
     // part of the loop that the evidence actually supports (RESEARCH.md §5).
     const derived = diagnoseFrom(response)
+    missSignal.current = {
+      stepTag: derived,
+      distractorTag: distractorTagFor(response),
+      validator: validatorName(spec),
+    }
     if (derived) {
       setErrorTag(derived)
       onSnapshot({ errorTag: derived })
@@ -301,12 +362,16 @@ export function ItemPlayer({
       return
     }
     setFormatError(null)
+    resolveCause(repairPath(verdict.ok))
     resolvePart(false, verdict.ok ? verdict.score : 0, verdict.ok)
   }
 
   /** After a full reveal there is nothing left to prove on this checkpoint —
    *  the miss is already logged and the scheduler will resurface the skill. */
-  const resolvePartAfterReveal = () => resolvePart(false, 0, false)
+  const resolvePartAfterReveal = () => {
+    resolveCause('full-reveal')
+    resolvePart(false, 0, false)
+  }
 
   const nextPart = () => {
     if (!parts) return
@@ -318,6 +383,7 @@ export function ItemPlayer({
       setPartFirstResponse(null)
       setPartWasWrongFirst(false)
       setFormatError(null)
+      missSignal.current = null
       setPhase(parts[partIndex + 1].study ? 'study' : 'answer')
     } else {
       // Evidence rules live in engine/activity.ts so they can be tested
@@ -334,7 +400,13 @@ export function ItemPlayer({
             score: agg.score,
             hintLevel: hintsShown,
             confidence,
-            errorTag: null,
+            // The FIRST checkpoint that broke, not the last: everything after a
+            // failed link in a case file tends to be downstream of it, and the
+            // whole app already speaks in terms of the first meaningful error.
+            // This used to be hard-coded null, so multi-part activities — case
+            // files, studios, the method drill — contributed no cause at all
+            // however clearly they had diagnosed one.
+            errorTag: activityTags.current[0] ?? null,
             validator: 'multi',
           },
           activeSec.current,
@@ -588,7 +660,8 @@ export function ItemPlayer({
                   onClick={() => {
                     setRetryVerdictOk(false)
                     setPhase('final')
-                    finishSingle({ firstOk: false, eventualOk: false, score: 0, finalResp: firstResponse ?? '' })
+                    const tag = resolveCause('full-reveal')
+                    finishSingle({ firstOk: false, eventualOk: false, score: 0, finalResp: firstResponse ?? '', tag })
                   }}
                 >
                   Got it

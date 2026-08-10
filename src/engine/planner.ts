@@ -53,6 +53,17 @@ export interface PlannerContext {
 
 // ---------------------------------------------------------------- helpers
 
+/** Is ONE prerequisite satisfied — by earned evidence or a routing signal? */
+function prereqSatisfied(
+  prereqId: string,
+  evidence: Map<string, SkillEvidence>,
+  state: AppState,
+): boolean {
+  if (stateRank(evidenceFor(evidence, prereqId).state) >= stateRank('independent')) return true
+  const sig = state.placement?.signals.find((s) => s.skillId === prereqId)
+  return sig?.signal === 'ok' || sig?.signal === 'strong'
+}
+
 /** A skill is frontier-eligible when every prereq is independent-or-better,
  *  or the placement judged the prereq 'ok'/'strong' (routing signal only). */
 export function prereqsMet(
@@ -60,20 +71,42 @@ export function prereqsMet(
   evidence: Map<string, SkillEvidence>,
   state: AppState,
 ): boolean {
-  return skill.prereqs.every((p) => {
-    const ev = evidenceFor(evidence, p)
-    if (stateRank(ev.state) >= stateRank('independent')) return true
-    const sig = state.placement?.signals.find((s) => s.skillId === p)
-    return sig?.signal === 'ok' || sig?.signal === 'strong'
-  })
+  return skill.prereqs.every((p) => prereqSatisfied(p, evidence, state))
 }
 
-/** Direct dependents not yet independent — "how much is waiting on this". */
+/**
+ * How much is ACTUALLY waiting on this skill — dependents that are both unowned
+ * and still blocked *by this skill*.
+ *
+ * The old version counted every unowned dependent, whether or not this skill
+ * was what stood in its way. That sounds like a rounding error and is not: once
+ * a skill is owned, its dependents are unlocked, so nothing is waiting on it —
+ * yet it kept claiming the full leverage bonus (capped at 2.5, the largest term
+ * in the scorer after a due review) forever. The root of the tree has the most
+ * dependents, so the root won every tie for the rest of the learner's life.
+ *
+ * Measured over 365 simulated days at ~100% first-try accuracy: the core block
+ * landed on `m-integers` — the first skill in the tree, long since Retained —
+ * **215 times out of 365**, the learner touched 59 of 122 skills all year, and
+ * 18 skills sat eligible-but-never-served. The scorer was not choosing badly
+ * among the candidates; it was scoring an already-open door as if it were shut.
+ *
+ * The same reasoning was already written down one screen below for the
+ * `alreadyCapable` case ("the dependents are ALREADY unlocked, so counting the
+ * leverage again just pins the plan to the easiest foundational skill in the
+ * tree"). It was simply never applied to a skill the learner had EARNED.
+ *
+ * This also makes the learner-facing `why` true. "4 skills are waiting on it"
+ * was printed for a skill exactly 1 was waiting on.
+ */
 export function prereqLeverage(
   skillId: string,
   index: ContentIndex,
   evidence: Map<string, SkillEvidence>,
+  state: AppState,
 ): number {
+  // Nothing is waiting on a prerequisite that is already satisfied.
+  if (prereqSatisfied(skillId, evidence, state)) return 0
   let n = 0
   for (const s of index.skillList) {
     if (!s.prereqs.includes(skillId)) continue
@@ -443,7 +476,7 @@ export function scoreSkills(
     const sig = state.placement?.signals.find((s) => s.skillId === skill.id)
     // Placement saw this go well and practice has not contradicted it yet.
     const alreadyCapable = sig?.signal === 'strong' && stateRank(ev.state) < stateRank('independent')
-    const lev = prereqLeverage(skill.id, index, evidence)
+    const lev = prereqLeverage(skill.id, index, evidence, state)
     // Leverage says "things are waiting on this". That argument dies when the
     // learner is already capable here, because `prereqsMet` treats a strong
     // placement as satisfying the prerequisite — the dependents are ALREADY

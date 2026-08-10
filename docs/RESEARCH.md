@@ -49,6 +49,13 @@ others are cited from their stable published records.
 - **Product behavior**: review scheduler with an explainable interval ladder
   (~1 → 3 → 7 → 14 → 30 → 60 days), shortened by errors and high-confidence
   mistakes, lengthened by easy independent recall.
+- **Tier correction (2026-08-09)**: for MATHEMATICAL PROCEDURES specifically,
+  spacing drops from EVIDENCE to HEURISTIC here. A well-powered experiment
+  found no retention benefit from distributing practice on a math procedure at
+  either a 1-week or 5-week test, and the authors decline to recommend it for
+  mathematics on current evidence. The ladder stays — retrieval (§1) is not in
+  question and nothing suggests spacing hurts — but the tier is now honest.
+  See §29e.1.
 - **HEURISTIC label**: the specific ladder values and multipliers are product
   heuristics; Cepeda et al. support *expanding gaps tuned to the retention
   goal*, not these exact numbers. The Settings/About screen says so.
@@ -81,6 +88,9 @@ others are cited from their stable published records.
   the evidence actually supports.
 - **Limitations**: blocked practice is still used at first exposure — the
   literature supports interleaving *after* initial acquisition.
+- **Effect-size correction (2026-08-09)**: heterogeneity is very high
+  (I² = 77.3%) and trim-and-fill indicates publication bias, adjusting the
+  pooled effect down to g = 0.29 [0.20, 0.38]. See §29e.2.
 
 ## 4. Worked examples and faded guidance — EVIDENCE
 
@@ -127,6 +137,9 @@ others are cited from their stable published records.
   it (Chi et al. 1994 on self-explanation quality varying widely by learner).
   The step→tag mapping is authored and therefore a HEURISTIC; what is not
   heuristic is that the tag now comes from observed work rather than opinion.
+- **Coverage correction (2026-08-09)**: the paragraph above described the
+  design; the implementation reached 4.1% of misses. Measured, fixed and
+  re-measured at 51.3% — see §29e.4 and §30.
 - **Evidence rule**: a repaired checkpoint yields GUIDED evidence only.
   `firstCorrect` is fixed at the first submission and a hint anywhere in the
   activity disqualifies independent evidence (`engine/activity.ts`, tested in
@@ -245,6 +258,9 @@ than "reading" people.
   **product heuristics**, labeled as such in the UI. They implement the
   direction of §§1–2 and the mastery-learning tradition (Bloom 1968; modern
   implementations in Khan Academy mastery systems) without claiming precision.
+  **Citation correction (2026-08-09)**: Bloom's 2-sigma does not survive —
+  pooled tutoring is about d = 0.79, his comparison used an unequal mastery
+  criterion, and mastery gains fade and may be test-specific. See §29e.3.
 - **Transfer is now measured (2026-08-06)**: "Transferred" previously fired on
   any success in transfer mode, which meant an authoring flag decided the top
   rung. It now additionally requires the item to come from a template family
@@ -1103,3 +1119,429 @@ WHAT ran.
 
    `starvation.test.ts` now runs the simulation for EVERY track, not just the
    no-track case the original covered — which is why the regression was caught.
+
+## 29. The 2026-08-09 landscape review — what the literature changed here
+
+A multi-source review of the "makes you smarter" market, the spaced-repetition
+and mastery systems this app is structurally related to, the calibration and
+debiasing literature, physics education research, and the motivation
+literature. Ninety-two source-reading agents; every claim below was fetched
+from a primary or authoritative secondary source and adversarially checked.
+Several findings CORRECT entries already in this ledger, which is recorded
+here rather than quietly patched — see §29e.
+
+### 29a. Far transfer is zero, and that is now a much harder number — EVIDENCE
+
+- **Second-order meta-analysis.** Across ten first-order meta-analyses,
+  restricted to ACTIVE control groups and corrected for publication bias, the
+  far-transfer effect of cognitive training is **g = 0.00** (range −0.03 to
+  0.02, true between-meta-analyses variance = 0). Uncorrected and including
+  passive controls it looks like g = 0.12. No modality beats any other:
+  working-memory training g = 0.00–0.02, action video games −0.01, and music,
+  chess and exergames all sit inside the same band. N-back's nominal effect
+  against treated controls disappeared once a single problematic study was
+  excluded. P-curve found the treated-control literature to have no
+  evidential value.
+- **Owen et al. (2010), Nature.** 11,430 completing participants, six weeks
+  online: every trained task improved (d ≈ 0.73–1.63) while the four untrained
+  benchmarks moved essentially not at all (as low as 0.01, 99% CI crossing
+  zero). **No dose-response** — sessions completed correlated with benchmark
+  change at Spearman rho <= 0.059. The active control group, who only looked
+  up trivia answers online, improved on all four benchmarks by similar
+  amounts. Even *near* transfer failed: the group trained on three
+  abstract-reasoning tasks gained numerically LESS on the abstract-reasoning
+  benchmark than the group that trained no reasoning tasks at all.
+- **Two things this app takes from it.** (1) The trivia-control result means
+  any internal "you improved" readout computed from repeated exposure to the
+  same assessment is measuring test-retest, not learning. (2) The absent
+  dose-response is a direct argument against minutes as a proxy for progress —
+  which is why the north star is learning *per* minute rather than minutes.
+- **Near transfer is real** and survives active-control adjustment; the
+  second-order authors' explicit recommendation to the field is to build for
+  near transfer instead. That is the position this app already takes, now with
+  a stronger citation than §11 had.
+- **FTC v. Lumos Labs (Jan 5 2016)**, N.D. Cal., Commission vote 4-0: a $50M
+  judgment suspended to $2M on inability to pay. Three claim categories were
+  charged as unfounded — real-world transfer to school, work and athletics;
+  delay of age-related decline; reduction of impairment from named conditions
+  — and separately, asserting that "scientific studies proved" them was itself
+  charged as deceptive. The order binds the company **and two named founders**
+  to hold "competent and reliable scientific evidence" BEFORE making such
+  claims. This is the operative external standard for cognitive-training
+  benefit claims in US advertising, and the app is written to clear it. These
+  are allegations settled by stipulated order, not adjudicated findings.
+- **ACTIVE 10-year follow-up.** Gains persisted only WITHIN the trained
+  ability — reasoning ES = 0.23, speed of processing ES = 0.66 — and the
+  memory arm showed no maintained memory effect at all. The much-cited
+  everyday-functioning benefit is **self-reported** IADL only; the memory arm
+  produced the largest self-reported benefit (ES = 0.48) while producing no
+  measured memory gain, which breaks the mediation story and looks like
+  response bias. No active control, self-selected volunteers, mean age 73.6 —
+  nothing here licenses claims about adolescents. Booster sessions at 11 and
+  35 months produced additional durable gains, which is real RCT evidence for
+  very-long-interval re-practice of a trained skill.
+
+### 29b. Calibration and debiasing — the strongest positive evidence this app has
+
+- **Morewedge et al. (2015).** One ~60-minute interactive debiasing game
+  reduced *commission* of six biases: d = 1.68 / 1.74 pre-post and
+  **d = 1.11 / 1.16 at 8–12 weeks**. It generalised to facets of a bias the
+  game never trained (d = 0.79 at posttest, 0.65 at follow-up).
+- **The dissociation that matters for content design**: the passive
+  instructional video taught bias RECOGNITION *better* than the game
+  (knowledge d = 1.69 vs 1.05), while the game reduced actual COMMISSION more,
+  immediately and at eight weeks. Knowing a bias and not committing it are
+  different skills. An item asking "which bias is this?" trains the first; an
+  item where the bias is the trap and the topic is something else trains the
+  second. **Design consequence: the Paths should keep shifting weight from
+  naming biases to falling for them.** Caveats: no untrained control group, so
+  only game-vs-video is a clean contrast. Notably, gamification embellishments
+  (a game score, narrative, hints) and training dose made no measurable
+  difference to bias reduction.
+- **Sellier, Scopelliti & Morewedge (2019).** Debiasing transferred to an
+  unannounced, structurally unrelated business case 43–52 days later with no
+  reminder and no disclosed connection: 58.8% versus 72.2% chose the
+  confirming option (OR 0.549, 95% CI [0.33, 0.92], p = .022), and the effect
+  did not decay across seven weeks. **Cite the corrigendum figure, 19%, not
+  the printed 29%** (Psychological Science 2020, 31(6), 762). Quasi-experiment
+  — condition determined by which voluntary sign-up slot students picked, one
+  school — not an RCT.
+- **Good Judgment / CHAMPS KNOW.** Under an hour of probabilistic-reasoning
+  training improved Brier accuracy by roughly 6–12%, replicated in all four
+  tournament years, with trained forecasters ahead at both the start and the
+  end of each 9-month tournament. Two findings that should steer content: of
+  the ten trained principles, **only "comparison classes / base rates" (the
+  outside view) was significantly associated with better accuracy**, and two
+  principles were associated with WORSE accuracy; and **depth per question
+  beat volume** — average forecasts per question predicted accuracy and
+  partially mediated the training effect, while total forecast count did not
+  differ between conditions and prior-year experience produced no Brier
+  improvement. The full model explained only 10–20% of variance.
+- **Natural frequencies (meta-analysis, 35 articles, 226 estimates).** ~24%
+  correct under natural frequencies versus ~4% under conditional
+  probabilities — sixfold, but **76% still fail** even in the facilitating
+  format, so the framing is a representation improvement and not sufficient
+  instruction. The strongest moderators were representational: "short menu"
+  formats that display the joint events, and visual aids, both of which helped
+  under BOTH framings. The field also argues the outcome measure should
+  include the intermediate steps rather than only the final posterior.
+  Sedlmeier & Gigerenzer (2001) found that teaching learners to *perform the
+  translation themselves* produced competence still intact at 15 weeks,
+  whereas merely presenting a problem in natural-frequency format is a
+  context-specific fix. (That last is a secondhand citation inside a review,
+  with no effect size reported there.)
+- **Hertwig & Grüne-Yanoff's reversibility criterion.** The test separating a
+  built competence from a propped-up performance: remove the intervention and
+  see whether performance persists. This app already has the apparatus —
+  hinted work never earns independent evidence, and the ladder re-tests
+  unaided later — so the criterion validates the existing evidence model
+  rather than asking for a new feature. Their boost/nudge distinction is also
+  the right frame for Human Insight: a boost targets a competence and is
+  necessarily transparent, where a nudge may work behind the chooser's back.
+
+### 29c. Formats and content design worth copying
+
+- **TIPERs** (Hieggelke, Kanim, Maloney & O'Kuma): ten physics task formats
+  engineered so an item cannot be answered by substituting into a formula —
+  Ranking, Working Backwards, "What, if Anything, is Wrong", Conflicting
+  Contentions, Changing Representation, Troubleshooting, Comparison, Bar
+  Chart, Linked Multiple-Choice, Qualitative Reasoning. Tasks are short and
+  mutually independent, which is exactly what an item-level scheduler needs.
+  **Tier: HEURISTIC.** PhysPort's own rubric rates TIPERs at its lowest
+  validation level — "based on research into" only, with no "demonstrated to
+  improve" and no "studied using" entries, which does not reach even their
+  Bronze tier. Adopted as a design vocabulary, not as a validated method.
+  Implemented in `content/items/physicsReasoning.ts`; all scenarios, numbers
+  and answers are original and computed. The TIPERs banks are commercial and
+  were not consulted for content.
+  - The anti-gaming rule taken with it: "What, if Anything, is Wrong" tasks
+    are distinguished from Troubleshooting tasks precisely by admitting the
+    answer **"nothing is wrong"**. A fault-finding bank where something is
+    always wrong teaches "name an objection" rather than judgement.
+    `p-whats-wrong` renders clean in three of its nine variants.
+- **Force Concept Inventory.** Its distractors were **empirically derived from
+  students' own open-ended responses**, expert-reviewed, refined through
+  interviews, then piloted on 1000+ students. That is the gold standard our
+  authored distractors approximate and must not claim to equal. The FCI is not
+  redistributable (faculty-only download), so FCI-style measurement requires
+  building our own items — which is the standing rule anyway. Even this
+  instrument has documented differential item functioning, question-order
+  effects, and false positives (students choosing the Newtonian option for
+  non-Newtonian reasons).
+- **Hake (1998).** 62 courses, 6,542 students: interactive engagement
+  <g> = 0.48 against traditional lecture 0.23. Two caveats that block naive
+  adoption: the sample is self-selected toward high-performing courses (Hake
+  says so), and his definition of "interactive engagement" **requires
+  immediate feedback through discussion with peers or instructors** — the
+  social channel is part of the construct, and a solo offline app cannot claim
+  it. No course reached <g> >= 0.7, and 15% of IE courses were
+  indistinguishable from lecture.
+  - Worth recording for a future honest progress measure: **normalized gain
+    `<g> = (post − pre) / (100 − pre)` correlates +0.02 with prior knowledge**,
+    against +0.55 for raw post-test score and −0.49 for raw gain. NOT adopted:
+    it needs a fixed pre/post instrument, and the app deliberately avoids
+    single-number scores. Kept here so the option is not forgotten.
+- **Schwartz & Martin, Inventing to Prepare for Future Learning.** Ninth
+  graders; the invention condition's advantage was **invisible on a
+  conventional transfer test** and appeared only when a worked-example
+  resource was embedded in the test itself — the design this app already
+  implements as PFL probes (§23). Two things to keep: the invention activity
+  had a **0% success rate** during the activity and still prepared later
+  learning, so a graded-correctness metric misclassifies it as worthless
+  (which is why probes are written as exposure); and the readiness produced
+  was **topic-specific**, as the authors state. One-year delayed retention of
+  the invention-prepared procedure was 56.7% against 0% for university
+  students who had not had it.
+- **Productive failure (Sinha & Kapur).** The strongest moderator by a wide
+  margin is **instruction built on the learner's own attempted solutions**:
+  g = 0.56 with that feature present versus 0.20 without. Cite the pooled
+  **g = 0.36**, not the widely-quoted 0.87 — that figure is a p-curve estimate
+  assuming no publication bias, not a corrected effect size (Egger's test was
+  non-significant and trim-and-fill imputed zero studies).
+- **Math Academy's Fractional Implicit Repetition.** Review credit propagates
+  down an **"encompassing" graph** — succeeding on an advanced topic
+  fractionally advances the simpler skills it implicitly exercises, while
+  failures propagate the other way. Two reasons this app is NOT adopting it:
+  the encompassing graph is explicitly **not** the prerequisite graph, and
+  running the mechanism over a prerequisite DAG (which is what we have)
+  produces systematically wrong credit; and there is no peer-reviewed evidence
+  for it — its author says so plainly, and the citations offered establish only
+  that learning rates vary between students and topics. Recorded as
+  considered-and-declined rather than unnoticed.
+- **FSRS**, for the record, since it is the obvious thing to be asked about.
+  Its memory model is Difficulty / Stability / Retrievability with a power
+  forgetting curve, and its interval is closed-form from a **desired retention
+  dial**: `I(r,S) = 9S(1/r − 1)`. Two findings matter more than the formula.
+  First, its "minimum recommended retention" objective is **study minutes
+  divided by expected total recall** — which is this app's north star written
+  as an objective function, and worth revisiting. Second, **there is no
+  universal optimal retention number**: the FSRS documentation states none, and
+  computes the optimum per learner by simulation. Any app quoting "0.9 is
+  optimal" as evidence is wrong. Not adopted now: FSRS-6 has 21 trainable
+  parameters, and while the defaults work cold, fitting them to one learner's
+  log is a large-parameter fit on small data, and the published evaluations
+  measure recall PREDICTION, not learning gain.
+- **ALEKS knowledge spaces**: tractable at curriculum scale (Beginning Algebra
+  = 88 problem types yielding ~60,000 feasible states out of 2^88 subsets).
+  But the foundational paper's single efficacy claim is uncited, unquantified
+  and untested — **marketing, not evidence**.
+- **Duolingo half-life regression** is a population fit over 13 million traces,
+  so a zero-server single-learner app cannot reproduce it; only its feature set
+  (elapsed time, cumulative seen/correct, within-session counts) is adoptable,
+  and its published evaluation measures recall prediction, not learning.
+
+### 29d. Motivation — the anti-gamification stance now has a number
+
+- **Deci, Koestner & Ryan, 128 experiments.** Expected tangible rewards
+  contingent on engagement, completion or performance significantly reduce
+  free-choice intrinsic motivation: engagement-contingent d = −0.40,
+  completion-contingent d = −0.36, performance-contingent d = −0.28; pooled
+  across all expected tangible rewards d = −0.36.
+- **The single worst structure in the meta-analysis is the one gamified
+  learning apps use most**: performance-contingent rewards where the learner
+  receives LESS than the maximum available — **d = −0.80** (−0.88 after
+  outlier removal), significantly worse than maximum-reward conditions
+  (−0.15). That is the shape of a broken streak, a two-of-three-stars score, a
+  progress bar deliberately left short.
+- **Bounded**: the undermining applies to tasks the learner already finds
+  interesting (d = −0.68) and not to boring ones (d = 0.18, ns); unexpected
+  rewards do not undermine. **Durable**: in child studies, free-choice
+  motivation measured more than a week after the reward ended showed
+  d = −0.55, at least as large as the immediate effect.
+- **Verbal/informational feedback ENHANCES** intrinsic motivation (free-choice
+  d = 0.33) — but this is age-moderated and did **not** hold for children
+  (d = 0.11, ns, 7 studies) against college students (d = 0.43, 14 studies).
+  The app's readouts are informational rather than contingent, which is the
+  right side of this literature; the age moderation is a reason not to claim
+  the evidence readouts are motivating for a teenage learner. They are there
+  because they are TRUE, not because they are motivating.
+- **Inoculation durability is format-dependent in a direction that penalises
+  gamification**: text interventions held about a month unboosted while
+  **gamified and video interventions lost statistical significance within
+  roughly two weeks**. Objective memory for the content mediated the effect
+  and motivation did not — the authors formally rejected their motivation
+  hypotheses. A memory-focused booster (restating the techniques) beat both
+  re-inoculation and a threat/urgency booster at ~30 days, and the
+  threat-focused booster with no technique content was ineffective. Retrieval
+  practice alone worked as a booster.
+
+### 29e. Corrections to entries already in this ledger
+
+1. **§2 (spacing) is narrower than it reads, for mathematics specifically.**
+   A well-powered experiment (N = 235, designed for 95% power at f² = 0.15,
+   38–40 per cell) distributed eight practice tasks on a mathematical
+   PROCEDURE across sessions 1 or 11 days apart and found **no retention
+   benefit over massing** at either a 1-week or 5-week unannounced test, and
+   **no lag effect** (RI × ISI interactions non-significant, p = .078 and
+   .633). The authors propose a declarative/procedural boundary — spacing
+   evidence comes overwhelmingly from facts and vocabulary — consistent with
+   Donovan & Radosevich (1999) finding complex content benefits less, and they
+   explicitly **decline to endorse distributed practice as a recommended
+   mathematics strategy on current evidence**. Dunlosky et al. themselves
+   quote the IES guide conceding that few studies examined complex structured
+   material.
+   - *What changes here*: the review ladder stays. The retrieval half of it
+     (§1) is not in question, forgetting is real, and no evidence says spacing
+     HURTS. What changes is the tier: for **mathematical procedures**, spacing
+     is downgraded from EVIDENCE to **HEURISTIC** in this ledger. And the
+     null is a failure to reject rather than proof of absence — no Bayes
+     factor and no equivalence test were reported.
+2. **§3 (interleaving) should quote the corrected figure.** Heterogeneity is
+   very high (I² = 77.3%, tau² = .20; sample-level effects from −1.37 to
+   +1.85, math alone I² = 76.9%) and trim-and-fill on the independent-effect
+   subset indicates publication bias, adjusting the pooled effect down to
+   **g = 0.29 [0.20, 0.38]** with 23 studies imputed as missing.
+3. **§13's appeal to "the mastery-learning tradition (Bloom 1968)" is too
+   strong.** Bloom's 2-sigma does not survive the broader literature: pooled
+   tutoring is about **d = 0.79**, and Bloom's comparison is confounded by an
+   unequal mastery criterion (90% for tutored students against 80% for the
+   classroom mastery condition), so it does not isolate tutoring as the causal
+   ingredient. Kulik et al. (1990) report d = 0.61 for less able and **0.4 for
+   more able** learners. Mastery gains fade and are plausibly **test-specific
+   — overfitting to the assessment** — which is a direct warning against
+   reading a mastery ladder as evidence of transferable learning. This app's
+   ladder already refuses that reading; the citation should stop implying a
+   bigger effect than exists. The underlying evidence base is also
+   methodologically weak (small, non-randomised, heterogeneous), so these
+   pooled figures are unreliable point estimates rather than settled facts.
+4. **§5's "diagnosis, not self-report" was true of the design and false of the
+   implementation.** Measured over 120 simulated days with no manual tagging:
+   **318 misses, 13 of them (4.1%) machine-taggable**, leaving 4 tagged
+   against 68 untagged in the trailing 28 days — permanently below
+   `malRuleProfile`'s floor of 8. The feature could only be reached by the
+   learner tapping a cause chip, which is exactly the self-assessment the
+   entry says the app refuses. Fixed; see §30.
+5. **Immediate feedback has no measured advantage over days-delayed
+   feedback.** ManyClasses 1: 38 authentic college classes, 2,081 students
+   across 15 campuses — **d = 0.002, 95% HDI [−0.05, 0.05]**, tight enough to
+   rule out even small effects in either direction, with all 40 preregistered
+   moderators overlapping zero and the only directional hint favouring
+   DELAYED feedback. Scope: days-scale delay on graded coursework, not
+   within-item corrective feedback and not a no-feedback control. Nothing in
+   the app claims immediacy is what makes its feedback work, and nothing
+   should start.
+
+### 29f. An assessment rule adopted from the misinformation literature
+
+The field's methodological standard for measuring misinformation skill is to
+expose people to a **mix of true and false items** and score discernment
+across both, because scoring only the rejection of false content confounds
+genuine skill with blanket scepticism. Directly applicable to Observer and
+Human Insight: a set where every scenario contains a manipulation trains
+"always accuse", which is the same failure mode the TIPERs "nothing is wrong"
+rule addresses in physics. Recorded as a content law for those Paths. Current
+status: partially honoured — several Insight families already include
+legitimate-request options — but a full audit of the ratio across
+Observer/Insight is open work, and this entry claims the rule, not compliance
+with it.
+
+## 30. Causes come from the work — closing the 4.1% gap
+
+`engine/diagnose.ts`, `engine/diagnose.test.ts`.
+
+**Problem, measured.** §29e.4 above. Only worked chains (6 of 548 template
+families at the time), chess and logic grids could produce an error cause at
+all, so the coach's mal-rule profile said "not enough yet to name a pattern"
+forever unless the learner hand-classified their own mistakes.
+
+**Three sources, in precedence order.** (1) the broken link of a worked chain;
+(2) the cause authored on the distractor the learner actually picked, now
+machine-readable through `mcqNoted`'s optional third element and
+`RenderedItem.distractorTags`; (3) **how the repair went** — corrected unaided
+on the next attempt reads as an execution slip, needing a hint or the full
+solution reads as a concept gap.
+
+**Source 3 is a HEURISTIC and the coach's copy says so.** What it is not is an
+opinion: the input is what the learner did next, not what they believe went
+wrong. That is the distinction §5 draws, and it is the same one the
+productive-failure literature draws when it finds that instruction built on the
+learner's own attempted solutions is the strongest moderator of the effect
+(§29c: g = 0.56 present versus 0.20 absent).
+
+**It refuses to fire on choice formats.** A second pick among four options
+after being told the first was wrong succeeds by luck about a third of the
+time, so a lucky retry would be recorded as "you had the method". Only
+constructed answers — numeric, fraction, text, steps — feed the repair-path
+fallback; multiple choice, multi-select, ordering and classification rely on
+sources 1 and 2 and otherwise produce no tag at all. `malRuleProfile` counts
+untagged misses separately and never reassigns them to the nearest cause.
+
+**Measured after.** The same 120-day simulation, still with no self-tagging and
+assuming the learner never picks a named distractor: **51.3% of misses now
+carry a machine-derived cause** (was 4.1%), and the trailing 28-day window
+holds 43 tagged against 29 untagged — the profile names real patterns instead
+of refusing. Multi-part activities (case files, work studios, the method drill)
+also stopped discarding their causes: `errorTag` was hard-coded `null` at the
+aggregation step, so the earliest broken checkpoint's diagnosis is now carried.
+
+**The manual chip picker still exists**, and that is deliberate rather than an
+oversight: where the app derives a cause it arrives pre-selected, and the
+learner can correct it. So the profile is not purely derived — it is derived by
+default and overridable. What changed is the direction of the burden. Before,
+the feature was unreachable WITHOUT self-classification; now self-report is a
+correction to an observation rather than the only source of one.
+
+**Known limits.** The repair-path route can only ever distinguish "slip" from
+"concept" — the two most actionable causes, and the two whose repairs differ
+most, but coarse. Finer causes (misread, strategy, representation) still need
+either a worked chain or an authored distractor tag. Of 39 templates carrying
+named distractors, 3 currently carry machine-readable tags; extending the rest
+is open work and each one narrows the untagged share.
+
+## 31. The frontier stopped moving for the learners doing best
+
+**Found by simulation, invisible everywhere else.** Two defects compounded:
+
+1. `prereqLeverage` counted every unowned dependent of a skill whether or not
+   that skill was what blocked them. An owned skill's dependents are already
+   unlocked, so nothing waits on it — yet it kept the leverage bonus (capped at
+   2.5, the largest term in the scorer after a due review) permanently. The
+   root of the tree has the most dependents, so the root won every tie forever.
+   The same reasoning was already written one screen below for the
+   `alreadyCapable` case; it had simply never been applied to a skill the
+   learner had EARNED. The learner-facing `why` was false too: "4 skills are
+   waiting on it" was printed for a skill exactly 1 was waiting on.
+2. Three skills carried fewer question families than their own promotion rule
+   requires, counting only the families an ordinary daily block can serve —
+   `m-data` and `s-graphs` had one, and `i-forecast` had two against the three
+   the Paths require. They could never reach Independent, so they never left
+   the `guided` frontier, so they kept the frontier bonus permanently too. The
+   existing audit gate missed this because it counted ALL templates attached to
+   a skill, including authentic work (application-day route only) and PFL
+   probes (deliberately one-time) — a superset of what the planner can serve.
+
+**Measured over 365 simulated days at ~90% first-try accuracy.**
+
+| | before | after |
+| --- | --- | --- |
+| skills ever served | 58 / 122 | **120 / 122** |
+| skills reaching Independent or better | 34 | **119** |
+| distinct core-block focuses | 39 | **153** |
+| most-repeated question family | 611 of 2,938 attempts (21%) | 111 (3.8%) |
+| worst single core focus | 215 of 365 days | 57 |
+
+A learner answering ~100% correctly previously spent **215 of 365 core blocks
+on `m-integers`** — the first skill in the tree, long since Retained — and
+their touched-skill count froze at 56 by day 60 and moved three skills in the
+following 300 days. Physics on the `ca-8` track recovered as a side effect:
+`m-data` had been absorbing the math core block, so the gateway into physics
+was never reached.
+
+**Gates added.** `engine/frontier.test.ts` pins curriculum coverage, ownership
+and anti-monopoly bounds over a simulated year at three accuracies, plus the
+unit fact that an owned skill claims no leverage. `contentAudit.test.ts` gains
+"every skill can reach Independent through ordinary daily practice", which
+applies the planner's own pool filter rather than counting every attached
+template.
+
+**Content closing the gap** (all original, computed answers, audit-gated):
+`m-data` gained bar-chart reading, line-graph reading and a display-choice
+family — its blurb had promised "tables, bar charts, line graphs, and scatter
+plots" while shipping one table family. `s-graphs` gained two families that
+make chart defence arithmetical (recompute what a truncated axis hides;
+recompute the whole series behind a cherry-picked window) rather than a
+four-option judgement call. `i-forecast` gained Brier scoring, which the app
+already computed for the Forecast Ledger but never taught. Physics — the
+thinnest bucket, at a median of two families per skill with six of eleven
+skills sitting exactly on the promotion floor — gained six TIPERs-format
+families and now has a median of three and none on the floor.

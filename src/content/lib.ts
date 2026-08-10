@@ -98,23 +98,37 @@ export function mcq(rng: Rng, correct: string, distractors: string[]): McqAnswer
 /**
  * MCQ whose distractors carry NAMED misconceptions. Notes survive the
  * shuffle: the result maps final option index → "name — why it tempts".
+ *
+ * A third tuple element may name the error CAUSE that distractor represents.
+ * Where it is present the coach can derive the cause from which wrong answer
+ * the learner actually picked, instead of asking them to diagnose themselves —
+ * see `engine/diagnose.ts`. It is optional because a distractor is not always
+ * a single identifiable cause, and guessing one would be worse than leaving the
+ * miss untagged: `malRuleProfile` counts untagged misses honestly and never
+ * assigns them to the nearest pattern.
  */
 export function mcqNoted(
   rng: Rng,
   correct: string,
-  distractors: [text: string, note: string | null][],
-): { answer: McqAnswer; distractorNotes: Record<number, string> } {
-  const uniq: [string, string | null][] = []
-  for (const [d, n] of distractors) {
-    if (d !== correct && !uniq.some(([u]) => u === d)) uniq.push([d, n])
+  distractors: [text: string, note: string | null, tag?: ErrorTag][],
+): { answer: McqAnswer; distractorNotes: Record<number, string>; distractorTags: Record<number, ErrorTag> } {
+  const uniq: [string, string | null, ErrorTag?][] = []
+  for (const entry of distractors) {
+    const [d] = entry
+    if (d !== correct && !uniq.some(([u]) => u === d)) uniq.push(entry)
   }
-  const entries: [string, string | null][] = shuffle(rng, [[correct, null] as [string, string | null], ...uniq.slice(0, 4)])
+  const entries: [string, string | null, ErrorTag?][] = shuffle(rng, [
+    [correct, null] as [string, string | null, ErrorTag?],
+    ...uniq.slice(0, 4),
+  ])
   const options = entries.map(([t]) => t)
   const distractorNotes: Record<number, string> = {}
-  entries.forEach(([, n], i) => {
+  const distractorTags: Record<number, ErrorTag> = {}
+  entries.forEach(([, n, tag], i) => {
     if (n) distractorNotes[i] = n
+    if (tag) distractorTags[i] = tag
   })
-  return { answer: { type: 'mcq', options, correct: options.indexOf(correct) }, distractorNotes }
+  return { answer: { type: 'mcq', options, correct: options.indexOf(correct) }, distractorNotes, distractorTags }
 }
 
 export function gcd(a: number, b: number): number {

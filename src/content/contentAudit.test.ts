@@ -19,6 +19,8 @@ import { COURSES, SKILLS, SKILL_BY_ID } from './skills'
 import { DIFFICULTY_INFO } from './difficulty'
 import { MATH_TRACKS, TRACK_BY_ID } from './tracks'
 import { formsRequired, STATE_LABEL } from '../engine/mastery'
+import { dailyRoute } from '../engine/plannerPolicy'
+import { isPflTemplate } from '../engine/pflId'
 import { KB_BY_SKILL } from './kb'
 import { correctResponse, firstFailedStep, serializeSteps, validate, wrongResponse } from '../engine/validate'
 import { matingMoves, movesKeepingMate } from '../engine/chessTools'
@@ -831,6 +833,44 @@ describe('content volume targets', () => {
       reach,
       `${withoutTransferRoute.length}/${SKILLS.length} skills have no transfer route: ${withoutTransferRoute.join(', ')}`,
     ).toBeGreaterThanOrEqual(0.65)
+  })
+
+  /**
+   * The ladder must be reachable through the block the learner actually gets.
+   *
+   * The check above counts EVERY template attached to a skill. The planner's
+   * ordinary pools do not: `pickTemplates` drops authentic work (it has its own
+   * application-day route) and PFL probes (deliberately one-time). So a skill
+   * whose second family was a 14-minute case file passed the audit while being
+   * unpromotable in daily practice — the learner could work at it every day
+   * forever and never reach Independent.
+   *
+   * That is not hypothetical. `m-data`, `s-graphs` and `i-forecast` were all in
+   * this state, and because an unpromotable skill keeps the `guided` frontier
+   * bonus permanently, `m-data` won the core block on 228 of 365 simulated days
+   * and its single family was served 611 times — about a fifth of the learner's
+   * whole year. A skill that cannot graduate does not merely stall; it captures
+   * the plan.
+   *
+   * Same rule as above, applied to the pool the daily plan can really see.
+   */
+  it('every skill can reach Independent through ordinary daily practice', () => {
+    const dailyPool = new Map<string, number>()
+    for (const t of BUILTIN_TEMPLATES) {
+      if (dailyRoute(t) !== 'daily-practice') continue
+      if (isPflTemplate(t.id)) continue
+      for (const id of t.skillIds) dailyPool.set(id, (dailyPool.get(id) ?? 0) + 1)
+    }
+    const unpromotable: string[] = []
+    for (const s of SKILLS) {
+      const required = formsRequired(s.bucket)
+      const have = dailyPool.get(s.id) ?? 0
+      if (have < required) unpromotable.push(`${s.id} (${have}/${required} daily families)`)
+    }
+    expect(
+      unpromotable,
+      `these skills can never reach Independent from a daily block: ${unpromotable.join(', ')}`,
+    ).toEqual([])
   })
 })
 

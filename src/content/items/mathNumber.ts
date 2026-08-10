@@ -1143,6 +1143,240 @@ const dataTable = tpl(
   },
 )
 
+/*
+ * `m-data` promises "tables, bar charts, line graphs, and scatter plots" and
+ * shipped exactly one family, on tables. That was not only a thin topic: with a
+ * single family reachable from an ordinary daily block, the skill could never
+ * satisfy its own promotion rule (Independent needs two distinct FAMILIES), so
+ * it sat at `guided` permanently — and a permanently-unpromotable skill keeps
+ * the frontier bonus forever. Measured over a simulated year: `data-table-read`
+ * was served 611 times, roughly a fifth of every attempt the learner made.
+ *
+ * The three families below finish the promise and let the skill graduate. A
+ * chart is drawn in a fenced block so it renders in the monospace column the
+ * markdown-lite renderer already supports — no images, no new dependency, and
+ * it stays readable at 320px.
+ */
+
+/** Fixed-width bar row, e.g. "Mon │████████ 40". */
+function barRow(label: string, value: number, max: number, width = 18): string {
+  const filled = Math.max(1, Math.round((value / max) * width))
+  return `${label.padEnd(4)}│${'█'.repeat(filled).padEnd(width)} ${value}`
+}
+
+const dataBarRead = tpl(
+  {
+    id: 'data-bar-read',
+    name: 'Read a bar chart',
+    skillIds: ['m-data'],
+    bucket: 'math',
+    difficulty: 2,
+    variants: 12,
+    minutes: 2.5,
+  },
+  (rng, seed) => {
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+    const values = labels.map(() => rint(rng, 8, 48))
+    const max = Math.max(...values)
+    const chart = labels.map((l, i) => barRow(l, values[i], max)).join('\n')
+    const q = cycle(seed, ['range', 'above', 'total'] as const)
+    const min = Math.min(...values)
+    const total = values.reduce((a, b) => a + b, 0)
+    const mean = total / values.length
+    const above = values.filter((v) => v > mean).length
+    const ans = q === 'range' ? max - min : q === 'above' ? above : total
+    const ask =
+      q === 'range'
+        ? 'What is the **range** (largest bar minus smallest bar)?'
+        : q === 'above'
+          ? 'How many days were **above the mean** of the five days?'
+          : 'What is the **total** across all five days?'
+    return {
+      title: 'Bar chart',
+      prompt: `Bikes rented per day:\n\n\`\`\`\n${chart}\n\`\`\`\n\n${ask}`,
+      answer: numeric(ans),
+      hints: [
+        'Read the NUMBER at the end of each bar, not the length of the bar — the bar is the picture, the number is the data.',
+        q === 'range'
+          ? `Largest = ${max}, smallest = ${min}.`
+          : q === 'above'
+            ? `Total = ${total}, so the mean is ${total} ÷ 5 = ${round(mean, 2)}.`
+            : `The five values are ${values.join(', ')}.`,
+        `Worked path: **${ans}**.`,
+      ],
+      explanation:
+        q === 'range'
+          ? `Range = ${max} − ${min} = **${ans}**. Range measures SPREAD, not size: two charts can share a mean and look nothing alike.`
+          : q === 'above'
+            ? `Mean = ${total} ÷ 5 = ${round(mean, 2)}, and ${ans} of the five bars sit above it. Notice that "above average" is usually not half — a single tall bar drags the mean up past most of the others.`
+            : `Sum every bar: ${values.join(' + ')} = **${ans}**. Totals come from the numbers; the picture only tells you where to look.`,
+    }
+  },
+)
+
+const dataLineRead = tpl(
+  {
+    id: 'data-line-read',
+    name: 'Read a line graph',
+    skillIds: ['m-data'],
+    bucket: 'math',
+    difficulty: 2,
+    variants: 12,
+    minutes: 3,
+  },
+  (rng, seed) => {
+    const start = rint(rng, 20, 40)
+    const steps = [rint(rng, -8, 12), rint(rng, -8, 12), rint(rng, -8, 12), rint(rng, -8, 12)]
+    const series = steps.reduce<number[]>((acc, s) => [...acc, acc[acc.length - 1] + s], [start])
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May']
+    const table = `| Month | ${months.join(' | ')} |\n| --- | ${months.map(() => '---').join(' | ')} |\n| Value | ${series.join(' | ')} |`
+    const q = cycle(seed, ['steepest', 'netchange', 'peak'] as const)
+    // The steepest SEGMENT is about the change between points, not the height.
+    let steepIdx = 0
+    for (let i = 1; i < steps.length; i++) {
+      if (Math.abs(steps[i]) > Math.abs(steps[steepIdx])) steepIdx = i
+    }
+    const net = series[series.length - 1] - series[0]
+    const peakIdx = series.indexOf(Math.max(...series))
+    const correct =
+      q === 'steepest'
+        ? `${months[steepIdx]}→${months[steepIdx + 1]}`
+        : q === 'netchange'
+          ? String(net)
+          : months[peakIdx]
+    const ask =
+      q === 'steepest'
+        ? 'Between which two months did the value change the **most** (in either direction)?'
+        : q === 'netchange'
+          ? 'What is the **net change** from Jan to May? (Negative if it fell.)'
+          : 'In which month was the value **highest**?'
+    // Distractors are drawn from the data itself, so they are always distinct
+    // from the key and always plausible: the other three segments, or the other
+    // four months. Hand-listed alternatives could collide with the answer once
+    // the random series happened to peak in the wrong place, which is what the
+    // "mcq needs 3+ options" gate caught here.
+    const segments = months.slice(0, 4).map((m, i) => `${m}→${months[i + 1]}`)
+    const distractors =
+      q === 'steepest'
+        ? segments.filter((s) => s !== correct)
+        : q === 'netchange'
+          ? []
+          : months.filter((m) => m !== correct)
+    return {
+      title: 'Line graph',
+      prompt: `Weekly signups, plotted month by month:\n\n${table}\n\n${ask}`,
+      answer: q === 'netchange' ? numeric(net) : mcq(rng, correct, distractors),
+      hints: [
+        'A line graph carries two different facts: the HEIGHT at each point, and the CHANGE between points. Decide which the question wants.',
+        q === 'steepest'
+          ? `The four changes are ${steps.map((s, i) => `${months[i]}→${months[i + 1]}: ${s > 0 ? '+' : ''}${s}`).join(', ')}.`
+          : q === 'netchange'
+            ? `Jan = ${series[0]}, May = ${series[4]}.`
+            : `The five values are ${series.join(', ')}.`,
+        `Worked path: **${correct}**.`,
+      ],
+      explanation:
+        q === 'steepest'
+          ? `Steepness is about the SEGMENT, not the point: the changes are ${steps.map((s, i) => `${months[i]}→${months[i + 1]}: ${s > 0 ? '+' : ''}${s}`).join(', ')}, so the biggest move is **${correct}**. The highest point and the steepest climb are different questions, and mixing them is the usual slip.`
+          : q === 'netchange'
+            ? `Net change = last − first = ${series[4]} − ${series[0]} = **${net}**. Net change ignores the route: a line that rises, falls, and rises again can still have a net change of zero.`
+            : `The tallest value is ${Math.max(...series)} in **${correct}**. "Highest" is about level; it says nothing about which month grew fastest.`,
+    }
+  },
+)
+
+const dataChartChoose = tpl(
+  {
+    id: 'data-chart-choose',
+    name: 'Which display fits the question?',
+    skillIds: ['m-data'],
+    bucket: 'math',
+    difficulty: 3,
+    variants: 6,
+    minutes: 2.5,
+    transfer: true,
+    calibration: true,
+  },
+  (rng, seed) => {
+    const cases = [
+      {
+        q: 'You want to know whether students who sleep longer tend to score higher on a test. You have both numbers for 40 students.',
+        correct: 'Scatter plot',
+        why: 'Two numeric measurements on the same individuals, and the question is whether they move together — that is exactly what a scatter plot shows.',
+        wrong: [
+          ['Bar chart', 'Bar charts compare separate categories. Sleep hours are not categories, and a bar chart would hide the pairing between the two numbers.'],
+          ['Line graph', 'A line graph implies the horizontal axis is an ordered sequence you travel along, usually time. These 40 students are not a sequence.'],
+          ['Pie chart', 'Pie charts show parts of one whole. Nothing here adds up to a whole.'],
+        ] as [string, string][],
+      },
+      {
+        q: 'You want to show how one city\'s rainfall changed across the twelve months of last year.',
+        correct: 'Line graph',
+        why: 'One measurement over an ordered time sequence: the line between points is meaningful because the months really do follow one another.',
+        wrong: [
+          ['Pie chart', 'A pie would treat the months as slices of a total and throw away the order — you could no longer see when the wet season was.'],
+          ['Scatter plot', 'A scatter plot is for the relationship between two measured variables; here time is the axis, not a second measurement.'],
+          ['Histogram', 'A histogram bins one variable to show its distribution. It would tell you how often each rainfall amount happened, not when.'],
+        ] as [string, string][],
+      },
+      {
+        q: 'You want to compare total recycling collected by four different schools last term.',
+        correct: 'Bar chart',
+        why: 'Four separate, unordered categories with one number each — the comparison you want is length against length.',
+        wrong: [
+          ['Line graph', 'Connecting the schools with a line would suggest school B sits "between" A and C in some real sequence. It does not; the order is arbitrary.'],
+          ['Scatter plot', 'A scatter plot needs two numeric measurements per case. There is only one number per school.'],
+          ['Histogram', 'A histogram bins a numeric variable. School name is a label, not a quantity to bin.'],
+        ] as [string, string][],
+      },
+      {
+        q: 'You want to see the shape of 200 reaction times — whether most cluster together and whether there is a long tail.',
+        correct: 'Histogram',
+        why: 'One numeric variable, many values, and the question is about the DISTRIBUTION: where the values pile up and how far the tail runs.',
+        wrong: [
+          ['Bar chart', 'A bar chart compares categories. Two hundred individual reaction times are not two hundred categories, and the bars would carry no shape.'],
+          ['Line graph', 'A line graph would imply the 200 measurements arrived in a meaningful order and that the values between them mean something.'],
+          ['Scatter plot', 'A scatter plot needs a second variable to plot against. Here there is only one.'],
+        ] as [string, string][],
+      },
+      {
+        q: 'You want to show what share of a school\'s budget goes to each of five departments.',
+        correct: 'Pie chart',
+        why: 'Five parts of one whole that genuinely sums to 100% — the one situation a pie is actually built for.',
+        wrong: [
+          ['Line graph', 'There is no sequence to travel along; the departments do not follow one another in any order.'],
+          ['Scatter plot', 'A scatter plot needs two numeric measurements per case, and there is one number per department.'],
+          ['Histogram', 'A histogram bins a numeric variable to show a distribution. Department is a label.'],
+        ] as [string, string][],
+      },
+      {
+        q: 'You want to know whether a town\'s daily high temperature and its ice-cream sales rise and fall together across one summer.',
+        correct: 'Scatter plot',
+        why: 'Two numeric measurements paired on the same days, and the question is about the relationship between them rather than about either one over time.',
+        wrong: [
+          ['Line graph', 'Two lines over time would show each series, but reading the relationship off two lines is guesswork — pairing the values directly is what answers the question.'],
+          ['Bar chart', 'Bar charts compare categories; days are ordered and there are far too many of them.'],
+          ['Pie chart', 'Nothing here is a share of a whole.'],
+        ] as [string, string][],
+      },
+    ]
+    const c = cycle(seed, cases)
+    const { answer, distractorNotes } = mcqNoted(rng, c.correct, c.wrong)
+    return {
+      title: 'Choosing the display',
+      prompt: `${c.q}\n\nWhich display answers that question best?`,
+      answer,
+      distractorNotes,
+      hints: [
+        'Ask what KIND of data you have before you think about pictures: how many variables, are they numbers or labels, and is there a real order?',
+        'One number per category → bars. One number over time → line. Two numbers per case → scatter. One number, many cases, shape → histogram. Parts of one whole → pie.',
+        `Worked path: **${c.correct}**.`,
+      ],
+      explanation: `**${c.correct}**. ${c.why}\n\nPicking the display is not decoration — the wrong chart can make a real pattern invisible or invent one that is not there.`,
+    }
+  },
+)
+
 // ---------------------------------------------------------------- counting & probability
 
 const countMult = tpl(
@@ -1357,6 +1591,9 @@ export const MATH_NUMBER_TEMPLATES: ItemTemplate[] = [
   statsMedian,
   statsMissing,
   dataTable,
+  dataBarRead,
+  dataLineRead,
+  dataChartChoose,
   countMult,
   countArrange,
   probSingle,

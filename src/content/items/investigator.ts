@@ -4,7 +4,7 @@
  */
 import type { ItemTemplate } from '../../domain/types'
 import { rint } from '../../engine/rng'
-import { fixed, fraction, mcq, tpl } from '../lib'
+import { cycle, fixed, fraction, mcq, numeric, round, tpl } from '../lib'
 
 // ---------- Deduction & syllogisms ----------
 
@@ -411,7 +411,67 @@ const cooperateRepeat = fixed(
   },
 )
 
+/* ---------- Scoring a forecast ----------
+ *
+ * `i-forecast` promises "probabilities you can be scored on; Brier feedback
+ * over time" and had two question families reachable from ordinary practice.
+ * Path skills need THREE distinct families before the ladder calls them
+ * Independent (mastery.ts `formsRequired`), so the skill was capped below its
+ * own bar no matter how well the learner did.
+ *
+ * This family teaches the scoring rule itself, which was the missing piece: the
+ * app records Brier scores for the Forecast Ledger but nothing ever taught what
+ * one means. Every score is COMPUTED from the generated probabilities, and the
+ * cases are chosen so the intuitive answer is wrong about a third of the time —
+ * hedging near 50% is safe but never good, and confident-and-right beats
+ * cautious-and-right.
+ */
+const brierCompare = tpl(
+  { id: 'i-brier', name: 'Which forecast scored better?', skillIds: ['i-forecast'], bucket: 'investigator', difficulty: 3, variants: 6, minutes: 3, calibration: true },
+  (_rng, seed) => {
+    const cases = [
+      { event: 'the school talent show sells out', a: 90, b: 60, happened: true },
+      { event: 'the bus is late on Monday', a: 80, b: 45, happened: false },
+      { event: 'it rains during Saturday\'s game', a: 30, b: 50, happened: false },
+      { event: 'the new cafeteria menu keeps the salad bar', a: 95, b: 70, happened: false },
+      { event: 'the library extends its hours this term', a: 20, b: 50, happened: true },
+      { event: 'the club hits its fundraising goal', a: 65, b: 50, happened: true },
+    ]
+    const c = cycle(seed, cases)
+    const outcome = c.happened ? 1 : 0
+    const brier = (p: number) => round((p / 100 - outcome) ** 2, 4)
+    const ba = brier(c.a)
+    const bb = brier(c.b)
+    const winner = ba < bb ? 'Ana' : 'Ben'
+    const wp = ba < bb ? c.a : c.b
+    const lp = ba < bb ? c.b : c.a
+    const lowScore = Math.min(ba, bb)
+    return {
+      title: 'Brier score',
+      prompt:
+        `Before the event, two forecasters gave a probability that **${c.event}**:\n\n` +
+        `| Forecaster | Probability |\n| --- | --- |\n| Ana | ${c.a}% |\n| Ben | ${c.b}% |\n\n` +
+        `It **${c.happened ? 'happened' : 'did not happen'}**.\n\n` +
+        `Brier score = (probability − outcome)², where outcome is 1 if it happened and 0 if it did not. **Lower is better.**\n\n` +
+        `What is the **better (lower)** of the two Brier scores? Give the number to four decimal places.`,
+      answer: numeric(lowScore, { tolerance: 0.0005 }),
+      hints: [
+        `Write the outcome as a number first: it ${c.happened ? 'happened, so outcome = 1' : 'did not happen, so outcome = 0'}.`,
+        `Convert each percent to a decimal and subtract: Ana ${(c.a / 100).toFixed(2)} − ${outcome}, Ben ${(c.b / 100).toFixed(2)} − ${outcome}. Then square — the square makes the sign irrelevant.`,
+        `Worked path: Ana scores ${ba}, Ben scores ${bb}, so the better score is **${lowScore}**.`,
+      ],
+      explanation:
+        `Outcome = ${outcome}. Ana: (${(c.a / 100).toFixed(2)} − ${outcome})² = **${ba}**. Ben: (${(c.b / 100).toFixed(2)} − ${outcome})² = **${bb}**. ` +
+        `Lower is better, so ${winner} scored better with ${wp}% against ${lp}%.\n\n` +
+        `Two things this rule does on purpose. It rewards being confident **and** right: moving from 60% to 90% on something that happens cuts your score from 0.16 to 0.01. ` +
+        `And it punishes being confident and wrong hardest of all — a 95% forecast on something that does not happen scores 0.9025, far worse than the 0.25 you get for shrugging at 50%. ` +
+        `That asymmetry is the point: a scoring rule you cannot game by hedging is what makes a probability an honest claim rather than a hedge.`,
+    }
+  },
+)
+
 export const INVESTIGATOR_TEMPLATES: ItemTemplate[] = [
+  brierCompare,
   syllogism,
   bayesNatural,
   bestTest,
