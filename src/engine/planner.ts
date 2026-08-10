@@ -26,7 +26,7 @@ import { dueForms, dueReviews } from './scheduler'
 import { relativeDebt, type AllocationReport } from './allocation'
 import { effectiveAllocation } from './allocationPlus'
 import { uid } from './rng'
-import { explainSeedFor, pickExplainTarget } from '../content/items/methodDrills'
+import { explainSeedFor, lastExplainedAt, pickExplainTarget } from '../content/items/methodDrills'
 import { activeMission, missionPriority, missionReadiness } from './mission'
 import type { RepairTarget } from './errors'
 import { calendarDaysUntil } from './time'
@@ -353,7 +353,7 @@ function pickAuthenticApplication(
       template,
       score:
         relativeDebt(report, template.bucket) * 8 +
-        coverageAdjustment(templateUse.get(template.id)) -
+        coverageAdjustment(templateUse.get(template.id), template.variants) -
         Math.abs(availableMinutes - template.minutes) * 0.15,
     }))
     .sort((a, b) => b.score - a.score)[0]?.template ?? null
@@ -901,7 +901,10 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
    * slot, and claiming it takes two would be a lie about the dose. The same
    * reasoning already keeps readiness probes out of short sessions.
    */
-  const explainTarget = !short && state.sessions.length % 3 === 2 ? pickExplainTarget(evidence) : null
+  const explainTarget =
+    !short && state.sessions.length % 3 === 2
+      ? pickExplainTarget(evidence, lastExplainedAt(state.events))
+      : null
   const explainSeed = explainTarget !== null ? explainSeedFor(explainTarget) : null
   const explainExit = explainTarget !== null && explainSeed !== null && index.templates.has('x-explain-back')
   const exitBudget = explainExit ? 4 : short ? 2 : total >= 25 ? 3 : 2

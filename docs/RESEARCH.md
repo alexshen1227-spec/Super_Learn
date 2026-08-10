@@ -2434,6 +2434,61 @@ Writing them immediately showed the first clipped-label canary was asserting
 the wrong condition — marker labels anchor inward, so they escape the frame
 only when the text is wider than half the plot.
 
+### 37i. A retention check that only checked one skill (2026-08-10)
+
+Found by measuring repeats-per-FORM rather than repeats-per-template, which is
+the distinction that made it visible at all.
+
+`x-explain-back` declares 51 forms — one per skill with both a concept card and
+an audited probe. A simulated learner-year used **one**:
+
+| accuracy | servings/yr | forms used | before → after |
+| --- | --- | --- | --- |
+| 30% | 89 | **1 of 51** | 89 repeats → ~5.9 |
+| 60% | 89 | **1 of 51** | 89 repeats → ~3.4 |
+| 90% | 102 | 1 of 51 | → 51 of 51, ~2.0 |
+
+**The mechanism.** `pickExplainTarget` returned the oldest RETAINED skill, and
+explaining a skill does not change its `retainedAt` — the explain-back logs
+under `x-explain` with the target carried only as context, precisely so a
+self-written explanation cannot advance an academic skill. So the oldest
+retained skill stayed the oldest retained skill forever. Now: least recently
+EXPLAINED first, oldest-retained breaking ties, read from the event's
+`aboutSkillIds` rather than by decoding the seed against `EXPLAIN_TARGETS`
+(which would silently mean something else the moment that list is reordered).
+
+### 37j. MEASURED AND REJECTED: penalising finite content for repeating
+
+The same sweep showed single-form content repeating hard — the same chess
+position 34 times a year at 30% accuracy. 82 of this bank's 622 templates have
+exactly one form, because a search-verified tactic cannot be randomised.
+
+Four penalty shapes were built and measured against a simulated year:
+
+| variant | owned @30% | owned @60% | worst repeat |
+| --- | --- | --- | --- |
+| unchanged | **43** | **65** | 34 / 19 / 15 |
+| replace the breadth term | 40 | 65 | 23 / 13 / 13 |
+| extra term, all templates | 42 | 62 | 24 / 15.5 / 12 |
+| extra term, finite content only | 39 | 62 | 23 / 16 / 13.3 |
+
+Every version cut repetition. Every version cost OWNED SKILLS. The mechanism is
+legible: promotion needs repeated unaided successes on a skill, so pushing the
+planner off a well-fitting template scatters attempts thinner and leaves fewer
+skills crossing their threshold.
+
+**Left unchanged deliberately.** The trade runs the wrong way — skills genuinely
+owned is the north star, and "I have seen that puzzle a lot" is a comfort
+complaint. Recorded in `plannerPolicy.ts` beside the function so the experiment
+is not repeated. If revisited, the thing to fix is the SUPPLY of single-form
+puzzles, not the scorer.
+
+Worth noting as a general result: this app's planner has now been measured
+twice in one day trading breadth against depth, and both times depth won on the
+north-star metric. That is not an argument for more repetition — it is an
+argument that any change to the scorer must report owned-skills, not just the
+number it was aimed at.
+
 **Licensing unchanged from §25**: Brilliant, IXL, DeltaMath, Alcumus, Beast and
 Math Academy are proprietary. Nothing here is text, artwork, a scoring constant
 or a taxonomy lifted from them — only mechanisms described in their own public

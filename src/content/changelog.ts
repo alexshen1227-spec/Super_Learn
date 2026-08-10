@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '8.5',
+    date: '2026-08-10',
+    title: 'The Retention Check Was Only Ever Checking One Thing',
+    points: [
+      'Every third session you get an "Explain it back" — you explain a skill you have mastered, from memory, then solve a real problem with it. It picked your OLDEST mastered skill. Explaining it does not change when you mastered it, so it stayed the oldest, and got picked every single time. There are 51 skills it could ask about. You would have got the same one about 89 times a year while everything else you had mastered was never checked once.',
+      'It now picks the one you have least recently explained. Measured over a simulated year: it went from reaching 1 skill to reaching 26, and from the same question 89 times to about 2-6 times each.',
+      'Also looked hard at a second thing and decided NOT to change it, which is worth saying. Some puzzles — chess especially — exist as a single fixed position, so they cannot be varied, and one of them was coming up 34 times a year. Four different fixes were built and measured. Every one of them cut the repetition and every one of them cost you MASTERED SKILLS, because getting a skill to stick needs repeated goes at it, and spreading practice thinner leaves fewer skills over the line. Seeing a puzzle often is annoying; learning less is worse. The measurements are written down so the next person does not redo the experiment.',
+    ],
+  },
+  {
     version: '8.4',
     date: '2026-08-10',
     title: 'Your Own Problems Come Back To You',

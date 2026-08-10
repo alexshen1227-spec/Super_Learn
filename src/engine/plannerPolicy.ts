@@ -76,13 +76,41 @@ export function buildTemplateCoverage(events: readonly AttemptEvent[], now: numb
  * comparable work; recently repeated families step back; old work slowly
  * becomes eligible again. Difficulty and readiness still decide what is
  * appropriate in the first place.
+ *
+ * `variants` is accepted but deliberately UNUSED — see the note below.
  */
-export function coverageAdjustment(coverage: TemplateCoverage | undefined): number {
+export function coverageAdjustment(coverage: TemplateCoverage | undefined, variants = 1): number {
+  void variants
   if (!coverage) return 3.25
   const staleReturn = Math.min(2.5, coverage.daysSince / 14)
   const lifetimeBreadth = Math.log2(1 + coverage.lifetime) * 0.3
   return staleReturn - coverage.recent * 1.5 - lifetimeBreadth
 }
+
+/*
+ * MEASURED AND REJECTED (2026-08-10): penalising repeats-per-FORM.
+ *
+ * A simulated learner-year showed single-form content repeating hard — the
+ * same chess position 34 times at 30% accuracy, and 82 of this bank's 622
+ * templates have exactly one form because a verified tactic cannot be
+ * randomised. Four shapes of penalty were built and measured:
+ *
+ *   variant                  owned @30%   owned @60%   worst repeat
+ *   unchanged                     43           65        34 / 19 / 15
+ *   replace breadth term          40           65        23 / 13 / 13
+ *   extra term, all templates     42           62        24 / 15.5 / 12
+ *   extra term, finite only       39           62        23 / 16 / 13.3
+ *
+ * Every version cut repetition and every version cost OWNED SKILLS. The
+ * mechanism is legible: promotion needs repeated unaided successes on a skill,
+ * so pushing the planner off a well-fitting template scatters attempts thinner
+ * and leaves fewer skills crossing their threshold.
+ *
+ * So the repetition is load-bearing, and the trade is the wrong way round:
+ * skills genuinely owned is the north star, while "I have seen that puzzle a
+ * lot" is a comfort complaint. Left unchanged on purpose. If this is revisited,
+ * the thing to fix is the SUPPLY of single-form puzzles, not the scorer.
+ */
 
 /**
  * How hard the mismatch penalty bites, per star of difference.
@@ -118,7 +146,7 @@ export function dailyTemplateScore(
   const penalty = template.difficulty < wantDifficulty ? weights.tooEasy : weights.tooHard
   return (
     -penalty * Math.abs(template.difficulty - wantDifficulty) +
-    coverageAdjustment(coverage) +
+    coverageAdjustment(coverage, template.variants) +
     Math.min(1, template.variants / 4) * 0.5 +
     (preferCalibration && template.calibration ? 1.2 : 0)
   )
