@@ -225,3 +225,37 @@ describe('only a first encounter with an idea counts', () => {
     expect(pflProbes(distinct, SKILL_BY_ID, evidenceAt(distinct)).length).toBe(3)
   })
 })
+
+/**
+ * A probe whose skill has NO prerequisites cannot be evidence about
+ * prerequisite ownership in either direction. It used to be recorded as
+ * `prereqsOwned: false`, which put `pfl-modular` (attached to `m-integers`,
+ * which has none) permanently on the "without prerequisites" side for every
+ * learner — one probe in nine, quietly biasing the comparison it fed.
+ */
+describe('probes that cannot answer the prerequisite question are excluded from it', () => {
+  const probe = (score: number, prereqsOwned: boolean | null) => ({ t: 0, skillId: 's', score, prereqsOwned })
+
+  it('counts a no-prerequisite probe in the overall rate but on neither side', () => {
+    const report = pflReport([
+      probe(1, null), probe(1, null), probe(1, null),
+      probe(0, true), probe(0, true), probe(0, true),
+    ])
+    expect(report.probes).toBe(6)
+    // Overall includes every probe: three 1s and three 0s.
+    expect(report.pickUp).toBeCloseTo(0.5, 5)
+    // The "with" side has its three samples; the "without" side has none, so
+    // it refuses rather than reporting the null-prerequisite probes as 100%.
+    expect(report.withPrereqs).toBeCloseTo(0, 5)
+    expect(report.withoutPrereqs).toBeNull()
+  })
+
+  it('still splits normally when both sides have real samples', () => {
+    const report = pflReport([
+      probe(1, true), probe(1, true), probe(1, true),
+      probe(0, false), probe(0, false), probe(0, false),
+    ])
+    expect(report.withPrereqs).toBeCloseTo(1, 5)
+    expect(report.withoutPrereqs).toBeCloseTo(0, 5)
+  })
+})

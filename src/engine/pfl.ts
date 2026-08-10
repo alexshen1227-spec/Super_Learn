@@ -67,8 +67,18 @@ export interface PflProbe {
   skillId: string
   /** Fraction of the probe's graded checkpoints answered correctly first try. */
   score: number
-  /** Did the learner already own this target's prerequisites when probed? */
-  prereqsOwned: boolean
+  /**
+   * Did the learner already own this target's prerequisites when probed?
+   *
+   * `null` when the question does not apply — a probe attached to a skill with
+   * NO prerequisites cannot be evidence about prerequisite ownership either
+   * way. It used to be recorded as `false`, which put `pfl-modular`
+   * (`m-integers`, no prerequisites) permanently on the "without" side of the
+   * comparison for every learner who ever met it: one probe in nine, silently
+   * biasing the split it was supposed to inform. Excluding it is the honest
+   * shape — the same refusal the rest of this module makes when it cannot say.
+   */
+  prereqsOwned: boolean | null
 }
 
 export interface PflReport {
@@ -121,12 +131,13 @@ export function pflProbes(
     if (!skillId) continue
     const prereqs = skills.get(skillId)?.prereqs ?? []
     const before = evidenceAt(e.t - 1)
-    const owned =
-      prereqs.length > 0 &&
-      prereqs.every((p) => {
-        const ev = before.get(p)
-        return ev ? stateRank(ev.state) >= stateRank('independent') : false
-      })
+    const owned: boolean | null =
+      prereqs.length === 0
+        ? null
+        : prereqs.every((p) => {
+            const ev = before.get(p)
+            return ev ? stateRank(ev.state) >= stateRank('independent') : false
+          })
     probes.push({
       t: e.t,
       skillId,
@@ -150,8 +161,11 @@ export function pflReport(probes: PflProbe[]): PflReport {
   }
 
   const pickUp = mean(probes.map((p) => p.score))
-  const withArr = probes.filter((p) => p.prereqsOwned).map((p) => p.score)
-  const withoutArr = probes.filter((p) => !p.prereqsOwned).map((p) => p.score)
+  // `null` means the question does not apply to that probe, so it belongs on
+  // neither side. `!p.prereqsOwned` would have swept those onto the "without"
+  // side, which is what the old boolean did.
+  const withArr = probes.filter((p) => p.prereqsOwned === true).map((p) => p.score)
+  const withoutArr = probes.filter((p) => p.prereqsOwned === false).map((p) => p.score)
   const withPrereqs = withArr.length >= MIN_PER_SIDE ? mean(withArr) : null
   const withoutPrereqs = withoutArr.length >= MIN_PER_SIDE ? mean(withoutArr) : null
 

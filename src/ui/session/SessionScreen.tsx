@@ -209,6 +209,20 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+/**
+ * What to say when a requested mode has nothing to give yet and the ordinary
+ * session stands in for it. Each line names what was missing, so the swap reads
+ * as a reason rather than as the app ignoring the request.
+ */
+const EMPTY_MODE_NOTE: Record<string, string> = {
+  mixed: 'Mixed review needs skills you already own to interleave, and there are none yet — running your normal session instead.',
+  challenge: 'Nothing sits near your ceiling yet, so there is no challenge set to build — running your normal session instead.',
+  focus: 'That skill has no practice available right now — running your normal session instead.',
+  ready: 'You are already ready for that course, so there is no run-up to build — running your normal session instead.',
+  checkpoint: 'That unit checkpoint has nothing left to ask — running your normal session instead.',
+  'error-clinic': 'No unrepaired errors right now — running your normal session instead.',
+}
+
   const buildPlan = useCallback(
     (ci: CheckIn) => {
       const ctx = { index, evidence, state, now: Date.now(), checkIn: ci }
@@ -242,8 +256,24 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
         default:
           p = buildSessionPlan(ctx)
       }
+      /*
+       * A requested mode can legitimately have nothing to offer yet — Mixed
+       * review needs skills you own, Challenge needs work near a ceiling you
+       * have not reached, and a brand-new learner has neither. Falling back to
+       * the ordinary session is right; doing it SILENTLY is not.
+       *
+       * Measured across five learner shapes: Challenge came back empty for a
+       * cold learner, a one-event learner, AND a learner who had got everything
+       * wrong, and Mixed review came back empty for two of them. In every case
+       * the learner tapped a card describing one thing and was given another
+       * with the daily plan's rationale on top, which reads as though the app
+       * simply ignored them. The error-clinic branch above already says so when
+       * it substitutes; this is the same courtesy for every other mode.
+       */
       if (!p.blocks.length) {
         p = buildSessionPlan(ctx)
+        const instead = EMPTY_MODE_NOTE[launch.kind as keyof typeof EMPTY_MODE_NOTE]
+        if (instead) p.rationale = [instead, ...p.rationale]
       }
       setPlan(p)
       setCheckIn(ci)

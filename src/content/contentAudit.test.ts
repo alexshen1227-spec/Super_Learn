@@ -929,10 +929,9 @@ describe('content volume targets', () => {
    * for its maximum easing every month, and the mean difficulty actually served
    * ROSE from 2.6 to 2.9. The dial was hard over with nowhere to go.
    *
-   * The ceiling here is 3★ rather than 2★ because that is what the bank
-   * currently supports; 30 skills still start at 3★ and closing those is
-   * recorded as open work in RESEARCH.md §32. Lowering this number later is the
-   * direction of travel — raising it is not.
+   * The ceiling is 2★: every skill offers a Foundation or Routine task a
+   * learner can actually start from. Lowering it further is fine; raising it
+   * is not, and would mean a skill somewhere has lost its way in.
    */
   it('every skill has an entry point a struggling learner can reach', () => {
     const easiest = new Map<string, number>()
@@ -941,7 +940,10 @@ describe('content volume targets', () => {
       if (isPflTemplate(t.id)) continue
       for (const id of t.skillIds) easiest.set(id, Math.min(easiest.get(id) ?? 99, t.difficulty))
     }
-    const ENTRY_CEILING = 3
+    // Lowered from 3 to 2 once `onRampsB.ts` closed the last thirty skills.
+    // 3★ is "combine ideas without scaffolding", which is the rung AFTER the
+    // one a learner meeting an idea for the first time needs.
+    const ENTRY_CEILING = 2
     const unreachable = SKILLS.filter((s) => (easiest.get(s.id) ?? 99) > ENTRY_CEILING).map(
       (s) => `${s.id} (easiest ${easiest.get(s.id) ?? '—'}★)`,
     )
