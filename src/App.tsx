@@ -82,7 +82,7 @@ const TABS: { id: Tab; label: string; icon: typeof IconToday }[] = [
 ]
 
 function Shell() {
-  const { state, ready, exitSample } = useStore()
+  const { state, ready, exitSample, staleTab } = useStore()
   const { view, go } = useNav()
   const [offline, setOffline] = useState(!navigator.onLine)
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null)
@@ -207,6 +207,25 @@ function Shell() {
       {offline ? (
         <div className="bg-surface2 border-b border-line text-center text-xs text-muted py-1.5 pt-safe" role="status">
           Offline — everything here works without a connection.
+        </div>
+      ) : null}
+      {/*
+        Two tabs, one learner. Saving is a whole-state overwrite from memory, so
+        the tab that writes last wins. Attempt EVENTS survive either way — the
+        append-only journal is unioned back on the next launch, which is what it
+        is for — but session records, deadlines and forecasts from the other tab
+        would be lost. Merging automatically would resurrect deleted deadlines
+        and reports, which is worse, so the collision is named instead of
+        silently resolved. Suppressed during a session: nothing is more
+        disruptive than a data warning mid-question, and the session's own
+        draft is written separately.
+      */}
+      {staleTab && !inSession ? (
+        <div className="bg-warn-soft border-b border-warn/30 text-warn text-xs py-1.5 px-4 flex items-center justify-between gap-2 pt-safe" role="status">
+          <span className="font-medium">Open in another tab, which has newer work. Reload to catch up before saving here.</span>
+          <button type="button" className="underline font-semibold min-h-11 -my-2 px-2" onClick={() => window.location.reload()}>
+            Reload
+          </button>
         </div>
       ) : null}
       {state.sampleMode ? (

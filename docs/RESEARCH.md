@@ -1942,3 +1942,52 @@ date (2026-02-30) passes the sanitizer's shape regex but fails `dateParts`'
 round-trip check, yielding NaN — and every consumer filters on `>= 0`, which
 NaN fails, so it is dropped rather than displayed. Both date inputs in the UI
 are `<input type="date">`, so it is not reachable there anyway.
+
+## 36. Two tabs, one learner
+
+Saving is a blind whole-state overwrite from an in-memory snapshot — there is
+no cross-tab coordination anywhere in the app: no `storage` listener, no lock,
+no version check. So a second tab holding an older snapshot silently clobbers
+the first tab's work on its next write. A learner with the installed PWA and a
+browser tab, or simply an old tab left open on a laptop, is in this situation.
+
+**Measured against a two-tab replay** (tab A completes a session and adds a
+deadline and a forecast; tab B, holding the pre-session snapshot, then writes):
+
+| | survives |
+| --- | --- |
+| attempt events | **yes** — all three |
+| session records | no |
+| deadlines | no |
+| forecasts | no |
+
+The events survive because of the append-only per-event journal, which is
+unioned back into the snapshot by id on hydrate. That is precisely what it was
+built for, and it means the catastrophic case — losing learning evidence — was
+already prevented by design. Every rung the learner holds derives from events,
+so mastery is untouched.
+
+**Why this is not fixed by merging.** Union-on-write looks like the obvious
+answer, and it is wrong: deadlines and problem reports can be DELETED, so a
+blind union would resurrect them. Restoring a deadline the learner removed is a
+worse failure than losing one they added, and silently either way.
+
+**What was done instead.** `saveState` now writes a tiny per-tab beacon
+(`axiomlab.writer`, carrying a module-scoped `TAB_ID`) on every save — a
+separate key rather than the mirror, because the mirror is skipped above
+`LS_MIRROR_MAX`, which is exactly the heavy user with the most to lose. A
+`storage` listener raises `staleTab`, and the shell shows one honest line:
+*"Open in another tab, which has newer work. Reload to catch up before saving
+here."* Suppressed during a session, where a data warning mid-question would be
+the most disruptive possible moment and the session draft is written separately
+anyway.
+
+The collision is named rather than resolved, which is the honest shape when
+both resolutions lose something.
+
+**Limits, stated.** This detects a second tab that has SAVED; it does not
+prevent the overwrite, and a learner who ignores the banner still loses the
+other tab's session records. Making that impossible needs either tombstones on
+every deletable collection or a real lock, and both are larger changes to the
+most safety-critical code in the app — where a botched fix loses more than the
+bug does.

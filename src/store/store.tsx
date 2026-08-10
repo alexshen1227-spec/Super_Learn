@@ -44,6 +44,7 @@ import {
   saveState,
   stashRealState,
   wipeAll,
+  TAB_ID,
 } from './persist'
 import { buildSampleState } from '../content/sample'
 
@@ -216,6 +217,14 @@ export interface StoreApi {
   checkpoint: () => Promise<boolean>
   /** Apply related actions as one durable, idempotent state transition. */
   commit: (actions: Action[]) => Promise<boolean>
+  /**
+   * Another tab has written since this one loaded, so this tab's snapshot is
+   * behind. Saving from here keeps its own attempt events (the append-only
+   * journal is unioned back on the next launch) but would overwrite the other
+   * tab's session records, deadlines and forecasts. Surfaced rather than
+   * merged: a blind union would resurrect deleted deadlines and reports.
+   */
+  staleTab: boolean
 }
 
 const StoreCtx = createContext<StoreApi | null>(null)
@@ -227,6 +236,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   stateRef.current = state
   const dirty = useRef(false)
   const persistScheduled = useRef(false)
+  const [staleTab, setStaleTab] = useState(false)
+
+  // Another tab saved. The beacon carries the writer's id, so our own writes
+  // are ignored and only a genuine second instance raises the flag.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== 'axiomlab.writer') return
+      if (e.newValue && e.newValue !== TAB_ID) setStaleTab(true)
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   // hydrate once
   useEffect(() => {
@@ -342,8 +363,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const api = useMemo<StoreApi>(
-    () => ({ state, ready, dispatch: dispatchSafe, enterSample, exitSample, resetAll, checkpoint, commit }),
-    [state, ready, dispatchSafe, enterSample, exitSample, resetAll, checkpoint, commit],
+    () => ({ state, ready, dispatch: dispatchSafe, enterSample, exitSample, resetAll, checkpoint, commit, staleTab }),
+    [state, ready, dispatchSafe, enterSample, exitSample, resetAll, checkpoint, commit, staleTab],
   )
   return <StoreCtx.Provider value={api}>{children}</StoreCtx.Provider>
 }

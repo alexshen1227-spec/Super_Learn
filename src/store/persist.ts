@@ -123,7 +123,42 @@ function idbPrefixValues(db: IDBDatabase, prefix: string): Promise<string[]> {
 let writesSinceBackup = 0
 
 /** Persist serialized state. Never throws; returns whether any durable copy landed. */
+/**
+ * Who wrote last, and when. A tiny beacon rather than the mirror, because the
+ * mirror is skipped above `LS_MIRROR_MAX` — which is exactly the heavy user
+ * with the most to lose.
+ *
+ * WHY THIS EXISTS. Saving is a blind whole-state overwrite from an in-memory
+ * snapshot, so a second tab holding an older snapshot silently clobbers the
+ * first tab's work on its next write. Measured against a two-tab replay:
+ * attempt EVENTS survive, because the append-only journal is unioned back in
+ * on hydrate and that is the whole point of it — but the other tab's session
+ * records, deadlines and forecasts are gone.
+ *
+ * Merging on write would resurrect deleted deadlines and reports, which is
+ * worse than the problem. So the app detects the collision and says so,
+ * instead of quietly picking a winner.
+ */
+const LS_WRITER = 'axiomlab.writer'
+
+/** Stable per-tab id. Module scope, so it lives exactly as long as the tab. */
+export const TAB_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
+/** The tab that wrote the persisted state last, or null if unknown. */
+export function lastWriterId(): string | null {
+  try {
+    return localStorage.getItem(LS_WRITER)
+  } catch {
+    return null
+  }
+}
+
 export async function saveState(json: string): Promise<boolean> {
+  try {
+    localStorage.setItem(LS_WRITER, TAB_ID)
+  } catch {
+    /* beacon is best-effort; never block a save on it */
+  }
   let ok = false
   try {
     await withDb(async (db) => {

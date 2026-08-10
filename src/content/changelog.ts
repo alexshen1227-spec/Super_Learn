@@ -11,6 +11,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '7.9',
+    date: '2026-08-09',
+    title: 'Two Tabs Could Quietly Undo Each Other',
+    points: [
+      'If you had the app open twice — an installed app and a browser tab, or just an old tab left open — the one that saved last overwrote the other. Your ANSWERS were always safe: every attempt is written to a separate append-only log and merged back when the app next opens, which is exactly what that log is for. But the other tab\'s session records, deadlines and forecasts were lost with no sign anything had happened. The app now notices and says so: "Open in another tab, which has newer work. Reload to catch up before saving here." It stays out of the way during a session.',
+      'Why it warns instead of merging automatically: deadlines and problem reports can be deleted, and blindly combining two versions would bring deleted ones back. Restoring something you removed is a worse surprise than losing something you added, so the app names the clash rather than guessing.',
+      'The safety rules — the ones about never teaching manipulation, always pointing to a trusted adult when a scenario turns serious, and never claiming an IQ number — are the strictest rules in this app and nothing was automatically checking them. Now they are checked on every release. Result: all 14 serious scenarios already pointed somewhere real, nothing instructs a technique, and no banned claim appears. Two earlier versions of the check wrongly accused good content, which is why the check now tests itself against known-good and known-bad wording.',
+    ],
+  },
+  {
     version: '7.8',
     date: '2026-08-09',
     title: 'The Named Wrong Answers Never Reached The Coach',
