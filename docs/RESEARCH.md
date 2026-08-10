@@ -1674,3 +1674,137 @@ One real oddity in that area, not yet changed: `pflProbes` forces
 on the "without prerequisites" side. Vacuously it belongs on neither. One probe
 in nine is mis-assigned; excluding it from the split rather than defaulting it
 to false is the honest shape. Open work.
+
+## 33. The third hunt (2026-08-09): the paths simulations do not reach
+
+The first two hunts simulated a learner playing forward. That misses everything
+a learner reaches by TAPPING something, everything that arrives from outside
+the app, and the grader itself. This round covered those, plus the two items
+§32 left open.
+
+### 33a. Items §32 left open, now closed
+
+- **Thirty skills still had no daily task easier than 3★.** `onRampsB.ts` adds a
+  1–2★ entry for every one; the audit ceiling drops from 3★ to **2★**. Every
+  skill in the tree now has a way in. The 1★ share of the daily pool rose from
+  6% to **11%** (62 of 581 families), and the number of skills whose easiest
+  task is 3★ or harder is **0, from 44**.
+- **`pflProbes` mis-assigned no-prerequisite probes.** `prereqsOwned` was
+  `false` for a probe whose skill has no prerequisites, which put `pfl-modular`
+  (`m-integers`) permanently on the "without prerequisites" side for every
+  learner — one probe in nine, biasing the comparison it fed. It is `null` now
+  and excluded from both sides; the overall pick-up rate still counts it.
+
+### 33b. The grader could be fooled
+
+Fuzzed every template with 50 junk inputs across five seeds. Option indexes
+were parsed with `Number()`, which is far too generous for a value that selects
+an answer: `"1e-999"` underflows to **0** and so picked option 0 on 180
+templates, and a bare `","` split to `['', '']` → `[0, 0]` → deduped `[0]`,
+which **scored** a multi-select whose answer was the first option.
+
+Not reachable from the player, which sends indexes it generated itself. Fixed
+anyway, for a specific reason: this is the **third** appearance of the
+`Number('') === 0` family in `validate.ts` (a blank multiple choice grading as
+option 0, then the same trap in `describeResponse`), and the grader is the last
+thing standing between a learner and a false claim about what they know.
+Indexes are now matched against plain digits rather than coerced, in both the
+validator and the read-back. `engine/graderFuzz.test.ts` also pins that padding
+never changes a verdict and that no input throws.
+
+### 33c. Observer and Insight trained suspicion, not discernment
+
+Of 55 families in those two buckets, **exactly one** ever had "nothing is
+wrong" as the correct answer. Everywhere else the right answer was that
+something WAS an inference or a pressure tactic — so a learner who answered
+"suspicious" every single time would have scored close to full marks without
+holding the skill.
+
+This is the failure §29f records from the misinformation-assessment literature:
+scoring only the rejection of bad content confounds genuine skill with blanket
+scepticism, and the field standard is to mix true and false items and score
+discernment across both. The physics bank already took the same medicine from
+TIPERs, whose "What, if Anything, is Wrong" tasks are *defined* by admitting
+that sometimes nothing is.
+
+It matters more here than anywhere else in the app. A teenager taught to read
+every direct request as manipulation has not been protected — they have been
+handed a different problem, and one that costs them people who were being
+straight with them. `content/items/discernment.ts` adds three roughly-half-
+benign families: pressure versus an ordinary ask, observation versus inference,
+and different versus contradictory. The benign cases deliberately share the
+surface of the real thing — a genuine deadline, a genuine disappointment, a
+genuine request for an answer today — so they cannot be passed on tone.
+
+An audit rule now keeps at least two families per bucket able to answer
+"nothing is wrong". The floor is low on purpose: much Observer work (scene
+recall, choosing the best question) has no benign shape and should not be
+forced into one. What it forbids is the state this was in — zero.
+
+### 33d. Requested modes substituted silently
+
+Challenge produced an EMPTY plan for a cold learner, a one-event learner and a
+learner who had got everything wrong; Mixed review for two of those. The
+session screen already fell back to the daily plan, so nothing crashed — but it
+did so without a word, so tapping a card promising "non-routine, near your
+ceiling" produced an ordinary session carrying the ordinary session's
+rationale. Every substitution now names what was missing, which the
+error-clinic branch had been doing alone.
+
+### 33e. A keyboard route nobody could find
+
+The spatial puzzle's keyboard alternative to dragging — arrows to move, R to
+rotate, Enter to place — was fully implemented and mentioned nowhere except an
+`aria-label` on the Rotate button. The founding brief asks for a keyboard
+alternative to every drag; one that cannot be discovered does not satisfy it.
+The tray hint now names the controls, and only while a piece is selected.
+
+### 33f. Checked and found sound
+
+Recorded because "we looked" is worth as much as "we fixed", and because
+several of these were suspicions that did not survive contact with a
+measurement:
+
+- **Session recovery.** Sixteen shapes of corrupt draft (truncated JSON, wrong
+  types, negative and out-of-range positions, unknown phase, a far-future
+  clock, a half-megabyte scratchpad), plus a storage layer throwing on read and
+  on write. Every one rejected safely; nothing threw; a finished session never
+  resumed; and everything that DID load pointed at a real question in a plan
+  whose templates still exist. Kept as `store/sessionRecovery.test.ts`.
+- **Hostile imports.** Seventeen malformed payloads — including a
+  prototype-pollution attempt — fed all the way through evidence replay,
+  allocation, the coach and the planner. Allocations always normalise to 100
+  with no negative share; no reader printed a broken value.
+- **The `useStore outside provider` console error** seen throughout development
+  is a Vite HMR artifact from live editing (a second module instance holding a
+  different context object). A clean page load produces **zero** console
+  errors. Confirmed by reproducing it on a stashed baseline and then by loading
+  a fresh tab.
+- **Layout.** No horizontal overflow and no sub-40px tap target on any of the
+  five tabs at **320px**, nor on any of the new content — including the fenced
+  ASCII bar chart, which renders monospaced with its own scroll container and
+  stays legible in dark mode.
+- **Keyboard and roles.** Chess squares and logic-grid cells are real buttons
+  with `gridcell` roles and labels; code-split screens show an `aria-live`
+  fallback rather than a blank flash.
+- **The PFL readout** (§32d) works; the earlier "nine probes, zero reaching the
+  report" was a harness artifact.
+
+### 33g. What is still not fixed, stated plainly
+
+- The bottom of the difficulty range is **thinner than the top**: 11% of the
+  daily pool is 1★ against 32% at 4-5★. Every skill now has an entry point, but
+  a learner well below grade level still runs out of gentle material faster
+  than a strong one runs out of hard material.
+- **Review debt stabilises around 40**, it does not clear. A learner who owns
+  seventy skills will always have a queue; §32c bounded its growth rather than
+  removing it.
+- Of 39 templates carrying named distractors, **3 carry machine-readable cause
+  tags** (§30). Each one added narrows the share of misses the coach can only
+  diagnose from the repair path.
+- **No claim is made that the bug list is empty.** Three hunts have each found
+  real defects that the previous one missed, and the honest reading of that is
+  that a fourth would too. What has changed is that each class found is now
+  held by a gate: curriculum coverage, session length, difficulty easing, entry
+  points, promotion reachability, grader robustness, practice modes, hostile
+  input, session recovery, unsupported markup, and benign-answer coverage.

@@ -11,6 +11,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '7.7',
+    date: '2026-08-09',
+    title: 'Every Topic Now Has A Way In, And The Guardian Path Stopped Rewarding Suspicion',
+    points: [
+      'The 30 remaining topics that started at a hard level now have a gentle first question each — reading a scatter for direction, what a logarithm asks, checking whether a pair of numbers fits both equations, tracing two lines of code by hand, spotting the control group, rounding to the nearest power of ten, and more. Zero topics now start hard, down from 44, and easy questions went from 6% of the bank to 11%.',
+      'The Guardian and Observer paths had a real problem: out of 55 question types, exactly ONE ever had "nothing is wrong here" as the right answer. Answering "that\'s suspicious" every single time would have scored nearly full marks. That is not influence defence — a person trained to read every direct request as manipulation has been given a different problem, not protected from one. Three new question types are now about half ordinary cases: a real deadline stated plainly, someone genuinely disappointed, two accounts that differ without contradicting. Getting those right is half the skill.',
+      'The answer checker could be fooled by things that are not answers. Certain odd text coerced into "you picked the first option" on 180 question types, and a bare comma could actually SCORE a multi-select. You could not do this by tapping — it needed input the app never sends — but the checker is the last thing between you and a false claim about what you know, so it now only accepts plain option numbers.',
+      'Tap "Challenge" as a new learner and you used to get an ordinary session with no explanation, because there was nothing near your ceiling yet. Now it tells you what was missing and why it is running something else instead.',
+      'The spatial puzzle could always be played by keyboard — arrows move, R rotates, Enter places — and said so nowhere. Now it says so, once you have picked up a piece.',
+      'Also checked and found fine, rather than assumed: 16 kinds of corrupted saved session (all safely refused, nothing lost, no crash), 17 kinds of malformed import file, a full or blocked browser storage, the app at 320px wide, dark mode, and screen-reader roles on the chess board and logic grids.',
+      'Still honest about the gaps: the easy end of the question bank is thinner than the hard end, the review pile settles around 40 rather than emptying, and three hunts have each found real bugs the previous one missed — so a fourth probably would too. What changed is that every kind of bug found so far now has a release check guarding it.',
+    ],
+  },
+  {
     version: '7.6',
     date: '2026-08-09',
     title: 'A Ten-Minute Session Was Fifteen Minutes, And The Difficulty Dial Was Stuck',
