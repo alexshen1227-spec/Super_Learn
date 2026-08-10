@@ -1888,3 +1888,57 @@ once* — each of these fails the build:
 
 The measurement harnesses that found each defect were kept as those gates
 rather than deleted, which is the only durable part of any of this.
+
+## 35. The content law nobody was checking
+
+Every content rule in this app has a release gate — computed answers, variant
+honesty, transfer reachability, entry points, unsupported markup,
+benign-answer coverage. The rules CLAUDE.md calls **law**, and the ones with
+the highest stakes for a teenage user, were enforced by nobody:
+
+- Observer and Human Insight teach influence DEFENCE, never operational
+  manipulation.
+- Danger-adjacent scenarios break the game frame and point to a trusted adult
+  or an emergency resource.
+- No IQ number, no microexpression lie-detection, no learning styles (§12).
+
+`content/safetyBoundaries.test.ts` now holds all three.
+
+**What it found: nothing — and that took two corrections to establish.** Both
+earlier drafts of the detector reported the app's BEST safety content as
+non-compliant:
+
+1. The first looked for the phrase "trusted adult" and missed "teacher or
+   parent", "responsible adult", "emergency help" and "school authority". It
+   flagged `h-trusted-person`, whose correct answers name 988 and 911 and whose
+   title is "This one is not a game".
+2. The second matched the generic hint text listing risks ("when threats,
+   self-harm or stalking appear…"), which appears on every variant of a family
+   including the deliberately benign one, and so reported five compliant
+   renders as bare.
+
+Corrected: all **fourteen** danger-adjacent scenarios in the bank already carry
+an escalation route, no render instructs a manipulation technique, and no
+banned claim appears anywhere including the knowledge-base cards.
+
+**Design of the matchers, since two got it wrong.** DANGER reads only the
+SCENARIO the learner reasons about, never the coaching around it. POINTER
+accepts any real-world escalation route rather than one house phrase.
+INSTRUCTION matches the imperative VOICE, not the vocabulary — defensive
+content has to name gaslighting and guilt-tripping to teach recognition, so a
+keyword scan would flag exactly the content the rule protects.
+
+**The gate verifies itself.** A matcher that has rotted into matching nothing
+is indistinguishable from a clean bank, which is how this rule went unguarded
+in the first place. One test pins every regex against known-bad AND known-good
+strings ("Notice when someone tries to make you feel guilty" must pass; "Here
+is how to make them feel guilty" must not), and another fails if the danger
+matcher stops finding scenarios at all.
+
+**Also checked this round and sound:** calendar handling. `engine/time.ts`
+compares local calendar ordinals rather than raw timestamps, so a deadline does
+not drift a day in western time zones or across DST. A semantically invalid
+date (2026-02-30) passes the sanitizer's shape regex but fails `dateParts`'
+round-trip check, yielding NaN — and every consumer filters on `>= 0`, which
+NaN fails, so it is dropped rather than displayed. Both date inputs in the UI
+are `<input type="date">`, so it is not reachable there anyway.
