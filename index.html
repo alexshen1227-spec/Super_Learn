@@ -2,9 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      `interactive-widget=resizes-content` makes the Android soft keyboard
+      shrink the LAYOUT viewport instead of scrolling the page under it.
+
+      Reported on a Pixel: "the text box keeps going down sometime when I'm
+      writing a report". Bottom-anchored sheets are sized in `dvh`, so with the
+      default (`resizes-visual`) the keyboard leaves layout untouched and the
+      browser scrolls the page beneath it — the field drifts out from under the
+      caret as you type. Resizing the content keeps the sheet inside the space
+      that is actually visible.
+    -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, interactive-widget=resizes-content"
     />
     <meta name="description" content="Axiom Lab — a private, offline-first adaptive learning system for math, physics, coding, reasoning, and thinking skills." />
     <meta name="theme-color" content="#0d1420" media="(prefers-color-scheme: dark)" />

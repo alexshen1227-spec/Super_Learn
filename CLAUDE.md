@@ -29,6 +29,29 @@ was worth doing.
   messages, and `docs/RESEARCH.md` stay as precise and technical as they need
   to be — the next agent reads those.
 
+## Reading the owner's bug reports
+
+They report through the in-app flag, and they have asked for this to be written
+down: **they are human and some reports will be wrong.** Treat each one as a
+observation to check, not a verdict to act on. Three rules follow:
+
+- **Verify before fixing.** Reproduce or measure first. Some reports are exact,
+  some are half-right, and at least one has been right about the symptom and
+  wrong about the cause.
+- **"I misunderstood" is itself a finding.** They said so explicitly: if the app
+  confused them, that is a defect in the app even when the behaviour is
+  technically correct. A question like "for what observation?" was a genuine
+  rendering bug; "wtf is a log" is a content-prerequisite bug. Neither is user
+  error.
+- **A vague report can still be right.** "Some of the answers are kinda obvious
+  because they're long" was measured afterwards at 62% in one bucket against a
+  25% chance baseline, while the bank-wide gate read 24% and passed. Feel
+  spotted what an average hid. Chase the mechanism before dismissing the
+  wording.
+
+Say plainly which reports turned out to be real, which did not, and why —
+knowing a report was mistaken is worth as much to them as a fix.
+
 ## Commands
 
 - `npm run dev` — dev server (port 5199, strictPort)

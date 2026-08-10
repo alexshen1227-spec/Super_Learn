@@ -882,7 +882,10 @@ const areaComposite = tpl(
     const ans = w * h - cutW * cutH
     return {
       title: 'L-shaped area',
-      prompt: `An L-shaped room is a **${w} × ${h}** rectangle with a **${cutW} × ${cutH}** rectangular corner missing. Find its area.`,
+      // "L-shape could be L or l" — a real report, and a fair one. The area is
+      // the same whichever corner is cut, but the question never said so, so
+      // the learner reasonably stopped to worry about orientation.
+      prompt: `An L-shaped room is a **${w} × ${h}** rectangle with a **${cutW} × ${cutH}** rectangular corner missing. It does not matter which corner — the area comes out the same either way. Find its area.`,
       answer: numeric(ans),
       hints: [
         'Two strategies: split the L into two rectangles, or subtract the missing corner.',

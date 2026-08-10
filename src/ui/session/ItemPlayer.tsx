@@ -484,6 +484,32 @@ export function ItemPlayer({
         </Card>
       ) : null}
 
+      {/*
+        THE SETUP for a multi-part item.
+
+        `item.prompt` frames the whole activity — the observation to explain,
+        the payoff matrix, the plan being pre-mortemed — while each part
+        carries only its own question. The player rendered `parts[i].prompt`
+        and never the top-level one, so that framing was invisible: "Write
+        three different plausible explanations for this observation" appeared
+        with no observation anywhere on screen. Reported by a learner as "For
+        what observation? It didn't gave me any observation or story?", and
+        41 of 55 multi-part templates were carrying something up there.
+
+        The content audit had it right all along — `visibleText()` already
+        treats `item.prompt` as learner-facing and checks its markup and
+        wording. The renderer was the half that disagreed.
+
+        Shown on every part, because a payoff matrix is needed in part three
+        as much as in part one, and skipped when it would merely repeat the
+        question directly below it.
+      */}
+      {parts && !twinItem && item.prompt?.trim() && item.prompt.trim() !== parts[partIndex].prompt.trim() ? (
+        <Card className="p-4 mb-3 bg-surface2">
+          <Rich text={item.prompt} className="text-[15px]" />
+        </Card>
+      ) : null}
+
       {phase === 'study' && parts && parts[partIndex].explore ? (
         <ExplorePlot
           // Remount per part: two explore parts in a row would otherwise

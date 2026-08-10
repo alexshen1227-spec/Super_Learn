@@ -522,9 +522,9 @@ const apologyQuality = fixed(
       type: 'mcq',
       options: [
         '"I\'m sorry — I lost track of time and left you waiting an hour. Next time I\'ll message the moment I\'m running late."',
-        '"I\'m sorry you feel that way."',
-        '"I\'m sorry, BUT you\'re honestly too sensitive about time."',
-        '"Mistakes were made, I guess."',
+        '"I\'m sorry you feel that way — I really hate it when you get upset with me over something this small."',
+        '"I\'m sorry I was late, BUT you know what I\'m like with time and you are honestly far too sensitive about it."',
+        '"Mistakes were made and the afternoon rather ran away from everyone, I guess. Anyway, shall we just get started?"',
       ],
       correct: 0,
     },

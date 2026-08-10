@@ -1136,6 +1136,69 @@ describe('multiple choice does not leak the answer through option length', () =>
       `longest-option shortcut scores ${(100 * share).toFixed(1)}% (chance ${((100 * chance) / n).toFixed(1)}%). Worst offenders: ${worst}`,
     ).toBeLessThanOrEqual(MAX_GLOBAL_SHARE)
   })
+
+  /**
+   * PER BUCKET, because the bank-wide number cannot see this.
+   *
+   * Reported by a learner, in four separate reports, ending "You have to make
+   * all the answer around the same length!!" — and they were right. The global
+   * gate read 24.4%, at chance, and passed. Underneath it the insight bucket
+   * was at 62%: pick the longest option and you were right four times in five.
+   *
+   * Math carries 1032 of the bank's 2192 multiple-choice questions and sits at
+   * 12%, so it drags the mean to chance and hides everything else. An average
+   * concealing the thing it averages over is precisely what `explore-spread`
+   * teaches, which made this an uncomfortable bug to find.
+   *
+   * These ceilings are a RATCHET: each is today's measured value plus a small
+   * margin. Lower them when content improves; never raise one to make a test
+   * pass. Chance is 25%, and that is where they should all end up.
+   */
+  const BUCKET_CEILING: Record<string, number> = {
+    strategist: 0.53,
+    science: 0.47,
+    observer: 0.47,
+    insight: 0.4,
+    meta: 0.39,
+    coding: 0.33,
+    investigator: 0.31,
+    math: 0.17,
+    physics: 0.12,
+    puzzle: 0.15,
+  }
+
+  it('no single bucket lets the longest-option shortcut run away', () => {
+    const per = new Map<string, { n: number; hits: number }>()
+    for (const t of BUILTIN_TEMPLATES) {
+      for (let seed = 0; seed < Math.min(SAMPLE_SEEDS, Math.max(1, t.variants)); seed++) {
+        let item
+        try {
+          item = t.generate(seed)
+        } catch {
+          continue
+        }
+        for (const part of item.parts ?? [{ answer: item.answer }]) {
+          const a = part.answer ?? item.answer
+          if (!a || a.type !== 'mcq' || a.options.length < 3) continue
+          const lens = a.options.map((o) => o.length)
+          const runnerUp = Math.max(...lens.filter((_, i) => i !== a.correct))
+          const e = per.get(t.bucket) ?? { n: 0, hits: 0 }
+          e.n++
+          if (lens[a.correct] > runnerUp * (1 + CUE_MARGIN)) e.hits++
+          per.set(t.bucket, e)
+        }
+      }
+    }
+    const over: string[] = []
+    for (const [bucket, e] of per) {
+      if (e.n < 20) continue
+      const shareHere = e.hits / e.n
+      const ceiling = BUCKET_CEILING[bucket] ?? 0.4
+      if (shareHere > ceiling)
+        over.push(`${bucket} ${(100 * shareHere).toFixed(0)}% (ceiling ${(100 * ceiling).toFixed(0)}%, ${e.hits}/${e.n})`)
+    }
+    expect(over, `buckets where the longest answer gives it away: ${over.join('; ')}`).toEqual([])
+  })
 })
 
 /**
@@ -1285,6 +1348,44 @@ describe('manipulable diagrams', () => {
         }
       }
     }
+  })
+
+  /**
+   * Numbers a learner reads have to look like numbers.
+   *
+   * Reported as "some UI and/or numbers are kinda broken", which turned out to
+   * be three separate faults: hyphen-minus where a real minus sign belongs
+   * (`(-3, 0)`), decimals running to three places (`frequency 13.333`), and —
+   * the bad one — `Speed 20.001 m/s` on the very diagram whose entire lesson
+   * is that the speed never changes. That last one was a rounded frequency
+   * multiplied back out, and it contradicted the item on screen.
+   */
+  it('every number a diagram shows is tidy, signed properly, and finite', () => {
+    const faults: string[] = []
+    for (const t of withExplore) {
+      for (let seed = 0; seed < Math.max(1, t.variants); seed++) {
+        const item = t.generate(seed)
+        const texts: string[] = [item.prompt, item.explanation ?? '']
+        for (const p of item.parts ?? []) {
+          texts.push(p.prompt, p.explanation ?? '', p.study ?? '', ...(p.hints ?? []))
+          if (p.answer.type === 'mcq') texts.push(...p.answer.options)
+          for (const stop of p.explore?.stops ?? []) {
+            texts.push(stop.caption, stop.value)
+            if (stop.plot.rect) texts.push(String(stop.plot.rect.label))
+            for (const m of stop.plot.marks ?? []) texts.push(m.label)
+            for (const c of stop.plot.circles ?? []) texts.push(String(c.label ?? ''))
+          }
+        }
+        for (const text of texts) {
+          const where = `${t.id} seed ${seed}`
+          const long = text.match(/-?\d+\.\d{3,}/g)
+          if (long) faults.push(`${where}: ${long.length} over-long decimal(s) like "${long[0]}" in "${text.slice(0, 70)}"`)
+          if (/\B-\d/.test(text)) faults.push(`${where}: hyphen where a minus sign belongs, in "${text.slice(0, 70)}"`)
+          if (/NaN|Infinity|undefined|\[object/.test(text)) faults.push(`${where}: broken value in "${text.slice(0, 70)}"`)
+        }
+      }
+    }
+    expect(faults, `numbers that read as glitches — ${faults.slice(0, 6).join(' | ')}`).toEqual([])
   })
 
   it('the axes never move while the learner drags', () => {

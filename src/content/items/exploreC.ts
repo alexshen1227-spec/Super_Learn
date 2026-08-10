@@ -33,6 +33,21 @@ function money(v: number): string {
   return (Math.round(v * 100) / 100).toFixed(2)
 }
 
+/** A real minus sign, never a hyphen, in front of any number a learner reads. */
+function neg(n: number): string {
+  return n < 0 ? `−${Math.abs(n)}` : `${n}`
+}
+
+/**
+ * A tidy number for a caption: at most one decimal place, and no trailing
+ * zero. Reported as "some numbers are kinda broken" — captions were showing
+ * 13.333 and 6.667, which read as a glitch rather than as a value.
+ */
+function tidy(v: number): string {
+  const r = Math.round(v * 10) / 10
+  return Number.isInteger(r) ? String(r) : r.toFixed(1)
+}
+
 // ------------------------------------------------- percentage asymmetry
 
 /**
@@ -279,7 +294,7 @@ const exploreSpread = tpl(
       const vals = valuesAt(w)
       return {
         value: `spread ${w}`,
-        caption: `Seven values from ${Math.min(...vals)} to ${Math.max(...vals)}. Mean ${c}.`,
+        caption: `Seven values from ${neg(Math.min(...vals))} to ${neg(Math.max(...vals))}. Mean ${c}.`,
         plot: {
           xMin,
           xMax,
@@ -498,7 +513,7 @@ const exploreVertex = tpl(
       const hs = [-3, -2, -1, 0, 1, 2, 3]
       const stops: ExploreStop[] = hs.map((h) => ({
         value: `h = ${h < 0 ? `−${-h}` : h}`,
-        caption: `y = ${plan.a === 1 ? '' : plan.a}(x ${h < 0 ? '+' : '−'} ${Math.abs(h)})² . Lowest point at (${h}, 0).`,
+        caption: `y = ${plan.a === 1 ? '' : plan.a}(x ${h < 0 ? '+' : '−'} ${Math.abs(h)})². Lowest point at (${neg(h)}, 0).`,
         plot: { xMin, xMax, yMin, yMax, xLabel: 'x', yLabel: 'y', series: curve(h, 0) },
       }))
       return {
@@ -546,7 +561,7 @@ const exploreVertex = tpl(
     const ks = [-4, -2, 0, 2, 4, 6]
     const stops: ExploreStop[] = ks.map((k) => ({
       value: `k = ${k < 0 ? `−${-k}` : k}`,
-      caption: `y = ${plan.a === 1 ? '' : plan.a}x² ${k < 0 ? '−' : '+'} ${Math.abs(k)}. Lowest point at (0, ${k}).`,
+      caption: `y = ${plan.a === 1 ? '' : plan.a}x² ${k < 0 ? '−' : '+'} ${Math.abs(k)}. Lowest point at (0, ${neg(k)}).`,
       plot: { xMin, xMax, yMin, yMax, xLabel: 'x', yLabel: 'y', series: curve(0, k) },
     }))
     return {
@@ -618,12 +633,14 @@ const explorePowers = tpl(
     const stops: ExploreStop[] = ns.map((n) => {
       const v = base ** n
       const shown = n >= 0 ? `${v}` : `1/${base ** -n}`
+      // The mark and the explanation used r2(base**n), which printed 0.333 and
+      // 0.111. A fraction is both tidier and closer to what the step means.
       return {
-        value: `${base}^${n < 0 ? `−${-n}` : n}`,
+        value: `${base}^${neg(n)}`,
         caption:
           n >= 0
             ? `${base}^${n} = ${v}. Each step down divides by ${base}.`
-            : `${base}^−${-n} = ${shown} = ${r2(v)}. Still dividing by ${base}, still positive.`,
+            : `${base}^−${-n} = ${shown}. Still dividing by ${base}, and still positive.`,
         plot: {
           xMin: -2.5,
           xMax: 3.5,
@@ -633,7 +650,7 @@ const explorePowers = tpl(
           yLabel: 'value',
           series: [],
           dots: ns.map((k) => ({ x: k, y: r2(base ** k), tone: (k === n ? 1 : 0) as 0 | 1 })),
-          marks: [{ x: n, label: `${r2(base ** n)}`, tone: 1 as const }],
+          marks: [{ x: n, label: shown, tone: 1 as const }],
         },
       }
     })
@@ -645,7 +662,7 @@ const explorePowers = tpl(
         `${base}^1 is ${base}. Divide by ${base} once more — what should ${base}^0 be?`,
         'Keep dividing past zero. Dividing a positive number can never give a negative one.',
       ],
-      explanation: `Going down one step always divides by ${base}: ${base ** 2} → ${base} → 1 → ${r2(1 / base)}. That is why ${base}^0 = 1 — it is what you get by dividing ${base}^1 by ${base} — and why negative exponents give small POSITIVE fractions rather than negative numbers.`,
+      explanation: `Going down one step always divides by ${base}: ${base ** 2} → ${base} → 1 → 1/${base}. That is why ${base}^0 = 1 — it is what you get by dividing ${base}^1 by ${base} — and why negative exponents give small POSITIVE fractions rather than negative numbers.`,
       transferBridge:
         'A rule that looks arbitrary is often a pattern continued. Asking "what keeps the pattern working?" is how zero and negative exponents, and later fractional ones, stop needing to be memorised.',
       parts: [
@@ -671,9 +688,9 @@ const explorePowers = tpl(
           hints: [
             'A negative exponent tells you to divide, not to make the answer negative.',
             `${base}^−2 means 1 ÷ ${base}², and ${base}² is ${base ** 2}.`,
-            `Worked path: 1 ÷ ${base ** 2} = ${r2(1 / base ** 2)} — **positive and smaller than 1**.`,
+            `Worked path: 1 ÷ ${base ** 2} = 1/${base ** 2} — **positive and smaller than 1**.`,
           ],
-          explanation: `Positive and less than 1: ${base}^−2 = 1 ÷ ${base ** 2} = ${r2(1 / base ** 2)}. The minus sign in the exponent flips the number over; it never changes its sign. Dividing a positive by a positive cannot give a negative, whatever the exponent says.`,
+          explanation: `Positive and less than 1: ${base}^−2 = 1 ÷ ${base ** 2} = 1/${base ** 2}. The minus sign in the exponent flips the number over; it never changes its sign. Dividing a positive by a positive cannot give a negative, whatever the exponent says.`,
         }),
       ],
     }
@@ -796,14 +813,18 @@ const exploreWave = tpl(
     const xMax = 8
     const amp = 1
     const stops: ExploreStop[] = lengths.map((lam) => {
-      const f = r2(v / lam)
+      // Displayed to one place, but the SPEED is printed as the exact constant
+      // it is. Recomputing it from the rounded frequency produced captions
+      // reading "Speed 20.001 m/s" on the very diagram whose lesson is that
+      // the speed never changes.
+      const f = v / lam
       const pts: [number, number][] = []
       for (let x = 0; x <= xMax + 1e-9; x += 0.05) {
         pts.push([r2(x), r2(amp * Math.sin((2 * Math.PI * x) / lam))])
       }
       return {
-        value: `${lam} m long`,
-        caption: `Wavelength ${lam} m, frequency ${f} per second. Speed ${r2(f * lam)} ${scene.unit}.`,
+        value: `${tidy(lam)} m long`,
+        caption: `Wavelength ${lam} m, frequency ${tidy(f)} per second. Speed ${v} ${scene.unit}.`,
         plot: {
           xMin: 0,
           xMax,

@@ -670,19 +670,19 @@ const pressureCases = [
     message: 'Answer in the next two minutes or I will ask someone who actually cares.',
     correct: 'Manufactured urgency plus guilt pressure',
     defense: 'Pause; urgency does not create an obligation. Reply only when ready.',
-    wrong: ['Neutral scheduling', 'Evidence-based persuasion', 'A normal apology'],
+    wrong: ['Neutral scheduling of something that genuinely has to happen soon', 'Evidence-based persuasion using reasons you can actually check', 'A normal apology for the short notice they have given you'],
   },
   {
     message: 'Everyone already shared their password with me. Why are you making this weird?',
     correct: 'False social proof used to push a security boundary',
     defense: 'Do not share credentials; verify through the official channel and tell a trusted adult or administrator.',
-    wrong: ['A harmless popularity poll', 'A technical support procedure', 'A fair group rule'],
+    wrong: ['A harmless popularity poll that nothing much depends upon', 'A technical support procedure of the kind real services do use', 'A fair group rule that everybody in the chat already agreed to'],
   },
   {
     message: 'Keep this between us. Other people would not understand our special friendship.',
     correct: 'Isolation and secrecy pressure',
     defense: 'Safety outranks secrecy: stop, preserve the message, and involve a trusted adult.',
-    wrong: ['Respect for privacy', 'A surprise-party plan', 'Ordinary confidentiality'],
+    wrong: ['Respect for the privacy of something told to you in confidence', 'A surprise-party plan that has to stay quiet for obvious reasons', 'Ordinary confidentiality of the sort any friendship involves'],
   },
   {
     message: 'The trial is free. Cancellation requires a weekday phone interview, but that is no big deal.',
@@ -735,12 +735,12 @@ const boundaryCases = [
   {
     situation: 'A classmate repeatedly asks to copy your answers after you already said no.',
     correct: 'I am not sharing answers. I can explain the first step after you try it.',
-    wrong: ['Maybe later, if you keep asking.', 'You are lazy and everyone knows it.', 'Fine, but never ask again.'],
+    wrong: ['Maybe later on, if you keep asking me about it enough.', 'You are lazy about this and honestly everybody already knows it.', 'Fine, take them this once, but do not ever ask me again.'],
   },
   {
     situation: 'A friend keeps posting photos of you after you asked them not to.',
     correct: 'Do not post photos of me. If another goes up, I will report it and leave the event.',
-    wrong: ['I guess it is okay if the photo is good.', 'Delete everything or I will ruin your account.', 'Say nothing and hope they notice.'],
+    wrong: ['I suppose it is fine to leave up as long as the photo is a good one.', 'Delete all of it right now or I will get your account taken down.', 'Say nothing at all and hope that they notice how you feel.'],
   },
   {
     situation: 'Someone keeps interrupting your study block with non-urgent messages.',
@@ -750,17 +750,17 @@ const boundaryCases = [
   {
     situation: 'A teammate makes the same personal joke after you asked them to stop.',
     correct: 'That joke is not okay with me. If it continues, I will step away and involve the coach.',
-    wrong: ['Make a harsher joke about them.', 'Laugh so nobody thinks you are sensitive.', 'Give a ten-minute explanation while they argue each point.'],
+    wrong: ['Make a harsher joke back at them so that they drop it.', 'Laugh along with it so that nobody decides you are too sensitive.', 'Give a ten-minute explanation while they argue each point.'],
   },
   {
     situation: 'An online contact asks you to hide your conversations from trusted adults.',
     correct: 'Stop replying, keep the messages, block or report the account, and tell a trusted adult now.',
-    wrong: ['Promise secrecy but ask them to be nicer.', 'Argue until they admit the request was wrong.', 'Delete the messages and handle it alone.'],
+    wrong: ['Promise to keep it secret, but ask them to be nicer about it.', 'Argue with them until they admit that the request was wrong to make.', 'Delete the messages so nobody sees them and handle it entirely alone.'],
   },
   {
     situation: 'A group keeps pressuring you to join an activity that feels unsafe.',
     correct: 'I am not doing that. I am leaving now and contacting someone I trust.',
-    wrong: ['Stay nearby so they do not call you scared.', 'Join briefly and leave if it gets worse.', 'Insult everyone before walking away.'],
+    wrong: ['Stay nearby anyway so that nobody gets to call you scared of it.', 'Join in briefly and then leave again if it starts getting worse.', 'Insult all of them on your way out so they know what you think.'],
   },
 ]
 
@@ -790,13 +790,53 @@ const boundaryLine = tpl(
   },
 )
 
-const deescalationOrders = [
-  ['Pause and lower your own voice', 'Name the concrete issue without insult', 'Ask one specific question', 'Agree on the next small action', 'Leave or get help if safety worsens'],
-  ['Stop typing the immediate comeback', 'Save evidence if the message is harmful', 'Mute or block the account', 'Use the platform report tools', 'Tell a trusted person if it continues'],
-  ['Take one slow breath', 'Acknowledge the feeling without agreeing to a false claim', 'Move from accusations to observable facts', 'Offer one workable next step', 'Revisit later if either person is still flooded'],
-  ['Notice the pressure signal in your body', 'Create physical or digital distance', 'State a short no', 'Contact a trusted person', 'Document and report repeated threats'],
-  ['Stop the public argument', 'Move to a calmer setting if safe', 'Let each person state one fact at a time', 'Choose a reversible next step', 'Check later whether the agreement held'],
-  ['Put down anything that could escalate harm', 'Create distance and use a steady voice', 'Do not debate while danger is rising', 'Get a responsible adult or emergency help', 'Record details only after everyone is safe'],
+/*
+ * Each sequence now carries the SITUATION it belongs to.
+ *
+ * Reported by a learner: "The question didn't specify the situation, what
+ * situation were you in? That decides what the answer to this question will
+ * be." Exactly right — the steps mentioned "the message" and "the account"
+ * while the prompt described no scene at all, so the learner had to reverse-
+ * engineer the scenario from the options.
+ *
+ * The same report also said some steps "can be switched and are both a
+ * decently correct answer", which was true of the online one: it had blocking
+ * before reporting, and either order is defensible in real life. Each step is
+ * now worded so its position is forced by something the previous step makes
+ * possible — save before anything is hidden, report while the messages still
+ * exist, block once they are no longer needed on screen.
+ */
+const deescalationOrders: { situation: string; steps: string[] }[] = [
+  {
+    situation: 'A disagreement with a friend has got loud, and you are both talking over each other.',
+    steps: ['Pause and lower your own voice', 'Name the concrete issue without insult', 'Ask one specific question', 'Agree on the next small action', 'Leave or get help if safety worsens'],
+  },
+  {
+    situation: 'Someone you barely know is sending you nasty messages online, and more keep arriving.',
+    steps: [
+      'Stop typing the reply you were about to send',
+      'Screenshot the messages while they are still visible to you',
+      'Report the account, which needs those messages to still exist',
+      'Block the account so that nothing new arrives',
+      'Tell a trusted adult if it carries on after that',
+    ],
+  },
+  {
+    situation: 'A family member is upset with you and has said something about you that is not true.',
+    steps: ['Take one slow breath', 'Acknowledge the feeling without agreeing to a false claim', 'Move from accusations to observable facts', 'Offer one workable next step', 'Revisit later if either person is still flooded'],
+  },
+  {
+    situation: 'Someone keeps pressuring you to do something you have already said you do not want to do.',
+    steps: ['Notice the pressure signal in your body', 'Create physical or digital distance', 'State a short no', 'Contact a trusted person', 'Document and report repeated threats'],
+  },
+  {
+    situation: 'You and a teammate start arguing in front of the rest of the group.',
+    steps: ['Stop the public argument', 'Move to a calmer setting if safe', 'Let each person state one fact at a time', 'Choose a reversible next step', 'Check later whether the agreement held'],
+  },
+  {
+    situation: 'A confrontation nearby is escalating and someone could get hurt.',
+    steps: ['Put down anything that could escalate harm', 'Create distance and use a steady voice', 'Do not debate while danger is rising', 'Get a responsible adult or emergency help', 'Record details only after everyone is safe'],
+  },
 ]
 
 const deescalationOrder = tpl(
@@ -810,10 +850,11 @@ const deescalationOrder = tpl(
     minutes: 3,
   },
   (rng, seed) => {
-    const steps = deescalationOrders[seed % deescalationOrders.length]
+    const scene = deescalationOrders[seed % deescalationOrders.length]
+    const steps = scene.steps
     return {
       title: 'Sequence the safer response',
-      prompt: 'Arrange these actions from the first stabilizing move to the final follow-through.',
+      prompt: `**The situation:** ${scene.situation}\n\nArrange these actions from the first stabilizing move to the final follow-through.`,
       answer: orderAnswer(rng, steps),
       hints: [
         'Regulate and create safety before trying to solve the disagreement.',

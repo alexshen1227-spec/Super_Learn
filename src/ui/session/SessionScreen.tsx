@@ -154,8 +154,32 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
     return () => clearInterval(id)
   }, [checkIn])
 
+  /*
+   * A paused session must not be destroyed by starting a different one.
+   *
+   * There is a single draft slot, so launching anything from Practice
+   * overwrote the paused daily session, and finishing that new session cleared
+   * the slot — the paused one vanished and Today offered "start today's
+   * session" as though it had never existed. Reported by a learner, and it is
+   * silent data loss: real work, gone, with no message.
+   *
+   * Named rather than guessed at, which is the same call the two-tab clash
+   * makes: the app cannot know which session is wanted, so it asks.
+   */
+  const [overwritePrompt, setOverwritePrompt] = useState<SessionDraft | null>(null)
+  const [mayOverwrite, setMayOverwrite] = useState(false)
+
   // ---------- resume or build ----------
   useEffect(() => {
+    if (launch.kind !== 'resume' && !mayOverwrite && !plan) {
+      const paused = loadDraftSync()
+      const usable =
+        paused && paused.plan.blocks.every((b) => b.activities.every((a) => index.templates.has(a.templateId)))
+      if (paused && usable) {
+        setOverwritePrompt(paused)
+        return
+      }
+    }
     if (launch.kind === 'resume') {
       const draft = loadDraftSync()
       // A draft can outlive an app update that renamed content — validate
@@ -208,8 +232,12 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
     }
     // daily / focus / mixed / challenge / error-clinic → check-in first
     setPhase('checkin')
+    // Re-runs when the learner chooses what to do about a paused session, and
+    // when that choice changes the launch itself — the route name does not
+    // change on "resume", so without `launch.kind` here the screen would keep
+    // showing the prompt it had already answered.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [mayOverwrite, launch.kind])
 
 /**
  * What to say when a requested mode has nothing to give yet and the ordinary
@@ -576,6 +604,50 @@ const EMPTY_MODE_NOTE: Record<string, string> = {
   )
 
   // ---------- screens ----------
+  if (overwritePrompt) {
+    const paused = overwritePrompt
+    const done = Object.values(paused.records).filter((r) => r.submitted).length
+    const total = paused.plan.blocks.reduce((a, b) => a + b.activities.length, 0)
+    const ago = Math.max(1, Math.round((Date.now() - paused.savedAt) / 60_000))
+    return (
+      <div className="pt-safe min-h-dvh grid place-items-center px-4">
+        <Card className="p-6 max-w-md w-full anim-in">
+          <h1 className="font-display text-xl font-bold">You already have a session paused</h1>
+          <p className="text-muted text-[15px] mt-2 leading-relaxed">
+            {done} of {total} activities done, left {ago === 1 ? 'a minute' : `${ago} minutes`} ago. Starting a
+            new one now would replace it — so this asks first rather than quietly overwriting your work.
+          </p>
+          <p className="text-faint text-[13px] mt-2 leading-relaxed">
+            Answers you already submitted are safely recorded either way. What would be lost is the rest of the
+            plan and where you had got to in it.
+          </p>
+          <Button
+            className="w-full mt-4"
+            onClick={() => {
+              setOverwritePrompt(null)
+              go({ name: 'session', launch: { kind: 'resume' } })
+            }}
+          >
+            Pick up the paused session
+          </Button>
+          <Button
+            kind="secondary"
+            className="w-full mt-2"
+            onClick={() => {
+              clearDraft()
+              setOverwritePrompt(null)
+              setMayOverwrite(true)
+            }}
+          >
+            Discard it and start this instead
+          </Button>
+          <Button kind="ghost" className="w-full mt-2" onClick={() => go({ name: 'today' })}>
+            Back
+          </Button>
+        </Card>
+      </div>
+    )
+  }
   if (phase === 'checkin') {
     return <CheckInScreen defaultMinutes={activeMission(state, Date.now())?.dailyMinutes ?? state.profile.sessionMinutes} deadlines={state.deadlines} onStart={buildPlan} onCancel={() => go({ name: 'today' })} />
   }

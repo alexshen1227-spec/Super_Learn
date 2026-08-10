@@ -2548,6 +2548,60 @@ baseline at the two lower levels.
 A third, smaller one: the no-dues warm-up fallback could pick the same template
 for two different skills, because a template may list several. Deduped.
 
+### 38. The first real bug report (2026-08-10)
+
+Twelve flagged items plus two prose reports from an actual session. Recorded in
+full because the hit rate matters: **every substantive report was right**, two
+of them pointed at defect CLASSES far larger than the instance reported, and
+the reporter's own caveat ("I'm a human that makes mistakes") turned out to be
+unnecessary.
+
+**Two class-level findings.**
+
+1. *"For what observation? It didn't gave me any observation or story?"* —
+   `item.prompt` frames a multi-part activity while each part carries only its
+   own question, and `ItemPlayer` rendered `parts[i].prompt` and never the
+   top-level one. **41 of 55 multi-part templates** were carrying content up
+   there, including `gt-play-first`'s entire payoff matrix and `st-premortem`'s
+   plan. The content audit had been right all along — `visibleText()` already
+   treats `item.prompt` as learner-facing — and the renderer was the half that
+   disagreed.
+
+2. *"You have to make all the answer around the same length!!"* — measured at a
+   15% margin, the longest option was correct in **62% of insight questions**
+   against a 25% chance baseline. The existing gate read 24.4% bank-wide and
+   passed, because math carries 1032 of 2192 MCQs at 12% and drags the mean to
+   chance. An average concealing what it averages over — the exact lesson
+   `explore-spread` teaches, which made it an uncomfortable one to find.
+
+| bucket | before | after |
+| --- | --- | --- |
+| insight | 62% | **35%** |
+| strategist | 47% | 47% |
+| science | 44% | 43% |
+| observer | 43% | 44% |
+
+Insight was rewritten (distractors elaborated to match, which also makes them
+better distractors); the rest are queued. `BUCKET_CEILING` is now a per-bucket
+ratchet set at today's measured values — lower them as content improves, never
+raise one to make a test pass. Chance is 25% and that is where they belong.
+
+**The rest, each real.** A paused session was destroyed by starting another
+(single draft slot, silent loss — now names the clash rather than guessing, the
+same call the two-tab warning makes). `pfl-benford` required log₁₀ to answer,
+so a probe measuring pick-up of a NEW idea was gated on an unmet OLD one; it
+now supplies a table. Diagram numbers carried hyphen-minus, three-place
+decimals, and `Speed 20.001 m/s` on the item whose lesson is that speed never
+changes. The de-escalation ordering puzzle stated no situation. The L-shaped
+room never said the orientation does not affect area. The Android keyboard
+scrolled the page under a bottom sheet instead of resizing it.
+
+**The lesson for reading reports.** Two of these arrived as feelings rather
+than diagnoses — "kinda obvious", "kinda broken" — and both were correct about
+a mechanism the reporter could not see. Written into CLAUDE.md: verify before
+fixing, treat confusion as a defect in the app, and do not discount a vague
+report. Measurement is how a feeling becomes a bug.
+
 **Licensing unchanged from §25**: Brilliant, IXL, DeltaMath, Alcumus, Beast and
 Math Academy are proprietary. Nothing here is text, artwork, a scoring constant
 or a taxonomy lifted from them — only mechanisms described in their own public

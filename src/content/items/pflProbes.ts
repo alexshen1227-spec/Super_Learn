@@ -452,9 +452,25 @@ const leadingDigits = tpl(
     kind: 'multi',
   },
   (rng, seed) => {
-    const d = 2 + (seed % 8) // 2..9 — the digit the learner computes for
-    const pct = Math.round(100 * Math.log10(1 + 1 / d))
-    const onePct = Math.round(100 * Math.log10(2)) // 30
+    const d = 2 + (seed % 8) // 2..9 — the digit the learner reads off
+    /*
+     * Given to the learner as a TABLE, not as log₁₀(1 + 1 ÷ d).
+     *
+     * Reported as "Wtf is a log...", and they were right to. Logarithms are a
+     * grade-10 skill that exists in this very tree as `m-logarithms`; a probe
+     * measuring how much of a NEW idea you pick up from a short explanation
+     * must not quietly require an OLD one the learner has never met. It was
+     * measuring prior knowledge, which is the one thing this probe exists not
+     * to measure.
+     *
+     * Still computed from the real law and rounded once, so the table shown
+     * and the graded answer cannot drift apart.
+     */
+    const FREQ: Record<number, number> = Object.fromEntries(
+      Array.from({ length: 9 }, (_, i) => [i + 1, Math.round(100 * Math.log10(1 + 1 / (i + 1)))]),
+    )
+    const pct = FREQ[d]
+    const onePct = FREQ[1] // 30
     return {
       title: 'Learn it here, then use it',
       prompt: 'A short explanation of something this app has never taught you. Read it, then answer from it.',
@@ -465,17 +481,21 @@ const leadingDigits = tpl(
               `Take a big pile of real-world numbers that spans many sizes — river lengths, town populations, invoice totals. Look only at the FIRST digit of each.\n\n` +
               `You might expect each of 1-9 to turn up about 11% of the time. They do not. **1** turns up about **30%** of the time, and the frequency falls away steadily to about 5% for **9**.\n\n` +
               `The reason is that such data grows by multiplying rather than adding. A quantity growing steadily spends far longer between 100 and 200 — a 100% climb — than between 900 and 1000, an 11% climb. It lingers on a leading 1.\n\n` +
-              `The frequency of leading digit **d** is **log₁₀(1 + 1 ÷ d)**, as a fraction. For d = 1 that is log₁₀(2) ≈ 0.30.\n\n` +
+              `Measured across many such collections, the shares land close to this every time:\n\n` +
+              `| first digit | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |\n` +
+              `| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n` +
+              `| share of numbers | ${FREQ[1]}% | ${FREQ[2]}% | ${FREQ[3]}% | ${FREQ[4]}% | ${FREQ[5]}% | ${FREQ[6]}% | ${FREQ[7]}% | ${FREQ[8]}% | ${FREQ[9]}% |\n\n` +
+              `(A formula produces those numbers, but you do not need it here — the table IS the idea.)\n\n` +
               `Because people inventing numbers tend to spread first digits evenly, auditors use this as a **flag**: a real-looking dataset with a flat first-digit spread is worth a closer look.\n\n` +
               `It is only a flag. The rule needs data spanning several orders of magnitude, and it fails on things like human heights or numbers with an imposed floor or ceiling.`,
           ),
           studySeconds: 90,
-          prompt: `Using the formula in the explanation: about what percentage of numbers begin with the digit **${d}**? Give a whole number.`,
+          prompt: `About what percentage of the numbers begin with the digit **${d}**? Give a whole number.`,
           answer: numeric(pct, { tolerance: 1 }),
-          explanation: `log₁₀(1 + 1/${d}) = log₁₀(${(1 + 1 / d).toFixed(3)}) ≈ ${(Math.log10(1 + 1 / d)).toFixed(3)}, which is about **${pct}%**. Compare that with the ${onePct}% for a leading 1.`,
+          explanation: `About **${pct}%**, against ${onePct}% for a leading 1. The share falls away steadily as the first digit grows — and note that 9 is not rare at ${FREQ[9]}%, just far less common than 1. That uneven spread is the whole surprise.`,
           hints: [
-            `Put d = ${d} into log₁₀(1 + 1 ÷ d), then turn the fraction into a percentage.`,
-            `1 + 1/${d} = ${(1 + 1 / d).toFixed(3)}.`,
+            `The explanation lists a share for every possible first digit.`,
+            `Find the column headed ${d} and read the share underneath it.`,
           ],
         },
         {

@@ -11,6 +11,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '8.7',
+    date: '2026-08-10',
+    title: 'Everything You Reported (And The Bigger Things Behind Two Of Them)',
+    points: [
+      'Your paused session is no longer destroyed by starting another one. Before, leaving the daily session half-done and then running anything from Practice quietly overwrote it, and finishing that second session deleted it for good — Today then offered "start today\'s session" as if nothing had happened. It now stops and asks, telling you how much was in the paused one. Your submitted answers were always safe; what was being lost was the plan and your place in it.',
+      '"For what observation? It didn\'t gave me any observation or story?" — you found a real bug, and a big one. Multi-part activities have a setup line that frames the whole thing, and the app was never drawing it. So the observation vanished. It turned out that 41 of the 55 multi-part activities were hiding something up there — including one that hid its entire payoff table and one that hid the plan you were supposed to criticise. All of them show it now.',
+      '"You have to make all the answer around the same length!!" — measured, and you were right by a mile. In the Human Insight questions, picking the longest answer got you 62% right when guessing should get 25%. The app already had a check for this, but it averaged across everything, and maths (over a thousand questions, and clean) dragged the average to look fine. Insight is now down to 35% and every subject is checked separately so it can never hide behind maths again. Strategy, science and observation are still above chance and are next.',
+      '"Wtf is a log..." — fair. That question handed you a formula using logarithms, which is high-school material you have not met. The whole point of those "learn something new" questions is measuring how fast you pick up an idea from a short explanation, so secretly needing something you were never taught made it measure the wrong thing entirely. It now gives you a simple table instead.',
+      'Numbers in the diagrams: three separate faults. Hyphens where minus signs belong, decimals running to three places (13.333), and the bad one — the wave activity printed "Speed 20.001 m/s" on the very picture whose whole lesson is that the speed never changes. All fixed, and now checked automatically.',
+      '"The question didn\'t specify the situation" — right again. The de-escalation ordering puzzle described no scene at all, so you had to guess it from the options. Each version now says what happened. You also said some steps could swap and both be fine; on the online one, they could. Each step is now worded so its place is forced by the one before it.',
+      'The L-shaped room now says outright that it does not matter which corner is missing — the area is the same either way. Your instinct to stop and check was reasonable; the question should have said so.',
+      'And the Pixel keyboard problem: the text box sliding away as you type a report. Android was scrolling the page under the keyboard instead of resizing it. Fixed at the page level, so every text box in the app benefits.',
+    ],
+  },
+  {
     version: '8.6',
     date: '2026-08-10',
     title: 'Being Stuck Is Now A Skill, And Two Sessions A Day Works Properly',

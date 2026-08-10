@@ -298,13 +298,13 @@ const strategistPortfolio = tpl(
 
 const clearNoCases = [
   ['A friend asks for your password.', 'No. I do not share passwords.', ['Maybe, if you promise not to use it.', 'Why are you always so suspicious?', 'Ignore the message but share it later.']],
-  ['Someone keeps borrowing your charger without asking.', 'Ask first. If you take it again without asking, I will keep it with me.', ['Fine, just bring it back eventually.', 'You are the worst person here.', 'Hide their belongings in return.']],
-  ['A group wants you to join a prank you dislike.', 'I am not joining. I will meet you afterward.', ['I guess I have to.', 'Do it but complain the whole time.', 'Threaten everyone in the group.']],
-  ['A classmate asks to copy your answer.', 'I will not share answers. I can explain the method.', ['Copy it quickly before the teacher sees.', 'You are too lazy to learn.', 'Say yes and resent it.']],
-  ['A relative posts your photo after you asked them not to.', 'Please remove it. I do not consent to my photos being posted.', ['It is probably too late to say anything.', 'Post an embarrassing photo of them.', 'Write a long public attack.']],
-  ['A teammate messages repeatedly during your sleep hours.', 'I mute messages at night and will reply in the morning.', ['I must answer every time.', 'Never contact me again.', 'Keep losing sleep without mentioning it.']],
+  ['Someone keeps borrowing your charger without asking.', 'Ask first. If you take it again without asking, I will keep it with me.', ['Fine, take it, just make sure you bring it back to me at some point.', 'You are honestly the most inconsiderate person on this whole team.', 'Hide something of theirs in return so that they know how it feels.']],
+  ['A group wants you to join a prank you dislike.', 'I am not joining. I will meet you afterward.', ['I suppose I have to come along if everyone else is going.', 'Go along with it but complain about having to the entire time.', 'Tell the whole group there will be consequences if they keep asking.']],
+  ['A classmate asks to copy your answer.', 'I will not share answers. I can explain the method.', ['Let them copy it quickly, before the teacher notices anything.', 'You are honestly too lazy to bother learning any of this yourself.', 'Say yes to keep the peace and quietly resent them for it.']],
+  ['A relative posts your photo after you asked them not to.', 'Please remove it. I do not consent to my photos being posted.', ['It is probably far too late to say anything about it now.', 'Post an embarrassing photo of them so they know how it feels.', 'Write a long public post attacking them for what they did.']],
+  ['A teammate messages repeatedly during your sleep hours.', 'I mute messages at night and will reply in the morning.', ['I have to answer every message, whatever time it arrives.', 'Do not ever contact me again, at any time of day.', 'Carry on losing sleep over it without mentioning it to them.']],
   ['Someone pressures you to lend an item you need.', 'I need it today, so I am not lending it.', ['Take it, I will figure something out.', 'You never respect anything.', 'Pretend it is broken.']],
-  ['A friend asks you to keep an ordinary surprise-party plan quiet.', 'I can keep the party plan private until the event.', ['I must tell everyone immediately.', 'All secrecy is dangerous.', 'Use the secret to demand a favor.']],
+  ['A friend asks you to keep an ordinary surprise-party plan quiet.', 'I can keep the party plan private until the event.', ['I have to tell everybody about this straight away.', 'Any secret at all is a warning sign and should be told.', 'Use knowing the secret to ask them for a favour later.']],
 ] as const
 
 const guardianClearNo = tpl(
@@ -362,42 +362,42 @@ const safetyCases = [
   {
     situation: 'An online contact who claims to be 16 asks for private photos, demands secrecy from your parents, and threatens to disappear if you refuse.',
     correct: 'Stop replying, preserve the messages, block/report the account, and tell a trusted adult now.',
-    wrong: ['Send one harmless photo to calm them down.', 'Argue until they prove their age.', 'Delete everything and handle it alone.'],
+    wrong: ['Send one completely harmless photo just to calm them down, and then stop replying to anything they send afterwards.', 'Keep arguing with them until they agree to prove how old they actually are, and decide what to do from there.', 'Delete everything so that it cannot be seen by anyone, and handle the whole situation on your own without telling people.'],
   },
   {
     situation: 'Two teammates are shouting. One picks up a heavy object and blocks the doorway.',
     correct: 'Create distance, do not physically intervene, and get a responsible adult or emergency help immediately.',
-    wrong: ['Stand between them and debate the facts.', 'Take the object by force.', 'Keep filming nearby for evidence.'],
+    wrong: ['Stand in between the two of them and calmly try to talk through the facts until everybody has cooled down.', 'Take the object off them by force straight away, before anybody standing nearby can end up getting hurt by it.', 'Keep filming the whole thing from nearby so that there is clear evidence of what happened available afterwards.'],
   },
   {
     situation: 'A friend says they may hurt themselves tonight and asks you to promise not to tell anyone.',
     correct: 'Stay connected if safe, tell a trusted adult or emergency service immediately, and do not keep the secrecy promise.',
-    wrong: ['Promise secrecy so they keep trusting you.', 'Wait until tomorrow to see whether they meant it.', 'Try to become their only source of help.'],
+    wrong: ['Promise to keep the whole thing completely secret, so that they carry on trusting you enough to keep talking to you.', 'Wait until tomorrow and see whether they actually meant any of what they said before doing anything about it.', 'Try to become the one person they rely on for everything, so that you can keep a close eye on how they are doing.'],
   },
   {
     situation: 'A stranger sends a link claiming your account will vanish in five minutes unless you enter your password.',
     correct: 'Do not open the link; use the official app directly, report the message, and ask trusted help if credentials were entered.',
-    wrong: ['Enter the password quickly, then change it later.', 'Reply and ask whether the link is real.', 'Forward the link to friends to test it.'],
+    wrong: ['Enter the password quickly so the account is not locked out, and then change it again later on to be safe.', 'Reply to the message and ask them directly whether the link is a real one before deciding whether to open it.', 'Forward the link on to a few friends first, so that somebody else can open it and find out whether it is genuine.'],
   },
   {
     situation: 'A classmate repeatedly threatens to share an edited humiliating image unless you do their assignments.',
     correct: 'Save the threats, stop negotiating, block/report where possible, and involve a trusted adult or school authority.',
-    wrong: ['Do one assignment to buy time.', 'Threaten them with a worse image.', 'Delete the messages so nobody sees them.'],
+    wrong: ['Do just one of the assignments for them to buy yourself a bit more time to work out what to do next.', 'Threaten them with something worse than what they sent, so that they realise you are not going to be an easy target.', 'Delete all of the messages straight away so that nobody else ever sees them, and carry on as though nothing happened.'],
   },
   {
     situation: 'At a gathering, your ride becomes impaired and insists they can still drive you home.',
     correct: 'Do not get in the vehicle; contact a safe sober adult or alternate ride and involve emergency help if they try to drive.',
-    wrong: ['Sit in front and keep them alert.', 'Accept because refusing may offend them.', 'Take the keys by starting a physical fight.'],
+    wrong: ['Sit in the front passenger seat and keep talking to them the whole way, so that they stay alert enough to drive.', 'Accept the lift anyway, because refusing it at this point would probably offend them and cause a scene.', 'Take the keys off them by force, starting a physical fight over it if that turns out to be what it takes.'],
   },
   {
     situation: 'Someone follows you after you clearly leave a conversation and keeps asking where you live.',
     correct: 'Move toward a staffed public place, contact a trusted person or emergency help, and do not go home alone while followed.',
-    wrong: ['Lead them home so someone there can see.', 'Stop in an isolated place to confront them.', 'Give a fake address and continue alone.'],
+    wrong: ['Lead them back towards your house so that somebody who is already there can get a proper look at them.', 'Stop somewhere quiet and out of the way in order to turn round and confront them about it directly.', 'Give them a fake address in order to throw them off, and then carry on walking the rest of the way home alone.'],
   },
   {
     situation: 'A trusted friend disagrees with your plan, speaks calmly, and accepts your final decision.',
     correct: 'Treat it as respectful disagreement; discuss evidence if useful and keep your own decision.',
-    wrong: ['Label any disagreement manipulation.', 'End the friendship immediately.', 'Agree just to eliminate discomfort.'],
+    wrong: ['Treat any disagreement at all as a sign that you are being manipulated.', 'End the friendship immediately rather than have the conversation at all.', 'Agree with them simply to make the uncomfortable feeling go away faster.'],
   },
 ]
 

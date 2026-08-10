@@ -14,25 +14,41 @@ const emotionVocab = tpl(
       {
         s: 'Jordan studied hard, got the second-best score in class, and can\'t stop thinking about the one person who did better.',
         correct: 'Frustrated envy tangled with pride — two feelings at once',
-        wrong: ['Pure happiness', 'Boredom', 'Fear'],
+        wrong: [
+          'Straightforward pride in a strong result, with nothing complicating it',
+          'Boredom with a subject that stopped being a challenge a while ago',
+          'Fear that the next test will go far worse than this one did',
+        ],
         note: 'Naming BOTH parts matters: proud of the score, stung by the comparison. Single-word summaries erase the useful half.',
       },
       {
         s: 'Sam agreed to cover a friend\'s chores again, said "no problem", and then slammed two doors on the way out.',
         correct: 'Resentment leaking out after saying yes while meaning no',
-        wrong: ['Genuine contentment', 'Surprise', 'Gratitude'],
+        wrong: [
+          'Genuine willingness to help, with the doors meaning nothing much',
+          'Surprise at being asked again so soon after the last time',
+          'Gratitude for a friendship worth going out of their way for',
+        ],
         note: 'The mismatch between words and door-slams is the tell — unexpressed "no" tends to exit sideways. The fix is upstream, at the yes.',
       },
       {
         s: 'Alex\'s best friend is moving away in a month. Alex keeps making jokes about it and changing the subject.',
         correct: 'Anticipatory sadness managed by deflection',
-        wrong: ['Indifference — the jokes prove it doesn\'t matter', 'Anger at the friend', 'Excitement'],
+        wrong: [
+          'Indifference to the move, which the constant joking makes obvious',
+          'Anger at the friend for choosing to leave without much warning',
+          'Excitement about having somewhere new to visit next year',
+        ],
         note: 'Humor is a common carrier for feelings that are too big to hold directly. Reading deflection as indifference misreads the size of the feeling, not its absence.',
       },
       {
         s: 'Riley triple-checks their packed bag the night before the trip they chose and paid for themselves.',
         correct: 'Excited AND anxious — the two often arrive together',
-        wrong: ['Regret about booking the trip', 'Boredom', 'Anger'],
+        wrong: [
+          'Regret about booking a trip they now wish they had not paid for',
+          'Boredom with the waiting, filled up by fiddling with the bag',
+          'Anger at whoever talked them into going in the first place',
+        ],
         note: 'Arousal is ambiguous: the same racing feeling reads as excitement or anxiety depending on the story attached. Both can be true at once.',
       },
     ]
@@ -150,31 +166,51 @@ const influenceFirewall = tpl(
       {
         s: '"This deal ends in 10 minutes! Everyone in your class already claimed theirs. Don\'t be the one who missed out!"',
         correct: 'Manufactured urgency plus social-proof pressure',
-        wrong: ['A neutral factual reminder', 'A personalized recommendation', 'Standard legal disclosure'],
+        wrong: [
+          'A neutral factual reminder that the offer window is closing soon',
+          'A personalised recommendation based on what classmates actually bought',
+          'A standard legal disclosure of the terms attached to the deal',
+        ],
         note: 'Two levers at once: an artificial clock (real deadlines survive questions; fake ones melt) and an unverifiable "everyone". Defense: name the tactic, then decide on the product\'s merits at YOUR pace — anything that punishes thinking time is selling the pressure, not the product.',
       },
       {
         s: '"After everything I\'ve done for you, you\'d really say no to this one little favor?"',
         correct: 'Guilt leverage converting past kindness into present obligation',
-        wrong: ['A fair reminder of a real debt', 'An apology', 'A neutral request'],
+        wrong: [
+          'A fair reminder of a real debt that genuinely is still outstanding',
+          'An apology for having to ask for something at an awkward moment',
+          'A neutral request that simply mentions their history together',
+        ],
         note: 'Real generosity does not invoice later. The frame makes "no" feel like betrayal — that FEELING is the tactic. Defense: "I\'m glad we help each other; I still can\'t do this one." Both clauses true.',
       },
       {
         s: '"You\'re honestly the smartest person I know. So you\'ll help me with — well, actually just do — this assignment, right?"',
         correct: 'Flattery priming a request that shifted mid-sentence',
-        wrong: ['A sincere compliment with no strings', 'A fair trade offer', 'Constructive feedback'],
+        wrong: [
+          'A sincere compliment with no strings, followed by a separate question',
+          'A fair trade offer in which both people get something they wanted',
+          'Constructive feedback about how capable they think you have become',
+        ],
         note: 'The compliment builds a small debt; the ask then MOVES (help → do it for me) hoping the glow carries over. Defense: separate the two — "thanks — and I can explain it, not do it."',
       },
       {
         s: '"Just sign up for the free trial — you can cancel anytime. (Cancellation available by phone, weekdays 9–11 am, after a retention interview.)"',
         correct: 'A dark pattern: easy entry, deliberately costly exit',
-        wrong: ['A generous free offer', 'A standard security measure', 'A misprint'],
+        wrong: [
+          'A generous free offer that they expect most people to keep paying for',
+          'A standard security measure protecting the account from casual misuse',
+          'A misprint in the help pages that nobody has got round to correcting',
+        ],
         note: 'The asymmetry IS the design: friction placed exactly where leaving happens. Defense: judge subscriptions by their exit before entering; calendar the cancel date at signup.',
       },
       {
         s: '"Quick — your account will be deleted TODAY unless you verify your password at this link. Do not tell anyone, IT policy."',
         correct: 'Phishing: urgency + secrecy + credential request — the triple red flag',
-        wrong: ['A routine IT notice', 'A helpful security upgrade', 'A harmless survey'],
+        wrong: [
+          'A routine IT notice of the kind organisations send out several times a year',
+          'A helpful security upgrade that genuinely does need confirming quickly',
+          'A harmless survey asking people to verify which account details are current',
+        ],
         note: 'Urgency prevents thinking, secrecy prevents checking, and no legitimate service asks for your password by link. Defense: never act on the message\'s own channel — go to the real site/app directly, and DO tell someone; "don\'t tell anyone" is itself the loudest alarm.',
       },
     ]
@@ -203,7 +239,7 @@ const boundary = tpl(
         wrong: [
           '"Fine, but this is the ABSOLUTE last time" (again)',
           'Silently write two versions with mistakes in theirs',
-          'Tell everyone else so they pressure your friend',
+          'Tell everyone else in the class so that they put pressure on your friend for you',
         ],
         note: 'Clear no + genuine alternative = boundary WITH warmth. The repeated "last time" teaches that your no is a delay; the sabotage and gossip options attack the person instead of the pattern.',
       },
@@ -221,7 +257,7 @@ const boundary = tpl(
         s: 'A teammate "jokingly" puts down your play in front of everyone, every practice. Today: "relax, it\'s a joke."',
         correct: '"Jokes we both laugh at are fine. This one I\'ve asked you to drop — drop it."',
         wrong: [
-          'Laugh along again and vent about them online later',
+          'Laugh along with it again and then vent about how annoying they are online later',
           'Put down their play harder next time',
           'Quit the team without saying why',
         ],
@@ -233,7 +269,7 @@ const boundary = tpl(
         wrong: [
           'Apologize and reply faster so they calm down',
           'Keep it secret as asked — it\'s probably fine',
-          'Handle it alone by arguing with them',
+          'Handle it alone by arguing back until they lose interest and leave you be',
         ],
         note: 'This is not a boundary-phrasing exercise — it is a recognized grooming pattern (secrecy + urgency + isolation from adults). The right move is not a better sentence; it is exiting the conversation and bringing in a trusted adult immediately. If anyone pressures you toward secrecy from your parents, that pressure itself is the alarm.',
       },
@@ -263,7 +299,7 @@ const deescalate = tpl(
         wrong: [
           'Return fire with their worst missed deadline',
           'Walk out of the meeting mid-sentence',
-          'Absorb it silently and seethe for the rest of the project',
+          'Absorb it silently, say nothing at all, and seethe quietly for the rest of the project',
         ],
         note: 'Acknowledge the heat, move to verifiable specifics, accept accountability if real. Counter-attacking converts one person\'s outburst into a two-person fight; silent absorption just schedules the explosion for later.',
       },
@@ -273,7 +309,7 @@ const deescalate = tpl(
         wrong: [
           'Match their volume so they learn how it feels',
           '"Calm down, it\'s literally just a game"',
-          'List every time they broke YOUR things',
+          'List every single time that they have broken something of YOURS in the past',
         ],
         note: 'Volume is contagious in both directions — going low and slow is the lever. "Calm down" plus minimizing ("just a game") reliably escalates: it dismisses the feeling while ordering its removal. The scoreboard option reopens every old fight at once.',
       },
@@ -281,7 +317,7 @@ const deescalate = tpl(
         s: 'Online: someone comments an insult on your post, and two others are already piling on.',
         correct: 'Don\'t feed it — no reply, mute or block, and talk to someone you trust if it continues or moves to harassment',
         wrong: [
-          'Craft the perfect devastating comeback',
+          'Craft the perfect devastating comeback and wait for the right moment to post it',
           'Screenshot it to a bigger account to shame them',
           'Post an angry story about "some people"',
         ],
@@ -357,7 +393,7 @@ const trustedPerson = tpl(
         wrong: [
           'Wait to see if anything actually happens tomorrow',
           'Confront the classmate yourself to look out for the kid',
-          'Post the screenshots publicly so everyone knows',
+          'Post the screenshots publicly so that everyone knows exactly what was said',
         ],
         note: 'A specific threat + timeline is an adult-now situation, full stop. Waiting gambles someone else\'s safety; solo confrontation adds you to the incident; public posting spreads it without protecting anyone. Reporting a credible threat is not snitching — it is the job of the person who saw it.',
       },
@@ -367,7 +403,7 @@ const trustedPerson = tpl(
         wrong: [
           'Keep their trust by telling no one, as they\'d want',
           'Assume it\'s a phase everyone goes through',
-          'Send motivational quotes and check back next week',
+          'Send some encouraging messages and quotes, then check back in with them next week',
         ],
         note: 'Hopelessness + giving away possessions + "won\'t matter soon" is a pattern to treat as urgent, not to diagnose yourself. This is the one secret you never keep: real friends get adults involved. In the US, call/text 988; if danger is immediate, 911. Telling was the loyal move.',
       },
