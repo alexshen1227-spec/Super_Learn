@@ -868,6 +868,41 @@ export interface ContentPackJson {
 
 // ---------------------------------------------------------------- app state
 
+/**
+ * A problem the LEARNER wrote, kept on their device.
+ *
+ * Deliberately walled off from everything that measures progress: authored
+ * problems never enter the planner, never generate an `AttemptEvent`, and can
+ * never move a rung. They are not audited content — nothing checked their
+ * wording, their difficulty or their fairness — and the one rule this app
+ * refuses to bend is that evidence comes from content the audit has verified.
+ * See `engine/authored.ts` for the test that keeps this true.
+ *
+ * `sensible` is the learner's own verdict on re-reading their problem later:
+ * null until judged, then kept or deleted. That review is the only quality
+ * control a serverless app can honestly offer, and it is also the part with
+ * the most learning in it — noticing that something you wrote does not hold up
+ * is the same skill as noticing it in someone else's work.
+ */
+export interface AuthoredProblem {
+  id: string
+  t: number
+  shapeId: string
+  /** The numbers the learner chose. The prompt and answer derive from these. */
+  slots: Record<string, number>
+  /** Rendered at creation so an edited shape cannot silently rewrite history. */
+  prompt: string
+  /** COMPUTED by the shape, never typed by anyone. */
+  answer: number
+  unit: string
+  skillId: string
+  /** Whether their prediction about their own problem was right. */
+  predictedOk: boolean
+  /** The learner's later verdict. null = not yet reviewed. */
+  sensible: boolean | null
+  reviewedAt: number | null
+}
+
 export interface AppState {
   version: number
   createdAt: number
@@ -885,6 +920,8 @@ export interface AppState {
   plans: FieldPlan[]
   placement: PlacementResult | null
   customPacks: ContentPackJson[]
+  /** Problems the learner wrote. Never evidence — see AuthoredProblem. */
+  authored: AuthoredProblem[]
   /** True when the sample profile is loaded (banner shown; real data kept aside). */
   sampleMode: boolean
 }
@@ -939,6 +976,7 @@ export function initialState(): AppState {
     plans: [],
     placement: null,
     customPacks: [],
+    authored: [],
     sampleMode: false,
   }
 }

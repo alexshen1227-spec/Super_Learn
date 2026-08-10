@@ -4,9 +4,25 @@
     {
       "name": "axiom-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 5199,
       "autoPort": true
+    },
+    {
+      "name": "axiom-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview",
+        "--",
+        "--port",
+        "5210",
+        "--strictPort"
+      ],
+      "port": 5210
     }
   ]
 }

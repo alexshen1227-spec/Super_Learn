@@ -77,6 +77,18 @@ perfectly:
   renders at the END of the document, so a truncated `innerText` read will miss
   it entirely and look like the click did nothing.
 
+**Is that console error real, or a dev-server artifact?** Run the built app.
+`.claude/launch.json` carries an `axiom-prod` config (`vite preview` on port
+5210) that serves `dist/`, so it needs a `npm run build` first and has no HMR
+at all. It is a different origin, so it gets its own empty IndexedDB — which
+also makes it the only honest way to test the first-run experience.
+
+The recurring `useStore outside provider` error in `<Shell>` was chased three
+times before this settled it: the dev server throws it after a tab has sat
+through a batch of hot edits, and the production build logs **nothing** across
+a full onboarding plus a complete Challenge Creator run. It is not a bug. Do
+not spend a fourth session on it.
+
 ## Architecture in one paragraph
 
 Attempts are APPEND-ONLY events (`AttemptEvent`); skill states, review dues,

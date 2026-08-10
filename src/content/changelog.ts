@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '8.3',
+    date: '2026-08-10',
+    title: 'Fifteen Draggable Diagrams, And You Can Write Your Own Problems',
+    points: [
+      'Eight more diagrams you can move, bringing it to fifteen. Squash a pen while the fence stays the same length. Push a trolley then set the force to exactly zero and watch it keep rolling. Drag one person\'s answer out and watch the average chase it while the middle value refuses. Turn up a survey size and watch the results pull in. Also: why up-20%-then-down-20% never gets you back, why doubling your speed quadruples your braking distance, what a trend line does and does not tell you, sliding a parabola, what a negative power actually means, why every circle has the same 3.14, and why shortening a wave never changes its speed.',
+      'New: the Challenge Creator, in Practice. You write the problem instead of solving one — pick a shape, set the numbers, and then say what YOUR problem does before it is worked out. Each shape hides a trap. Build a journey of 100 km at 100 km/h then 100 km at 20 km/h, guess the average speed is 60, and find out it is 33.3.',
+      'The app tells you when a problem you wrote does not actually ask anything — two legs at the same speed, or a gym with no joining fee — and will not let you finish it until you fix it. It separately gives advice it does NOT block you on, like "this splits into pennies rather than round numbers".',
+      'Everything you write is kept in one place, marked as yours, with the two buttons you asked for: it makes sense, or it does not and gets deleted. Nothing you write counts towards any skill, and the app says so rather than pretending otherwise — you wrote it, so getting it right cannot show what getting one right normally shows.',
+      'A whole class of "the picture is wrong even though the numbers are right" is now caught automatically. The chart-drawing maths is shared with the checks, so they can test where things LAND on screen, not just what the numbers are. It immediately caught two survey results landing closer together than a dot is wide — twelve results drawing as fewer.',
+      'Also fixed: a rectangle that was meant to be a SQUARE was being drawn as a wide rectangle, which quietly contradicted the whole point of the "the square holds the most" activity. And the ratio-writing shape refused 72% of the combinations you could pick — it now refuses 11%.',
+    ],
+  },
+  {
     version: '8.2',
     date: '2026-08-10',
     title: 'Four More Diagrams You Can Move',

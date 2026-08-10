@@ -17,6 +17,7 @@ import { isPflTemplate } from '../../engine/pfl'
 import { MATH_TRACKS, TRACK_BY_ID } from '../../content/tracks'
 import { getReadyReport } from '../../engine/getReady'
 import { effectiveAllocation } from '../../engine/allocationPlus'
+import { ChallengeCreator } from './ChallengeCreator'
 
 const LAB_ORDER: BucketId[] = ['observer', 'investigator', 'strategist', 'puzzle', 'insight', 'meta']
 const ACADEMIC_ORDER: BucketId[] = ['math', 'physics', 'coding', 'science']
@@ -38,6 +39,7 @@ export function Practice() {
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
   const [browse, setBrowse] = useState<BucketId | null>(null)
   const [homework, setHomework] = useState(false)
+  const [creator, setCreator] = useState(false)
   const [workOpen, setWorkOpen] = useState(false)
   const [query, setQuery] = useState('')
   const searchResults = useMemo(() => {
@@ -136,6 +138,15 @@ export function Practice() {
           onClick={() => go({ name: 'session', launch: { kind: 'error-clinic' } })}
         />
         <ModeCard title="Homework support" sub="A coach, not an answer machine" onClick={() => setHomework(true)} />
+        {/* Writing a problem is a different act from solving one, and the
+            invention literature supports doing it BEFORE being told the rule
+            (RESEARCH.md §37f). It produces no evidence and never enters the
+            planner: nothing has audited a learner's own wording. */}
+        <ModeCard
+          title="Challenge Creator"
+          sub="Write a problem, predict what it does — kept out of your progress"
+          onClick={() => setCreator(true)}
+        />
         {/* Launched deliberately and never by the planner: a probe re-served
             measures memory rather than pick-up, so the learner chooses when to
             spend one. Offers an unused probe first. See engine/pfl.ts. */}
@@ -181,6 +192,7 @@ export function Practice() {
 
       <BrowseSheet bucket={browse} onClose={() => setBrowse(null)} />
       <HomeworkSheet open={homework} onClose={() => setHomework(false)} />
+      <ChallengeCreator open={creator} onClose={() => setCreator(false)} />
       {workOpen ? (
         <WorkChooser
           work={authenticWork}

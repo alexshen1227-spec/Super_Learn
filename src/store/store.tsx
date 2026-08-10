@@ -18,6 +18,7 @@ import type {
   AppSettings,
   AppState,
   AttemptEvent,
+  AuthoredProblem,
   CoachDecision,
   ContentPackJson,
   Deadline,
@@ -66,6 +67,9 @@ export type Action =
   | { type: 'add-plan'; plan: FieldPlan }
   | { type: 'answer-plan'; id: string; outcome: FieldPlan['outcome']; t: number }
   | { type: 'set-placement'; placement: PlacementResult }
+  | { type: 'add-authored'; problem: AuthoredProblem }
+  | { type: 'judge-authored'; id: string; sensible: boolean; t: number }
+  | { type: 'delete-authored'; id: string }
   | { type: 'add-pack'; pack: ContentPackJson }
   | { type: 'remove-pack'; id: string }
   | { type: 'replace'; state: AppState }
@@ -194,6 +198,20 @@ export function reduceState(state: AppState, action: Action): AppState {
       // evidence — deleting them touches nothing derived. (Attempt events, by
       // contrast, are append-only and have no delete action on purpose.)
       return { ...state, reports: [] }
+    case 'add-authored':
+      return { ...state, authored: [...state.authored, action.problem].slice(-200) }
+    case 'judge-authored':
+      return {
+        ...state,
+        authored: state.authored.map((a) =>
+          a.id === action.id ? { ...a, sensible: action.sensible, reviewedAt: action.t } : a,
+        ),
+      }
+    case 'delete-authored':
+      // Safe to delete outright: authored problems are walled off from the
+      // evidence model, so nothing derived depends on one having existed.
+      // Attempt events, by contrast, are append-only and have no delete action.
+      return { ...state, authored: state.authored.filter((a) => a.id !== action.id) }
     case 'set-placement':
       return { ...state, placement: action.placement }
     case 'add-pack': {

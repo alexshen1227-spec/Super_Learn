@@ -7,6 +7,7 @@
  * values this exists to reject.
  */
 import type {
+  AuthoredProblem,
   AgeBand,
   AppSettings,
   AppState,
@@ -35,6 +36,7 @@ import {
   initialState,
 } from '../domain/types'
 import { validatePack } from '../engine/contentSchema'
+import { CREATOR_BY_ID } from '../content/creators'
 import { normalizeAllocationPercentages } from '../engine/allocationTargets'
 import { TRACK_BY_ID } from '../content/tracks'
 
@@ -298,6 +300,44 @@ function sanitizeReport(raw: unknown): ProblemReport | null {
   }
 }
 
+/**
+ * A learner-authored problem, rebuilt rather than trusted.
+ *
+ * The prompt and the answer are RECOMPUTED from the stored slot values through
+ * the shape's own generator, so an imported file cannot smuggle in a problem
+ * whose stated answer disagrees with its own numbers — which is the whole
+ * point of computing answers rather than typing them. A file naming a shape
+ * this build does not have is dropped, not guessed at.
+ */
+function sanitizeAuthored(raw: unknown): AuthoredProblem | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const r = raw as Record<string, unknown>
+  const shapeId = str(r.shapeId, '', 60)
+  const shape = CREATOR_BY_ID.get(shapeId)
+  if (!shape) return null
+  const rawSlots = typeof r.slots === 'object' && r.slots !== null ? (r.slots as Record<string, unknown>) : {}
+  const slots: Record<string, number> = {}
+  for (const slot of shape.slots) {
+    const v = num(rawSlots[slot.key], slot.min, slot.max, slot.min)
+    // Off-grid values would render a problem the creator UI could never make.
+    slots[slot.key] = Math.min(slot.max, Math.max(slot.min, Math.round(v / slot.step) * slot.step))
+  }
+  const sensible = r.sensible === true ? true : r.sensible === false ? false : null
+  return {
+    id: str(r.id, `ap${Math.random().toString(36).slice(2, 8)}`, 40),
+    t: num(r.t, 0, 4102444800000, Date.now()),
+    shapeId,
+    slots,
+    prompt: shape.render(slots),
+    answer: shape.solve(slots),
+    unit: shape.unit,
+    skillId: shape.skillId,
+    predictedOk: r.predictedOk === true,
+    sensible,
+    reviewedAt: sensible === null ? null : num(r.reviewedAt, 0, 4102444800000, Date.now()),
+  }
+}
+
 function sanitizePlacement(raw: unknown): PlacementResult | null {
   if (typeof raw !== 'object' || raw === null) return null
   const p = raw as Record<string, unknown>
@@ -381,6 +421,10 @@ export function sanitizeState(raw: unknown): AppState {
       .slice(-100),
     placement: sanitizePlacement(r.placement),
     customPacks,
+    authored: (Array.isArray(r.authored) ? r.authored : [])
+      .map(sanitizeAuthored)
+      .filter((a): a is AuthoredProblem => a !== null)
+      .slice(-200),
     sampleMode: bool(r.sampleMode, false),
   }
 }

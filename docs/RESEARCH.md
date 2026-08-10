@@ -2300,6 +2300,56 @@ ranges are 60, 34, 16 and 8 percentage points at n = 10, 30, 100, 500 — a 7.5�
 narrowing where 1/√n predicts √50 ≈ 7.1. A learner who measured them would
 find the relationship the item claims.
 
+### 37f. Challenge Creator — BUILT, and what it refuses to claim
+
+Desmos's Challenge Creator was recorded in §37c as the most interesting gap in
+this app. Built now, in the only shape a serverless app can honestly support.
+
+**The problem it had to solve.** Learner-authored content has no quality
+control here — no server, no model, no reviewer. The answer is CONSTRAINED
+authoring: the learner picks the numbers, and the shape computes its own
+answer and recognises its own degenerate cases. That keeps the bank's oldest
+law intact (`content/creators.ts` computes answers; nothing is hand-typed) and
+lets `flaw()` say *why* a combination asks nothing.
+
+**Evidence status: NONE, enforced by test.** `engine/authored.test.ts` proves
+that adding, judging and deleting an authored problem append no `AttemptEvent`,
+no coach decision and no session, and that creator ids cannot collide with
+template ids. Nothing has audited a learner's own wording, so letting it move a
+rung would break the rule the whole progress model rests on. The UI says this
+plainly rather than staying quiet about it.
+
+**Why it is still worth session minutes.** The graded-feeling moment is not
+solving your own problem — you would know the answer. It is PREDICTING what
+the thing you assembled will do, before it is computed, and every shape hides a
+trap that survives being told:
+
+| shape | the trap |
+| --- | --- |
+| price up then down | equal percentages feel like they cancel |
+| two-leg journey | the average speed is not the average of the speeds |
+| fee plus monthly rate | doubling the months does not double the bill |
+| sharing in a ratio | the number of PEOPLE is not the number of PARTS |
+
+Meeting "100 km at 100 km/h then 100 km at 20 km/h averages **33.3**, not 60"
+in a journey you designed yourself is harder to wave away than meeting it in
+one handed to you. That is the §29c invention argument, and it is the only
+claim made here.
+
+**A usability defect found by measuring, not by using.** The first ratio shape
+treated "the shares come out as pennies" as a flaw and blocked it, refusing
+**72% of the combinations a learner could reach** — a feature that says no
+three times in four reads as broken, not as rigorous. Split into `flaw` (asks
+nothing; blocks) and `note` (works, reads awkwardly; advises). Now 11% blocked,
+61% advised, and a gate caps blocking at 25% so it cannot regress.
+
+**On dev-server ghosts.** A `useStore outside provider` error had been chased
+three times across sessions. Settled by serving the production build
+(`.claude/launch.json` → `axiom-prod`, no HMR, its own empty database): zero
+console output across a full onboarding plus a complete Challenge Creator run.
+Recorded so a fourth session does not spend on it. The general lesson is that
+"reproduce it without the dev server" is cheap and should come before theory.
+
 **Licensing unchanged from §25**: Brilliant, IXL, DeltaMath, Alcumus, Beast and
 Math Academy are proprietary. Nothing here is text, artwork, a scoring constant
 or a taxonomy lifted from them — only mechanisms described in their own public
