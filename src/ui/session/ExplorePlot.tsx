@@ -27,13 +27,17 @@ import { Button, Card } from '../components'
 
 /** Viewbox units. Fixed so the SVG scales cleanly at any width. */
 const W = 320
-const H = 200
+const H_FULL = 200
 const PAD_L = 34
 const PAD_B = 26
 const PAD_T = 10
 const PAD_R = 10
 
 function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
+  // A plot with no vertical scale is a strip, not a square: keeping the full
+  // height leaves a large empty band above the data that reads as missing
+  // content rather than as breathing room.
+  const H = spec.hideY ? 128 : H_FULL
   const sx = (x: number) => PAD_L + ((x - spec.xMin) / (spec.xMax - spec.xMin || 1)) * (W - PAD_L - PAD_R)
   const sy = (y: number) => H - PAD_B - ((y - spec.yMin) / (spec.yMax - spec.yMin || 1)) * (H - PAD_T - PAD_B)
 
@@ -147,11 +151,16 @@ function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
             strokeWidth={2}
             strokeDasharray="4 3"
           />
-          {/* Label x is clamped so a marker near an edge stays readable. */}
+          {/*
+            The label sits BESIDE its own line and points inward, rather than
+            centred on it. Centred labels straddle their line and reach across
+            a neighbouring marker, which is exactly what two markers a few
+            units apart do to each other.
+          */}
           <text
-            x={clamp(sx(mk.x), PAD_L + 24, W - PAD_R - 24)}
+            x={sx(mk.x) > W / 2 ? sx(mk.x) - 4 : sx(mk.x) + 4}
             y={PAD_T + 9 + i * 11}
-            textAnchor="middle"
+            textAnchor={sx(mk.x) > W / 2 ? 'end' : 'start'}
             className={`${mk.tone === 1 ? 'fill-warn' : 'fill-accent'} text-[9px] font-semibold`}
           >
             {mk.label}

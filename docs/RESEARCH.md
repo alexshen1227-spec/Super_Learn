@@ -2271,6 +2271,28 @@ furniture can lie even when the data does not.
    caption now names the shape, which surfaces the symmetry as a bonus.
 3. Means printed to three decimals (`31.429` minutes of homework).
 
+**Three defects that only LOOKING found.** The browser pane finally rendered
+(two tabs had drifted apart; screenshots follow the fronted tab, not the one
+being driven), and the first screenshot of a finished dot plot showed three
+things every measurement had passed:
+
+1. **The chart under-reported its own data.** Caption "seven values", six dots
+   visible — two learners with the same answer drawn at the same point. Equal
+   values now stack. Note that every numeric check passed: seven dots existed,
+   all in bounds, all finite. Overlap is invisible to a bounds check.
+2. **A marker label reached across a neighbouring marker's line.** Centred
+   labels straddle their own line, which is exactly wrong when two markers sit
+   a few units apart — which is the normal state of this item at its first
+   stop. Labels now sit beside their line, pointing inward.
+3. **Dot plots kept the full height of an xy graph**, leaving an empty band
+   above the data that reads as missing content.
+
+Recorded because the lesson generalises past this widget: geometric assertions
+catch data that is *wrong*, and cannot catch data that is *illegible*. The
+audit gates are still worth more — they caught the empty polyline and the
+duplicate captions before anything rendered — but a rendered screenshot is not
+a redundant check, and this session shipped three fixes that only it produced.
+
 **Sample data is illustrative, and says so.** The twelve surveys per sample
 size are written down rather than drawn at render time, because a picture that
 differs per device is one the audit cannot check. They are not decorative: the

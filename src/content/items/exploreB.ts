@@ -35,6 +35,39 @@ function r2(v: number): number {
   return Math.round(v * 1000) / 1000
 }
 
+/**
+ * Dot-plot placement: equal values stack upward instead of landing on top of
+ * one another.
+ *
+ * Found by looking at the rendered chart rather than by measuring it — the
+ * caption said "seven values" and six dots were visible, because two learners
+ * who both read 6 books were drawn at exactly the same point. A chart that
+ * silently under-reports its own data is worse than no chart, and stacking is
+ * what a dot plot is supposed to do anyway.
+ */
+function stackDots(values: number[], toneOf?: (i: number) => 0 | 1): { x: number; y: number; tone?: 0 | 1 }[] {
+  const seen = new Map<number, number>()
+  return values.map((v, i) => {
+    const k = seen.get(v) ?? 0
+    seen.set(v, k + 1)
+    return { x: v, y: r2(0.5 + k * 0.4), ...(toneOf ? { tone: toneOf(i) } : {}) }
+  })
+}
+
+/** One height for every stop, since the axes may not move as the learner drags. */
+function stackHeight(sets: number[][]): number {
+  let tallest = 1
+  for (const vals of sets) {
+    const seen = new Map<number, number>()
+    for (const v of vals) {
+      const k = (seen.get(v) ?? 0) + 1
+      seen.set(v, k)
+      if (k > tallest) tallest = k
+    }
+  }
+  return r2(0.5 + (tallest - 1) * 0.4 + 0.5)
+}
+
 // ------------------------------------------------- perimeter versus area
 
 /**
@@ -285,6 +318,7 @@ const exploreOutlier = tpl(
       return s.length % 2 ? s[(s.length - 1) / 2] : (s[mid - 1] + s[mid]) / 2
     }
 
+    const dotHeight = stackHeight(outliers.map((last) => [...base, last]))
     const stops: ExploreStop[] = outliers.map((last) => {
       const vals = [...base, last]
       // One decimal place: nobody reports a homework average as 31.429.
@@ -297,11 +331,13 @@ const exploreOutlier = tpl(
           xMin: 0,
           xMax,
           yMin: 0,
-          yMax: 2,
+          yMax: dotHeight,
           hideY: true,
           xLabel: scene.what,
           series: [],
-          dots: vals.map((v, i) => ({ x: v, y: 1, tone: (i === vals.length - 1 ? 1 : 0) as 0 | 1 })),
+          // The dragged value is toned to match its own marker, so it is
+          // visible which dot is doing the pulling.
+          dots: stackDots(vals, (i) => (i === vals.length - 1 ? 1 : 0)),
           marks: [
             { x: mean, label: `mean ${mean}`, tone: 1 as const },
             { x: med, label: `median ${med}`, tone: 0 as const },
@@ -406,6 +442,7 @@ const exploreSampleSize = tpl(
       500: [46, 47, 48, 49, 49, 50, 50, 51, 51, 52, 53, 54],
     }
     const sizes = [10, 30, 100, 500]
+    const dotHeight = stackHeight(sizes.map((n) => runs[n]))
     const stops: ExploreStop[] = sizes.map((n) => {
       const vals = runs[n]
       const lo = Math.min(...vals)
@@ -417,13 +454,11 @@ const exploreSampleSize = tpl(
           xMin: 0,
           xMax: 100,
           yMin: 0,
-          yMax: 2,
+          yMax: dotHeight,
           hideY: true,
           xLabel: '% of tries that succeeded',
           series: [],
-          // Stagger the height so equal results stay countable instead of
-          // hiding underneath each other.
-          dots: vals.map((v, i) => ({ x: v, y: r2(0.6 + (i % 3) * 0.4) })),
+          dots: stackDots(vals),
           marks: [{ x: scene.truth, label: `truth ${scene.truth}%`, tone: 0 as const }],
         },
       }
