@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '7.6',
+    date: '2026-08-09',
+    title: 'A Ten-Minute Session Was Fifteen Minutes, And The Difficulty Dial Was Stuck',
+    points: [
+      'If you picked a 10-minute session you were given about 15, on 99% of days. Three separate counting mistakes: the maths for a short session forgot to leave room for one of its own blocks (a comment right next to it even claimed it did), the warm-up checked whether it had room BEFORE adding a question so it always overshot by one, and the "explain it back" ending is a 4-minute task that was chosen after everything else had already been sized as if it were 2. Now a 10-minute session is 10 minutes. This matters most for the person who picked 10 because 10 is all they had.',
+      'That oversized ending was also why Meta Lab was eating 14% of a short session against its 5% share, and why one single question type was 8% of a whole year of practice for anyone doing short sessions. Both back to normal.',
+      'The bigger one: when you were struggling, the app knew and could not act on it. It reads your recent accuracy and asks for easier work — and it was asking, at full strength, every month for a simulated year, while the difficulty it actually served went UP. A learner getting 14-19% right sat there all year. Two reasons: the question chooser was tuned to prefer slightly-harder work (right when you are coping, wrong when you are drowning) and a brand-new question could outbid an appropriate one on novelty alone. Now the preference flips while you are struggling.',
+      'And the other half of that: 44 of 122 topics had no easy way in — the gentlest question they offered was already a "combine ideas without help" problem, and 14 topics started at "advanced". So the app could ask for easier work and there was none to give. Fourteen new foundation questions open those doors: reading a two-way table, what a fractional exponent means, which side of a triangle is which, what a logarithm is asking, naming the parts of a circle, why removing your own options can win an argument. A release check now refuses to ship a topic with no way in.',
+      'Reviews were piling up faster than they could ever be cleared — for every ability level, including the strongest, the "due" number climbed all year. The warm-up served about two reviews a session no matter how many were waiting, while the number waiting grows with every skill you master. It now widens when the queue is long (up to about a third of the session, never more — urgent work is not allowed to take over). Reviews done over a year went from 643 to 1,095 and the pile stopped growing.',
+      'Honest about what is still not fixed: 30 topics still start at a "combine ideas" level rather than a gentle one, and only 6% of all questions are foundation-level, so a struggling learner still has less easy material than they should. And the review pile is stable now, not empty — around 40 once you own a lot of skills.',
+    ],
+  },
+  {
     version: '7.5',
     date: '2026-08-09',
     title: 'The Frontier Stopped Moving For Learners Doing Well',

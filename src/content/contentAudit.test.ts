@@ -534,6 +534,47 @@ describe('items are answerable and fair', () => {
     }
   })
 
+  /**
+   * The renderer is markdown-LITE, and it fails silently.
+   *
+   * `ui/richtext.tsx` parses exactly: **bold**, `code`, fenced blocks, tables,
+   * > quotes, blank-line paragraphs, and simple "1." / "-" lists. Anything
+   * else is emitted as literal characters, so a prompt written with
+   * `_emphasis_` shows the learner the underscores. Caught in the browser
+   * rather than by any test: a new item read
+   * "_(Just read the table — no calculation beyond finding the right cell.)_".
+   *
+   * Deliberately narrow, to stay free of false positives: `*single asterisks*`
+   * are not flagged because arithmetic legitimately uses `*`, and underscores
+   * inside code spans and fenced blocks are stripped before matching because
+   * identifiers like `MATH_TEMPLATES` are not emphasis.
+   */
+  it('uses no markup the renderer cannot render', () => {
+    const stripCode = (s: string): string => s.replace(/```[\s\S]*?```/g, '').replace(/`[^`]*`/g, '')
+    const offenders: string[] = []
+    for (const { t, seed, item } of renders) {
+      for (const raw of visibleText(item)) {
+        const text = stripCode(raw ?? '')
+        // Word-boundary rule, as real markdown uses: `log_b(y)` is subscript
+        // notation and renders correctly as literal text, while ` _phrase_ `
+        // is someone reaching for emphasis the renderer does not have.
+        const italic = text.match(/(^|[\s("'])_[^_\s][^_]{0,120}_(?=[\s.,!?;:)"']|$)/)
+        if (italic) offenders.push(`${t.id}@${seed}: underscore emphasis "${italic[0].trim().slice(0, 44)}"`)
+        const star = text.match(/(^|[\s("'])\*[^*\s][^*]{0,120}\*(?=[\s.,!?;:)"']|$)/)
+        if (star) offenders.push(`${t.id}@${seed}: single-asterisk emphasis "${star[0].trim().slice(0, 44)}"`)
+        const link = text.match(/\[[^\]]{1,60}\]\([^)]{1,120}\)/)
+        if (link) offenders.push(`${t.id}@${seed}: markdown link "${link[0].slice(0, 48)}"`)
+        const heading = text.match(/(^|\n)#{1,6}\s+\S/)
+        if (heading) offenders.push(`${t.id}@${seed}: markdown heading`)
+      }
+    }
+    // Deduped by template: one generator produces the same fault on every
+    // seed, and a list of forty identical lines hides how many families are
+    // actually affected.
+    const byTemplate = [...new Map(offenders.map((o) => [o.split('@')[0], o])).values()]
+    expect(byTemplate, `unsupported markup reaches the learner: ${byTemplate.join(' | ')}`).toEqual([])
+  })
+
   it('every numeric answer can actually be typed', () => {
     for (const { t, seed, item } of renders) {
       for (const spec of specsOf(item)) {
@@ -870,6 +911,43 @@ describe('content volume targets', () => {
     expect(
       unpromotable,
       `these skills can never reach Independent from a daily block: ${unpromotable.join(', ')}`,
+    ).toEqual([])
+  })
+
+  /**
+   * Every skill needs a way IN.
+   *
+   * The difficulty dial can ask for 1★, but it can only be answered by content
+   * that exists. Measured before this gate: 44 of 122 skills offered nothing
+   * easier than 3★ ("combine ideas without scaffolding, or choose the method
+   * yourself") and 14 started at 4★ — so on those skills the first thing a
+   * learner ever met was an advanced problem.
+   *
+   * The consequence was measured, not assumed. Simulating a learner whose
+   * accuracy responds to difficulty: a struggling learner sat at 14-19%
+   * first-try accuracy for twelve straight months while `stretchSignal` asked
+   * for its maximum easing every month, and the mean difficulty actually served
+   * ROSE from 2.6 to 2.9. The dial was hard over with nowhere to go.
+   *
+   * The ceiling here is 3★ rather than 2★ because that is what the bank
+   * currently supports; 30 skills still start at 3★ and closing those is
+   * recorded as open work in RESEARCH.md §32. Lowering this number later is the
+   * direction of travel — raising it is not.
+   */
+  it('every skill has an entry point a struggling learner can reach', () => {
+    const easiest = new Map<string, number>()
+    for (const t of BUILTIN_TEMPLATES) {
+      if (dailyRoute(t) !== 'daily-practice') continue
+      if (isPflTemplate(t.id)) continue
+      for (const id of t.skillIds) easiest.set(id, Math.min(easiest.get(id) ?? 99, t.difficulty))
+    }
+    const ENTRY_CEILING = 3
+    const unreachable = SKILLS.filter((s) => (easiest.get(s.id) ?? 99) > ENTRY_CEILING).map(
+      (s) => `${s.id} (easiest ${easiest.get(s.id) ?? '—'}★)`,
+    )
+    expect(
+      unreachable,
+      `these skills have no entry task at ${ENTRY_CEILING}★ or below: ${unreachable.join(', ')}`,
     ).toEqual([])
   })
 })

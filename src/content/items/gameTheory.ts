@@ -50,7 +50,7 @@ function matrix(
     `| | **${colNames[0]}** | **${colNames[1]}** |\n| --- | --- | --- |\n` +
     `| **${rowNames[0]}** | ${row[0][0]} , ${col[0][0]} | ${row[0][1]} , ${col[0][1]} |\n` +
     `| **${rowNames[1]}** | ${row[1][0]} , ${col[1][0]} | ${row[1][1]} , ${col[1][1]} |\n\n` +
-    `*Each cell reads: your points , their points.*`
+    `**Each cell reads: your points, their points.**`
   )
 }
 

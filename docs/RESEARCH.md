@@ -1545,3 +1545,132 @@ already computed for the Forecast Ledger but never taught. Physics — the
 thinnest bucket, at a median of two families per skill with six of eleven
 skills sitting exactly on the promotion floor — gained six TIPERs-format
 families and now has a median of three and none on the floor.
+
+## 32. The second hunt (2026-08-09): the dial, the dose, and the door
+
+A sweep across eight learner profiles — three abilities, five session lengths,
+two courses, and the first thirty days — plus a second harness in which the
+learner's accuracy RESPONDS to difficulty. That second harness is the reason
+this round found anything: every previous simulation used a fixed accuracy, so
+the difficulty dial had no effect *by construction* and could not be tested at
+all. Four defects, all invisible to 331 passing tests.
+
+### 32a. The difficulty dial could not lower the difficulty
+
+**Measured.** A learner whose accuracy responds to difficulty, simulated for a
+year: at **14–19% first-try accuracy for twelve consecutive months**,
+`stretchSignal` reported its maximum easing (`adjust = −1`) every single month,
+and the mean difficulty actually served **rose** from 2.6★ to 2.9★. The core
+block computed a target of **2.06★ and was handed 2.8★**.
+
+**Two causes.**
+
+1. `dailyTemplateScore` penalised easier-than-target at 2.6 per star and
+   harder-than-target at only 1.4. That lean is deliberate and right for a
+   learner in range — "repeatedly easy is pleasant and does not move the
+   frontier" — and exactly wrong for one who is drowning. Combined with the
+   +3.25 an unseen family earns in coverage debt, a two-star overshoot cost
+   2.8 and novelty out-bid appropriateness. Fixed: while the global signal is
+   asking for easier work the lean REVERSES (`MISMATCH_EASING`, 1.2 easy / 2.8
+   hard) rather than merely softening, and the flag is threaded through the
+   warm-up, core, rotation and exit picks. All four constants are HEURISTIC;
+   what is not a judgment call is that a dial which cannot lower the work is
+   not a dial.
+2. **44 of 122 skills offered nothing easier than 3★** ("combine ideas without
+   scaffolding, or choose the method yourself") and **14 started at 4★**. On
+   those skills the first thing a learner ever met was an advanced problem, so
+   there was nothing easier to serve however loudly the dial asked. This
+   contradicts §4 directly: worked-example and expertise-reversal evidence is
+   the reason the support ladder exists, and a skill whose easiest task is 3★
+   has no novice rung.
+
+**After.** Core target 2.15★ against 2.5★ served (was 2.06 against 2.8);
+struggling accuracy 14–19% → 17–23%. Gated by `engine/easing.test.ts` and by a
+new content audit, "every skill has an entry point a struggling learner can
+reach".
+
+**Still open, stated plainly.** Fourteen 1–2★ on-ramps were authored
+(`content/items/onRamps.ts`); **30 skills still start at 3★** and the gate
+holds the line at 3★ rather than 2★ because that is what the bank supports.
+Only 32 of 574 families are 1★ (6%), so the dial's bottom end remains thin and
+a struggling learner still sits near 20%. Lowering the gate is the direction of
+travel.
+
+### 32b. A ten-minute session was a fifteen-minute session
+
+**Measured.** Against a 10-minute target the planner produced **15.1 minutes on
+99% of days**; 20-minute sessions overran on 38%. Three independent arithmetic
+faults:
+
+- `coreBudget` on a short session did not subtract `labBudget` — while the
+  comment beside `labBudget` explicitly claimed it did. A comment asserting an
+  invariant the code does not hold is worse than no comment.
+- The warm-up tested `warmMin >= warmBudget` BEFORE adding an item, so it could
+  always overshoot by one whole item: a 3-minute budget reliably produced a
+  5-minute block.
+- The every-third-session "explain it back" retention check costs 4 minutes,
+  but was chosen at the END, after the rest of the plan had been sized against
+  a guessed exit budget of 2.
+
+**Why it matters beyond tidiness.** The founding brief makes a deliberate
+endpoint a hard constraint and rules out "just one more". Overrunning a
+learner's stated dose by half lands hardest on the person who chose ten minutes
+because ten minutes is what they had.
+
+**After.** 10-minute target: **15.1 → 10.0 mean**. The exit is now decided
+before anything spends the budget, and is skipped on short sessions rather than
+claiming a 4-minute activity takes 2. Gated by "never plans more than the
+chosen length plus the grace window", across five lengths and six consecutive
+sessions.
+
+**Side effect, measured:** Meta Lab ran at **14.3% against its 5% target** on
+short sessions and `x-explain-back` alone was **8.2% of a short-session
+learner's entire year**. Both were the oversized exit. Now 5.5% and 2.2%.
+
+### 32c. Review debt grew without bound at every ability
+
+**Measured.** Due reviews climbed monotonically across a simulated year for
+EVERY ability level — 26 → 44 for the weakest, and **15 → 44 even for the
+strongest**. Supply was constant (a fixed ~18% warm-up, about two retrievals a
+session) while demand scaled with ownership: every skill that reaches Retained
+adds its own recurring schedule.
+
+This is the same arithmetic Math Academy uses to argue flat per-item SRS is
+infeasible in a densely connected curriculum (§29c). Their answer — propagating
+credit down an "encompassing" graph — is one this app declined, and for a
+recorded reason: that graph is explicitly not the prerequisite graph, and there
+is no peer-reviewed evidence for the mechanism.
+
+**What was done instead.** The warm-up allowance now scales with review
+pressure (18% → at most 30% of the session, item cap 3 → 5 when the queue is
+long). Bounded on purpose: the brief is explicit that urgent work must never
+permanently erase the rest of the plan, so this is a lean, not a takeover.
+Measured: reviews served over a year **643 → 1,095**, and the debt curve
+flattens instead of climbing (strongest learner ends at 36 with a flat trace
+rather than 44 and rising).
+
+**Honest limits.** Debt is stabilised, not cleared — a learner who owns 70
+skills will always have a queue, and the steady state is still around 40.
+Nothing here changes the interval ladder itself. A second cost is measured and
+recorded rather than hidden: more reviews means the warm-up now serves the
+HARDEST block of a struggling learner's session (3.1★), because reviews target
+owned skills and family-level reviews deliberately re-serve the exact question
+that lapsed regardless of its difficulty.
+
+### 32d. Checked and found sound
+
+The preparation-for-future-learning readout (§23) appeared dead in the first
+sweep — nine probes served, zero reaching the report. That was an artifact of
+the harness, which wrote probes with a null `score`; the player writes the
+graded outcome there deliberately (`probeScore`), and with the harness
+corrected the readout works: 9 probes, a pick-up rate, and both sides of the
+prerequisite split populated. Recorded because a "dead feature" finding that
+turns out to be a measurement error is worth the same honesty as one that does
+not.
+
+One real oddity in that area, not yet changed: `pflProbes` forces
+`prereqsOwned = false` for any probe whose skill has no prerequisites, so
+`pfl-modular` (attached to `m-integers`, which has none) is permanently counted
+on the "without prerequisites" side. Vacuously it belongs on neither. One probe
+in nine is mis-assigned; excluding it from the split rather than defaulting it
+to false is the honest shape. Open work.

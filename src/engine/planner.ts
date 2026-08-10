@@ -201,7 +201,7 @@ function pickTemplates(
   wantDifficulty: number,
   count: number,
   templateUse: Map<string, TemplateCoverage>,
-  opts: { transferOnly?: boolean; excludeKinds?: string[]; preferCalibration?: boolean; prioritizeTemplateId?: string } = {},
+  opts: { transferOnly?: boolean; excludeKinds?: string[]; preferCalibration?: boolean; prioritizeTemplateId?: string; easing?: boolean } = {},
 ): ItemTemplate[] {
   const pool = candidates
     .filter((t) => (opts.transferOnly ? t.transfer : true))
@@ -223,7 +223,7 @@ function pickTemplates(
         // ASYMMETRIC on purpose: slightly hard is productive; repeatedly easy
         // is pleasant but does not move the frontier. Coverage debt only breaks
         // the fair fight among work that is already near the right level.
-        dailyTemplateScore(t, wantDifficulty, templateUse.get(t.id), opts.preferCalibration) +
+        dailyTemplateScore(t, wantDifficulty, templateUse.get(t.id), opts.preferCalibration, opts.easing) +
         (opts.prioritizeTemplateId === t.id ? 100 : 0),
     }))
     .sort((a, b) => b.score - a.score)
@@ -250,6 +250,7 @@ function pickTemplatesForBudget(
     preferCalibration?: boolean
     prioritizeTemplateId?: string
     maxPerTemplate?: number
+    easing?: boolean
   },
 ): ItemTemplate[] {
   const ranked = pickTemplates(candidates, wantDifficulty, candidates.length, templateUse, opts)
@@ -815,9 +816,35 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   // enough graded evidence to say (engine/stretch.ts).
   const stretch = stretchSignal(state.events, now)
   if (stretch.why && stretch.adjust !== 0) rationale.push(stretch.why)
+  /*
+   * While the dial is asking for easier work, template selection has to want
+   * easier work too. Without this the dial computed a lower target and the
+   * selector quietly overshot it — see MISMATCH_EASING in plannerPolicy.
+   */
+  const easing = stretch.adjust < 0
   const total = checkIn.minutes
   const short = total <= 12
-  const exitBudget = short ? 2 : total >= 25 ? 3 : 2
+  /*
+   * The exit is decided HERE, before anything spends the budget, because its
+   * cost is not fixed: the every-third-session "explain it back" retention
+   * check is a 4-minute activity where an ordinary exit ticket is 2.
+   *
+   * It used to be chosen at the end, after the core and lab blocks had already
+   * been sized against a guessed `exitBudget` of 2 or 3 — so on every third
+   * session the plan was silently two minutes longer than it had budgeted for.
+   * On a ten-minute session that single block was 40% of the dose, which is
+   * why `x-explain-back` was 8.2% of a short-session learner's entire year and
+   * Meta Lab ran at 14.3% against its 5% target.
+   *
+   * It is also skipped outright on a short session: a 4-minute retention check
+   * cannot honestly fit in ten minutes alongside a warm-up, a core and a lab
+   * slot, and claiming it takes two would be a lie about the dose. The same
+   * reasoning already keeps readiness probes out of short sessions.
+   */
+  const explainTarget = !short && state.sessions.length % 3 === 2 ? pickExplainTarget(evidence) : null
+  const explainSeed = explainTarget !== null ? explainSeedFor(explainTarget) : null
+  const explainExit = explainTarget !== null && explainSeed !== null && index.templates.has('x-explain-back')
+  const exitBudget = explainExit ? 4 : short ? 2 : total >= 25 ? 3 : 2
   /*
    * Short sessions used to get NO lab block at all — `labBudget` was 0 and the
    * rotation was skipped outright. Simulated over a year at 10 minutes a day
@@ -836,7 +863,23 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   // ---- 1. Retrieval warm-up
   const due = dueReviews(evidence, now)
   const warmActs: PlannedActivity[] = []
-  const warmBudget = short ? 3 : Math.min(6, Math.max(4, Math.round(total * 0.18)))
+  /*
+   * Review throughput has to answer review PRESSURE, or the queue only grows.
+   *
+   * A fixed ~18% warm-up serves about two retrievals a session whatever is
+   * waiting, while demand scales with how many skills the learner owns: every
+   * skill that reaches Retained adds its own recurring schedule. Measured over
+   * a simulated year, due reviews climbed steadily at EVERY ability level —
+   * 15 → 44 even for the strongest learner — because supply was constant and
+   * demand was not.
+   *
+   * So the warm-up widens when the queue is long, and is bounded at 30% of the
+   * session because the founding brief is explicit that urgent work must never
+   * permanently erase the rest of the plan. It is a lean, not a takeover.
+   */
+  const duePressure = Math.min(1, due.length / 20)
+  const warmShare = 0.18 + 0.12 * duePressure
+  const warmBudget = short ? 3 : Math.min(9, Math.max(4, Math.round(total * warmShare)))
   let warmMin = 0
   const warmSkills: string[] = []
   // FAMILY-LEVEL first. Asking for the exact question family that lapsed is
@@ -845,8 +888,20 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   const forms = dueForms(evidence, now)
   const coveredSkills = new Set<string>()
   let lapsedTargeted = 0
+  /*
+   * `warmMin + cost > warmBudget` and not `warmMin >= warmBudget`.
+   *
+   * Testing the budget BEFORE adding lets the block overshoot by one whole
+   * item every time: with a 3-minute budget, a 2.5-minute review passes the
+   * check at 0, and the next one passes it at 2.5, landing the block at 5. On
+   * a ten-minute session that single off-by-one was half the overrun. The
+   * first item is always allowed — a warm-up with nothing in it is not a
+   * warm-up — but nothing after it may cross the line.
+   */
+  const warmCap = short ? 2 : duePressure >= 0.75 ? 5 : 3
+  const warmFits = (cost: number): boolean => warmActs.length === 0 || warmMin + cost <= warmBudget
   for (const f of forms) {
-    if (warmActs.length >= 3 || warmMin >= warmBudget) break
+    if (warmActs.length >= warmCap || warmMin >= warmBudget) break
     // One family per skill per session — the point is coverage of weak spots,
     // not drilling a single skill into the ground.
     if (coveredSkills.has(f.skillId)) continue
@@ -854,6 +909,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     // A family can vanish when content is renamed; fall through to the
     // skill-level path rather than dropping the review.
     if (!template || template.authentic) continue
+    if (!warmFits(template.minutes)) continue
     coveredSkills.add(f.skillId)
     warmActs.push(act(template, 'review', used))
     warmMin += template.minutes
@@ -862,7 +918,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   }
   // Then any skill that is due without a specific family to blame.
   for (const d of due) {
-    if (warmActs.length >= 3 || warmMin >= warmBudget) break
+    if (warmActs.length >= warmCap || warmMin >= warmBudget) break
     if (coveredSkills.has(d.skillId)) continue
     const ev = evidenceFor(evidence, d.skillId)
     const picks = pickTemplates(
@@ -870,8 +926,9 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       Math.min(stretch.adjust > 0 ? 4 : 3, targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, d.skillId), stretch.adjust)),
       1,
       templateUse,
+      { easing },
     )
-    if (picks.length) {
+    if (picks.length && warmFits(picks[0].minutes)) {
       coveredSkills.add(d.skillId)
       warmActs.push(act(picks[0], 'review', used))
       warmMin += picks[0].minutes
@@ -885,7 +942,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       .sort((a, b) => (a.lastCorrectAt ?? 0) - (b.lastCorrectAt ?? 0))
     for (const ev of independents.slice(0, 2)) {
       const picks = pickTemplates(index.bySkill.get(ev.skillId) ?? [], 2, 1, templateUse)
-      if (picks.length && warmMin < warmBudget) {
+      if (picks.length && warmFits(picks[0].minutes)) {
         warmActs.push(act(picks[0], 'review', used))
         warmMin += picks[0].minutes
         warmSkills.push(index.skills.get(ev.skillId)?.name ?? ev.skillId)
@@ -1019,7 +1076,13 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   if (coreChoice) {
     const ev = evidenceFor(evidence, coreChoice.skill.id)
     const diff = targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, coreChoice.skill.id), stretch.adjust)
-    const coreBudget = short ? Math.max(4, total - warmMin - exitBudget) : Math.max(6, total - warmMin - labBudget - exitBudget)
+    // Every block the plan is going to add has to come out of the same budget.
+    // The short branch used to omit `labBudget` while the comment beside
+    // `labBudget` claimed it subtracted it — so a ten-minute session was
+    // planned at 15.1 minutes on 99% of days.
+    const coreBudget = short
+      ? Math.max(2, total - warmMin - labBudget - exitBudget)
+      : Math.max(6, total - warmMin - labBudget - exitBudget)
     const needsIntro = stateRank(ev.state) < stateRank('guided')
     // Calibration steering: only once there is enough rated history to say
     // anything. calibrationGap returns null below its sample floor.
@@ -1044,6 +1107,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       maxCount: short ? 2 : 8,
       minCount: short ? 1 : 3,
       preferCalibration: miscalibrated,
+      easing,
     })
     const actsCore: PlannedActivity[] = picks.map((t, i) =>
       act(
@@ -1058,7 +1122,9 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
         kind: 'core',
         bucket: coreBucket,
         label: neighbours.length ? `${coreChoice.skill.name} + interleaved` : `${coreChoice.skill.name}`,
-        minutes: Math.max(5, Math.min(coreBudget, minutesOf(picks))),
+        // Never above the budget: a floor of 5 on a 3-minute budget is how a
+        // block silently grows the session past the length that was chosen.
+        minutes: Math.min(coreBudget, Math.max(short ? 2 : 5, minutesOf(picks))),
         activities: actsCore,
         why: `${coreChoice.skill.name} because ${coreChoice.reasons.slice(0, 2).join(' and ')}.`,
       })
@@ -1098,7 +1164,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
           targetDifficulty(evidenceFor(evidence, labSkill.skill.id), checkIn.energy, conservative, placementSignal(state, labSkill.skill.id), stretch.adjust),
           labBudget,
           templateUse,
-          { maxCount: short ? 1 : total >= 40 ? 4 : 3, minCount: 1 },
+          { maxCount: short ? 1 : total >= 40 ? 4 : 3, minCount: 1, easing },
         ),
       )
     } else {
@@ -1139,9 +1205,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   // ---- 4. Exit: every third session, explain a retained skill back from
   // memory (self-explanation, scheduled); otherwise one unaided retrieval on
   // today's core skill.
-  const explainTarget = state.sessions.length % 3 === 2 ? pickExplainTarget(evidence) : null
-  const explainSeed = explainTarget !== null ? explainSeedFor(explainTarget) : null
-  if (explainTarget !== null && explainSeed !== null && index.templates.has('x-explain-back')) {
+  if (explainExit) {
     blocks.push({
       id: uid('b'),
       kind: 'exit',
@@ -1153,18 +1217,23 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     })
     rationale.push(`Exit: explain ${index.skills.get(explainTarget)?.name ?? explainTarget} back from memory (retention check by self-explanation).`)
   }
-  const coreSkillId = explainTarget === null || explainSeed === null ? coreChoice?.skill.id : undefined
+  const coreSkillId = explainExit ? undefined : coreChoice?.skill.id
   if (coreSkillId) {
     const usedInCore = new Set(blocks.flatMap((b) => b.activities.map((a) => a.templateId)))
+    // The exit ticket asks for one unaided problem, so it must respect the same
+    // easing the rest of the session does. Left un-threaded it was measured as
+    // the HARDEST block in a struggling learner's day (3.0★ against a 2★ ask)
+    // — the last thing they saw before the session ended.
     const exitPick = pickTemplates(
       (index.bySkill.get(coreSkillId) ?? []).filter((t) => !usedInCore.has(t.id)),
       2,
       1,
       templateUse,
+      { easing },
     )
     const fallback = exitPick.length
       ? exitPick
-      : pickTemplates(index.bySkill.get(coreSkillId) ?? [], 2, 1, templateUse)
+      : pickTemplates(index.bySkill.get(coreSkillId) ?? [], 2, 1, templateUse, { easing })
     if (fallback.length) {
       blocks.push({
         id: uid('b'),

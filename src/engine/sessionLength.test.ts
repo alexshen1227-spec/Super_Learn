@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildExtensionBlock, buildSessionPlan, SESSION_GRACE_MIN } from './planner'
+import { buildExtensionBlock, buildSessionPlan, estimatedPlanMinutes, SESSION_GRACE_MIN } from './planner'
 import { DEFAULT_INDEX } from '../content/registry'
 import { deriveEvidence } from './mastery'
 import { initialState, type AppState, type CheckIn } from '../domain/types'
@@ -57,6 +57,49 @@ describe('a session runs to the length that was chosen', () => {
     for (const a of extra!.activities) {
       expect(served.has(`${a.templateId}:${a.seed}`), `${a.templateId} form repeated`).toBe(false)
       expect(servedTemplates.has(a.templateId), `${a.templateId} family repeated`).toBe(false)
+    }
+  })
+
+  /**
+   * THE OTHER DIRECTION, which nothing tested.
+   *
+   * Every test above checks that a short plan gets topped up. None checked that
+   * a plan respects the ceiling, and it did not: a ten-minute session was
+   * planned at 15.1 minutes on 99% of days, and a twenty-minute one overran on
+   * 38%. Three separate causes, all arithmetic:
+   *
+   *  - `coreBudget` on a short session did not subtract `labBudget`, while the
+   *    comment beside `labBudget` claimed it did;
+   *  - the warm-up tested its budget BEFORE adding an item, so it could always
+   *    overshoot by one whole item;
+   *  - the every-third-session "explain it back" exit costs 4 minutes but was
+   *    chosen after the rest of the plan had been sized against a guess of 2.
+   *
+   * A learner who picks ten minutes has ten minutes. Overrunning them by half
+   * is the "just one more" pattern the founding brief rules out, and it lands
+   * hardest on the person with the least time.
+   */
+  it('never plans more than the chosen length plus the grace window', () => {
+    for (const minutes of [10, 20, 25, 30, 45] as const) {
+      const base = initialState()
+      const state: AppState = { ...base, onboarded: true, profile: { ...base.profile, sessionMinutes: minutes } }
+      // Walk several sessions so the every-third-session exit is included.
+      for (let session = 0; session < 6; session++) {
+        const withHistory: AppState = { ...state, sessions: Array.from({ length: session }, () => ({}) as never) }
+        const plan = buildSessionPlan({
+          index: DEFAULT_INDEX,
+          evidence: deriveEvidence([], NOW),
+          state: withHistory,
+          now: NOW,
+          checkIn: { minutes, energy: 'ok', focus: null },
+        })
+        const planned = estimatedPlanMinutes(plan)
+        expect(
+          planned,
+          `${minutes}-minute session #${session + 1} planned ${planned} minutes: ` +
+            plan.blocks.map((b) => `${b.kind}=${b.minutes}`).join(' + '),
+        ).toBeLessThanOrEqual(minutes + SESSION_GRACE_MIN)
+      }
     }
   })
 

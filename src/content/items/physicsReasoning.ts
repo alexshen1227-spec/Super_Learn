@@ -210,7 +210,7 @@ const whatsWrong = tpl(
       title: 'What, if anything, is wrong?',
       prompt:
         `A trip covers **${km} km** in **${min} minutes**. A student writes:\n\n> ${shown}\n\n` +
-        `What, if anything, is wrong with this work?\n\n_Some of these are fine. Saying "nothing is wrong" is a real answer._`,
+        `What, if anything, is wrong with this work?\n\n**Some of these are fine.** Saying "nothing is wrong" is a real answer.`,
       answer,
       distractorNotes,
       distractorTags,

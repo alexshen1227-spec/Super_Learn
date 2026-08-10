@@ -52,6 +52,7 @@ import { CONSTRAINT_PUZZLE_TEMPLATES } from './items/constraintPuzzles'
 import { COUNTEREXAMPLE_TEMPLATES } from './items/counterexamples'
 import { CALIFORNIA_STANDARDS_TEMPLATES } from './items/californiaStandards'
 import { PHYSICS_REASONING_TEMPLATES } from './items/physicsReasoning'
+import { ONRAMP_TEMPLATES } from './items/onRamps'
 
 export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...MATH_NUMBER_TEMPLATES,
@@ -100,6 +101,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...COUNTEREXAMPLE_TEMPLATES,
   ...CALIFORNIA_STANDARDS_TEMPLATES,
   ...PHYSICS_REASONING_TEMPLATES,
+  ...ONRAMP_TEMPLATES,
 ]
 
 export function packItemToTemplate(pack: ContentPackJson, i: number): ItemTemplate {

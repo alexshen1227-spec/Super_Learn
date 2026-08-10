@@ -47,7 +47,7 @@ const genObsInf = tpl(
     const scene = `At ${time} you walk past ${place}. A ${state} ${object} is lying on it. Nobody is standing within a few metres of it. The corridor lights are on.`
     return {
       title: 'Seen or concluded?',
-      prompt: `**Scene.** ${scene}\n\nSort each statement: does the scene *state* it, or does it go beyond what you saw?`,
+      prompt: `**Scene.** ${scene}\n\nSort each statement: does the scene **state** it, or does it go beyond what you saw?`,
       answer: classify(rng, ['Stated by the scene', 'Goes beyond it'], [
         { text: `The ${object} is ${state}.`, category: 0 },
         { text: `The ${object} is on ${place}.`, category: 0 },
@@ -245,7 +245,7 @@ const genSyllogism = tpl(
     if (form === 'universal') {
       return {
         title: 'What follows?',
-        prompt: `Given:\n\n1. All **${s.a}** are **${s.b}**.\n2. All **${s.b}** are **${s.c}**.\n\nWhich conclusion follows *necessarily*?`,
+        prompt: `Given:\n\n1. All **${s.a}** are **${s.b}**.\n2. All **${s.b}** are **${s.c}**.\n\nWhich conclusion follows **necessarily**?`,
         answer: mcq(rng, `All ${s.a} are ${s.c}.`, [
           `All ${s.c} are ${s.a}.`,
           `All ${s.b} are ${s.a}.`,
@@ -262,7 +262,7 @@ const genSyllogism = tpl(
     }
     return {
       title: 'What follows?',
-      prompt: `Given:\n\n1. If something is one of the **${s.a}**, then it is **${s.c}**.\n2. This one is **not ${s.c}**.\n\nWhich conclusion follows *necessarily*?`,
+      prompt: `Given:\n\n1. If something is one of the **${s.a}**, then it is **${s.c}**.\n2. This one is **not ${s.c}**.\n\nWhich conclusion follows **necessarily**?`,
       answer: mcq(rng, `It is not one of the ${s.a}.`, [
         `It is one of the ${s.a}.`,
         `It is one of the ${s.b}.`,
