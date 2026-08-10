@@ -6,3 +6,6 @@ dev-dist/
 repro-tmp.ts
 test-results/
 playwright-report/
+
+# throwaway measurement output from investigation harnesses
+*-out.txt
