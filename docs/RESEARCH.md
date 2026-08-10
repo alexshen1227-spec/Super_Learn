@@ -1668,12 +1668,16 @@ prerequisite split populated. Recorded because a "dead feature" finding that
 turns out to be a measurement error is worth the same honesty as one that does
 not.
 
-One real oddity in that area, not yet changed: `pflProbes` forces
-`prereqsOwned = false` for any probe whose skill has no prerequisites, so
-`pfl-modular` (attached to `m-integers`, which has none) is permanently counted
-on the "without prerequisites" side. Vacuously it belongs on neither. One probe
-in nine is mis-assigned; excluding it from the split rather than defaulting it
-to false is the honest shape. Open work.
+One real oddity in that area: `pflProbes` forced `prereqsOwned = false` for any
+probe whose skill has no prerequisites, so `pfl-modular` (attached to
+`m-integers`, which has none) was permanently counted on the "without
+prerequisites" side. Vacuously it belongs on neither.
+
+**FIXED** (verified 2026-08-10): `prereqsOwned` is `boolean | null`, the null
+case is excluded from both sides of the split rather than swept onto one, and
+`pfl.test.ts` covers it. This note said "Open work" for longer than the code
+did — a stale ledger entry is the same class of defect as an overclaiming one,
+so it is worth re-reading old open items before trusting them.
 
 ## 33. The third hunt (2026-08-09): the paths simulations do not reach
 
@@ -2488,6 +2492,61 @@ twice in one day trading breadth against depth, and both times depth won on the
 north-star metric. That is not an argument for more repetition — it is an
 argument that any change to the scorer must report owned-skills, not just the
 number it was aimed at.
+
+### 37k. Naming the struggle — BUILT, and kept narrower than the slogan
+
+Beast Academy teaches productive struggle as a named skill rather than a mood
+to endure (§37c). Built as `x-stuck` in Meta Lab, two families:
+reading the state, and choosing the next move.
+
+**What the evidence supports.** Sinha & Kapur (2021), 53 studies / 166
+comparisons: attempting a problem BEFORE instruction beats instruction-then-
+problem at Hedge's g = 0.36 [0.20, 0.51], rising to 0.37-0.58 at high fidelity
+to the productive-failure design.
+https://journals.sagepub.com/doi/10.3102/00346543211019105
+
+That structure is ALREADY what this app runs — PFL probes, the Notice-then-
+Predict diagrams, the Challenge Creator prediction. Nothing new is claimed for
+it. The addition is metacognitive: help-seeking is itself a skill with two
+failure modes, avoidance and over-reliance, and novices show both.
+
+**What is deliberately NOT claimed.** That struggling as such makes you learn
+more; that difficulty is inherently valuable; anything mindset-shaped. The
+content never says "struggle is good for you". It says these are two different
+states, here is the cue that separates them (did the last few attempts produce
+new information?), and here is what each one asks for. The cue is deliberately
+not time and not comfort, because both states feel equally bad.
+
+### 37l. Session rhythms: two real bugs that only irregular use exposed
+
+Several rules key off the COUNT of finished sessions rather than calendar days,
+so two-a-day, five-a-day and long gaps exercise paths one-a-day never does.
+`sessionRhythm.test.ts` plays seven rhythms.
+
+**1. The identical question, twice in one session.** `pickSeed` tries 24 random
+seeds looking for an unused variant, then hands one back anyway. For a
+single-form template every seed maps to form 0, so all 24 collide and the guard
+silently fails. Two due skills naming the same family then produced the same
+question back to back. Measured at 1 session in 40 before, 0 after.
+
+Worth separating from the thing that is NOT a bug: repeating a template with
+DIFFERENT numbers happened in 17 of those 40 sessions and is ordinary
+interleaving. The test asserts on `templateId#form`, not `templateId`.
+
+**2. Same-day review, which is massing wearing a spacing badge.** A skill that
+is `struggling` or `blockedByMisconception` is marked due IMMEDIATELY rather
+than on an interval — right intent, but with two sessions a day it returns
+three hours later, and re-testing a repair that fast reads working memory. 16
+same-day repeats over 21 simulated days.
+
+`MIN_REVIEW_GAP_MS = 12h` keeps "tomorrow morning" and refuses "again this
+afternoon", and is inert for a once-a-day learner. HEURISTIC. Measured after,
+across 1/2/3 sessions a day at three accuracy levels: owned skills 44-48 (30%),
+69-77 (60%), 114-120 (90%) — no regression, and better than the 43/65/119
+baseline at the two lower levels.
+
+A third, smaller one: the no-dues warm-up fallback could pick the same template
+for two different skills, because a template may list several. Deduped.
 
 **Licensing unchanged from §25**: Brilliant, IXL, DeltaMath, Alcumus, Beast and
 Math Academy are proprietary. Nothing here is text, artwork, a scoring constant

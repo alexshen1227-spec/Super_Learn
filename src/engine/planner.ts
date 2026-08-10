@@ -126,6 +126,48 @@ function recentlyUsedForms(events: AttemptEvent[], now: number): Set<string> {
 const recentTemplateUse = buildTemplateCoverage
 
 /** Pick a seed whose rendered form was not used recently (best effort). */
+/**
+ * True when every FORM this template has is already planned for this session.
+ *
+ * `pickSeed` tries 24 random seeds and takes one whose variant is unused —
+ * which silently gives up and serves a duplicate when there is nothing left to
+ * find. For a single-form template that is every time: `seed % 1` is always 0,
+ * so all 24 candidates collide and the 25th line hands one back anyway.
+ *
+ * Measured over 40 simulated sessions, one served `s-blinding` twice in a row
+ * in the same warm-up — the identical question, back to back — because two due
+ * skills both resolved to it. Repeating a template with DIFFERENT numbers is
+ * ordinary interleaving and happened in 17 of those 40 sessions; repeating the
+ * identical question is the bug.
+ */
+export function formsExhausted(template: ItemTemplate, used: Set<string>): boolean {
+  const forms = Math.max(1, template.variants)
+  for (let v = 0; v < forms; v++) {
+    if (!used.has(`${template.id}:${v}`)) return false
+  }
+  return true
+}
+
+/**
+ * How long a skill rests before a review may retrieve it again. HEURISTIC.
+ *
+ * A skill that is struggling or blocked by a misconception is marked due
+ * IMMEDIATELY rather than on an interval, which is the right intent — it
+ * should come back soon. But "due now" plus two sessions in one day means it
+ * comes back three hours later, and re-testing a repair that fast reads
+ * working memory rather than whether anything was repaired. Measured over 21
+ * simulated days at two sessions a day, 16 reviews were same-day repeats.
+ *
+ * Twelve hours keeps "soon" (tomorrow morning) while refusing "again this
+ * afternoon". It does nothing at all to a once-a-day learner.
+ */
+export const MIN_REVIEW_GAP_MS = 12 * 3_600_000
+
+function retriedTooSoon(evidence: Map<string, SkillEvidence>, skillId: string, now: number): boolean {
+  const last = evidence.get(skillId)?.lastAttemptAt ?? null
+  return last !== null && now - last < MIN_REVIEW_GAP_MS
+}
+
 export function pickSeed(template: ItemTemplate, used: Set<string>): number {
   for (let i = 0; i < 24; i++) {
     const seed = Math.floor(Math.random() * 0x7fffffff)
@@ -239,9 +281,18 @@ function pickTemplates(
   wantDifficulty: number,
   count: number,
   templateUse: Map<string, TemplateCoverage>,
-  opts: { transferOnly?: boolean; excludeKinds?: string[]; preferCalibration?: boolean; prioritizeTemplateId?: string; easing?: boolean } = {},
+  opts: {
+    transferOnly?: boolean
+    excludeKinds?: string[]
+    preferCalibration?: boolean
+    prioritizeTemplateId?: string
+    easing?: boolean
+    /** Already planned this session — drop anything with no fresh form left. */
+    used?: Set<string>
+  } = {},
 ): ItemTemplate[] {
   const pool = candidates
+    .filter((t) => !opts.used || !formsExhausted(t, opts.used))
     .filter((t) => (opts.transferOnly ? t.transfer : true))
     .filter((t) => !(opts.excludeKinds ?? []).includes(t.kind))
     // Long-form simulations have their own Practice mode. Quietly squeezing a
@@ -293,6 +344,8 @@ function pickTemplatesForBudget(
     prioritizeTemplateId?: string
     maxPerTemplate?: number
     easing?: boolean
+    /** Already planned this session — drop anything with no fresh form left. */
+    used?: Set<string>
   },
 ): ItemTemplate[] {
   const ranked = pickTemplates(candidates, wantDifficulty, candidates.length, templateUse, opts)
@@ -762,7 +815,7 @@ export function buildExtensionBlock(
   const templateUse = recentTemplateUse(ctx.state.events, ctx.now)
   const activities: PlannedActivity[] = []
   let minutes = 0
-  for (const t of pickTemplates(pool, 3, pool.length, templateUse, {})) {
+  for (const t of pickTemplates(pool, 3, pool.length, templateUse, { used })) {
     if (activities.length >= 4) break
     // Never overshoot the far edge of the window.
     if (minutes + t.minutes > remaining + SESSION_GRACE_MIN) continue
@@ -948,7 +1001,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   // FAMILY-LEVEL first. Asking for the exact question family that lapsed is
   // the whole point: choosing by difficulty-match let a strong family satisfy
   // the skill's review while the weak one stayed untested.
-  const forms = dueForms(evidence, now)
+  const forms = dueForms(evidence, now).filter((f) => !retriedTooSoon(evidence, f.skillId, now))
   const coveredSkills = new Set<string>()
   let lapsedTargeted = 0
   /*
@@ -972,6 +1025,9 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     // A family can vanish when content is renamed; fall through to the
     // skill-level path rather than dropping the review.
     if (!template || template.authentic) continue
+    // Two due skills can name the same family; without this the second one
+    // re-serves the identical question.
+    if (formsExhausted(template, used)) continue
     if (!warmFits(template.minutes)) continue
     coveredSkills.add(f.skillId)
     warmActs.push(act(template, 'review', used))
@@ -983,13 +1039,14 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   for (const d of due) {
     if (warmActs.length >= warmCap || warmMin >= warmBudget) break
     if (coveredSkills.has(d.skillId)) continue
+    if (retriedTooSoon(evidence, d.skillId, now)) continue
     const ev = evidenceFor(evidence, d.skillId)
     const picks = pickTemplates(
       index.bySkill.get(d.skillId) ?? [],
       Math.min(stretch.adjust > 0 ? 4 : 3, targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, d.skillId), stretch.adjust)),
       1,
       templateUse,
-      { easing },
+      { easing, used },
     )
     if (picks.length && warmFits(picks[0].minutes)) {
       coveredSkills.add(d.skillId)
@@ -1002,10 +1059,22 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   if (warmActs.length === 0) {
     const independents = [...evidence.values()]
       .filter((ev) => stateRank(ev.state) >= stateRank('independent'))
+      // Same rest as a real review: retrieving something two hours after you
+      // last touched it is not retrieval practice.
+      .filter((ev) => !retriedTooSoon(evidence, ev.skillId, now))
       .sort((a, b) => (a.lastCorrectAt ?? 0) - (b.lastCorrectAt ?? 0))
-    for (const ev of independents.slice(0, 2)) {
-      const picks = pickTemplates(index.bySkill.get(ev.skillId) ?? [], 2, 1, templateUse)
+    // Two different skills can resolve to the SAME template, because a
+    // template may list several skills — which put one family in the warm-up
+    // twice. Different numbers each time, so not the same question, but still
+    // a narrower warm-up than intended.
+    const warmTemplates = new Set(warmActs.map((a) => a.templateId))
+    for (const ev of independents.slice(0, 3)) {
+      if (warmActs.length >= warmCap) break
+      const picks = pickTemplates(index.bySkill.get(ev.skillId) ?? [], 2, 1, templateUse, { used }).filter(
+        (t) => !warmTemplates.has(t.id),
+      )
       if (picks.length && warmFits(picks[0].minutes)) {
+        warmTemplates.add(picks[0].id)
         warmActs.push(act(picks[0], 'review', used))
         warmMin += picks[0].minutes
         warmSkills.push(index.skills.get(ev.skillId)?.name ?? ev.skillId)
@@ -1171,6 +1240,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       minCount: short ? 1 : 3,
       preferCalibration: miscalibrated,
       easing,
+      used,
     })
     const actsCore: PlannedActivity[] = picks.map((t, i) =>
       act(
@@ -1227,7 +1297,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
           targetDifficulty(evidenceFor(evidence, labSkill.skill.id), checkIn.energy, conservative, placementSignal(state, labSkill.skill.id), stretch.adjust),
           labBudget,
           templateUse,
-          { maxCount: short ? 1 : total >= 40 ? 4 : 3, minCount: 1, easing },
+          { maxCount: short ? 1 : total >= 40 ? 4 : 3, minCount: 1, easing, used },
         ),
       )
     } else {
@@ -1236,6 +1306,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
         ...pickTemplatesForBudget(index.byBucket.get(labBucket) ?? [], 2, labBudget, templateUse, {
           maxCount: total >= 40 ? 4 : 3,
           minCount: 1,
+          used,
         }),
       )
     }
@@ -1292,11 +1363,11 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       2,
       1,
       templateUse,
-      { easing },
+      { easing, used },
     )
     const fallback = exitPick.length
       ? exitPick
-      : pickTemplates(index.bySkill.get(coreSkillId) ?? [], 2, 1, templateUse, { easing })
+      : pickTemplates(index.bySkill.get(coreSkillId) ?? [], 2, 1, templateUse, { easing, used })
     if (fallback.length) {
       blocks.push({
         id: uid('b'),
@@ -1396,6 +1467,7 @@ export function buildReadyPlan(ctx: PlannerContext, trackId: string): SessionPla
     const picks = pickTemplatesForBudget(index.bySkill.get(skill.id) ?? [], diff, perSkill, templateUse, {
       maxCount: 4,
       minCount: 2,
+      used,
     })
     if (!picks.length) continue
     blocks.push({
@@ -1433,6 +1505,7 @@ export function buildFocusPlan(ctx: PlannerContext, skillId: string): SessionPla
   const picks = pickTemplatesForBudget(index.bySkill.get(skillId) ?? [], diff, checkIn.minutes, templateUse, {
     maxCount: Math.max(3, Math.min(10, Math.ceil(checkIn.minutes / 2))),
     minCount: 2,
+    used,
   })
   const blocks: PlannedBlock[] = picks.length
     ? [
@@ -1481,6 +1554,7 @@ export function buildErrorClinicPlan(ctx: PlannerContext, targets: RepairTarget[
       maxCount: Math.min(6, Math.max(2, Math.ceil(perTargetBudget / 2))),
       minCount: Math.min(2, preferred.length),
       prioritizeTemplateId: failedTemplate?.id,
+      used,
     })
     if (!picks.length) continue
     const conceptual = target.tags.some((tag) => tag === 'concept' || tag === 'strategy' || tag === 'representation')
@@ -1530,7 +1604,7 @@ export function buildMixedReviewPlan(ctx: PlannerContext): SessionPlan {
     const round = Math.floor(cursor / practiced.length)
     cursor++
     guard++
-    const picks = pickTemplates(index.bySkill.get(ev.skillId) ?? [], 2.5, 99, templateUse)
+    const picks = pickTemplates(index.bySkill.get(ev.skillId) ?? [], 2.5, 99, templateUse, { used })
     if (!picks.length) continue
     const reusable = picks.filter((t) => t.variants > 1)
     const template = picks[round] ?? (reusable.length ? reusable[round % reusable.length] : null)
@@ -1586,7 +1660,7 @@ export function buildCheckpointPlan(ctx: PlannerContext, skillIds: string[], uni
     )
     const ranked = [
       ...pool.filter((t) => dueFamilies.has(t.id)),
-      ...pickTemplates(pool.filter((t) => !dueFamilies.has(t.id)), 3, 99, templateUse),
+      ...pickTemplates(pool.filter((t) => !dueFamilies.has(t.id)), 3, 99, templateUse, { used }),
     ]
     const picks = ranked.slice(0, 2)
     if (!picks.length) continue
@@ -1642,7 +1716,7 @@ export function buildChallengePlan(ctx: PlannerContext): SessionPlan {
     cursor++
     guard++
     const hard = (index.bySkill.get(ev.skillId) ?? []).filter((t) => t.difficulty >= 3)
-    const picks = pickTemplates(hard, 4.5, 99, templateUse)
+    const picks = pickTemplates(hard, 4.5, 99, templateUse, { used })
     if (!picks.length) continue
     const reusable = picks.filter((t) => t.variants > 1)
     const template = picks[round] ?? (reusable.length ? reusable[round % reusable.length] : null)

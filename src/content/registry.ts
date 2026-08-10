@@ -58,6 +58,7 @@ import { exploreItems } from './items/explore'
 import { exploreBItems } from './items/exploreB'
 import { exploreCItems } from './items/exploreC'
 import { DISCERNMENT_TEMPLATES } from './items/discernment'
+import { STUCK_TEMPLATES } from './items/stuck'
 
 export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...MATH_NUMBER_TEMPLATES,
@@ -112,6 +113,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...exploreBItems,
   ...exploreCItems,
   ...DISCERNMENT_TEMPLATES,
+  ...STUCK_TEMPLATES,
 ]
 
 export function packItemToTemplate(pack: ContentPackJson, i: number): ItemTemplate {

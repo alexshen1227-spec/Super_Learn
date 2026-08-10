@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '8.6',
+    date: '2026-08-10',
+    title: 'Being Stuck Is Now A Skill, And Two Sessions A Day Works Properly',
+    points: [
+      'New skill in Meta Lab: "Working while stuck". It teaches the one distinction that actually helps — productive struggle (you are still generating attempts and each one rules something out: keep going) versus genuinely stuck (you have repeated the same move with no new information: that is a signal). The cue is whether the last few minutes produced anything NEW, not how long it has taken and not how bad it feels, because both states feel equally bad.',
+      'The second half is what to ask for. Asking for the whole answer and refusing to ask at all are both ways of not learning, and almost all advice only warns about the first. The best move is the smallest thing that unblocks you plus a sentence naming where you got to — which often unsticks you while you write it.',
+      'What this does NOT say: that struggling is good for you, or that difficulty helps by itself. The research that holds up is narrower — attempting a problem BEFORE being taught the method beats the other order — and this app already did that. This is about reading the state you are in.',
+      'Different rhythms now properly tested: one session a day, two, three, five in a cramming binge, every third day, a fortnight off, and a three-month gap. Two real bugs came out of it.',
+      'First: the app could ask you the IDENTICAL question twice in one session. Two skills due for review can point at the same question, and the guard that was meant to stop that silently gave up on questions that only have one version. Fixed and now checked across every rhythm.',
+      'Second, and worse if you practise twice a day: a skill you are struggling with was marked "due now" and could come back three hours later. Testing a repair that fast reads short-term memory rather than whether anything was repaired. There is now a twelve-hour minimum rest before the same skill returns — which keeps "tomorrow morning" and refuses "again this afternoon", and changes nothing at all if you practise once a day. Same-day repeats went from 16 in three weeks to essentially none.',
+    ],
+  },
+  {
     version: '8.5',
     date: '2026-08-10',
     title: 'The Retention Check Was Only Ever Checking One Thing',

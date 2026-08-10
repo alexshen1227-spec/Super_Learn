@@ -332,6 +332,7 @@ const meta = defineCourse(
         { id: 'x-calib', name: 'Self-calibration', bucket: 'meta', prereqs: [], gradeBand: 8, blurb: 'Match confidence to evidence; make “I don’t know” a power move.' },
         { id: 'x-explain', name: 'Explanation & compression', bucket: 'meta', prereqs: [], gradeBand: 8, blurb: 'Compress ideas into one sentence, one example, one trap.' },
         { id: 'x-focus', name: 'Focus & error diagnosis', bucket: 'meta', prereqs: [], gradeBand: 7, blurb: 'Plan deep work; sort your errors by cause, not by topic.' },
+        { id: 'x-stuck', name: 'Working while stuck', bucket: 'meta', prereqs: [], gradeBand: 7, blurb: 'Tell progress-that-feels-bad from genuinely stuck — and know what each one asks you to do.' },
       ],
     },
   ],
