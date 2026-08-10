@@ -37,6 +37,46 @@ was worth doing.
 - `npm run icons` — regenerate PNG icons (procedural, dependency-free)
 - `node scripts/find-tactics.mjs` — mine new search-verified chess positions
 
+## Looking at the app in a browser
+
+**Screenshot anything visual before you call it done.** Bounds checks prove a
+diagram's data is *correct*; they are structurally unable to see that it is
+*unreadable*. On 2026-08-10 a dot plot passed every audit gate — seven dots,
+all finite, all inside the box — while the rendered picture showed six, because
+two equal values were drawn at the same point under a caption reading "seven
+values". Two more of the same class shipped in the same pass: a label centred
+on its own line reached across a neighbouring one, and a chart kept the full
+height of an xy graph, leaving an empty band that reads as a failed load.
+
+So: after building or changing any SVG, chart, or new mark type, take a real
+screenshot in the running app — not just `read_page` or DOM measurement. Pick a
+variant whose data has duplicates or near-ties, since that is where overlap
+hides. Keep the audit gates too; they caught an invisible polyline and
+duplicate captions before anything rendered. The two are complementary.
+
+**When `computer`/screenshot fails** with "the pane is not displayed / not
+compositing" while `read_page`, `javascript_tool` and `navigate` all work
+perfectly:
+
+- **The pane has to be visible in the user's own window**, and that is not
+  something an agent can change. A hidden pane composites no frames, so
+  screenshots and clicks fail while every DOM tool keeps working, which reads
+  exactly like a broken tool. Restarting the preview does not fix it; asking
+  the user to show the Browser pane does.
+- Things that look like the cause and are NOT: a spare open tab, the URL path,
+  a stale dev server. All three were tested on 2026-08-10 and none of them
+  explains it — the pane simply worked for a stretch and then stopped.
+- A screenshot can also return a **stale frame** — check it against the DOM
+  before believing it. A real `computer` click forces a fresh one.
+- When the pane is unavailable, fall back to measuring the rendered SVG through
+  `javascript_tool` (coordinates, computed styles, contrast ratios). That
+  catches wrong data and, as §37e records, cannot catch illegible data — so
+  say plainly in the summary that the visual check did not happen.
+- Reaching a specific item: Practice → a bucket card opens a browse sheet
+  listing every template, and clicking one launches it directly. The sheet
+  renders at the END of the document, so a truncated `innerText` read will miss
+  it entirely and look like the click did nothing.
+
 ## Architecture in one paragraph
 
 Attempts are APPEND-ONLY events (`AttemptEvent`); skill states, review dues,

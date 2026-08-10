@@ -340,6 +340,7 @@ const exploreAreaScale = tpl(
           xMax,
           yMin: 0,
           yMax,
+          aspectSquare: true,
           xLabel: 'width',
           yLabel: 'height',
           series: [],

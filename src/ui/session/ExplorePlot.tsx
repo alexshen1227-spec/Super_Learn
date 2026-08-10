@@ -24,22 +24,21 @@
 import { useMemo, useRef, useState } from 'react'
 import type { ExploreSpec, PlotSpec } from '../../domain/types'
 import { Button, Card } from '../components'
+import { DOT_R, PLOT_PAD, PLOT_W, plotLayout } from '../../engine/plotGeometry'
 
-/** Viewbox units. Fixed so the SVG scales cleanly at any width. */
-const W = 320
-const H_FULL = 200
-const PAD_L = 34
-const PAD_B = 26
-const PAD_T = 10
-const PAD_R = 10
+// Viewbox units. The projection itself lives in engine/plotGeometry so the
+// content audit can check the SCREEN positions of what this draws.
+const W = PLOT_W
+const PAD_L = PLOT_PAD.l
+const PAD_B = PLOT_PAD.b
+const PAD_T = PLOT_PAD.t
+const PAD_R = PLOT_PAD.r
 
 function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
   // A plot with no vertical scale is a strip, not a square: keeping the full
   // height leaves a large empty band above the data that reads as missing
   // content rather than as breathing room.
-  const H = spec.hideY ? 128 : H_FULL
-  const sx = (x: number) => PAD_L + ((x - spec.xMin) / (spec.xMax - spec.xMin || 1)) * (W - PAD_L - PAD_R)
-  const sy = (y: number) => H - PAD_B - ((y - spec.yMin) / (spec.yMax - spec.yMin || 1)) * (H - PAD_T - PAD_B)
+  const { H, sx, sy } = plotLayout(spec)
 
   // Gridlines at whole-number-ish intervals, capped so they never turn to mush.
   const xStep = niceStep(spec.xMin, spec.xMax)
@@ -116,12 +115,42 @@ function Plot({ spec, label }: { spec: PlotSpec; label: string }) {
         </>
       ) : null}
 
+      {(spec.circles ?? []).map((c, i) => (
+        <g key={`c${i}`}>
+          {/* rx and ry are scaled separately: with aspectSquare they agree and
+              this is a circle; without it, an honest ellipse beats a circle
+              drawn at the wrong width. */}
+          <ellipse
+            cx={sx(c.cx)}
+            cy={sy(c.cy)}
+            rx={Math.abs(sx(c.cx + c.r) - sx(c.cx))}
+            ry={Math.abs(sy(c.cy) - sy(c.cy + c.r))}
+            className="fill-accent/20 stroke-accent"
+            strokeWidth={2}
+          />
+          <line
+            x1={sx(c.cx)}
+            y1={sy(c.cy)}
+            x2={sx(c.cx + c.r)}
+            y2={sy(c.cy)}
+            className="stroke-accent"
+            strokeWidth={1.5}
+            strokeDasharray="3 2"
+          />
+          {c.label ? (
+            <text x={sx(c.cx)} y={sy(c.cy) - 6} textAnchor="middle" className="fill-ink text-[10px] font-semibold">
+              {c.label}
+            </text>
+          ) : null}
+        </g>
+      ))}
+
       {(spec.dots ?? []).map((d, i) => (
         <circle
           key={`d${i}`}
           cx={sx(d.x)}
           cy={sy(d.y)}
-          r={3.5}
+          r={DOT_R}
           className={d.tone === 1 ? 'fill-warn' : 'fill-accent'}
           opacity={0.75}
         />

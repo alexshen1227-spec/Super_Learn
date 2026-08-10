@@ -26,6 +26,7 @@ import { correctResponse, firstFailedStep, serializeSteps, validate, wrongRespon
 import { matingMoves, movesKeepingMate } from '../engine/chessTools'
 import { puzzleValid } from '../engine/logicGrid'
 import { solutionValid } from '../engine/polyomino'
+import { clippedMarks, overlappingDots } from '../engine/plotGeometry'
 import type { AnswerSpec, RenderedItem } from '../domain/types'
 import { MATH_LADDER, BREADTH_PROBES } from '../engine/placement'
 
@@ -1222,6 +1223,24 @@ describe('manipulable diagrams', () => {
                 `${at}: dot (${d.x}, ${d.y}) falls outside the box and would be drawn over the axes`,
               ).toBe(true)
             }
+            for (const ci of pl.circles ?? []) {
+              expect(
+                Number.isFinite(ci.cx) && Number.isFinite(ci.cy) && Number.isFinite(ci.r),
+                `${at}: non-finite circle`,
+              ).toBe(true)
+              expect(ci.r, `${at}: a circle needs a positive radius`).toBeGreaterThan(0)
+              expect(
+                ci.cx - ci.r >= pl.xMin - EPS &&
+                  ci.cx + ci.r >= pl.xMin - EPS &&
+                  ci.cx + ci.r <= pl.xMax + EPS &&
+                  ci.cy - ci.r >= pl.yMin - EPS &&
+                  ci.cy + ci.r <= pl.yMax + EPS,
+                `${at}: circle escapes the box and would be clipped by the frame`,
+              ).toBe(true)
+              // A circle drawn on stretched axes is an ellipse, which quietly
+              // contradicts any item whose lesson is that circles are round.
+              expect(pl.aspectSquare, `${at}: a plot with circles must set aspectSquare`).toBe(true)
+            }
             for (const mk of pl.marks ?? []) {
               expect(Number.isFinite(mk.x), `${at}: non-finite marker`).toBe(true)
               expect(mk.label.length, `${at}: an unlabelled marker is a mystery line`).toBeGreaterThan(0)
@@ -1230,6 +1249,34 @@ describe('manipulable diagrams', () => {
                 `${at}: marker "${mk.label}" at ${mk.x} sits outside the box`,
               ).toBe(true)
             }
+          }
+        }
+      }
+    }
+  })
+
+  /**
+   * Bounds are a fact about DATA; overlap is a fact about PIXELS. A dot plot
+   * shipped in this bank passing every bounds assertion — seven dots, finite,
+   * inside the box — while the rendered picture showed six, two values having
+   * landed on the same point under a caption reading "seven values". Nothing
+   * written over the data model could have seen it, so this gate projects
+   * through the renderer's own layout (`engine/plotGeometry`) and checks the
+   * screen positions.
+   */
+  it('no two dots are drawn on top of each other, and no marker label leaves the frame', () => {
+    for (const t of withExplore) {
+      for (let seed = 0; seed < Math.max(1, t.variants); seed++) {
+        for (const p of t.generate(seed).parts ?? []) {
+          if (!p.explore) continue
+          for (const [si, stop] of p.explore.stops.entries()) {
+            const at = `${t.id} seed ${seed} stop ${si}`
+            const hidden = overlappingDots(stop.plot)
+            expect(
+              hidden,
+              `${at}: ${hidden.length} pair(s) of dots drawn on top of each other — the chart shows fewer values than it has`,
+            ).toEqual([])
+            expect(clippedMarks(stop.plot), `${at}: a marker label runs off the frame`).toEqual([])
           }
         }
       }
@@ -1260,7 +1307,13 @@ describe('manipulable diagrams', () => {
           if (!p.explore) continue
           const stops = p.explore.stops
           const drawings = stops.map((s) =>
-            JSON.stringify([s.plot.series, s.plot.rect ?? null, s.plot.dots ?? null, s.plot.marks ?? null]),
+            JSON.stringify([
+              s.plot.series,
+              s.plot.rect ?? null,
+              s.plot.dots ?? null,
+              s.plot.marks ?? null,
+              s.plot.circles ?? null,
+            ]),
           )
           expect(
             new Set(drawings).size,

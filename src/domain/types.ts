@@ -280,6 +280,18 @@ export interface PlotSpec {
    * that is not there.
    */
   hideY?: boolean
+  /** Circles in data units, for anything where roundness is the point. */
+  circles?: { cx: number; cy: number; r: number; label?: string }[]
+  /**
+   * Force one pixels-per-unit scale on both axes, centred in the frame.
+   *
+   * Without it a plot area of 276 × 164 pixels stretches equal data spans
+   * unequally, so a square renders as a wide rectangle and a circle as an
+   * ellipse. On any diagram whose LESSON is a shape — "the square encloses the
+   * most", "this ratio is the same for every circle" — that stretch quietly
+   * contradicts the thing being taught.
+   */
+  aspectSquare?: boolean
 }
 
 /** One position of the control, and the picture at that position. */

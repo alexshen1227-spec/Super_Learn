@@ -56,6 +56,7 @@ import { ONRAMP_TEMPLATES } from './items/onRamps'
 import { ONRAMP_B_TEMPLATES } from './items/onRampsB'
 import { exploreItems } from './items/explore'
 import { exploreBItems } from './items/exploreB'
+import { exploreCItems } from './items/exploreC'
 import { DISCERNMENT_TEMPLATES } from './items/discernment'
 
 export const BUILTIN_TEMPLATES: ItemTemplate[] = [
@@ -109,6 +110,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...ONRAMP_B_TEMPLATES,
   ...exploreItems,
   ...exploreBItems,
+  ...exploreCItems,
   ...DISCERNMENT_TEMPLATES,
 ]
 
