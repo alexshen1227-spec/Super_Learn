@@ -54,6 +54,7 @@ import { CALIFORNIA_STANDARDS_TEMPLATES } from './items/californiaStandards'
 import { PHYSICS_REASONING_TEMPLATES } from './items/physicsReasoning'
 import { ONRAMP_TEMPLATES } from './items/onRamps'
 import { ONRAMP_B_TEMPLATES } from './items/onRampsB'
+import { DISCERNMENT_TEMPLATES } from './items/discernment'
 
 export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...MATH_NUMBER_TEMPLATES,
@@ -104,6 +105,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...PHYSICS_REASONING_TEMPLATES,
   ...ONRAMP_TEMPLATES,
   ...ONRAMP_B_TEMPLATES,
+  ...DISCERNMENT_TEMPLATES,
 ]
 
 export function packItemToTemplate(pack: ContentPackJson, i: number): ItemTemplate {

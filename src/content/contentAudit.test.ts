@@ -575,6 +575,59 @@ describe('items are answerable and fair', () => {
     expect(byTemplate, `unsupported markup reaches the learner: ${byTemplate.join(' | ')}`).toEqual([])
   })
 
+  /**
+   * Observer and Human Insight must train DISCERNMENT, not suspicion.
+   *
+   * Measured before this gate: of 55 families in those two buckets, exactly
+   * ONE ever had "nothing is wrong here" as the correct answer. Everywhere
+   * else the right answer was that something WAS an inference or a pressure
+   * tactic — so a learner who answered "suspicious" every single time would
+   * have scored close to full marks without holding the skill at all.
+   *
+   * The misinformation-assessment literature names this failure directly
+   * (RESEARCH.md §29f): scoring only the rejection of bad content confounds
+   * genuine skill with blanket scepticism, and the standard is to mix true and
+   * false items. It matters more here than anywhere else in the app — a
+   * teenager taught to read every direct request as manipulation has not been
+   * made safer, and a detector that fires on everything carries no information.
+   *
+   * The floor is deliberately low (a handful of families, not a ratio) because
+   * plenty of Observer work — scene recall, choosing the best question — has no
+   * "nothing is wrong" shape at all and should not be forced into one. What it
+   * forbids is the state this was in: zero.
+   */
+  it('Observer and Insight let "nothing is wrong" be the right answer', () => {
+    // The authoring convention for a benign key: it opens with "Nothing", or
+    // says plainly that what is described is ordinary or fine. Matching a
+    // convention rather than a vibe stops the gate passing on a stray word in
+    // some unrelated option.
+    const BENIGN = /^nothing\b|nothing is wrong|\bordinary\b|stays inside what the scene|perfectly (normal|fine)|no pressure|is fine\b/i
+    for (const bucket of ['observer', 'insight'] as const) {
+      const families = BUILTIN_TEMPLATES.filter((t) => t.bucket === bucket)
+      const withBenignKey = families.filter((t) =>
+        [0, 1, 2, 3, 5, 8].some((seed) => {
+          let item: RenderedItem
+          try {
+            item = t.generate(seed)
+          } catch {
+            return false
+          }
+          const specs = item.parts?.length ? item.parts.map((p) => p.answer) : item.answer ? [item.answer] : []
+          return specs.some((s) => {
+            if (s.type === 'mcq') return BENIGN.test(s.options[s.correct])
+            if (s.type === 'text') return s.accept.some((a) => BENIGN.test(a))
+            return false
+          })
+        }),
+      )
+      expect(
+        withBenignKey.length,
+        `${bucket}: ${withBenignKey.length} of ${families.length} families can ever answer "nothing is wrong". ` +
+          `At zero, answering "suspicious" every time scores full marks.`,
+      ).toBeGreaterThanOrEqual(2)
+    }
+  })
+
   it('every numeric answer can actually be typed', () => {
     for (const { t, seed, item } of renders) {
       for (const spec of specsOf(item)) {

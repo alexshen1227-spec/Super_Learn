@@ -273,7 +273,20 @@ export function PolyominoPlayer({
       {!solved ? (
         <>
           <div className="flex items-center justify-between mt-4 mb-1 px-1">
-            <p className="text-[13px] text-muted font-medium">Tray — drag a piece onto the board, or tap to select</p>
+            {/*
+              The keyboard route is a requirement, not a nicety — the founding
+              brief asks for a keyboard alternative to every drag. It existed
+              (arrows move, R rotates, Enter places) and was undiscoverable: the
+              only mention anywhere was the aria-label on the Rotate button, so
+              a keyboard-only learner had to already know. It is named here, and
+              only once a piece is selected, so it appears exactly when it is
+              usable rather than as permanent clutter.
+            */}
+            <p className="text-[13px] text-muted font-medium">
+              {selectedPiece
+                ? 'Arrow keys move it · R rotates · Enter places it — or drag it across'
+                : 'Tray — drag a piece onto the board, or tap to select one'}
+            </p>
             {spec.allowRotation ? (
               <Button kind="secondary" onClick={rotateSelected} disabled={!selectedPiece} className="!px-3 !text-[13px]" ariaLabel="Rotate selected piece (R)">
                 <IconRotate size={15} /> Rotate

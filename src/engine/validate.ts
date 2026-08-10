@@ -69,12 +69,39 @@ function gcd(a: number, b: number): number {
   return a || 1
 }
 
+/**
+ * Option indexes are PLAIN DIGITS, and nothing else.
+ *
+ * `Number()` is far too generous for a value that selects an answer. It reads
+ * `""` as 0, `"1e-999"` as 0 (underflow), `" "` as 0, and `"0x1"` as 1 — so
+ * strings that are not selections at all coerce into valid choices. A bare
+ * comma reached here as `['', '']` → `[0, 0]`, deduped to `[0]`, which SCORED a
+ * multi-select whose answer was the first option.
+ *
+ * This is the third appearance of the same bug class in this file's history —
+ * `Number('') === 0` grading a blank multiple choice as option 0, then again in
+ * `describeResponse` — so the fix is to stop coercing and start matching. Not
+ * reachable from the player, which sends indexes it generated itself; the
+ * grader is the last line and should not depend on that.
+ */
+const INDEX = /^\d+$/
+
 function parseIndexList(raw: string): number[] | null {
   const t = raw.trim()
   if (t === '') return []
-  const parts = t.split(',').map((p) => Number(p.trim()))
-  if (parts.some((n) => !Number.isInteger(n) || n < 0)) return null
+  const segments = t.split(',').map((p) => p.trim())
+  if (segments.some((p) => !INDEX.test(p))) return null
+  const parts = segments.map(Number)
+  if (parts.some((n) => !Number.isSafeInteger(n))) return null
   return parts
+}
+
+/** A single option index, or null when the response is not one. */
+function parseIndex(raw: string): number | null {
+  const t = raw.trim()
+  if (!INDEX.test(t)) return null
+  const n = Number(t)
+  return Number.isSafeInteger(n) ? n : null
 }
 
 export function validate(spec: AnswerSpec, raw: string): Verdict {
@@ -118,10 +145,10 @@ export function validate(spec: AnswerSpec, raw: string): Verdict {
       return spec.accept.some((a) => normalizeText(a) === norm) ? { ok: true, score: 1 } : WRONG
     }
     case 'mcq': {
-      // Number('') is 0 — a blank must never grade as "picked option 0".
-      if (raw.trim() === '') return WRONG
-      const i = Number(raw)
-      if (!Number.isInteger(i) || i < 0 || i >= spec.options.length) return WRONG
+      // Plain digits only — see parseIndex. A blank, a bare comma and
+      // "1e-999" all used to coerce to option 0.
+      const i = parseIndex(raw)
+      if (i === null || i >= spec.options.length) return WRONG
       return i === spec.correct ? { ok: true, score: 1 } : WRONG
     }
     case 'multi': {
@@ -231,8 +258,10 @@ export function describeResponse(spec: AnswerSpec, raw: string): string {
   const indexes = parseIndexList(raw)
   switch (spec.type) {
     case 'mcq': {
-      const i = Number(raw)
-      return Number.isInteger(i) && i >= 0 && i < spec.options.length ? spec.options[i] : raw
+      // Same strict parse as the validator, so what is read back is always
+      // what was actually graded.
+      const i = parseIndex(raw)
+      return i !== null && i < spec.options.length ? spec.options[i] : raw
     }
     case 'multi':
     case 'order': {
