@@ -1991,3 +1991,44 @@ other tab's session records. Making that impossible needs either tombstones on
 every deletable collection or a real lock, and both are larger changes to the
 most safety-critical code in the app — where a botched fix loses more than the
 bug does.
+
+### 36a. Sample mode, checked end to end
+
+The only feature that moves the learner's whole profile aside and puts a demo
+in its place. While it runs, the IndexedDB stash is the ONLY copy of everything
+they have ever done.
+
+**One guard added.** `enterSample` did not check whether sample mode was
+already on. Running it twice would stash the DEMO over the real profile —
+permanent, total, unrecoverable. Settings only offers the button when
+`sampleMode` is false so it was not reachable, but the cost of being wrong
+about that is everything the learner has, and the function should not depend on
+its callers. It now refuses.
+
+**Verified in a real browser, not asserted.** Entering: the real profile
+(3 events, real name) went to the stash while the demo (70 events, "Sample
+Learner") took over, with the warning strip up. Exiting: the real profile came
+back into both the live state AND the backup slot before the stash was cleared,
+and the strip went away. `exitSample` was already ordered correctly — save,
+checkpoint, then clear — and returns false rather than restoring nothing when
+the stash cannot be read.
+
+`store/sampleMode.test.ts` pins the double-entry guard and that a stashed
+profile survives the sanitiser it is restored through, including sessions,
+deadlines, forecasts and if-then plans. The IndexedDB half is not unit-tested:
+there is no IDB in the test environment and this project does not carry a fake
+for it, which is stated in the file rather than papered over.
+
+### 36b. Performance after everything
+
+Re-measured, because this round added ~90 question families and changed the
+planner repeatedly. Nothing regressed:
+
+| history | derive | plan | coach | allocation | due | mal-rules |
+| --- | --- | --- | --- | --- | --- | --- |
+| 500 | 2.4ms | 6.7ms | 3.7ms | 0.8ms | 0.3ms | 0.5ms |
+| 5,000 | 4.7ms | 10.0ms | 4.7ms | 0.7ms | 0.0ms | 0.5ms |
+| 20,000 | 12.4ms | 9.0ms | 7.0ms | 0.9ms | 0.1ms | 2.1ms |
+
+Rendering all 607 families once takes 67ms, which happens only in the Practice
+browser and the audit.

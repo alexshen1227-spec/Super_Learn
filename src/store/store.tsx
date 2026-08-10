@@ -312,6 +312,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const enterSample = useCallback(async () => {
+    /*
+     * REFUSE IF ALREADY IN SAMPLE MODE. Running this twice would stash the
+     * SAMPLE state over the real one — the stash is the only copy of the
+     * learner's profile and history while the demo is loaded, so that is
+     * permanent, total loss with no recovery path.
+     *
+     * Settings only offers this button when `sampleMode` is false, so it is
+     * not reachable today. The guard is here because the cost of being wrong
+     * about that is everything the learner has ever done, and the function
+     * should not depend on every caller checking first.
+     */
+    if (stateRef.current.sampleMode) return false
     const stashed = await stashRealState(JSON.stringify(stateRef.current))
     if (!stashed) return false
     const sample = buildSampleState()
