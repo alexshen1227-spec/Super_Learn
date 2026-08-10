@@ -19,6 +19,45 @@ export interface TemplateCoverage {
   daysSince: number
 }
 
+/** Manipulable diagrams are identified by id prefix, as PFL probes are. */
+export const EXPLORE_PREFIX = 'explore-'
+
+export function isExploreTemplate(templateId: string): boolean {
+  return templateId.startsWith(EXPLORE_PREFIX)
+}
+
+/**
+ * How many times one manipulable diagram is worth serving. HEURISTIC — no
+ * study fixes this number.
+ *
+ * The reasoning: an exploration is EXPOSURE. "Notice what stayed fixed while
+ * everything else moved" happens once; dragging the same slider again mostly
+ * re-reads a caption. The graded checkpoints attached to it are ordinary
+ * retrieval and do benefit from spacing, which is why the cap is three rather
+ * than one — an initial meeting plus two spaced revisits — and not higher.
+ *
+ * Measured, which is the only reason this exists: a simulated learner-year at
+ * 30% accuracy served ONE diagram 45 times and never reached the other
+ * fourteen. Heavy repetition is normal for this planner and defensible for
+ * retrieval (`exp-evaluate` runs 123 times in the same year); it is not
+ * defensible for exposure. The same argument is why PFL probes are excluded
+ * from ordinary pools outright.
+ */
+export const EXPLORE_SERVE_LIMIT = 3
+
+/**
+ * True once a diagram has delivered everything a diagram can deliver.
+ *
+ * A SOFT cap: the count comes from events already written, so a plan built
+ * before this session's events land can push a family a little past the limit.
+ * Measured over a simulated year that lands between three and six servings,
+ * and never twice in one session — which is the number that would actually
+ * read as a bug.
+ */
+export function exploreExhausted(templateId: string, use: TemplateCoverage | undefined): boolean {
+  return isExploreTemplate(templateId) && (use?.lifetime ?? 0) >= EXPLORE_SERVE_LIMIT
+}
+
 /** Lifetime coverage prevents a deterministic tie-break from starving a family forever. */
 export function buildTemplateCoverage(events: readonly AttemptEvent[], now: number): Map<string, TemplateCoverage> {
   const coverage = new Map<string, TemplateCoverage>()

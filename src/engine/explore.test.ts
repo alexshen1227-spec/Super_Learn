@@ -9,7 +9,12 @@
 import { describe, expect, it } from 'vitest'
 import { resumePhase } from './activity'
 import { BUILTIN_TEMPLATES } from '../content/registry'
-import type { ExploreSpec } from '../domain/types'
+import type { AppState, AttemptEvent, ExploreSpec } from '../domain/types'
+import { initialState } from '../domain/types'
+import { DEFAULT_INDEX } from '../content/registry'
+import { buildSessionPlan } from './planner'
+import { deriveEvidence } from './mastery'
+import { EXPLORE_SERVE_LIMIT, isExploreTemplate } from './plannerPolicy'
 
 type P = 'study' | 'answer' | 'wrong'
 const F = { study: 'study', answer: 'answer' } as const
@@ -89,6 +94,96 @@ describe('exploring is exposure, never evidence', () => {
       const keys = Object.keys(spec)
       expect(keys.sort(), `${id}: unexpected field on an explore spec`).toEqual(
         ['initial', 'invitation', 'label', 'stops'].sort(),
+      )
+    }
+  })
+})
+
+/**
+ * A manipulable diagram is exposure, and exposure does not repeat well.
+ *
+ * This is a simulation rather than an assertion-by-construction because that
+ * is the only level at which the failure was visible: every scoring decision
+ * was defensible and a struggling learner was still served ONE diagram 45
+ * times in a simulated year while never meeting the other fourteen.
+ */
+describe('diagrams do not repeat like retrieval items', () => {
+  const DAY = 86_400_000
+
+  function run(days: number, acc: number) {
+    const state: AppState = { ...initialState(), onboarded: true }
+    let t = Date.UTC(2026, 0, 5, 16)
+    const served = new Map<string, number>()
+    let worstInOneSession = 0
+    for (let d = 0; d < days; d++) {
+      t += DAY
+      let plan
+      try {
+        plan = buildSessionPlan({
+          index: DEFAULT_INDEX,
+          evidence: deriveEvidence(state.events, t),
+          state,
+          now: t,
+          checkIn: { minutes: 30, energy: 'ok', focus: null },
+        })
+      } catch {
+        continue
+      }
+      const today = new Map<string, number>()
+      for (const block of plan.blocks) {
+        for (const a of block.activities) {
+          const tpl = DEFAULT_INDEX.templates.get(a.templateId)
+          if (!tpl) continue
+          if (isExploreTemplate(tpl.id)) {
+            served.set(tpl.id, (served.get(tpl.id) ?? 0) + 1)
+            today.set(tpl.id, (today.get(tpl.id) ?? 0) + 1)
+          }
+          const ok = (state.events.length % 10) / 10 < acc
+          state.events.push({
+            id: `e${state.events.length}`,
+            t: t + state.events.length,
+            sessionId: plan.id,
+            templateId: tpl.id,
+            itemVersion: tpl.version,
+            seed: a.seed,
+            skillIds: tpl.skillIds,
+            bucket: tpl.bucket,
+            mode: a.mode,
+            firstResponse: 'x',
+            finalResponse: 'x',
+            correct: ok,
+            firstCorrect: ok,
+            score: null,
+            validator: 'numeric',
+            hintLevel: 0,
+            confidence: null,
+            elapsedSec: tpl.minutes * 60,
+            errorTags: [],
+            difficulty: tpl.difficulty,
+          } as AttemptEvent)
+        }
+      }
+      worstInOneSession = Math.max(worstInOneSession, 0, ...today.values())
+    }
+    return { served, worstInOneSession }
+  }
+
+  it('never serves the same diagram twice in one session', () => {
+    for (const acc of [0.3, 0.7]) {
+      const { worstInOneSession } = run(120, acc)
+      expect(worstInOneSession, `accuracy ${acc}: a session repeated a diagram`).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it('stops offering a diagram once it has been explored a few times', () => {
+    for (const acc of [0.3, 0.7]) {
+      const { served } = run(240, acc)
+      const worst = [...served.entries()].sort((a, b) => b[1] - a[1])[0]
+      if (!worst) continue
+      // The cap is soft (counts come from events already written), so this
+      // allows headroom — but 45, the number that prompted the fix, is far out.
+      expect(worst[1], `accuracy ${acc}: ${worst[0]} served ${worst[1]} times`).toBeLessThanOrEqual(
+        EXPLORE_SERVE_LIMIT * 3,
       )
     }
   })

@@ -21,6 +21,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Everything you write is kept in one place, marked as yours, with the two buttons you asked for: it makes sense, or it does not and gets deleted. Nothing you write counts towards any skill, and the app says so rather than pretending otherwise — you wrote it, so getting it right cannot show what getting one right normally shows.',
       'A whole class of "the picture is wrong even though the numbers are right" is now caught automatically. The chart-drawing maths is shared with the checks, so they can test where things LAND on screen, not just what the numbers are. It immediately caught two survey results landing closer together than a dot is wide — twelve results drawing as fewer.',
       'Also fixed: a rectangle that was meant to be a SQUARE was being drawn as a wide rectangle, which quietly contradicted the whole point of the "the square holds the most" activity. And the ratio-writing shape refused 72% of the combinations you could pick — it now refuses 11%.',
+      'The most serious thing found this round was invisible until a whole simulated year was replayed: a learner having a hard time was being handed the SAME diagram 45 times over a year, and never meeting the other fourteen. Repeating a question is fine — that is what practice is. Repeating a thing whose whole point is noticing something once is just wasted time. Diagrams now bow out after a few showings, which dropped that 45 to 6 and let the other diagrams through. No session ever shows you the same one twice.',
     ],
   },
   {

@@ -2350,6 +2350,45 @@ console output across a full onboarding plus a complete Challenge Creator run.
 Recorded so a fourth session does not spend on it. The general lesson is that
 "reproduce it without the dev server" is cheap and should come before theory.
 
+### 37g. Exposure must not repeat like retrieval (2026-08-10)
+
+Found by replaying a simulated learner-year against the finished bank, which
+is the only level at which it was visible — every scoring decision involved was
+individually defensible.
+
+| accuracy | diagrams reached | worst repeat | after the fix |
+| --- | --- | --- | --- |
+| 30% | **1 of 15** | `explore-powers` × **45** | × 6 |
+| 50% | 5 of 15 | × 21 | × 6 |
+| 70% | 9 of 15 | × 11 | × 3 |
+| 90% | 12 of 15 | × 6 | × 4 |
+
+A learner having a hard time met ONE manipulable diagram, forty-five times, and
+never met the other fourteen.
+
+**The distinction that matters.** Heavy repetition is normal for this planner
+and defensible: `exp-evaluate` runs 123 times in the same simulated year, and
+repeated retrieval is the point. It is NOT defensible for exposure. "Notice
+what stayed fixed while everything else moved" happens once; the forty-fifth
+drag of the same slider re-reads a caption. This is the same argument that
+already excludes PFL probes from ordinary pools (§30), applied to the other
+kind of exposure content in the bank.
+
+`exploreExhausted` in `plannerPolicy.ts` stops offering a family after
+`EXPLORE_SERVE_LIMIT = 3`. A soft cap — the count comes from events already
+written, so a plan built before this session's events land can overshoot to
+about six across a year. The number that would actually read as a bug is two in
+one session, and that is measured at zero.
+
+Coverage stays low for a struggling learner (1-5 families), and that is
+correct rather than a residual problem: a learner who never reaches
+`m-circles` should not be handed the π diagram. What the fix bought is that
+their minutes stop being spent re-dragging one slider.
+
+The limit is a HEURISTIC. Three is "an initial meeting plus two spaced
+revisits", reasoned from the graded checkpoints attached to each diagram being
+ordinary retrieval that does benefit from spacing. No study fixes it.
+
 **Licensing unchanged from §25**: Brilliant, IXL, DeltaMath, Alcumus, Beast and
 Math Academy are proprietary. Nothing here is text, artwork, a scoring constant
 or a taxonomy lifted from them — only mechanisms described in their own public

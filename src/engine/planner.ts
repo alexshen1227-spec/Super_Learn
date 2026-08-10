@@ -40,6 +40,7 @@ import {
   coverageAdjustment,
   dailyRoute,
   dailyTemplateScore,
+  exploreExhausted,
   type TemplateCoverage,
 } from './plannerPolicy'
 
@@ -253,6 +254,10 @@ function pickTemplates(
     // thing; and a probe re-served is a probe wasted, because the second time
     // it measures memory rather than pick-up. They are launched deliberately.
     .filter((t) => !isPflTemplate(t.id))
+    // A manipulable diagram is exposure, and exposure does not repeat well.
+    // Without this a struggling learner was served ONE diagram 45 times in a
+    // simulated year while never meeting the other fourteen.
+    .filter((t) => !exploreExhausted(t.id, templateUse.get(t.id)))
   const scored = pool
     .map((t) => ({
       t,
