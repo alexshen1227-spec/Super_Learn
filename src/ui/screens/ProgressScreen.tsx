@@ -15,6 +15,7 @@ import { ERROR_TAGS, BUCKETS } from '../../domain/types'
 import { SKILL_BY_ID } from '../../content/skills'
 import { Button, Card, Chip, EmptyState, HeaderBar, SectionTitle } from '../components'
 import { BarPair, CalibrationChart, TrendColumns } from '../charts'
+import { NorthStarPanel } from './NorthStar'
 import { WeekReviewModal } from '../WeekReview'
 import { useState } from 'react'
 import { learningQualityReport, outcomeReport } from '../../engine/outcomes'
@@ -96,6 +97,12 @@ export function ProgressScreen() {
     return (
       <div>
         <HeaderBar title="Progress" subtitle="Evidence, not scores" />
+
+      {/* First, because it is the only number the project is FOR. Everything
+          below it is diagnostic detail about how practice is going. */}
+      <div className="mt-3">
+        <NorthStarPanel />
+      </div>
         <Card className="mt-4">
           <EmptyState
             icon="◔"
@@ -110,6 +117,13 @@ export function ProgressScreen() {
   return (
     <div>
       <HeaderBar title="Progress" subtitle="Evidence, not scores" />
+
+      {/* First, because it is the only number the project is FOR. The three
+          cards below it are the LADDER's view, which is deliberately more
+          generous — see engine/northStar.ts on why the two disagree. */}
+      <div className="mt-3">
+        <NorthStarPanel />
+      </div>
 
       <div className="grid grid-cols-3 gap-3 mt-3">
         <StatCard label="Independent" value={stateCounts.independent + stateCounts.retained + stateCounts.transferred} sub="skills" tone="text-accent" />

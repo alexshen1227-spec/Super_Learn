@@ -11,6 +11,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '9.1',
+    date: '2026-08-11',
+    title: 'The Number This App Is Actually For',
+    points: [
+      'Progress now opens with one question: what have you actually kept? A skill only counts there once you have answered it again with no hints, at least 14 days after you first got it unaided, on a different question from the one you learned it on. Nothing you did today can move it.',
+      'That is a harder bar than the Independent/Retained badges below it, which count a re-test after 48 hours. The two are meant to disagree. The looser one decides what to practise next; the stricter one decides what can honestly be claimed. Neither was changed to flatter the other.',
+      'It answers three things in numbers: what you can do now that you could not three months ago, what has survived from three months ago, and how many focused minutes each surviving skill cost. There is a fourth column it deliberately keeps apart — skills you have used in a genuinely new context — because folding transfer into a total would overstate it.',
+      'Things it refuses to say. Minutes-per-skill shows a dash until five skills have survived, because an average over two is noise with a decimal point. The three-month comparison says nothing at all until there are three months of history. And a skill you learned long ago and have not been asked about since is filed as "not asked", not as lost — the app does not know, and says so.',
+      'The weekly chart draws empty weeks empty. No streak, no points, no encouragement, nothing that grows just because you opened the app. If the line is flat it looks flat, which is the whole point of having it.',
+    ],
+  },
+  {
     version: '9.0',
     date: '2026-08-10',
     title: 'You Can Now Argue With The App, And Two Things It Was Wrong About You',

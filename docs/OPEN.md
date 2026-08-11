@@ -85,7 +85,23 @@ repository is public and SA would propagate. `ATTRIBUTIONS.md` holds the rule;
 the `source` field on `ItemTemplate` and the audit gate already exist and are
 unused. Prioritise whatever step 5 reports as thinnest.
 
-### 7. Measure the north star
+### 7. Measure the north star — DONE
+`engine/northStar.ts` derives, from the event log alone: skills that survived
+14+ days unaided on a different family, minutes per surviving skill, the
+three-month gained/held/not-asked split, transfer counted separately, and a
+twelve-week trend. Surfaced at the top of Progress. 18 tests, each one an
+attempt to earn a durable skill without retaining anything.
+
+The 48-hour `retained` rung in `mastery.ts` was NOT changed. It is load-bearing
+for the planner, the coach and the review scheduler, and the goal says to stop
+and ask before touching mastery. The strict measure sits beside it instead.
+
+OPEN QUESTION for a future session: should the ladder's `retained` rung move
+from 48 hours to 14 days to match? That would make one number instead of two,
+at the cost of much slower review scheduling and a large drop in reported
+progress. It needs a decision, not a default.
+
+### 7b. Original north-star spec, for reference
 Delayed retention checks (unaided re-test at 14+ days, hints unavailable,
 reported separately), transfer probes as their own metric, minutes-to-retention
 as a trend. A plain dashboard: no streaks, no points, no encouragement. If the
