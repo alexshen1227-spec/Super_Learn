@@ -136,36 +136,36 @@ const sampleBias = tpl(
         question: 'how long students at the whole school sleep',
         good: 'Pick 50 student ID numbers at random from the full roster and ask those students',
         bads: [
-          ['Ask the first 50 students arriving at zero period', 'early arrivers are exactly the students whose sleep differs — the method selects on the thing being measured'],
-          ['Post a survey link and count whoever answers', 'self-selected respondents care more about the topic than the average student'],
-          ['Ask everyone on the morning swim team', 'one team is a cluster with shared habits, not a miniature of the school'],
+          ['Ask the first 50 students who arrive for zero period', 'early arrivers are exactly the students whose sleep differs — the method selects on the thing being measured'],
+          ['Post a survey link somewhere and count up whoever answers it', 'self-selected respondents care more about the topic than the average student'],
+          ['Ask every one of the people on the morning swim team', 'one team is a cluster with shared habits, not a miniature of the school'],
         ] as [string, string, ErrorTag?][],
       },
       {
         question: 'what fraction of a city supports a new bike lane',
         good: 'Dial randomly generated phone numbers across every neighborhood',
         bads: [
-          ['Survey people at the bike shop', 'the location pre-filters for people who already cycle', 'inference'],
-          ['Let a cycling forum vote in an online poll', 'self-selection plus a cycling audience double-filters the sample', 'inference'],
-          ['Ask drivers stuck at one downtown intersection', 'one location at one time of day is a cluster, not a cross-section', 'inference'],
+          ['Survey the people who come into the bike shop', 'the location pre-filters for people who already cycle', 'inference'],
+          ['Let the members of a cycling forum vote in an online poll', 'self-selection plus a cycling audience double-filters the sample', 'inference'],
+          ['Ask the drivers who are stuck at one downtown intersection', 'one location at one time of day is a cluster, not a cross-section', 'inference'],
         ] as [string, string, ErrorTag?][],
       },
       {
         question: 'the average battery life of a phone model',
         good: 'Test a random selection of units pulled from across all production runs',
         bads: [
-          ['Test the units customers returned as faulty', 'returned units are selected precisely because something was wrong'],
-          ['Test the first 30 units off the line on launch day', 'one production run shares its conditions — early units are their own cluster'],
-          ['Average the battery ratings users post in reviews', 'people review when unusually pleased or unusually annoyed — the middle stays silent'],
+          ['Test the units that customers have returned as faulty', 'returned units are selected precisely because something was wrong'],
+          ['Test the first 30 units that come off the line on launch day', 'one production run shares its conditions — early units are their own cluster'],
+          ['Average up the battery ratings that users post in their reviews', 'people review when unusually pleased or unusually annoyed — the middle stays silent'],
         ] as [string, string, ErrorTag?][],
       },
       {
         question: 'how often the trains on a line run late',
         good: 'Check the recorded times of trains sampled at random across the full timetable',
         bads: [
-          ['Time the trains during your own commute each day', 'one time slot has its own traffic pattern — rush hour is not the timetable'],
-          ['Count complaints posted about the line', 'nobody posts "train arrived as scheduled" — complaints select for lateness'],
-          ['Check the first ten trains of the day', 'the early-morning cluster runs before congestion builds'],
+          ['Time the trains during your own commute on each day of the week', 'one time slot has its own traffic pattern — rush hour is not the timetable'],
+          ['Count up the complaints people post about the line', 'nobody posts "train arrived as scheduled" — complaints select for lateness'],
+          ['Check the first ten of the trains running that day', 'the early-morning cluster runs before congestion builds'],
         ] as [string, string, ErrorTag?][],
       },
     ] as const)
@@ -197,9 +197,9 @@ const sampleVariability = tpl(
       rng,
       `Both are legitimate estimates — random samples vary, and the truth is likely near this range`,
       [
-        [`The second sample must have been done incorrectly`, 'disagreement between random samples is expected, not evidence of a mistake', 'inference'],
-        [`The class should keep sampling until a sample hits ${mid}% exactly`, 'no single sample is "the right one" — stopping when you like the number is a bias machine'],
-        [`The true value must be exactly ${mid}%, the average of the two`, 'averaging two samples improves the estimate but cannot pin the truth to one exact number', 'inference'],
+        [`The second of the two samples must have been done incorrectly somehow`, 'disagreement between random samples is expected, not evidence of a mistake', 'inference'],
+        [`The class ought to keep on sampling until one of the samples hits exactly ${mid}% exactly`, 'no single sample is "the right one" — stopping when you like the number is a bias machine'],
+        [`The true value must be exactly ${mid}%, which is the average of the two figures`, 'averaging two samples improves the estimate but cannot pin the truth to one exact number', 'inference'],
       ],
     )
     return {

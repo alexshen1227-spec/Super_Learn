@@ -213,13 +213,13 @@ const investigatorSynthesis = tpl(
 // ---------------------------------------------------------------- Strategist
 
 const nextActionCases = [
-  ['Goal: submit a science report. Nothing has been started.', 'Read the rubric and identify the required sections.', ['Choose the final font.', 'Submit an empty file.', 'Ask for praise on the conclusion.']],
-  ['Goal: arrive by 8:00. Travel time is unknown.', 'Check realistic travel time and route options.', ['Pick an alarm sound.', 'Leave at 7:59.', 'Assume the fastest possible trip.']],
-  ['Goal: improve a quiz score. The missed topics are unknown.', 'Sort the missed questions by skill and error type.', ['Repeat only the easiest correct questions.', 'Buy new stationery.', 'Study every chapter equally.']],
+  ['Goal: submit a science report. Nothing has been started.', 'Read the rubric and identify the required sections.', ['Choose the final font and the heading sizes now.', 'Submit an empty file now and fix it later on.', 'Ask a friend whether the conclusion sounds good.']],
+  ['Goal: arrive by 8:00. Travel time is unknown.', 'Check realistic travel time and route options.', ['Pick a louder alarm sound for the morning.', 'Decide to leave the house at exactly 7:59.', 'Assume the fastest possible trip, then leave.']],
+  ['Goal: improve a quiz score. The missed topics are unknown.', 'Sort the missed questions by skill and error type.', ['Repeat only the easiest questions you got right.', 'Buy some new stationery before starting the revision.', 'Study every chapter for an equal length of time.']],
   ['Goal: organize a club event. The date is not confirmed.', 'Confirm the date and non-negotiable constraints.', ['Print decorations.', 'Promise a venue to everyone.', 'Assign cleanup before choosing a location.']],
-  ['Goal: repair a bug. The failure cannot yet be repeated.', 'Find the smallest reliable reproduction.', ['Rewrite the entire app.', 'Change several systems at once.', 'Declare the bug random.']],
+  ['Goal: repair a bug. The failure cannot yet be repeated.', 'Find the smallest reliable reproduction.', ['Rewrite the entire app from scratch.', 'Change several of the systems all at once.', 'Declare the bug to be entirely random.']],
   ['Goal: save $60. Current spending is unknown.', 'Record a normal week of spending.', ['Skip one meal immediately.', 'Guess where all money goes.', 'Choose a reward for finishing.']],
-  ['Goal: finish a group presentation. Roles are unclear.', 'List deliverables and assign one owner to each.', ['Wait for someone else to start.', 'Polish the title slide alone.', 'Schedule the celebration.']],
+  ['Goal: finish a group presentation. Roles are unclear.', 'List deliverables and assign one owner to each.', ['Wait for somebody else on the team to start.', 'Polish the title slide on your own to begin with.', 'Schedule the celebration for the end of it.']],
   ['Goal: test whether a routine helps focus. No baseline exists.', 'Measure focus with the current routine first.', ['Change sleep, food, and routine together.', 'Ask whether the new routine sounds scientific.', 'Keep only the best day.']],
 ] as const
 

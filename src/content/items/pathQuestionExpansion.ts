@@ -21,54 +21,54 @@ const exactParaphraseCases = [
     quote: 'I can review the first half tonight, but I need help with the graphs tomorrow.',
     correct: 'They can review only the first half tonight and need graph help tomorrow.',
     wrong: [
-      'They will finish the whole review tonight.',
-      'They refuse to work on the graphs.',
-      'They need help with every part tomorrow.',
+      'They will get the whole of the review finished by tonight.',
+      'They are refusing to do any of the work on the graphs at all.',
+      'They will need help with every single part of the work again tomorrow.',
     ],
   },
   {
     quote: 'The bus was late twice this week; I am not saying it is always late.',
     correct: 'The bus was late twice this week, and the speaker rejects a broader claim.',
     wrong: [
-      'The bus is usually late.',
-      'The bus was exactly two minutes late.',
-      'The speaker thinks the schedule should change.',
+      'The bus is late on most mornings of the week, as a general rule.',
+      'The bus was running exactly two minutes late on that particular morning.',
+      'The speaker thinks that the whole bus schedule ought to be changed.',
     ],
   },
   {
     quote: 'I liked the evidence in your opening, though the conclusion felt too certain.',
     correct: 'They liked the opening evidence but thought the conclusion overstated certainty.',
     wrong: [
-      'They disliked the whole argument.',
-      'They agreed completely with the conclusion.',
-      'They wanted more evidence in the opening and nowhere else.',
+      'They disliked more or less the whole of the argument.',
+      'They agreed completely with the conclusion as it was written.',
+      'They wanted more evidence in the opening section and nowhere else in it.',
     ],
   },
   {
     quote: 'If the rain stops by four, I will walk; otherwise I will take the train.',
     correct: 'Walking depends on the rain stopping by four; otherwise they will take the train.',
     wrong: [
-      'They have decided to walk no matter what.',
-      'They will take the train only if it rains after four.',
-      'They expect the train to stop running at four.',
+      'They have already decided to walk, regardless of what the weather does.',
+      'They will only take the train if it happens to be raining after four.',
+      'They expect the trains to stop running altogether at around four in the afternoon.',
     ],
   },
   {
     quote: 'Three people opened the document, but I do not know whether any of them read it.',
     correct: 'Three opens were recorded; reading is still unknown.',
     wrong: [
-      'Three people read the whole document.',
-      'Nobody read the document.',
-      'Exactly one person read the document.',
+      'Three separate people read the whole document.',
+      'Nobody has read the document at all.',
+      'Exactly one person has actually read the document.',
     ],
   },
   {
     quote: 'I am free after practice, unless the coach adds a team meeting.',
     correct: 'They are available after practice only if no team meeting is added.',
     wrong: [
-      'They are definitely free after practice.',
-      'The team meeting has already been added.',
-      'They are skipping practice for a meeting.',
+      'They are definitely free once practice has finished for the day.',
+      'The team meeting has already been added to the schedule this week.',
+      'They are skipping practice altogether in order to go to a meeting.',
     ],
   },
 ]
@@ -139,33 +139,33 @@ const observationCount = tpl(
 const evidenceBoundaryCases = [
   {
     prompt: 'A mug is beside a laptop. The laptop screen is dark.',
-    correct: 'The mug is beside the laptop.',
-    wrong: ['The laptop battery is dead.', 'The owner forgot to charge it.', 'The mug contains cold coffee.'],
+    correct: 'A mug is sitting right beside the laptop.',
+    wrong: ['The laptop battery has run all the way down.', 'The owner forgot to put it on charge last night.', 'The mug still has cold coffee sitting in it.'],
   },
   {
     prompt: 'At 2:10, the door opened and Lee entered carrying a folded umbrella.',
     correct: 'Lee entered at 2:10 carrying a folded umbrella.',
-    wrong: ['It was raining outside.', 'Lee had just bought the umbrella.', 'Lee was late.'],
+    wrong: ['It must have been raining outside at the time.', 'Lee had only just bought that umbrella today.', 'Lee arrived later than they were meant to.'],
   },
   {
     prompt: 'The message shows a sent time of 8:03 and no reply beneath it.',
     correct: 'No reply is displayed beneath the 8:03 message.',
-    wrong: ['The recipient is ignoring the sender.', 'The recipient read it at 8:04.', 'The friendship is in trouble.'],
+    wrong: ['The recipient is deliberately ignoring the sender.', 'The recipient read the message at about 8:04.', 'The friendship is in some kind of trouble.'],
   },
   {
     prompt: 'Four chairs face the board; one chair has a green backpack on it.',
     correct: 'A green backpack is on one of the four chairs.',
-    wrong: ['The backpack belongs to a student.', 'Someone left in a hurry.', 'The other chairs are unused.'],
+    wrong: ['The backpack belongs to one of the students.', 'Somebody left the room in rather a hurry.', 'The other three chairs are not being used.'],
   },
   {
     prompt: 'The scoreboard reads 12-12 with 40 seconds remaining.',
     correct: 'The displayed score is tied with 40 seconds left.',
-    wrong: ['The home team will win.', 'Both teams have played equally well.', 'A timeout is about to happen.'],
+    wrong: ['The home team is going to win this one.', 'Both teams have played about equally well.', 'A timeout is about to be called by someone.'],
   },
   {
     prompt: 'A plant has three yellow leaves and seven green leaves.',
     correct: 'Three leaves are yellow and seven are green.',
-    wrong: ['The plant was overwatered.', 'The plant is dying.', 'The room is too dark.'],
+    wrong: ['The plant has been given too much water.', 'The plant is in the process of dying.', 'The room it sits in is far too dark.'],
   },
 ]
 
@@ -247,25 +247,25 @@ const logicCases = [
     rules: 'All kestrels are birds. No birds are mammals.',
     claim: 'No kestrels are mammals.',
     correct: 'Valid: the two rules form a chain that excludes every kestrel from mammals.',
-    wrong: ['Invalid: some birds might be mammals.', 'Invalid: we need to know how many kestrels exist.', 'Valid only if kestrels can fly.'],
+    wrong: ['Invalid: some of the birds might be mammals.', 'Invalid: we would first need to know how many kestrels actually exist.', 'Valid only if kestrels are able to fly.'],
   },
   {
     rules: 'If the sensor is wet, its light turns red. The light is red.',
     claim: 'The sensor is wet.',
     correct: 'Invalid: another cause could also make the light red.',
-    wrong: ['Valid by reversing the if-then rule.', 'Valid because red always means wet.', 'Invalid only when the sensor is broken.'],
+    wrong: ['Valid, by simply reversing the if-then rule.', 'Valid, because red always means that it is wet.', 'Invalid only when the sensor happens to be broken.'],
   },
   {
     rules: 'If a file is encrypted, it cannot be read without a key. This file can be read without a key.',
     claim: 'This file is not encrypted.',
     correct: 'Valid by contrapositive: readable without a key rules out encryption under the rule.',
-    wrong: ['Invalid because contrapositives reverse both parts.', 'Invalid because the file might be large.', 'Valid only if the key is secret.'],
+    wrong: ['Invalid, because a contrapositive has to reverse both of the parts of the rule.', 'Invalid, because the file in question might be large.', 'Valid only if the key is genuinely secret.'],
   },
   {
     rules: 'Some musicians are coders. All coders solve puzzles.',
     claim: 'Some musicians solve puzzles.',
     correct: 'Valid: the musicians who are coders must also solve puzzles.',
-    wrong: ['Invalid because not all musicians are coders.', 'Invalid because some does not mean any.', 'Valid only if all puzzle solvers are coders.'],
+    wrong: ['Invalid, because not all of the musicians are coders.', 'Invalid, because "some" does not mean "any".', 'Valid only if all of the puzzle solvers are coders.'],
   },
   {
     rules: 'No blue tokens are heavy. Some square tokens are heavy.',
@@ -344,32 +344,32 @@ const separatorCases = [
   {
     hypotheses: 'The plant droops because it lacks water OR because its roots are waterlogged.',
     correct: 'Check soil moisture near the roots before adding anything.',
-    wrong: ['Add more water immediately.', 'Move it to a prettier pot.', 'Ask whether the plant looks sad.'],
+    wrong: ['Add a good deal more water immediately.', 'Move the plant into a prettier pot.', 'Ask somebody else whether the plant is looking a bit sad.'],
   },
   {
     hypotheses: 'The app is slow because the network is slow OR because one local calculation is expensive.',
     correct: 'Run the same action offline and compare its timing.',
-    wrong: ['Change the app colors.', 'Restart without recording timing.', 'Ask one user whether it feels faster today.'],
+    wrong: ['Change the colours used in the app.', 'Restart it without recording any timing.', 'Ask one of the users whether it feels faster today.'],
   },
   {
     hypotheses: 'The class score fell because the new unit is harder OR because fewer students completed the test.',
     correct: 'Compare difficulty on common questions and completion rates separately.',
-    wrong: ['Look only at the class average.', 'Assume the new unit is harder.', 'Remove the lowest score and stop.'],
+    wrong: ['Look only at the average across the whole class.', 'Assume that the new unit is simply harder.', 'Remove the single lowest score from the set and then stop there.'],
   },
   {
     hypotheses: 'A light fails because the bulb is dead OR because the outlet has no power.',
     correct: 'Test a known-working device in the outlet, then test the bulb elsewhere.',
-    wrong: ['Buy a brighter bulb.', 'Flip random switches until something changes.', 'Conclude both are broken.'],
+    wrong: ['Buy a brighter bulb and try that.', 'Flip the switches at random until something or other finally changes.', 'Conclude that both of them are broken.'],
   },
   {
     hypotheses: 'A teammate missed messages because notifications were off OR because they chose not to answer.',
     correct: 'Ask neutrally and check whether notifications were delivered.',
-    wrong: ['Send an angrier message.', 'Assume the silence was intentional.', 'Ask other people to guess their motive.'],
+    wrong: ['Send a rather angrier message back.', 'Assume that the silence was entirely intentional.', 'Ask some other people to have a guess at what their motive was.'],
   },
   {
     hypotheses: 'Seedlings differ because of light OR because of soil type.',
     correct: 'Use the same soil across light levels, then repeat with light held constant across soils.',
-    wrong: ['Change light and soil together.', 'Measure only the tallest seedling.', 'Choose the explanation that sounds more scientific.'],
+    wrong: ['Change both the light and the soil at the same time.', 'Measure only the tallest of the seedlings.', 'Choose whichever of the two explanations happens to sound the more scientific one.'],
   },
 ]
 
@@ -542,32 +542,56 @@ const cleanStrategyCases = [
   {
     situation: 'Your team can win a vote by hiding the meeting time from two opponents.',
     correct: 'Share the time equally and improve the proposal enough to win an informed vote.',
-    wrong: ['Hide it because the outcome matters.', 'Send a misleading time, then apologize later.', 'Exclude them only from the final reminder.'],
+    wrong: [
+      'Hide the time from them, because the outcome of the vote genuinely matters.',
+      'Send them a misleading time now, then apologise for the mix-up afterwards.',
+      'Tell everyone the time but leave those two off the final reminder message.',
+    ],
   },
   {
     situation: 'A study partner asks for your finished answers before attempting the work.',
     correct: 'Offer a hint or compare methods after they make a real attempt.',
-    wrong: ['Send the answers but ask them to change the wording.', 'Trade answers for a future favor.', 'Pretend the file failed to attach.'],
+    wrong: [
+      'Send the finished answers over, but ask them to change the wording first.',
+      'Trade the answers for a favour of similar size from them later on.',
+      'Say yes, then pretend the file simply failed to attach to the message.',
+    ],
   },
   {
     situation: 'A club wants more sign-ups and considers pre-checking a consent box.',
     correct: 'Leave consent unchecked and make the value of joining clear enough for an active yes.',
-    wrong: ['Pre-check it because people can opt out.', 'Hide the choice in smaller text.', 'Enroll everyone for a trial without notice.'],
+    wrong: [
+      'Pre-check the box, on the grounds that anybody can still opt out later.',
+      'Keep the box unchecked but set the choice in noticeably smaller text.',
+      'Enrol everyone in a free trial first and tell them about it afterwards.',
+    ],
   },
   {
     situation: 'You notice a competitor made an arithmetic error that helps your side in a public comparison.',
     correct: 'Correct the error publicly and argue from the accurate comparison.',
-    wrong: ['Stay silent because you did not cause it.', 'Repeat the mistaken number without attribution.', 'Correct it only after the decision is final.'],
+    wrong: [
+      'Stay silent about the error, since you were not the one who made it.',
+      'Repeat the mistaken number yourself, without attributing it to them.',
+      'Point the error out, but only once the decision has already been made.',
+    ],
   },
   {
     situation: 'A deadline can be met only if a teammate works late without being asked.',
     correct: 'Ask explicitly, offer a real no, and shrink scope or move the deadline if needed.',
-    wrong: ['Assign the work and announce it as decided.', 'Use guilt about team loyalty.', 'Wait until late enough that refusal feels impossible.'],
+    wrong: [
+      'Assign them the extra work and announce it to the team as already decided.',
+      'Bring up how much the rest of the team has put in, and let guilt do the work.',
+      'Wait until it is late enough in the day that refusing is no longer realistic.',
+    ],
   },
   {
     situation: 'A shortcut would collect classmates personal data that is not needed for the project.',
     correct: 'Collect only the minimum necessary data and explain its use before consent.',
-    wrong: ['Collect everything in case it is useful later.', 'Remove names but keep secret identifiers without notice.', 'Ask forgiveness after the analysis.'],
+    wrong: [
+      'Collect all of it now, on the chance that some of it proves useful later.',
+      'Strip the names out but quietly keep identifiers that can re-link the rows.',
+      'Run the analysis first and ask the class to forgive the shortcut afterwards.',
+    ],
   },
 ]
 
@@ -670,7 +694,7 @@ const pressureCases = [
     message: 'Answer in the next two minutes or I will ask someone who actually cares.',
     correct: 'Manufactured urgency plus guilt pressure',
     defense: 'Pause; urgency does not create an obligation. Reply only when ready.',
-    wrong: ['Neutral scheduling of something that genuinely has to happen soon', 'Evidence-based persuasion using reasons you can actually check', 'A normal apology for the short notice they have given you'],
+    wrong: ['Neutral scheduling of a genuinely urgent thing', 'Evidence-based persuasion you can check', 'A normal apology for the short notice given'],
   },
   {
     message: 'Everyone already shared their password with me. Why are you making this weird?',
@@ -682,19 +706,19 @@ const pressureCases = [
     message: 'Keep this between us. Other people would not understand our special friendship.',
     correct: 'Isolation and secrecy pressure',
     defense: 'Safety outranks secrecy: stop, preserve the message, and involve a trusted adult.',
-    wrong: ['Respect for the privacy of something told to you in confidence', 'A surprise-party plan that has to stay quiet for obvious reasons', 'Ordinary confidentiality of the sort any friendship involves'],
+    wrong: ['Ordinary respect for a confidence', 'A surprise party that must stay quiet', 'Ordinary confidentiality between friends'],
   },
   {
     message: 'The trial is free. Cancellation requires a weekday phone interview, but that is no big deal.',
-    correct: 'Dark pattern: easy entry and deliberately costly exit',
+    correct: 'Dark pattern: easy in, costly out',
     defense: 'Judge the exit before entering and decline designs that trap consent behind friction.',
-    wrong: ['A security feature', 'A loyalty reward', 'A neutral pricing comparison'],
+    wrong: ['A standard security feature', 'A loyalty reward for staying', 'A neutral comparison of prices'],
   },
   {
     message: 'You are the only person smart enough to do my entire assignment for me.',
-    correct: 'Flattery tied to a boundary-crossing request',
+    correct: 'Flattery tied to a boundary crossing',
     defense: 'Separate compliment from request: offer explanation, not completed work.',
-    wrong: ['Constructive feedback', 'A fair exchange', 'A study plan'],
+    wrong: ['Constructive feedback on work', 'A fair exchange of favours', 'A plan for studying together'],
   },
   {
     message: 'If you leave the group chat, I will tell everyone what you said last month.',
@@ -740,7 +764,7 @@ const boundaryCases = [
   {
     situation: 'A friend keeps posting photos of you after you asked them not to.',
     correct: 'Do not post photos of me. If another goes up, I will report it and leave the event.',
-    wrong: ['I suppose it is fine to leave up as long as the photo is a good one.', 'Delete all of it right now or I will get your account taken down.', 'Say nothing at all and hope that they notice how you feel.'],
+    wrong: ['I suppose it is fine to leave it up, as long as the photo is a decent one.', 'Delete every bit of it right now or I will get your account taken down.', 'Say nothing at all and just hope that they notice how you feel.'],
   },
   {
     situation: 'Someone keeps interrupting your study block with non-urgent messages.',
@@ -750,12 +774,12 @@ const boundaryCases = [
   {
     situation: 'A teammate makes the same personal joke after you asked them to stop.',
     correct: 'That joke is not okay with me. If it continues, I will step away and involve the coach.',
-    wrong: ['Make a harsher joke back at them so that they drop it.', 'Laugh along with it so that nobody decides you are too sensitive.', 'Give a ten-minute explanation while they argue each point.'],
+    wrong: ['Make an even harsher joke back at them so that they drop it.', 'Laugh along with all of it, so that nobody decides that you are too sensitive.', 'Give them a ten-minute explanation while they argue with each point.'],
   },
   {
     situation: 'An online contact asks you to hide your conversations from trusted adults.',
     correct: 'Stop replying, keep the messages, block or report the account, and tell a trusted adult now.',
-    wrong: ['Promise to keep it secret, but ask them to be nicer about it.', 'Argue with them until they admit that the request was wrong to make.', 'Delete the messages so nobody sees them and handle it entirely alone.'],
+    wrong: ['Promise that you will keep it secret, but ask them to be nicer about it.', 'Argue with them until they finally admit that the request was wrong to make.', 'Delete all of the messages so that nobody sees them, and handle it entirely alone.'],
   },
   {
     situation: 'A group keeps pressuring you to join an activity that feels unsafe.',

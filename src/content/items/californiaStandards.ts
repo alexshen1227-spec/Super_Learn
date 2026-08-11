@@ -201,7 +201,7 @@ const rigidVsDilation = tpl(
     return {
       title: 'What the transformation preserves',
       prompt: `A figure is translated, rotated, and then dilated by scale factor **${scale}**. How does the image compare with the original?`,
-      answer: mcq(rng, correct, rigid ? ['Similar but not congruent — lengths change', 'Neither similar nor congruent', 'Congruent only if it began at the origin'] : ['Congruent — every transformation preserves length', 'Neither similar nor congruent', 'Congruent because corresponding angles match']),
+      answer: mcq(rng, correct, rigid ? ['Similar but not congruent — lengths change', 'Neither similar to it nor congruent with it', 'Congruent only if it began at the origin'] : ['Congruent — every transformation of this kind preserves length', 'Neither similar to it nor congruent with it', 'Congruent, because the corresponding angles all match']),
       hints: ['Translations and rotations are rigid motions.', `A dilation multiplies every length by ${scale}.`],
       explanation: `${rigid ? 'A scale factor of 1 changes no length, so the entire composition is rigid and the figures are congruent.' : `The dilation changes lengths by a factor of ${scale}, so the result remains similar but is not congruent.`}`
     }
@@ -336,7 +336,7 @@ const congruenceRigidMotion = tpl(
     return {
       title: 'Rigid-motion argument',
       prompt: `Figure B is obtained from Figure A by **${c.move}**. Which conclusion is justified?`,
-      answer: mcq(rng, c.conclusion, ['Congruent only if both figures cross the origin', 'Neither similar nor congruent because the position changed', 'Congruent because every transformation preserves length'].filter((x) => x !== c.conclusion)),
+      answer: mcq(rng, c.conclusion, ['Congruent only if both figures cross the origin', 'Neither similar to it nor congruent with it because the position changed', 'Congruent because every transformation preserves length'].filter((x) => x !== c.conclusion)),
       hints: ['A rigid motion preserves all distances and angle measures.', 'A dilation is rigid only when its scale factor is 1.'],
       explanation: `**${c.conclusion}.** The proof rests on what each transformation preserves, not on how the picture happens to look.`
     }
@@ -387,7 +387,7 @@ const coordinateSlopeProof = tpl(
     return {
       title: 'Coordinate proof by slope',
       prompt: `Line ℓ has slope **${m}**. Line n has slope **${secondLabel}**. What relationship is proved?`,
-      answer: mcq(rng, correct, perpendicular ? ['Parallel — the slopes have opposite signs', 'Neither — slopes cannot prove an angle', 'Coincident — every point is shared'] : ['Perpendicular — equal slopes form a right angle', 'Neither — slopes cannot prove parallel lines', 'The lines must intersect at the origin']),
+      answer: mcq(rng, correct, perpendicular ? ['Parallel — the two slopes have opposite signs', 'Neither — slopes on their own cannot prove an angle', 'Coincident — every single point is shared between them'] : ['Perpendicular — equal slopes form a right angle', 'Neither — slopes cannot prove parallel lines', 'The lines must intersect at the origin']),
       hints: ['Parallel nonvertical lines have equal slopes.', 'Perpendicular nonvertical lines have slopes whose product is −1.'],
       explanation: `The slopes ${perpendicular ? `multiply to ${m}(${secondLabel}) = −1` : 'are equal'}, so the lines are **${perpendicular ? 'perpendicular' : 'parallel'}**. This is an algebraic proof of a geometric relationship.`
     }
@@ -701,12 +701,12 @@ const inferenceSimulation = tpl(
     const pct = round((100 * atLeast) / trials, 1)
     const rare = pct <= 5
     const correct = rare
-      ? 'The observed difference would be unusual under random chance, so it is evidence against the chance-only model'
-      : 'The observed difference is not unusual under random chance, so the simulation does not give strong evidence against that model'
+      ? 'The observed difference would be unusual under chance alone, so it is evidence against the chance model'
+      : 'The observed difference is not unusual under chance alone, so this is not strong evidence against that model'
     return {
       title: 'Read a randomization simulation',
       prompt: `Under a chance-only model, a simulation produced a difference at least as large as the observed one in **${atLeast} of ${trials} trials (${pct}%)**. What is the careful interpretation?`,
-      answer: mcq(rng, correct, rare ? ['Chance has been proved impossible', 'The treatment works for every individual', 'The simulation proves the original measurements were correct'] : ['The result proves a real effect because the observed groups differed', 'Chance has been proved to be the true explanation', 'A large sample automatically creates a causal conclusion']),
+      answer: mcq(rng, correct, rare ? ['Chance as an explanation has now been proved to be impossible by the results of the simulation', 'The treatment demonstrably works for every single individual person in the study', 'The simulation proves that all of the original measurements were recorded correctly'] : ['The result proves that there really is an effect here, because the two observed groups differed', 'Chance has now been proved to be the one true explanation of what was seen here', 'A sample of that size automatically creates a causal conclusion all on its own here']),
       hints: ['Ask how often the chance-only model produced a result this extreme.', 'Rare under the model is evidence against it; common under the model is not.'],
       explanation: `**${correct}.** A simulation measures compatibility with a specified chance model; it does not by itself prove causation, universalize to a population, or make chance literally impossible.`
     }

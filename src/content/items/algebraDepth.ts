@@ -284,14 +284,14 @@ const slopeSpecial = tpl(
     const c = b + rint(rng, 1, 6)
     const p1 = vertical ? `(${a}, ${b})` : `(${b}, ${a})`
     const p2 = vertical ? `(${a}, ${c})` : `(${c}, ${a})`
-    const correct = vertical ? 'The slope is undefined' : 'The slope is 0'
+    const correct = vertical ? 'The slope here is undefined' : 'The slope is 0'
     return {
       title: 'The two special lines',
       prompt: `What is the slope of the line through **${p1}** and **${p2}**?`,
       answer: mcq(rng, correct, [
-        vertical ? 'The slope is 0' : 'The slope is undefined',
-        'The slope is 1, since the two points differ by one step',
-        'There is no line through these two points at all',
+        vertical ? 'The slope is 0' : 'The slope here is undefined',
+        'The slope is 1: the points differ by one step',
+        'There is no line through the two points',
       ]),
       hints: [
         'Write the fraction (change in y) ÷ (change in x) before deciding anything.',
@@ -486,9 +486,11 @@ const rateFromGraph = tpl(
       title: 'Read the rate',
       prompt: `A relationship is modelled by **y = ${m}x + ${b}**, where y is ${ctx.y} and x is ${ctx.x}.\n\nWhat does the **${m}** tell you?`,
       answer: mcq(rng, `The amount changes by ${m} ${ctx.unit}`, [
-        `The starting amount was ${m} before any ${ctx.x} had passed`,
-        `The total reaches ${m} once all of the ${ctx.x} have passed`,
-        `The amount is ${m} times larger than it was at the start`,
+        // Same clipped register as the key. The rate reading used to be the
+        // shortest option every single time, which reads as the answer.
+        `The starting amount is ${m}`,
+        `The total reaches ${m} at the end`,
+        `The amount ends up ${m} times its starting size`,
       ]),
       hints: [
         'In y = mx + b, one number is a starting value and the other is a rate of change.',

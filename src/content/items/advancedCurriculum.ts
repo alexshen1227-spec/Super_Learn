@@ -210,9 +210,9 @@ const designAssignment = tpl(
   (rng) => {
     const correct = 'Randomly assign the volunteers to the two methods, then compare outcomes'
     const noted = mcqNoted(rng, correct, [
-      ['Let each volunteer choose the method they prefer', 'self-selection — motivation and prior beliefs can differ between groups', 'inference'],
-      ['Put the strongest students in the new-method group', 'baseline imbalance — the groups differ before treatment begins', 'inference'],
-      ['Use the new method first and the old method next year', 'time confound — different cohorts and conditions replace a fair comparison', 'inference'],
+      ['Let each of the volunteers choose whichever method they prefer', 'self-selection — motivation and prior beliefs can differ between groups', 'inference'],
+      ['Put all of the strongest students into the new-method group', 'baseline imbalance — the groups differ before treatment begins', 'inference'],
+      ['Use the new method this year and then the old method again next year', 'time confound — different cohorts and conditions replace a fair comparison', 'inference'],
     ])
     return {
       title: 'Build a causal comparison',
@@ -236,7 +236,7 @@ const designReplication = tpl(
         correct: 'Hide group labels from the essay scorers (blind the outcome assessment)',
         wrong: [
           'Increase the font size on every essay so the scorers can read them all more comfortably',
-          'Tell the scorers the expected result more clearly so they know what to look out for',
+          'Tell the scorers what result to expect so they know what to look for',
           'Score only the essays from the new curriculum and drop the comparison group entirely',
         ],
       },
@@ -244,7 +244,7 @@ const designReplication = tpl(
         setup: 'One small experiment finds a surprising effect with p = 0.04.',
         ask: 'What would most strengthen confidence that the effect is not a sample-specific fluke?',
         correct: 'Independent replication with a new sample and the same predeclared method',
-        wrong: ['Repeat the analysis many ways and publish the smallest p-value', 'Remove inconvenient observations without reporting it', 'Treat p = 0.04 as proof that the theory is true'],
+        wrong: ['Repeat the analysis in many different ways and publish the smallest p-value', 'Remove the inconvenient observations without reporting that you did', 'Treat a p-value of 0.04 as outright proof that the theory is true'],
       },
     ]
     const c = cycle(seed, cases)

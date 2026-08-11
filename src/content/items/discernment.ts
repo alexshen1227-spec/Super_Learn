@@ -236,7 +236,7 @@ const claimDiscernment = tpl(
   (rng, seed) => {
     const c = cycle(seed, CLAIM_CASES)
     const correct = c.benign
-      ? 'Observation — it stays inside what the scene actually shows'
+      ? 'Observation — it stays inside what the scene itself actually shows you'
       : 'Inference — it adds a cause, a person or an intention the scene does not show'
     return {
       title: 'Observation or inference?',
@@ -246,9 +246,9 @@ const claimDiscernment = tpl(
       answer: mcq(rng, correct, [
         c.benign
           ? 'Inference — it adds a cause, a person or an intention the scene does not show'
-          : 'Observation — it stays inside what the scene actually shows',
-        'Neither — the claim is too vague to classify',
-        'Both — every observation is really an inference',
+          : 'Observation — it stays inside what the scene itself actually shows you',
+        'Neither — the claim is far too vague to classify either way',
+        'Both — every observation is really an inference underneath',
       ]),
       hints: [
         'Try to point at the part of the scene that makes the claim true. If your finger lands on something described, it is observation.',

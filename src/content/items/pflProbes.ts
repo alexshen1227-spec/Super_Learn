@@ -91,9 +91,9 @@ const clockArithmetic = tpl(
         {
           prompt: 'What does the explanation say a remainder can never be?',
           answer: mcq(rng, `Equal to or larger than ${m}`, [
-            'A number smaller than the thing being divided',
-            'Zero, because something always remains',
-            'An even number when the divisor is odd',
+            'Smaller than the divisor',
+            'Always exactly zero',
+            'Even, when the divisor is odd',
           ]),
           explanation: `The text says the remainder always sits between 0 and n−1, so it can never reach ${m}. Zero IS allowed — that is what happens when the division is exact.`,
           hints: ['Re-read the sentence about the range a remainder can take.', 'The range given is 0 to n−1 inclusive.'],
@@ -171,9 +171,9 @@ const simpsonsParadox = tpl(
         {
           prompt: 'The explanation gives a reason this reversal happens. What is it?',
           answer: mcq(rng, 'The two clinics handled very different mixes of easy and hard cases', [
-            'One clinic simply recorded its results dishonestly',
-            'The sample sizes were too small for any comparison to hold',
-            'Percentages cannot be added together in any circumstance',
+            'One of the clinics simply recorded its own results dishonestly',
+            'The sample sizes were far too small for any comparison to hold up',
+            'Percentages cannot be added together under any circumstances at all',
           ]),
           explanation:
             'The text names the mix: clinic A took mostly hard cases, clinic B mostly easy ones, so the totals compare workloads rather than skill. Nothing about the numbers is dishonest or too small.',
@@ -591,9 +591,9 @@ const littlesLaw = tpl(
         {
           prompt: 'The explanation claims the law holds "for any steady system". What does STEADY rule out?',
           answer: mcq(rng, 'A system still filling up or draining — where the inside count is trending, not hovering', [
-            'Systems where the arrivals happen at unpredictable, random moments',
-            'Systems that run more than one queue or more than one server at once',
-            'Systems where a few individuals stay very much longer than the rest do',
+            'Systems where the arrivals all happen at unpredictable, random moments of the day',
+            'Systems that happen to run more than one queue or more than one server at once',
+            'Systems where a few of the individuals stay very much longer than the rest do',
           ]),
           explanation:
             'The law needs the inside count to hover around a level rather than trend — a filling or draining system breaks the bookkeeping. Randomness, multiple servers, and unequal stays are all fine: that generality is what makes the law so widely useful.',
@@ -667,9 +667,9 @@ const condorcetCycle = tpl(
         {
           prompt: 'What is the honest takeaway of the preference cycle?',
           answer: mcq(rng, 'A group can have looping preferences even when every member ranks consistently — so agenda order can decide outcomes', [
-            'One of the three friends must secretly have an inconsistent ranking',
-            'Head-to-head voting always finds the true group favorite',
-            'Cycles only happen when voters change their minds between rounds',
+            'One of the three friends must secretly be holding an inconsistent ranking of their own',
+            'Head-to-head voting always finds the true favourite of the group in the end',
+            'Cycles only ever happen when the voters change their minds in between the rounds',
           ]),
           explanation:
             'Every individual ranking was a clean, consistent list — the LOOP lives only at the group level. That is the unsettling and useful lesson: "what the group prefers" can be genuinely undefined, and whoever sets the order of votes holds real power. Knowing this is a defense, not a trick: you can now spot when an agenda, not a majority, produced a result.',

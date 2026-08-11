@@ -165,7 +165,7 @@ const methodContrast = tpl(
       {
         prompt: 'Two price problems both mention 20%. One asks for 20% of $60; the other says $60 is 20% of an unknown price. What clue changes the method?',
         correct: 'Whether the whole (the percent base) is known or unknown',
-        wrong: ['Whether the dollar sign appears', 'Whether 20 is even', 'Whether the answer will be larger than 100'],
+        wrong: ['Whether a dollar sign appears anywhere in the wording', 'Whether the number 20 happens to be an even one', 'Whether the final answer will end up larger than 100'],
         why: '“Percent of” gives the base; reverse percent hides the base and asks you to reconstruct it.',
       },
       {
@@ -177,13 +177,13 @@ const methodContrast = tpl(
       {
         prompt: 'Two geometry problems show triangles. One marks a right angle and asks for a missing side; the other gives angles and asks for an exterior angle. What selects the method?',
         correct: 'The marked relationships: right angle versus angle sums',
-        wrong: ['The drawing size', 'Which side looks longest', 'Whether the triangle points upward'],
+        wrong: ['The overall size of the drawing on the page', 'Which of the sides happens to look the longest', 'Whether the triangle happens to be pointing upward'],
         why: 'The diagram’s structure—not its appearance—selects Pythagoras or an angle-sum fact.',
       },
       {
         prompt: 'One probability problem asks for exactly one red draw. Another asks for at least one red draw over several draws. What clue suggests using a complement?',
         correct: '“At least one” is often easier as 1 minus none',
-        wrong: ['The color red', 'Having more than two numbers', 'The word “draw”'],
+        wrong: ['The color red', 'Having more than two numbers in the problem', 'The word “draw”'],
         why: '“At least one” bundles several cases; its opposite, “none,” is often one clean calculation.',
       },
       {
@@ -195,19 +195,19 @@ const methodContrast = tpl(
       {
         prompt: 'One data question asks for a typical value. Another asks which group is more consistent. What clue chooses mean/median versus spread?',
         correct: '“Typical” asks about center; “consistent” asks about spread',
-        wrong: ['Whichever list has more values', 'Whether decimals appear', 'Always calculate the mean first'],
+        wrong: ['Whichever of the two lists happens to have more values in it', 'Whether any decimals appear in the values', 'Always calculate the mean of the list first'],
         why: 'Center and spread answer different questions even when they use the same data.',
       },
       {
         prompt: 'One physics problem gives mass and volume. Another gives voltage and resistance. Both require division. Why are their methods still different?',
         correct: 'The quantities and units identify the governing relationship',
-        wrong: ['Any division problem uses the same physics law', 'The larger number must be divided by the smaller', 'Physics methods are chosen by the final unit only'],
+        wrong: ['Any division problem at all uses the very same physics law', 'The larger number must always be divided by the smaller one', 'Physics methods are chosen by the final unit and nothing else'],
         why: 'Surface arithmetic can match while the relationship—density or Ohm’s law—does not.',
       },
       {
         prompt: 'One word problem describes equal groups. Another describes a fixed starting amount plus the same increase each hour. What clue separates multiplication from a linear model?',
         correct: 'A starting value plus repeated additive change needs a linear model',
-        wrong: ['Longer stories always need equations', 'The word “each” always means multiplication only', 'Hours can never be multiplied'],
+        wrong: ['Longer word problems always need equations of one kind or another', 'The word “each” always means multiplication only', 'Hours can never be multiplied by anything at all'],
         why: 'A fixed intercept plus a constant rate has two parts; equal groups alone has one multiplication structure.',
       },
     ] as const)

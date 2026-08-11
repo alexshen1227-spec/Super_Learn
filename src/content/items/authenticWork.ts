@@ -72,7 +72,7 @@ const projectStudio = tpl(
           study: `PROJECT BRIEF\n\n- Budget ceiling: **$${budget}**\n- Doors open: Friday, 5:30 pm\n- Capacity: 40 people\n- A staff sponsor must approve the safety plan before publicity promises the date\n- Quotes: venue $${venue}, supplies $${supplies}, printing $${printing}\n- Keep a **${reserveRate}% reserve on quoted costs** for surprises\n- Success: runs safely, begins on time, and stays inside budget`,
           studySeconds: 75,
           prompt: 'Which item is a genuine launch dependency rather than a nice-to-have?',
-          answer: mcq(rng, 'Staff approval of the safety plan before publicizing the date', [
+          answer: mcq(rng, 'Getting staff approval of the safety plan in writing before the date is publicised', [
             'Settling on the most stylish poster font, since the posters are what people see first',
             'Buying the full range of decorations so the room looks finished on the night itself',
             'Reaching a hundred reactions on the announcement post before the doors are due to open',
@@ -105,9 +105,9 @@ const projectStudio = tpl(
         part('Stress-test', {
           prompt: 'The pre-mortem says: “At 5:20 pm nobody knows who has the sign-in list.” Which repair changes the system now?',
           answer: mcq(rng, 'Name one check-in owner, one backup, and a 5:00 pm handoff check', [
-            'Tell everyone to be more responsible',
-            'Add “sign-in” to a long shared checklist with no owner',
-            'Hope the sponsor notices in time',
+            'Tell everyone on the team to be more responsible about it',
+            'Add “sign-in” to a long shared checklist that has no named owner at all',
+            'Hope that the sponsor notices the gap in time and steps in',
           ]),
           explanation: 'A repair needs ownership, timing, and a verification point. “Be responsible” changes no condition that produced the failure.',
         }),
@@ -191,9 +191,9 @@ const writingStudio = tpl(
         part('Claim size', {
           prompt: 'Which sentence is proportioned to the evidence?',
           answer: mcq(rng, `In this ${topic.n}-student evaluation, the program was associated with a ${diff}-point improvement; ${caveat} limits generalization.`, [
-            `The evaluation shows that ${topic.program} improve ${topic.outcome} for everyone by ${diff}%.`,
-            'Students liked it, proving the measured effect is causal.',
-            'The provider says it transforms outcomes, so expansion is risk-free.',
+            `The evaluation shows that ${topic.program} improve ${topic.outcome} for every student by ${diff}%, in any school that adopts the programme.`,
+            'Students liked it and said so clearly in the interviews, which proves the measured effect was caused by the programme itself.',
+            'The provider says it transforms outcomes everywhere it has been tried, so expanding it across the school now carries no real risk.',
           ]),
           explanation: 'The honest sentence states the population, comparison, observed magnitude, and limitation. It neither hides the result nor expands it beyond the study.',
         }),
@@ -216,18 +216,18 @@ const writingStudio = tpl(
         part('Edit', {
           prompt: 'An editor circles “This proves the program works.” What revision repairs the exact problem?',
           answer: mcq(rng, `“In this evaluation, the program was associated with a ${diff}-point improvement.”`, [
-            '“This basically proves the program works.”',
-            '“Many people believe the program works.”',
-            '“The data is interesting.”',
+            '“This basically proves the program works and that we should roll it out.”',
+            '“Many of the people who have seen these results believe the program works.”',
+            '“The data is interesting and certainly worth discussing with the team.”',
           ]),
           explanation: 'The revision replaces an absolute causal claim with a bounded statement tied to the actual comparison and effect size.',
         }),
         part('Headline', {
           prompt: 'Choose the headline that keeps both result and uncertainty visible.',
           answer: mcq(rng, `${topic.program}: promising ${diff}-point result, replication needed`, [
-            `${topic.program} proven to transform every student`,
-            `No conclusion possible about ${topic.program}`,
-            `Students love new program`,
+            `${topic.program} proven to transform outcomes for every single student`,
+            `No conclusion of any kind is yet possible about ${topic.program}`,
+            `Students love the new ${topic.program} and want it kept`,
           ]),
           explanation: 'A responsible headline does not bury a meaningful result, but it also does not spend more certainty than the evidence earned.',
         }),
@@ -294,9 +294,11 @@ const programStudio = tpl(
         part('Implement', {
           prompt: 'Which implementation satisfies the contract?',
           answer: mcq(rng, `\`${correctCode}\``, [
-            `\`function ${task.name}(values, limit) { return values.length; }\``,
-            `\`function ${task.name}(values, limit) { let count = 0; for (const value of values) if (value ${inclusive ? '<' : '<='} limit) count++; return count; }\``,
-            `\`function ${task.name}(values, limit) { values.sort(); return values[0]; }\``,
+            // Every option is formatted exactly like the key. When only the
+            // right answer was pretty-printed, block height alone gave it away.
+            `\`function ${task.name}(values, limit) {\n  let count = 0;\n  for (const value of values) {\n    count += 1;\n  }\n  return values.length;\n}\``,
+            `\`function ${task.name}(values, limit) {\n  let count = 0;\n  for (const value of values) {\n    if (value ${inclusive ? '<' : '<='} limit) count += 1;\n  }\n  return count;\n}\``,
+            `\`function ${task.name}(values, limit) {\n  let count = 0;\n  values.sort();\n  for (const value of values) {\n    if (value ${op} limit) return count;\n  }\n  return values[0];\n}\``,
           ]),
           explanation: `The correct implementation initializes state, visits every value, uses the specified **${op}** boundary, increments only on a match, returns the count, and leaves the array unchanged.`,
         }),
@@ -328,9 +330,9 @@ const programStudio = tpl(
         part('Review', {
           prompt: 'A reviewer asks for one improvement that increases trust without expanding scope. Choose it.',
           answer: mcq(rng, 'Add the boundary tests to the automated suite and document whether equality counts', [
-            'Rewrite it with recursion because recursion looks advanced',
-            'Add networking and a database',
-            'Rename every variable without changing documentation or tests',
+            'Rewrite the whole thing with recursion, because recursion looks advanced',
+            'Add networking support and a whole database layer to it',
+            'Rename every variable without changing the documentation or the tests',
           ]),
           explanation: 'The review should reduce ambiguity and regression risk. Cleverness and unrelated features increase surface area without strengthening the contract.',
         }),
@@ -391,9 +393,9 @@ const experimentStudio = tpl(
           studySeconds: 65,
           prompt: 'Which design most directly isolates the proposed change?',
           answer: mcq(rng, 'Randomly assign trial order, change only the treatment feature, and use the same measurement procedure', [
-            'Run all controls in the morning and all treatments after lunch with a different measurer',
-            'Change the treatment feature and improve the measuring method at the same time',
-            'Use the best-looking four objects for treatment',
+            'Run all of the controls in the morning and all of the treatments after lunch, with a different person doing the measuring',
+            'Change the treatment feature and improve the measuring method at the same time, so that both upgrades get tested together',
+            'Use the four best-looking objects for the treatment group so the test has the best chance of showing something',
           ]),
           explanation: 'Random order distributes drift; holding procedure constant isolates the treatment. Selection and simultaneous changes create rival explanations.',
         }),
@@ -407,9 +409,9 @@ const experimentStudio = tpl(
         part('Interpret', {
           prompt: `The treatment mean is ${difference} ${ex.outcome} ${direction} than control. Which conclusion fits four trials per condition?`,
           answer: mcq(rng, `In these trials, ${ex.change} produced a ${difference}-unit ${direction} mean; repeat with more trials before generalizing.`, [
-            `It is established that ${ex.change} always cause exactly a ${difference}-unit change.`,
-            'The two means came out different, so ordinary measurement noise cannot be what produced the gap.',
-            'Four trials per condition is too few to provide any usable evidence about the change at all.',
+            `It is established that ${ex.change} always cause exactly a ${difference}-unit change, under any conditions.`,
+            'The two means came out different from each other, so ordinary measurement noise cannot be what produced the gap.',
+            'Four trials in each condition is far too few to provide any usable evidence at all about this change.',
           ]),
           explanation: 'A small experiment can supply evidence without supplying certainty. State the observed result, scope it to these trials, and name replication.',
         }),
@@ -466,7 +468,7 @@ const EXCERPTS = [
   {
     title: 'The Quiet Workshop',
     text: `Mr. Ilyan never repaired a clock while its owner was explaining the problem. He listened with both hands flat on the bench. Only after the story ended did he touch the case. “You hear stopping,” he told Lina. “I need to know whether it stops at the same point.”\n\nThey marked the minute hand and waited. The clock failed at twelve minutes, then twenty-seven, then nine. Lina expected him to look disappointed. Instead he smiled and wrote “not position-dependent.” A failed guess, she realized, had purchased a smaller search space. By noon they had not fixed the clock, but they had eliminated dust on one gear, a warped minute hand, and the owner’s theory about cold mornings. The bench held fewer answers than it had at dawn and more knowledge.`,
-    thesis: 'Disciplined elimination can create knowledge before it creates a solution.',
+    thesis: 'Disciplined elimination can create real knowledge before it ever creates a solution.',
     evidence: 'Each failed hypothesis narrows the search space even though the clock remains broken.',
     counter: 'Elimination alone is insufficient; the workshop still needs a constructive test that identifies the cause.',
   },
@@ -537,8 +539,8 @@ const bookStudio = tpl(
         part('Counter-reading', {
           prompt: 'Which complication would make a seminar comment more intellectually honest?',
           answer: mcq(rng, ex.counter, [
-            'No competing reading is available now that a thesis fitting the evidence has already been identified.',
-            'Every reading of the passage is supported about equally well, so no single thesis can be preferred.',
+            'No competing reading is available any longer, now that a thesis fitting the evidence has been identified.',
+            'Every reading of the passage is supported about equally well, so no single thesis can really be preferred.',
             'The passage is best judged on whether it holds a reader’s attention, rather than on its argument.',
           ]),
           explanation: `A counter-reading tests the thesis at its boundary: ${ex.counter}`,
@@ -562,9 +564,9 @@ const bookStudio = tpl(
         part('Discuss', {
           prompt: 'A classmate gives a different reading with real textual support. What is the strongest response?',
           answer: mcq(rng, 'Paraphrase their claim, identify the evidence that would distinguish the readings, then revise if theirs explains more', [
-            'Restate your own thesis more forcefully, so the strongest version of it is on the table',
-            'Say interpretation is subjective so evidence does not matter',
-            'Change the subject to whether you liked the story',
+            'Restate your own thesis rather more forcefully, so that the strongest version of it is out on the table',
+            'Say that interpretation is all subjective anyway, so the evidence does not really matter',
+            'Change the subject over to whether or not you happened to like the story',
           ]),
           explanation: 'Skilled discussion treats disagreement as a comparison between explanatory models. Accurate paraphrase comes before challenge.',
         }),
@@ -644,16 +646,16 @@ const dialogueStudio = tpl(
         part('Paraphrase', {
           prompt: 'Which reply checks understanding instead of merely saying “okay”?',
           answer: mcq(rng, `“So your point is: ${mentor.principle.toLowerCase()} Is that accurate?”`, [
-            '“Yeah, I knew that already — it lines up with what I had been assuming so far.”',
-            '“Could you just show me the answer, and then I can work backwards from it later?”',
-            '“That sounds complicated — I think I will need to go over it a few more times.”',
+            '“Yeah, I knew that already — it lines up almost exactly with what I had been assuming about it so far anyway.”',
+            '“Could you just show me the finished answer, and then I can work backwards from it and figure out the reasoning later?”',
+            '“That sounds quite complicated — I think I am going to need to go over the whole thing a few more times on my own.”',
           ]),
           explanation: 'A paraphrase gives the expert a chance to repair your model before the conversation moves on.',
         }),
         part('Challenge', {
           prompt: 'Which question tests the advice respectfully at a real boundary?',
           answer: mcq(rng, mentor.challenge, [
-            'Are you sure that holds in every case, or are there situations where it would not?',
+            'Are you sure that holds in every case, or are there times it would not?',
             'What makes you confident about that, given how many other opinions there are on it?',
             'Could you walk me through everything on this topic so I have the full picture first?',
           ]),
@@ -662,9 +664,9 @@ const dialogueStudio = tpl(
         part('Next test', {
           prompt: 'What should happen immediately after office hours?',
           answer: mcq(rng, 'Apply the principle to one concrete example, record the result, and return with the exact point that still fails', [
-            'Wait for them to check in again, so the next question comes at a time that suits them',
-            'Write the advice into notes in their exact wording so nothing gets lost in paraphrase',
-            'Put the same opening question to a second expert, to see whether the two answers agree',
+            'Wait for them to check in with you again, so that the next question arrives at a time that happens to suit them',
+            'Write the advice into your notes in their exact wording, so that nothing at all gets lost in the paraphrasing',
+            'Put exactly the same opening question to a second expert, to see whether the two of them give answers that agree',
           ]),
           explanation: 'Expert time compounds when advice becomes an experiment. A concrete attempt produces a better next question.',
         }),
@@ -687,9 +689,9 @@ const dialogueStudio = tpl(
         part('Follow up', {
           prompt: 'Which follow-up message uses the expert’s time well?',
           answer: mcq(rng, '“I tried the agreed test. Here was my prediction, here is the result, and this exact step still confuses me. Could you check my reasoning there?”', [
-            '“Still a bit confused after trying it. Do you have any more tips I could work through?”',
-            '“Could we start again from the beginning? I think I lost the thread somewhere early on.”',
-            '“I have written your advice down and will work through it properly later. Thanks a lot.”',
+            '“Still a bit confused even after trying it out for myself. Do you have any more tips that I could go away and work through?”',
+            '“Could we go right back and start again from the very beginning? I think I must have lost the thread of it somewhere quite early on.”',
+            '“I have written all of your advice down and I will work through it all properly later on in the week. Thanks a lot for it.”',
           ]),
           explanation: 'A strong follow-up shows work, isolates the remaining uncertainty, and asks for a bounded kind of help.',
         }),
@@ -773,7 +775,7 @@ const guardianDialogueStudio = tpl(
         }),
         part('Pressure check', {
           prompt: 'They reply, “If you cared about me/the team, you would just allow it.” What is happening?',
-          answer: mcq(rng, 'A relationship test is being used to replace discussion of the actual boundary', [
+          answer: mcq(rng, 'A relationship test is being used in place of any discussion of the actual boundary', [
             'They have offered a genuine reason to think the boundary is unfair and worth reconsidering',
             'The boundary stops being valid, because a rule that damages a relationship cannot be the right one',
             'You need to show that you care by giving way this one time, and can hold the line in future',
@@ -783,9 +785,9 @@ const guardianDialogueStudio = tpl(
         part('Opening', {
           prompt: 'Which opening is direct, specific, and leaves room for relevant context?',
           answer: mcq(rng, `“I want to address one specific pattern. ${c.boundary} ${c.option} Is there context I’m missing before we agree on that?”`, [
-            '“You always ruin everything.”',
-            '“It is probably fine, never mind.”',
-            'A ten-minute speech listing every past disagreement',
+            '“You always do this and you always ruin everything. Every single time I trust you with something it goes wrong, and honestly I do not know why I keep expecting anything different from you by now.”',
+            '“It is probably fine, honestly. I do not want to make this awkward, so never mind — if it keeps happening then maybe I will say something, but really, do not worry about it at all. Sorry for even bringing it up.”',
+            'Before we get to this one, I want to go through everything from the past term: the project in September, the group chat in October, the thing at the weekend, and then we can decide who has been more unreasonable overall',
           ]),
           explanation: 'The opening names the behavior and requested future action, offers a workable path, and asks for context without turning the boundary into a vote.',
         }),
@@ -809,9 +811,9 @@ const guardianDialogueStudio = tpl(
         part('Escalate', {
           prompt: 'Which condition means this should stop being a private practice conversation?',
           answer: mcq(rng, 'Threats, retaliation, coercion, repeated boundary violations, major power imbalance, or any immediate safety concern', [
-            'The other person looks disappointed',
-            'You need a few seconds to think',
-            'They offer relevant context and ask one clarifying question',
+            'The other person looks disappointed, goes quiet, or seems hurt by what you have just said to them about it',
+            'You need a few seconds to think before you answer, and the pause feels uncomfortable',
+            'They offer some relevant context you did not have, and then ask one clarifying question about it',
           ]),
           explanation: 'Safety, coercion, and repeated violations require support and documentation. De-escalation does not mean staying alone in an unsafe interaction.',
         }),
@@ -884,9 +886,9 @@ const fieldStudio = tpl(
         part('Hypotheses', {
           prompt: 'Which working stance best protects accuracy?',
           answer: mcq(rng, `Keep all three live: ${c.hypotheses.join('; ')}.`, [
-            `Assume ${c.hypotheses[2]} because it is the most blameworthy.`,
-            'Go with whichever explanation came up first, because the earliest account is usually the accurate one.',
-            'Decline to investigate at all, on the grounds that certainty is not achievable from these records.',
+            `Assume ${c.hypotheses[2]}, on the grounds that it is far and away the most blameworthy of the available explanations.`,
+            'Go with whichever explanation came up first, on the grounds that the earliest account is usually the accurate one.',
+            'Decline to investigate the matter at all, on the grounds that certainty is not achievable from these records.',
           ]),
           explanation: 'Competing hypotheses prevent one early story from controlling what evidence gets noticed.',
         }),
@@ -926,10 +928,10 @@ const fieldStudio = tpl(
         }),
         part('Update', {
           prompt: 'The item is found in an adjacent location. What belongs in the corrected report?',
-          answer: mcq(rng, 'Record where it was found, close unsupported hypotheses, note the process gap, and avoid pretending the initial suspicion was reasonable evidence', [
-            'Delete the entire report so nobody sees the error',
-            'Keep blaming the original person because they were suspicious',
-            'Announce that the case was solved through intuition',
+          answer: mcq(rng, 'Record where it was found, close the unsupported hypotheses, note the process gap, and do not call the initial suspicion evidence', [
+            'Delete the entire report so that nobody ever sees the error that was made',
+            'Keep on blaming the original person, on the grounds that they were the one who seemed most suspicious right from the start',
+            'Announce that the case was solved through pure intuition and good instincts',
           ]),
           explanation: 'Corrections should update facts and improve the system. Owning the earlier uncertainty is part of trustworthy investigation.',
         }),
@@ -1001,9 +1003,9 @@ const decisionStudio = tpl(
         part('Constraint', {
           prompt: 'You do not want attendance history retained. What is the ethical decision move?',
           answer: mcq(rng, 'Treat privacy as an explicit constraint or cost, check retention controls, and do not hide it behind the cheaper price', [
-            'Ignore privacy entirely on the grounds that it carries no clear dollar amount to compare',
-            'Assume the company will handle the data responsibly, since most companies generally do',
-            'Invent a dollar value for privacy chosen so that it guarantees the answer already preferred',
+            'Ignore privacy entirely, on the grounds that it carries no clear dollar amount that can be compared to a price',
+            'Assume the company will handle the data responsibly, since most companies generally do, and leave it out of the comparison',
+            'Invent a dollar value for privacy, chosen so that it guarantees the answer you already preferred before starting',
           ]),
           explanation: 'Not every value belongs in one fake-precise number. A decision memo can state a threshold: if attendance storage cannot be disabled, choose the alternative.',
         }),
@@ -1026,9 +1028,9 @@ const decisionStudio = tpl(
         part('Review', {
           prompt: 'After one month, what evidence should drive the review?',
           answer: mcq(rng, 'Actual uses, total billed cost, observed data retention, and whether the original objective was met', [
-            'Whether switching plans at this point would feel embarrassing to explain to anyone',
-            'Only the advertised monthly fee, since that is the number the decision was made on',
-            'How many friends ended up choosing each plan once they had heard the reasoning',
+            'Whether switching plans at this point would feel embarrassing to have to explain to anybody else',
+            'Only the advertised monthly fee, since that is the single number the original decision was actually made on',
+            'How many of your friends ended up choosing each plan once they had heard all of the reasoning',
           ]),
           explanation: 'The review compares predictions and constraints with observed reality. Sunk pride and popularity do not answer the original decision.',
         }),

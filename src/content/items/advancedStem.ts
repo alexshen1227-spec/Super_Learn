@@ -419,9 +419,9 @@ const complexityScale = tpl(
       title: 'Two working solutions',
       prompt: `Both algorithms produce correct results on a list of **${n.toLocaleString('en-US')}** items.\n\n· **A** compares every item with every other item.\n· **B** sorts the list first, then makes one pass through it.\n\nEven though A is ${factor}× faster per individual step, which finishes sooner — and roughly how many steps does the winner take?`,
       answer: mcq(rng, correct, [
-        `A — a faster step wins once the constant factor of ${factor}× is included`,
-        `They finish at about the same time, since both must examine all ${n.toLocaleString('en-US')} items`,
-        'It cannot be determined without knowing the programming language used',
+        `A — its faster step wins once the ${factor}× is included`,
+        `About the same time — both examine all ${n.toLocaleString('en-US')} items`,
+        'It cannot be determined without knowing the language',
       ]),
       hints: [
         'Count the steps each does before worrying about how fast a step is.',

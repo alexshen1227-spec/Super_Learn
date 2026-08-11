@@ -1069,38 +1069,42 @@ describe('math tracks resolve against the tree', () => {
  * NO TEST-WISE SHORTCUT.
  *
  * Measured 2026-08-09: the correct option was UNIQUELY the longest in 39.8% of
- * multiple-choice checkpoints against a 25.3% chance baseline — a learner who
- * always picked the longest option would have scored ~40% without reading, and
- * the app would have banked that as independent evidence. Nothing looked wrong
- * in the code or on screen; the bias came from a writing habit where the right
+ * multiple-choice checkpoints — a learner who always picked the longest option
+ * would have scored ~40% without reading, and the app would have banked that
+ * as independent evidence. The bias came from a writing habit: the right
  * answer carries its qualifier and the distractors stay terse.
  *
- * This caps it PER TEMPLATE, which is where the habit lives and where it is
- * fixable. Sometimes the true answer genuinely needs more words, so the bar is
- * not zero — but a template that does it every single time is cueing.
+ * The FIRST version of this gate used the wrong baseline and hid the problem
+ * for a day. It compared the hit rate against 1/k averaged over every option
+ * set, which is not the null: a set whose options are all the same length can
+ * never be cued at all, so it should contribute zero, not 0.25. Against the
+ * real null — count only the sets that HAVE a clear length outlier, and ask
+ * how often the key is that outlier — insight scored 36% where 10% was
+ * expected while the bank-wide number sat innocently at chance.
+ *
+ * So this gate compares OBSERVED against EXPECTED, per bucket, in BOTH
+ * directions. "Never pick the shortest" is a weaker cue than "always pick the
+ * longest", but it is the same defect and worth watching.
  */
 describe('multiple choice does not leak the answer through option length', () => {
   const SAMPLE_SEEDS = 8
   /**
    * A length cue is only exploitable if a learner can SEE it. Being longest by
    * three characters is invisible; being longest by half again is a billboard.
-   * So "cued" means longest by at least this margin over the runner-up.
-   *
-   * Measured 2026-08-09 (and the first attempt at this measurement was wrong,
-   * which is why the margin exists): counting ANY length lead put the exploit
-   * at 38.2% against a 25.3% chance baseline and looked alarming. At a 25%
-   * margin the exploit scores 25.0% — chance exactly. The genuine excess sits
-   * around five points at a 15% margin, which is what this gate holds.
+   * Both tests must pass: a 15% relative lead AND 8 characters, so that
+   * "Three" against "Four" is not counted as a cue.
    */
   const CUE_MARGIN = 0.15
-  const MAX_GLOBAL_SHARE = 0.32
+  const CUE_CHARS = 8
+  /** Observed minus expected, as a share of the bucket's option sets. */
+  const MAX_EXCESS_SHARE = 0.05
 
-  it('a learner picking the longest option cannot score far above chance', () => {
-    let n = 0
-    let hits = 0
-    let chance = 0
-    const perTemplate = new Map<string, { n: number; hits: number }>()
+  type Tally = { n: number; obsL: number; expL: number; obsS: number; expS: number }
+
+  function tally() {
+    const per = new Map<string, Tally>()
     for (const t of BUILTIN_TEMPLATES) {
+      const e = per.get(t.bucket) ?? { n: 0, obsL: 0, expL: 0, obsS: 0, expS: 0 }
       for (let seed = 0; seed < Math.min(SAMPLE_SEEDS, Math.max(1, t.variants)); seed++) {
         let item
         try {
@@ -1111,93 +1115,55 @@ describe('multiple choice does not leak the answer through option length', () =>
         for (const part of item.parts ?? [{ answer: item.answer }]) {
           const a = part.answer ?? item.answer
           if (!a || a.type !== 'mcq' || a.options.length < 3) continue
-          n++
-          chance += 1 / a.options.length
           const lens = a.options.map((o) => o.length)
-          const runnerUp = Math.max(...lens.filter((_, i) => i !== a.correct))
-          const cued = lens[a.correct] > runnerUp * (1 + CUE_MARGIN)
-          if (cued) hits++
-          const e = perTemplate.get(t.id) ?? { n: 0, hits: 0 }
+          const k = lens.length
+          const others = (i: number) => lens.filter((_, j) => j !== i)
+          const isLong = (i: number) => {
+            const hi = Math.max(...others(i))
+            return lens[i] > hi * (1 + CUE_MARGIN) && lens[i] - hi >= CUE_CHARS
+          }
+          const isShort = (i: number) => {
+            const lo = Math.min(...others(i))
+            return lens[i] * (1 + CUE_MARGIN) < lo && lo - lens[i] >= CUE_CHARS
+          }
           e.n++
-          if (cued) e.hits++
-          perTemplate.set(t.id, e)
+          // At most one option can be the outlier, so the null probability of
+          // the key being it is 1/k when the set has one and 0 when it does not.
+          if (lens.some((_, i) => isLong(i))) e.expL += 1 / k
+          if (lens.some((_, i) => isShort(i))) e.expS += 1 / k
+          if (isLong(a.correct)) e.obsL++
+          if (isShort(a.correct)) e.obsS++
         }
       }
+      if (e.n) per.set(t.bucket, e)
     }
-    const share = hits / n
-    const worst = [...perTemplate.entries()]
-      .map(([id, e]) => ({ id, excess: e.hits - e.n / 4 }))
-      .sort((a, b) => b.excess - a.excess)
-      .slice(0, 8)
-      .map((x) => x.id)
-      .join(', ')
-    expect(
-      share,
-      `longest-option shortcut scores ${(100 * share).toFixed(1)}% (chance ${((100 * chance) / n).toFixed(1)}%). Worst offenders: ${worst}`,
-    ).toBeLessThanOrEqual(MAX_GLOBAL_SHARE)
-  })
-
-  /**
-   * PER BUCKET, because the bank-wide number cannot see this.
-   *
-   * Reported by a learner, in four separate reports, ending "You have to make
-   * all the answer around the same length!!" — and they were right. The global
-   * gate read 24.4%, at chance, and passed. Underneath it the insight bucket
-   * was at 62%: pick the longest option and you were right four times in five.
-   *
-   * Math carries 1032 of the bank's 2192 multiple-choice questions and sits at
-   * 12%, so it drags the mean to chance and hides everything else. An average
-   * concealing the thing it averages over is precisely what `explore-spread`
-   * teaches, which made this an uncomfortable bug to find.
-   *
-   * These ceilings are a RATCHET: each is today's measured value plus a small
-   * margin. Lower them when content improves; never raise one to make a test
-   * pass. Chance is 25%, and that is where they should all end up.
-   */
-  const BUCKET_CEILING: Record<string, number> = {
-    strategist: 0.53,
-    science: 0.47,
-    observer: 0.47,
-    insight: 0.4,
-    meta: 0.39,
-    coding: 0.33,
-    investigator: 0.31,
-    math: 0.17,
-    physics: 0.12,
-    puzzle: 0.15,
+    return per
   }
 
-  it('no single bucket lets the longest-option shortcut run away', () => {
-    const per = new Map<string, { n: number; hits: number }>()
-    for (const t of BUILTIN_TEMPLATES) {
-      for (let seed = 0; seed < Math.min(SAMPLE_SEEDS, Math.max(1, t.variants)); seed++) {
-        let item
-        try {
-          item = t.generate(seed)
-        } catch {
-          continue
-        }
-        for (const part of item.parts ?? [{ answer: item.answer }]) {
-          const a = part.answer ?? item.answer
-          if (!a || a.type !== 'mcq' || a.options.length < 3) continue
-          const lens = a.options.map((o) => o.length)
-          const runnerUp = Math.max(...lens.filter((_, i) => i !== a.correct))
-          const e = per.get(t.bucket) ?? { n: 0, hits: 0 }
-          e.n++
-          if (lens[a.correct] > runnerUp * (1 + CUE_MARGIN)) e.hits++
-          per.set(t.bucket, e)
-        }
-      }
-    }
+  it('no bucket rewards picking the longest option', () => {
     const over: string[] = []
-    for (const [bucket, e] of per) {
+    for (const [bucket, e] of tally()) {
       if (e.n < 20) continue
-      const shareHere = e.hits / e.n
-      const ceiling = BUCKET_CEILING[bucket] ?? 0.4
-      if (shareHere > ceiling)
-        over.push(`${bucket} ${(100 * shareHere).toFixed(0)}% (ceiling ${(100 * ceiling).toFixed(0)}%, ${e.hits}/${e.n})`)
+      const excess = (e.obsL - e.expL) / e.n
+      if (excess > MAX_EXCESS_SHARE)
+        over.push(
+          `${bucket}: key is longest ${e.obsL}/${e.n} (${((100 * e.obsL) / e.n).toFixed(0)}%) where ${e.expL.toFixed(1)} (${((100 * e.expL) / e.n).toFixed(0)}%) is expected`,
+        )
     }
     expect(over, `buckets where the longest answer gives it away: ${over.join('; ')}`).toEqual([])
+  })
+
+  it('no bucket rewards eliminating the shortest option', () => {
+    const over: string[] = []
+    for (const [bucket, e] of tally()) {
+      if (e.n < 20) continue
+      const excess = (e.obsS - e.expS) / e.n
+      if (excess > MAX_EXCESS_SHARE)
+        over.push(
+          `${bucket}: key is shortest ${e.obsS}/${e.n} where ${e.expS.toFixed(1)} is expected`,
+        )
+    }
+    expect(over, `buckets where the shortest answer gives it away: ${over.join('; ')}`).toEqual([])
   })
 })
 

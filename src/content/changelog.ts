@@ -11,6 +11,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '8.8',
+    date: '2026-08-10',
+    title: 'The Longest Answer Is No Longer The Answer — In Any Subject',
+    points: [
+      'You told me the right answer was usually the longest one. I fixed Human Insight last time and said strategy, science and observation were next. They are done — and so is every other subject, because while checking them I found the measurement itself was wrong.',
+      'What was wrong with it: I was comparing against "25%, because there are four options". But a question whose four answers are all the same length can never be given away by length at all, so it should not count towards the target. Once only the questions that CAN be given away are counted, the real target for science was 8% — and science was sitting at 26%. It looked fine and was not.',
+      'Against the corrected measurement, every subject is now at or below where pure chance puts it. Strategy went from 66 giveaway questions to 1. Meta Lab from 48 to 0. Investigator from 60 to 8, which is exactly what chance predicts. Insight, science, observation, coding and maths are all clean too.',
+      'How they were fixed: almost never by shortening the right answer. The pattern was a correct answer that carried its reason while the wrong ones were one-line brush-offs. So the wrong ones got the same care — a bad plan spelled out in full is both the same length AND much harder to dismiss at a glance, which makes the question better, not just fairer.',
+      'One was not about words at all. In the programming studio, the correct code was laid out neatly over several lines while the three wrong versions were crammed onto one — you could spot it by shape before reading a single character. All four are laid out identically now, and I checked in the running app that the four buttons come out the same height.',
+      'Something honest I am NOT fixing: the right answer is now almost never the shortest option either. That is a much weaker hint — it only rules out one answer, on the small number of questions where one answer is clearly shortest. Padding out short correct answers would make them worse to read for very little gain, so I have written it down instead of hiding it.',
+      'The automatic check has been replaced. The old one used the wrong target and let a subject sit at three times chance while reporting "fine". The new one works out the right target from the questions themselves, checks each subject separately, and watches both directions.',
+    ],
+  },
+  {
     version: '8.7',
     date: '2026-08-10',
     title: 'Everything You Reported (And The Bigger Things Behind Two Of Them)',

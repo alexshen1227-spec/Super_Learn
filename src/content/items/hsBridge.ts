@@ -118,8 +118,8 @@ const sequenceType = tpl(
           geometric
             ? `Arithmetic — each term adds ${terms[1] - terms[0]}, so the next term is ${terms[3] + (terms[1] - terms[0])}`
             : `Geometric — each term is multiplied by ${round(terms[1] / terms[0], 2)}, so the next term is ${round(terms[3] * (terms[1] / terms[0]), 2)}`,
-          `Neither one, because the gaps between the terms are not consistent enough to name`,
-          `Both descriptions fit, so either rule can be used to continue the sequence from here`,
+          `Neither, because the gaps are not consistent`,
+          `Both fit, so either rule continues it`,
         ],
       ),
       hints: [

@@ -443,7 +443,7 @@ const exploreScatter = tpl(
               'Step from no scatter to the widest, watching the line itself rather than the dots.',
           },
           prompt: 'The line stayed put the whole time. What changed as the scatter grew?',
-          answer: mcq(rng, 'How well the line predicts any individual point', [
+          answer: mcq(rng, 'How well the line predicts any single individual point on it', [
             'The direction of the relationship, which weakened as points spread out',
             'The steepness of the line, which flattened as the scatter grew',
             'Nothing important — scatter is measurement noise and can be ignored',
@@ -454,7 +454,7 @@ const exploreScatter = tpl(
           prompt: `A study reports a real upward trend between hours revised and test score, with scores scattering ±25 marks around the line. A student revises for one extra hour. What can you honestly tell them?`,
           answer: mcq(rng, 'That scores tend to rise with revision, but their own result could easily land far off the line', [
             'That their score will rise by exactly the amount the line predicts',
-            'That the trend is too scattered to mean anything, so revising makes no difference',
+            'That the trend is too scattered to mean anything at all, so revising makes no difference',
             'That their score will rise by at least the amount the line predicts',
           ]),
           hints: [
@@ -762,7 +762,7 @@ const explorePi = tpl(
               'Grow the circle from smallest to largest, reading the last number in the caption each time.',
           },
           prompt: 'As the circle grew, both distances got bigger. What happened to around ÷ across?',
-          answer: mcq(rng, 'It stayed at 3.14 for every circle', [
+          answer: mcq(rng, 'It stayed at about 3.14 for every one of the circles', [
             'It grew, because a bigger circle has more edge to go around',
             'It shrank, because the distance across grows faster',
             'It changed unpredictably from one circle to the next',

@@ -509,9 +509,9 @@ const correlationMeaning = tpl(
       title: 'Reading a correlation',
       prompt: `A study reports: **${c}**\n\nWhat has been established so far?`,
       answer: mcq(rng, correct, [
-        'The first one causes the second',
-        'The second one causes the first',
-        'Nothing at all — the finding is meaningless',
+        'The first one is what causes the second one to happen',
+        'The second one is what causes the first one to happen',
+        'Nothing at all — a correlation of this kind is simply meaningless',
       ]),
       hints: [
         'Separate two different questions: do they move together, and does one make the other happen?',
@@ -675,25 +675,25 @@ const distinguishingTest = tpl(
       {
         setup: 'Your bike light will not turn on. Either the battery is flat, or the bulb has blown.',
         correct: 'Put the same battery in a different light and see whether that one works',
-        wrong: ['Press the switch again, harder', 'Check that the light is a brand you trust', 'Ask a friend which they think it is'],
+        wrong: ['Press the switch again, rather harder this time', 'Check whether the light is made by a brand that you actually trust', 'Ask a friend which of the two they think it is'],
         why: 'a working light with this battery rules the battery out; a dead one rules the bulb out. Either result eliminates one explanation.',
       },
       {
         setup: 'Plants on one windowsill are wilting. Either they are underwatered, or that sill is too hot.',
         correct: 'Move half the plants to a cooler sill and keep watering everything the same',
-        wrong: ['Water all of them more', 'Look up how much this species usually needs', 'Wait a week and see what happens'],
+        wrong: ['Water every one of them rather more', 'Look up how much water a species like this one usually needs each week', 'Wait for a week and then see what happens'],
         why: 'holding water constant while changing the temperature means any difference has only one explanation left.',
       },
       {
         setup: 'A file will not open. Either the file is corrupt, or your program is too old.',
         correct: 'Try opening a different, known-good file in the same program',
-        wrong: ['Restart the computer', 'Try opening the same file again', 'Check how large the file is'],
+        wrong: ['Restart the computer and try again', 'Try opening exactly the same file over again in a moment', 'Check how large the file actually is'],
         why: 'if the known-good file opens, the program is fine and the file is the suspect; if it also fails, the program is.',
       },
       {
         setup: 'A recipe came out badly. Either the oven runs cold, or you mismeasured the flour.',
         correct: 'Bake something simple with an oven thermometer inside',
-        wrong: ['Make the same recipe again the same way', 'Buy a different brand of flour', 'Ask whether other people liked it'],
+        wrong: ['Make exactly the same recipe again in the same way', 'Buy a completely different brand of flour', 'Ask whether any other people liked it'],
         why: 'reading the real oven temperature settles that explanation on its own, without touching the other.',
       },
     ]

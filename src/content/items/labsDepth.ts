@@ -82,9 +82,9 @@ const paraphraseFidelity = tpl(
         said: '"I can make the study session, but only after 4, and I\'d rather we focus on the lab report."',
         correct: 'They can come after 4 and prefer working on the lab report',
         bads: [
-          ['They will arrive at 4 to work on the lab report', '"after 4" became "at 4", and a preference became a plan'],
-          ['They do not really want to study together', 'invents a reluctance the speaker never voiced'],
-          ['They can only stay briefly after 4', 'duration was never mentioned'],
+          ['They will arrive at 4 in order to work on the lab report', '"after 4" became "at 4", and a preference became a plan'],
+          ['They do not really want to study together at all', 'invents a reluctance the speaker never voiced'],
+          ['They can only stay for a short while after 4 in the afternoon', 'duration was never mentioned'],
         ] as [string, string, ErrorTag?][],
       },
       {
@@ -100,18 +100,18 @@ const paraphraseFidelity = tpl(
         said: '"Grandpa\'s okay — the doctor is keeping him overnight just to watch the medication change."',
         correct: 'He is staying overnight for observation after a medication change',
         bads: [
-          ['He got worse, so they kept him', 'adds a deterioration the speaker denied'],
-          ['The medication caused a bad reaction', 'a change being watched is not a reaction that happened'],
-          ['He is fine and coming home tonight', 'drops the overnight stay entirely'],
+          ['He got a good deal worse, so they have decided to keep him in', 'adds a deterioration the speaker denied'],
+          ['The medication caused him to have a bad reaction', 'a change being watched is not a reaction that happened'],
+          ['He is completely fine and is coming home again tonight', 'drops the overnight stay entirely'],
         ] as [string, string, ErrorTag?][],
       },
       {
         said: '"I didn\'t lose your charger — I left it in the band room, and the room was locked when I went back."',
         correct: 'They know where the charger is but could not retrieve it yet',
         bads: [
-          ['They lost the charger and are making excuses', 'assumes bad faith the words do not contain'],
-          ['They will bring the charger tomorrow', 'no promise was made'],
-          ['The charger is gone from the band room', 'the speaker claims it is IN the band room'],
+          ['They lost the charger and are now just making excuses', 'assumes bad faith the words do not contain'],
+          ['They will bring the charger along with them tomorrow', 'no promise was made'],
+          ['The charger has gone missing from the band room entirely', 'the speaker claims it is IN the band room'],
         ] as [string, string, ErrorTag?][],
       },
     ] as const)
@@ -233,8 +233,8 @@ const evThreshold = tpl(
       `${c[2]} — it is the only option that makes the cutoff for certain`,
       [
         [`${c[1]} — its average time (${evFast} min) is better`, `the average is meaningless here: miss the cutoff and the whole trip fails; a coin-flip ${fastBad}-minute outcome blows it`, 'strategy'],
-        [`${c[1]} — its best case (${fastGood} min) is the fastest on offer`, 'best-case planning bets the outcome on luck', 'strategy'],
-        [`Either — they are close enough`, `one arrives by ${safe} min for certain; the other misses the ${cutoff}-minute cutoff half the time`],
+        [`${c[1]} — its best case (${fastGood} min) is easily the fastest one on offer`, 'best-case planning bets the outcome on luck', 'strategy'],
+        [`Either uploader — the two options are close enough to be a coin flip`, `one arrives by ${safe} min for certain; the other misses the ${cutoff}-minute cutoff half the time`],
       ],
     )
     return {
@@ -300,36 +300,36 @@ const boundaryQuality = tpl(
         setup: 'A teammate keeps sending homework-answer requests at midnight.',
         correct: '"I\'m not sending answers. I can explain the method tomorrow at lunch if you want."',
         bads: [
-          ['"Maybe, I\'ll see — I\'m pretty busy tonight…"', 'a soft maybe invites the same ask tomorrow; the limit never gets stated'],
-          ['"You always do this. You\'re using me and everyone knows it."', 'attacks the person instead of stating the limit — now it\'s a fight about character'],
-          ['"Fine, but only this once (again)."', 'a boundary that yields when pushed teaches that pushing works'],
+          ['"Maybe, I\'ll see how it goes — I\'m pretty busy tonight and tomorrow too…"', 'a soft maybe invites the same ask tomorrow; the limit never gets stated'],
+          ['"You always do this to me. You\'re using me and everyone else knows it too."', 'attacks the person instead of stating the limit — now it\'s a fight about character'],
+          ['"Fine, but only this one more time — again — and then that is really it."', 'a boundary that yields when pushed teaches that pushing works'],
         ] as [string, string, ErrorTag?][],
       },
       {
         setup: 'A friend pressures you to share your streaming password "since you trust me".',
         correct: '"No — I don\'t share passwords, that one\'s a rule for everyone. Happy to watch together at mine."',
         bads: [
-          ['"My parents would kill me, sorry, it\'s them not me."', 'outsourcing the no makes it negotiable — the friend now argues with your parents\' rule, not yours', 'strategy'],
-          ['"If you were a real friend you wouldn\'t ask."', 'returns pressure with pressure; the limit gets lost in the counterattack', 'strategy'],
-          ['"Ugh, fine, just don\'t change anything."', 'consent under pressure is the outcome the pressure was for', 'concept'],
+          ['"My parents would absolutely kill me, sorry, it is really them and not me."', 'outsourcing the no makes it negotiable — the friend now argues with your parents\' rule, not yours', 'strategy'],
+          ['"If you were a real friend you would not be asking me this in the first place."', 'returns pressure with pressure; the limit gets lost in the counterattack', 'strategy'],
+          ['"Ugh, fine, take it then, just do not change anything at all on there while you have it."', 'consent under pressure is the outcome the pressure was for', 'concept'],
         ] as [string, string, ErrorTag?][],
       },
       {
         setup: 'A group chat keeps roasting one member and tags you to join in.',
         correct: '"Not my thing — I\'m out of the roasting. Game night still on Friday?"',
         bads: [
-          ['(Leave the chat silently)', 'exits the situation but leaves the norm untouched and the target alone'],
-          ['"You\'re all bullies and I\'m reporting everyone."', 'may escalate past what the situation needs before a plain refusal was even tried — and threats you don\'t mean erode the ones you do'],
-          ['(Join with a mild roast so it stays friendly)', 'participation IS endorsement, however gentle the line'],
+          ['(Leave the group chat silently and say nothing about it to anyone)', 'exits the situation but leaves the norm untouched and the target alone'],
+          ['"You are all bullies and I am reporting every single one of you."', 'may escalate past what the situation needs before a plain refusal was even tried — and threats you don\'t mean erode the ones you do'],
+          ['(Join in with a mild roast of your own so that it stays friendly)', 'participation IS endorsement, however gentle the line'],
         ] as [string, string, ErrorTag?][],
       },
       {
         setup: 'An online "friend" of two weeks asks for a photo you\'re not comfortable sharing, "to prove you trust me".',
         correct: '"No. And asking again ends the conversation." (Then tell a trusted adult if it continues.)',
         bads: [
-          ['"Not yet — maybe when we\'ve talked longer."', '"not yet" schedules a future yes; discomfort deserves a full no'],
-          ['"Why would you even want that? What\'s wrong with you?"', 'debating motives opens a negotiation; the ask itself is the problem'],
-          ['(Block instantly and tell no one)', 'blocking is right — telling no one leaves you carrying it alone, and adults exist for exactly this'],
+          ['"Not yet — maybe once we have been talking for a good while longer."', '"not yet" schedules a future yes; discomfort deserves a full no'],
+          ['"Why would you even want something like that? What is wrong with you?"', 'debating motives opens a negotiation; the ask itself is the problem'],
+          ['(Block them instantly, delete the messages, and do not tell anybody at all about it)', 'blocking is right — telling no one leaves you carrying it alone, and adults exist for exactly this'],
         ] as [string, string, ErrorTag?][],
       },
     ] as const)
@@ -359,9 +359,9 @@ const interleaving = tpl(
         q: 'Two study plans for three solve-methods (factoring, square roots, formula): AAABBBCCC vs interleaved ABCACBCAB. A test two weeks later mixes all three. Which plan predicts better test performance, and why?',
         correct: 'Mixed — the test\'s real task is choosing the method, and only mixing practices the choosing',
         bads: [
-          ['Blocked — it felt smoother, and smooth practice means strong learning', 'fluency during practice is the classic false signal; the smoothness comes from already knowing which method applies'],
-          ['Blocked — switching wastes time that could be spent drilling', 'the "wasted" switching is the retrieval the test will demand'],
-          ['They are equal if total time matches', 'time matched, demands differ: one practices execution only, the other execution plus selection'],
+          ['Blocked — the whole thing felt smoother, and smooth practice means strong learning', 'fluency during practice is the classic false signal; the smoothness comes from already knowing which method applies'],
+          ['Blocked — switching around wastes time that could be spent drilling', 'the "wasted" switching is the retrieval the test will demand'],
+          ['They come out equal as long as the total time matches', 'time matched, demands differ: one practices execution only, the other execution plus selection'],
         ] as [string, string, ErrorTag?][],
       },
       {
@@ -377,9 +377,9 @@ const interleaving = tpl(
         q: 'When is BLOCKED practice actually the right call?',
         correct: 'In the first minutes with a brand-new skill, before mixing anything',
         bads: [
-          ['Never — mixing is always better', 'a skill you cannot yet execute once has nothing to interleave'],
-          ['Whenever the test is more than a week away', 'distance to the test favors MORE mixing, not less'],
-          ['When the skills being practiced are easily confused', 'confusable skills are exactly where mixing pays most — it forces the discrimination'],
+          ['Never — mixing them is always the better option', 'a skill you cannot yet execute once has nothing to interleave'],
+          ['Whenever the test is still more than a week away', 'distance to the test favors MORE mixing, not less'],
+          ['When the skills that are being practiced are easily confused', 'confusable skills are exactly where mixing pays most — it forces the discrimination'],
         ] as [string, string, ErrorTag?][],
       },
       {
@@ -387,8 +387,8 @@ const interleaving = tpl(
         correct: 'Mix anyway — the final and real use are mixed, and the quiz cost is small',
         bads: [
           ['Block for the quiz, then re-block before the final', 're-blocking never practices selection, which is what the final tests'],
-          ['Mixing is only for math, so it does not apply here', 'interleaving evidence spans categories from math to art styles'],
-          ['Block everything; use the saved time for rereading', 'rereading is among the weakest strategies measured'],
+          ['Mixing is only for maths, so it does not really apply here', 'interleaving evidence spans categories from math to art styles'],
+          ['Block absolutely everything, and use the time you save for rereading', 'rereading is among the weakest strategies measured'],
         ] as [string, string, ErrorTag?][],
       },
     ] as const)
@@ -452,9 +452,9 @@ const effectSize = tpl(
       rng,
       `Probably real but too small to matter — judge the SIZE, not just the certainty`,
       [
-        ['Fake — a difference that small must be chance', `with n = ${n.toLocaleString()}, even tiny true differences are detected reliably; small ≠ chance`, 'concept'],
-        ['Important — a proven difference is a difference worth acting on', 'statistical detectability and practical importance are different questions; this conflates them', 'concept'],
-        ['Impossible to say anything without the raw data', 'the two numbers given — effect size and sample size — are exactly the ones needed for this judgment', 'incomplete'],
+        ['Fake — a difference that small has to be down to chance alone', `with n = ${n.toLocaleString()}, even tiny true differences are detected reliably; small ≠ chance`, 'concept'],
+        ['Important — a difference this well established is always worth acting on', 'statistical detectability and practical importance are different questions; this conflates them', 'concept'],
+        ['Impossible to say anything useful at all without seeing the raw data', 'the two numbers given — effect size and sample size — are exactly the ones needed for this judgment', 'incomplete'],
       ],
     )
     return {
@@ -491,9 +491,9 @@ const confoundHunt = tpl(
         fix: 'Note laptop use and visit purpose FIRST, then compare within each group',
         confound: 'remote workers both order trend drinks and camp for hours — the drink is a marker, not a motor',
         bads: [
-          ['Offer free oat milk for a week and watch stay times', 'the freebie changes who shows up — a new confound replaces the old', 'inference'],
-          ['Interview oat-milk drinkers about their plans', 'self-reports of the confound do not remove it from the comparison', 'inference'],
-          ['Track stay times across more cafes', 'replicating a confounded design replicates its confound', 'inference'],
+          ['Offer free oat milk for a week and watch what happens to stay times', 'the freebie changes who shows up — a new confound replaces the old', 'inference'],
+          ['Interview the oat-milk drinkers about what they are planning to do', 'self-reports of the confound do not remove it from the comparison', 'inference'],
+          ['Track how long customers stay across a much larger number of cafes', 'replicating a confounded design replicates its confound', 'inference'],
         ] as [string, string, ErrorTag?][],
       },
       {
@@ -501,9 +501,9 @@ const confoundHunt = tpl(
         fix: 'Loan standard and premium rackets at random within a skill tier and count wins',
         confound: 'serious players buy premium gear AND practice more — spending tracks dedication',
         bads: [
-          ['Compare win rates only among players who can afford the racket', 'affordability was never the confound; dedication was'],
-          ['Ask premium owners whether the racket helps', 'owners who paid are the last people who can judge it neutrally'],
-          ['Check whether winners recommend the racket', 'reverses the question and keeps the tangle'],
+          ['Compare win rates only among the players who can afford the premium racket', 'affordability was never the confound; dedication was'],
+          ['Ask the premium racket owners whether they think that it helps them', 'owners who paid are the last people who can judge it neutrally'],
+          ['Check whether the winning players recommend the racket afterwards', 'reverses the question and keeps the tangle'],
         ] as [string, string, ErrorTag?][],
       },
       {
@@ -511,9 +511,9 @@ const confoundHunt = tpl(
         fix: 'Randomly offer lessons to half a waitlist and compare growth',
         confound: 'families that buy lessons differ in a dozen vocabulary-relevant ways',
         bads: [
-          ['Control for family income statistically', 'income is one thread of many; adjustment cannot name them all'],
-          ['Compare musical vs non-musical siblings', 'closer, but which sibling gets lessons is still a choice made for reasons'],
-          ['Find more studies with the same design', 'a stack of confounded studies is a taller confounded study'],
+          ['Control for family income statistically in the analysis', 'income is one thread of many; adjustment cannot name them all'],
+          ['Compare the musical siblings against the non-musical ones', 'closer, but which sibling gets lessons is still a choice made for reasons'],
+          ['Find some more studies that use exactly the same design', 'a stack of confounded studies is a taller confounded study'],
         ] as [string, string, ErrorTag?][],
       },
     ] as const)
@@ -663,36 +663,36 @@ const invariantSpot = tpl(
         code: 'let sum = 0;\nfor (let i = 0; i < arr.length; i++) {\n  sum += arr[i];\n}',
         correct: 'After each pass: sum equals the total of the first i elements processed',
         bads: [
-          ['`sum` equals the total of the whole array at every step', 'only true at the END — an invariant must hold every iteration'],
-          ['`i` is always less than the array length inside the loop body', 'true, but it is the loop CONDITION, and it says nothing about what sum means'],
-          ['`sum` is always positive', 'false with negative elements — and never the point'],
+          ['`sum` equals the total of the entire array at every single step', 'only true at the END — an invariant must hold every iteration'],
+          ['`i` is always less than the array length inside of the loop body', 'true, but it is the loop CONDITION, and it says nothing about what sum means'],
+          ['`sum` is always a positive number at every step', 'false with negative elements — and never the point'],
         ] as [string, string, ErrorTag?][],
       },
       {
         code: 'let best = arr[0];\nfor (let i = 1; i < arr.length; i++) {\n  if (arr[i] > best) best = arr[i];\n}',
         correct: 'After each pass: best is the largest of the elements examined so far',
         bads: [
-          ['`best` is the largest element of the array throughout', 'only guaranteed after the FINAL pass', 'concept'],
-          ['`best` only changes on the first iteration', 'best changes whenever a new maximum appears', 'concept'],
-          ['`arr[i]` is always greater than `best`', 'usually false — that is the condition being TESTED, not maintained', 'concept'],
+          ['`best` is the largest element in the whole array all the way through', 'only guaranteed after the FINAL pass', 'concept'],
+          ['`best` only ever changes on the very first iteration', 'best changes whenever a new maximum appears', 'concept'],
+          ['`arr[i]` is always greater than `best` on every pass', 'usually false — that is the condition being TESTED, not maintained', 'concept'],
         ] as [string, string, ErrorTag?][],
       },
       {
         code: 'let lo = 0, hi = arr.length - 1; // arr is sorted\nwhile (lo <= hi) {\n  const mid = Math.floor((lo + hi) / 2);\n  if (arr[mid] === target) return mid;\n  if (arr[mid] < target) lo = mid + 1;\n  else hi = mid - 1;\n}',
         correct: 'If target is in the array, it always lies between positions lo and hi',
         bads: [
-          ['`mid` is always the exact middle of the whole array', 'mid is the middle of the CURRENT window, which shrinks'],
-          ['`arr[lo]` is always less than `arr[hi]`', 'can fail as the window narrows to one element'],
-          ['The loop always runs log(n) times exactly', 'that is its cost ceiling, not a truth maintained each pass'],
+          ['`mid` is always the exact middle of the whole array every time', 'mid is the middle of the CURRENT window, which shrinks'],
+          ['`arr[lo]` is always less than `arr[hi]` at every step', 'can fail as the window narrows to one element'],
+          ['The loop always runs exactly log(n) times, every single time', 'that is its cost ceiling, not a truth maintained each pass'],
         ] as [string, string, ErrorTag?][],
       },
       {
         code: 'let open = 0;\nfor (const ch of text) {\n  if (ch === "(") open++;\n  if (ch === ")") open--;\n  if (open < 0) return false;\n}\nreturn open === 0;',
         correct: 'open always equals unmatched "(" seen so far — and dipping negative means a ")" arrived with nothing to close',
         bads: [
-          ['`open` counts all parentheses of either kind', 'it counts the DIFFERENCE, which is why zero at the end means balanced'],
-          ['`open` is always at least 1 inside the loop', 'open starts at 0 and legitimately returns to 0 after each balanced pair'],
-          ['The function returns true whenever the text contains "()"', 'the check is global balance, not the presence of one pair'],
+          ['`open` counts up all of the parentheses, of either kind', 'it counts the DIFFERENCE, which is why zero at the end means balanced'],
+          ['`open` is always at least 1 at every point inside the loop body', 'open starts at 0 and legitimately returns to 0 after each balanced pair'],
+          ['The function returns true whenever the text contains "()" anywhere inside it, at any position at all', 'the check is global balance, not the presence of one pair'],
         ] as [string, string, ErrorTag?][],
       },
     ] as const)

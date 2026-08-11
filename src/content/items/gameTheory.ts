@@ -315,9 +315,9 @@ const coordination = tpl(
       title: 'Coordination, not conflict',
       prompt: `${p.story.charAt(0).toUpperCase() + p.story.slice(1)} — you both do well only if you pick the SAME option.\n\n${matrix(p.row, p.row, row, col)}\n\nWhat does this situation actually require?`,
       answer: mcq(rng, 'Communication, since two arrangements are equally stable and the only real risk is mismatching', [
-        'A stronger negotiating position, since one of the two sides has to give way before the other one can be satisfied',
-        'A careful probability estimate, since the payoffs here reward whichever side predicts the other one most accurately',
-        'Nothing much, since both sides already want the same outcome and will therefore tend to arrive at it on their own',
+        'A stronger negotiating position, since one of the two sides has to give way first',
+        'A careful probability estimate, since the payoffs reward predicting the other side accurately',
+        'Nothing much, since both sides already want the same outcome in the end anyway',
       ]),
       hints: [
         'Check both matching cells for stability. Does either side want to move alone from them?',
@@ -672,9 +672,9 @@ const playFirst = tpl(
           stage: 'Commit',
           prompt: 'Before any analysis: which do you choose, and on what grounds? Pick the reasoning that matches your decision.',
           answer: mcq(rng, `Take — whatever they do, taking pays me more (${T} beats ${R}, and ${P} beats ${S})`, [
-            `Split — if we both do it we each get ${R}, which is better than the ${P} we get by both taking`,
-            `Split — taking risks ending up with very little if they happen to take as well, so it is safer`,
-            `Take — the ${T} payoff is the largest single number available anywhere in the description`,
+            `Split — we each get ${R}, which is better than the ${P} we get by both taking`,
+            `Split — if they also take, I end up with very little, so this is safer`,
+            `Take — the ${T} payoff is the largest single number on the board`,
           ]),
           hints: [
             'Hold their choice fixed, one case at a time. If they Split, what do each of your options pay?',

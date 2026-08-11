@@ -2574,17 +2574,9 @@ unnecessary.
    chance. An average concealing what it averages over — the exact lesson
    `explore-spread` teaches, which made it an uncomfortable one to find.
 
-| bucket | before | after |
-| --- | --- | --- |
-| insight | 62% | **35%** |
-| strategist | 47% | 47% |
-| science | 44% | 43% |
-| observer | 43% | 44% |
-
-Insight was rewritten (distractors elaborated to match, which also makes them
-better distractors); the rest are queued. `BUCKET_CEILING` is now a per-bucket
-ratchet set at today's measured values — lower them as content improves, never
-raise one to make a test pass. Chance is 25% and that is where they belong.
+Insight was rewritten first (distractors elaborated to match, which also makes
+them better distractors) and the rest queued behind a per-bucket ratchet. Both
+the number and the ratchet turned out to be wrong; see §38a.
 
 **The rest, each real.** A paused session was destroyed by starting another
 (single draft slot, silent loss — now names the clash rather than guessing, the
@@ -2601,6 +2593,82 @@ than diagnoses — "kinda obvious", "kinda broken" — and both were correct abo
 a mechanism the reporter could not see. Written into CLAUDE.md: verify before
 fixing, treat confusion as a defect in the app, and do not discount a vague
 report. Measurement is how a feeling becomes a bug.
+
+### 38a. The length cue, measured against the right baseline (2026-08-10)
+
+Finishing §38's second finding turned up a worse problem than the one being
+fixed: **the measurement was wrong**, and it was wrong in the direction that
+hides defects.
+
+**The baseline error.** The gate compared the hit rate against `1/k` averaged
+over EVERY option set. That is not the null. A set whose four options are all
+the same length can never be cued in either direction, so under the null it
+contributes zero — not 0.25. Only sets containing a clear length outlier can be
+cued at all, and for those the null probability that the key is the outlier is
+1/k. Summing `1/k` over just those sets is the expectation.
+
+The difference is not cosmetic. Science read 26% and was called "at chance";
+against the real null of 8% it had an excess of 38 checkpoints. Every "at
+chance" reading in §38's table was similarly inflated, and the `BUCKET_CEILING`
+ratchet built on top of it was calibrated against a number that meant nothing.
+
+A cue is only visible if a learner can see it, so "outlier" requires BOTH a 15%
+relative lead and an 8-character absolute gap. Without the second test the
+metric flagged `o-scene-recall`, whose options are "Two/Three/Four/Five": five
+characters against four is a 25% lead and invisible.
+
+**Measured before and after, observed against expected.** Excess is
+observed − expected, in checkpoints; a healthy bucket sits at or below zero.
+
+| bucket | sets | longest-is-key before | after | expected |
+| --- | --- | --- | --- | --- |
+| insight | 107 | 39 (+28.8) | 4 (+2.5) | 1.5 |
+| meta | 132 | 48 (+34.2) | 0 (−2.1) | 2.1 |
+| investigator | 215 | 60 (+39.0) | 8 (0.0) | 8.0 |
+| science | 212 | 55 (+38.0) | 4 (−0.5) | 4.5 |
+| observer | 138 | 31 (+17.5) | 1 (−2.0) | 3.0 |
+| strategist | 133 | 66 (+61) † | 1 (−1.3) | 2.3 |
+| coding | 59 | 16 (+10.8) | 1 (−1.0) | 2.0 |
+| math | 774 | 81 (+29.3) | 32 (−9.9) | 41.9 |
+| physics | 72 | 6 (−1.0) | 6 (−1.0) | 7.0 |
+
+† strategist's "before" is the pre-fix reading from §38's naive metric; the
+expected-value figure was not captured before the first edits landed.
+
+**What the rewrites actually were.** Almost never shortening the key. The
+recurring shape is a right answer that carries its qualifier ("keep all three
+live, *because* …") against distractors written as one-line dismissals. The fix
+is to give each distractor the same procedural texture while keeping its
+specific flaw — an elaborate bad plan is both length-matched AND a harder,
+more realistic discrimination than a terse one. Three cases needed the reverse:
+`h-influence-firewall` and `path-h-pressure-defense` name a technique in four
+words while the distractors described theirs in a sentence, so the distractors
+were compressed to labels.
+
+One case was not about words at all. `studio-program-build` pretty-printed the
+correct implementation across seven lines and left the three wrong ones as
+one-liners — the key was identifiable from block shape before reading a token.
+All four are now formatted identically; measured in the running app, the four
+option buttons render at 67px each.
+
+**A second, weaker cue is now visible and is being left alone.** Across every
+bucket the key is almost never the SHORTEST option (math: 14 observed against
+43 expected). "Never pick the shortest" eliminates one option on the ~6% of
+sets that have a clear-shortest outlier — worth roughly a point bank-wide,
+against the ~18 points the longest-answer cue was worth. Chasing it would mean
+padding terse-but-correct answers, which costs more in readability than it buys
+in validity. Recorded rather than fixed.
+
+**The gate now in place** (`contentAudit.test.ts`) checks observed-minus-
+expected per bucket, in both directions, capped at 5% of that bucket's sets.
+Unlike the ratchet it replaces, it needs no hand-tuned constants: expectation
+is computed from the same option sets being judged, so it cannot drift.
+
+**Method note for the next hunt.** The reason this took two passes is that the
+first metric was validated against intuition ("25% is chance, so 24% is fine")
+instead of against a simulation of the null. Any "is this above chance?"
+question in this codebase should compute chance from the actual data, not from
+the number of options.
 
 **Licensing unchanged from §25**: Brilliant, IXL, DeltaMath, Alcumus, Beast and
 Math Academy are proprietary. Nothing here is text, artwork, a scoring constant

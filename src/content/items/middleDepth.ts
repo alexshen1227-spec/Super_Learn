@@ -267,9 +267,9 @@ const trendPredict = tpl(
       rng,
       `Not trustworthy — ${far} is far outside the data, and the straight-line pattern may not continue`,
       [
-        [`${m * far + b} ${c.unit}, exactly as the line says`, 'the arithmetic is right but the LINE has no evidence out there — extrapolation is the trap', 'inference'],
-        [`Trustworthy, because the line fit the data well`, 'good fit inside the range says nothing about behavior far outside it', 'inference'],
-        [`Not trustworthy, because best-fit lines only work at the exact measured points`, 'too strict the other way — interpolation between observed points is legitimate', 'inference'],
+        [`${m * far + b} ${c.unit} exactly, which is what the fitted line says it should be`, 'the arithmetic is right but the LINE has no evidence out there — extrapolation is the trap', 'inference'],
+        [`Trustworthy, because the line happened to fit the measured data well`, 'good fit inside the range says nothing about behavior far outside it', 'inference'],
+        [`Not trustworthy, because a best-fit line only ever works at the exact measured points`, 'too strict the other way — interpolation between observed points is legitimate', 'inference'],
       ],
     )
     return {

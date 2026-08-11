@@ -435,9 +435,9 @@ const commitmentIdea = tpl(
       title: 'Commitment',
       prompt: `${c.text}\n\nWhy might deliberately removing your own options be an advantage here?`,
       answer: mcq(rng, c.correct, [
-        'It is never an advantage — more options are always better',
-        'It hides information from the other side',
-        'It makes the other side feel guilty enough to agree',
+        'It is never an advantage of any kind, because having more options is always better',
+        'It hides useful information from the other side of the table',
+        'It makes the other side feel guilty enough to agree to whatever it is',
       ]),
       hints: [
         'Normally more choices are better. Ask what changes when the OTHER side can see which choices you no longer have.',

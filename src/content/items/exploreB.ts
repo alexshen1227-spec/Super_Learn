@@ -358,7 +358,7 @@ const exploreOutlier = tpl(
         }),
         part('Predict', {
           prompt: `Nine people are in a room. Eight earn about £25,000 a year; the ninth earns £10 million. Which describes a **typical** person in that room better?`,
-          answer: mcq(rng, 'The median, because it is not dragged by the one extreme salary', [
+          answer: mcq(rng, 'The median, because it is not dragged upward by the one extreme salary', [
             'The mean, because it uses all nine salaries rather than throwing information away',
             'Neither — with an extreme value present, no single number can be used at all',
             'The mean, because with nine people the sample is large enough for it to settle down',
