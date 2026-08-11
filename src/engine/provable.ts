@@ -18,7 +18,7 @@
  * CONTENT, is the app's fault rather than the learner's, and is exactly the
  * signal that should decide what gets imported next.
  */
-import type { ItemTemplate } from '../domain/types'
+import type { AttemptEvent, ItemTemplate } from '../domain/types'
 import { BURNED_TEMPLATE_IDS } from '../content/burned'
 import { formsRequired } from './mastery'
 
@@ -72,4 +72,57 @@ export function poolPressure(index: IndexLike, skillIds: Iterable<string>): Pool
  */
 export function isProvable(index: IndexLike, skillId: string, bucket: string): boolean {
   return cleanPool(index, skillId).length >= formsRequired(bucket)
+}
+
+/**
+ * How often the planner had to serve a template again too soon.
+ *
+ * The planner prefers a rested template and falls back to a stale one rather
+ * than skip a due review, so a forced repeat is never a scheduling bug — it is
+ * the pool being too thin to honour the gap. Counting them turns "practice
+ * feels repetitive" into a number, per skill, that says which content to add.
+ *
+ * Derived from the event log alone, so it reflects what actually happened
+ * rather than what the planner intended.
+ */
+export interface CooldownPressure {
+  skillId: string
+  bucket: string
+  /** Families tagged here that can still carry unaided evidence. */
+  cleanPool: number
+  /** Attempts in the window that repeated a template inside the minimum gap. */
+  forcedRepeats: number
+  /** Graded attempts on this skill in the window. */
+  attempts: number
+}
+
+export function cooldownPressure(
+  events: readonly AttemptEvent[],
+  index: IndexLike,
+  now: number,
+  opts: { windowDays?: number; gapDays?: number } = {},
+): CooldownPressure[] {
+  const windowMs = (opts.windowDays ?? 90) * 86_400_000
+  const gapMs = (opts.gapDays ?? 1) * 86_400_000
+  const lastSeen = new Map<string, number>()
+  const rows = new Map<string, { forced: number; attempts: number; bucket: string }>()
+  for (const e of [...events].sort((a, b) => a.t - b.t)) {
+    const prev = lastSeen.get(e.templateId)
+    lastSeen.set(e.templateId, e.t)
+    if (e.t < now - windowMs) continue
+    const forced = prev !== undefined && e.t - prev <= gapMs
+    for (const s of e.skillIds) {
+      const row = rows.get(s) ?? { forced: 0, attempts: 0, bucket: e.bucket }
+      row.attempts++
+      if (forced) row.forced++
+      rows.set(s, row)
+    }
+  }
+  const out: CooldownPressure[] = []
+  for (const [skillId, row] of rows) {
+    if (!row.forced) continue
+    out.push({ skillId, bucket: row.bucket, cleanPool: cleanPool(index, skillId).length, forcedRepeats: row.forced, attempts: row.attempts })
+  }
+  // Worst first: most forced repeats, then thinnest pool.
+  return out.sort((a, b) => b.forcedRepeats - a.forcedRepeats || a.cleanPool - b.cleanPool)
 }

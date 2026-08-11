@@ -44,6 +44,7 @@ import {
   dailyRoute,
   dailyTemplateScore,
   exploreExhausted,
+  isExploreTemplate,
   type TemplateCoverage, withoutTooEarlyNonRoutine, withoutTemplates,} from './plannerPolicy'
 
 export interface PlannerContext {
@@ -116,6 +117,32 @@ export function prereqLeverage(
     if (stateRank(evidenceFor(evidence, s.id).state) < stateRank('independent')) n++
   }
   return n
+}
+
+/**
+ * Namespaced so one set can carry both "this exact question" and "this
+ * template at all" — the file already keeps two key shapes in here.
+ */
+export const templateKey = (templateId: string) => `tpl:${templateId}`
+
+/**
+ * The shortest gap the planner leaves between two servings of one template,
+ * in days, unless honouring it would mean skipping a due review.
+ *
+ * Never a hard block. `pickTemplates` falls back to the full pool when the
+ * cooldown would leave nothing, because a due review has to happen even if
+ * every way of testing it is stale — skill spacing is the retention
+ * mechanism and it outranks this.
+ *
+ * See RESEARCH.md §37j: penalising repetition inside the SCORER was measured
+ * and rejected, because it scattered attempts and cost owned skills. A floor
+ * that steps aside for a due review is a different shape.
+ */
+export const MIN_TEMPLATE_GAP_DAYS = 1
+
+/** Served so recently that a repeat tests recall of the answer, not the skill. */
+function onCooldown(use: TemplateCoverage | undefined, gapDays: number): boolean {
+  return use !== undefined && use.daysSince <= gapDays
 }
 
 function recentlyUsedForms(events: AttemptEvent[], now: number): Set<string> {
@@ -311,7 +338,24 @@ function pickTemplates(
     // Without this a struggling learner was served ONE diagram 45 times in a
     // simulated year while never meeting the other fourteen.
     .filter((t) => !exploreExhausted(t.id, templateUse.get(t.id)))
-  const scored = pool
+  // Cooldown, applied as a PREFERENCE. Anything served today, yesterday or
+  // already planned into this session steps aside — but only while something
+  // else can take its place. An empty pool falls straight back to the full
+  // one, so a due review is never skipped for freshness.
+  // A THREE-STAGE degrade, because collapsing straight from "rested" to
+  // "anything" reintroduced same-session duplicates by the back door. Each
+  // stage is only reached when the one above it is empty, so a due review is
+  // still never skipped — it just exhausts the better options first.
+  const notThisSession = pool.filter((t) => !opts.used?.has(templateKey(t.id)))
+  const rested = notThisSession.filter((t) => !onCooldown(templateUse.get(t.id), MIN_TEMPLATE_GAP_DAYS))
+  // The fallback exists so a due REVIEW is never skipped. Exposure makes no
+  // such claim: an unserved diagram costs nothing, while a repeated one is
+  // just a re-read. So diagrams stay filtered out of every degraded stage —
+  // without this, the extra variety the cooldown created pushed one diagram
+  // to 11 servings against a soft cap of 3.
+  const degrade = (list: ItemTemplate[]) => list.filter((t) => !isExploreTemplate(t.id) || rested.includes(t))
+  const pickable = rested.length ? rested : notThisSession.length ? degrade(notThisSession) : degrade(pool)
+  const scored = pickable
     .map((t) => ({
       t,
       score:
@@ -748,6 +792,10 @@ function act(t: ItemTemplate, mode: AttemptMode, used: Set<string>): PlannedActi
   const seed = pickSeed(t, used)
   used.add(`${t.id}:${seed}`)
   used.add(`${t.id}:${seed % Math.max(1, t.variants)}`)
+  // TEMPLATE-level too, not only form-level. `used` tracked `id:seed`, so a
+  // generator with 24 variants could legally fill a whole session with itself:
+  // measured at 252 same-session duplicates over a simulated learner-year.
+  used.add(templateKey(t.id))
   return { templateId: t.id, seed, mode }
 }
 
@@ -822,6 +870,7 @@ export function buildExtensionBlock(
       if (!t) continue
       used.add(`${a.templateId}:${a.seed % Math.max(1, t.variants)}`)
       seenTemplates.add(a.templateId)
+      used.add(templateKey(a.templateId))
       for (const s of t.skillIds) if (!seenSkills.includes(s)) seenSkills.push(s)
     }
   }
@@ -1073,8 +1122,16 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     // Two due skills can name the same family; without this the second one
     // re-serves the identical question.
     if (formsExhausted(template, used)) continue
+    // The same twelve-hour rest the skill-level path below enforces. This loop
+    // reviews a due FAMILY and never checked it, so a skill retrieved three
+    // hours ago could come straight back through this door — which is massing
+    // wearing a spacing badge, and the reason MIN_REVIEW_GAP_MS exists.
+    if (retriedTooSoon(evidence, f.skillId, now)) continue
     if (!warmFits(template.minutes)) continue
-    coveredSkills.add(f.skillId)
+    // A template listing several skills REVIEWS all of them. Marking only the
+    // one that triggered it left the others still "due", and the next loop
+    // served the same question again for the second skill.
+    for (const s of template.skillIds) coveredSkills.add(s)
     warmActs.push(act(template, 'review', used))
     warmMin += template.minutes
     warmSkills.push(index.skills.get(f.skillId)?.name ?? f.skillId)
@@ -1094,7 +1151,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       { easing, used },
     )
     if (picks.length && warmFits(picks[0].minutes)) {
-      coveredSkills.add(d.skillId)
+      for (const s of picks[0].skillIds) coveredSkills.add(s)
       warmActs.push(act(picks[0], 'review', used))
       warmMin += picks[0].minutes
       warmSkills.push(index.skills.get(d.skillId)?.name ?? d.skillId)

@@ -321,6 +321,16 @@ export function stabilityFactor(reviewSuccesses: number, lapses: number): number
  * a written artifact) and therefore produces no evidence, however good the
  * work was. Self-assessment guides the plan; it never advances a skill.
  */
+/**
+ * A repeat this soon is the same QUESTION, not the same skill.
+ *
+ * Matches the planner's `MIN_TEMPLATE_GAP_DAYS`, deliberately: the planner
+ * avoids serving a template inside this window, so an attempt that lands
+ * inside it happened because nothing fresh existed — the pool was too thin.
+ * The learner should not be credited with retention for the app's shortage.
+ */
+const RECYCLED_GAP_MS = 1 * 86_400_000
+
 function isFirstUnaidedSuccess(e: AttemptEvent): boolean {
   if (e.hintLevel > 0) return false
   if (isBurned(e)) return false
@@ -398,7 +408,17 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
     // change of question, not a change of digits.
     const formKey = e.mode === 'placement' ? 'placement' : e.templateId
     // Retention: a later unaided success ≥48h after the previous success.
+    //
+    // RECYCLED attempts are excluded. If this exact template was answered
+    // within the planner's minimum gap, a correct answer now may be recall of
+    // that specific question rather than of the skill — and retention is the
+    // one number this app exists to produce, so it gets the strictest rule.
+    // The attempt still counts as independence and still schedules review; it
+    // just cannot be the thing that says "this survived".
+    const priorOnThisTemplate = tr.forms.get(e.templateId)?.lastAttemptAt ?? 0
+    const recycled = priorOnThisTemplate > 0 && e.t - priorOnThisTemplate <= RECYCLED_GAP_MS
     if (
+      !recycled &&
       tr.independentForms.size >= required &&
       tr.lastCorrectAt !== null &&
       e.t - tr.lastCorrectAt >= RETENTION_GAP_MS &&

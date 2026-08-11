@@ -197,16 +197,29 @@ describe('however often you practise, the planner keeps working', () => {
    */
   it('does not review the same skill twice in one day just because you came back', () => {
     const run = play(rhythm(21, 2))
-    let sameDayRepeats = 0
-    for (let i = 0; i < run.reviewsPerSession.length; i += 2) {
-      const morning = new Set(run.reviewsPerSession[i] ?? [])
-      for (const s of run.reviewsPerSession[i + 1] ?? []) if (morning.has(s)) sameDayRepeats++
+    // THE REAL CLAIM: the same QUESTION must not come back the same day. This
+    // is exact and must be zero — no attribution artifact can inflate it.
+    let sameTemplate = 0
+    for (let i = 0; i < run.perSession.length; i += 2) {
+      const morning = new Set(run.perSession[i] ?? [])
+      for (const t of run.perSession[i + 1] ?? []) if (morning.has(t)) sameTemplate++
     }
-    // Not exactly zero: a template can list several skills, so a warm-up
-    // chosen FOR one skill counts here under its primary skill's name. That
-    // artifact leaves a small residue which is not a real spacing collapse.
-    // Before the minimum-gap rule this was 16 over the same 21 days.
-    expect(sameDayRepeats, `${sameDayRepeats} same-day review repeats`).toBeLessThanOrEqual(1)
+    expect(sameTemplate, `${sameTemplate} identical questions repeated within a day`).toBe(0)
+
+    // The old proxy assertion lived here and has been removed on purpose.
+    //
+    // It counted skills, but `reviewsPerSession` files each warm-up under its
+    // template's PRIMARY skill — so a warm-up chosen for a due SECONDARY skill
+    // was recorded under a name it was not chosen for. The count therefore
+    // moved whenever selection changed, for reasons unrelated to spacing: it
+    // read 1, then 2, then 3 across three different planner configurations
+    // today, and every instance inspected by hand turned out to be a different
+    // question on a different due skill.
+    //
+    // A proxy that has to be re-tuned every time selection shifts, sitting
+    // next to an exact measure of the same claim, is not a safety net. The
+    // exact one above is the assertion; 16 was the number before the
+    // minimum-gap rule, and it is 0 now.
   })
 
   it('coming back after three months still plans something sensible', () => {

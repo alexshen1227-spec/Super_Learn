@@ -13,7 +13,31 @@ Last reviewed: 2026-08-10.
 
 ## Committed to, not yet built
 
-### 5. Item cooldown
+### 5. Item cooldown — PARTLY DONE
+Shipped: template-level repeat tracking, a three-stage degrade that never
+skips a due review, the twelve-hour rest applied to the family warm-up path,
+`cooldownPressure()`, and retention no longer counting a repaired repeat.
+
+NOT shipped, deliberately: "never the same template twice in a session" as an
+absolute rule, and the 30-day window. Measured over simulated years:
+
+| config | owned @85% | owned @55% |
+| --- | --- | --- |
+| baseline | 67 | 45 |
+| cap 1 | 69 | 41 |
+| cap 1 + repeat-if-well-fitted | 72 | **38** |
+| cap 2 + repeat-if-well-fitted | 68 | **31** |
+
+Every version that reduced repetition cost a STRUGGLING learner owned skills —
+RESEARCH.md §37j re-derived. The cap-1 variants also pushed one diagram to 11
+servings against a soft cap of 9, cause not found. The measured cap of 2
+stands.
+
+Worth revisiting IF the thin pools get filled by step 6: the trade exists
+because there is not enough content at the right difficulty, so importing may
+dissolve it rather than balance it.
+
+### 5b. Original cooldown spec, for reference
 Suppress recently-seen problems without ever blocking a due skill review.
 Keys on TEMPLATE, not variant. Target 30 days, configurable. Hard floor:
 never the same template twice in a session or on consecutive days.
