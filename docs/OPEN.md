@@ -52,7 +52,32 @@ difficulty, and how often the window could not be honoured. `poolPressure()`
 in `provable.ts` already does the burned-item half of this and is the natural
 place for it.
 
-### 6. Curation, not generation
+### 6. Curation — PARTLY DONE
+Shipped: `scripts/import-openstax.mjs`, 30 verified items from OpenStax
+*Statistics* (CC BY 4.0), and a per-book licence survey of the OpenStax
+catalogue (129 books: 46 CC BY, 72 CC BY-NC-SA, 11 unstated). First editions
+are CC BY and second editions are NC-SA — verified, not assumed.
+
+Yield was deliberately low: 1,929 exercises down to 30. Only bare-numeric
+solutions with self-contained problem text survive, because that is the subset
+where a misaligned parse is detectable.
+
+Result: skills below the independence bar 23 to 21; fully blocked 6 to 4.
+`s-hypo`, `s-corr` and `m-sampling` are fixed.
+
+STILL BLOCKED, and not fixable from this source: `i-abduce`, `c-decomp`,
+`i-commit`, `x-stuck`. The thinnest pools are reasoning skills — abduction,
+commitment, decomposition, working while stuck — and no openly licensed
+statistics or algebra text contains problems about them. This is the central
+obstacle to finishing step 6: the abundant CC BY sources serve pools that are
+already healthy, and the starved pools have no obvious open source at all.
+
+Next options, roughly by promise: OpenStax *Introductory Business Statistics*
+and the CC BY algebra titles for more maths depth; pre-1930 public domain
+logic and puzzle texts for `i-abduce`; accepting that `x-stuck` and `c-decomp`
+may have to stay generator-backed.
+
+### 6b. Original curation spec, for reference
 Import human-authored problems. CC BY 4.0 and public domain only —
 Illustrative Mathematics FIRST edition (2019–2021; v.360 is CC BY-NC),
 OpenStax verified per book, pre-1930 texts. ShareAlike is refused because this
@@ -126,9 +151,8 @@ cannot be where it is acquired. Accepted, per the fourth tie-breaker.
   already out of the numbers, so there is no urgency — but if one is never
   settled, the attempt is silently discarded forever. Watch whether that
   becomes a way to quietly delete inconvenient evidence.
-- **`ATTRIBUTIONS.md` lists no adapted material** because none has been
-  imported. The audit gate that enforces the licence rule has therefore never
-  fired against a real source.
+- **The licence audit gate now fires against a real source** (OpenStax
+  Statistics, CC BY 4.0). It had never been exercised before this.
 - **The Browser pane intermittently stops compositing**, so screenshots fail
   while every DOM tool keeps working (see CLAUDE.md). Cause unknown; it is a
   pane-visibility problem outside the app.

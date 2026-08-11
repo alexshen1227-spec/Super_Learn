@@ -32,20 +32,30 @@ any template carries a `source` whose licence is not `CC BY 4.0` or
 
 ## Adapted material currently in the bank
 
-**None yet.** Every item in the bank at present is original to this project.
+### Statistics — OpenStax
+- **Author:** OpenStax
+- **Licence:** CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
+- **Source:** https://openstax.org/details/books/statistics
+  (machine-readable at https://github.com/openstax/osbooks-statistics)
+- **Adapted:** yes. Problem text is used verbatim and answers are the book's
+  own printed solutions. Skill tags, difficulty, answer tolerances, hints and
+  explanations were added by this app and are NOT OpenStax's.
+- **Templates:** `os-stat-*` in `src/content/items/imported.ts` (30 items)
+- **How:** `scripts/import-openstax.mjs`, which verifies the downloaded
+  source's licence before writing anything and refuses a non-CC-BY source.
 
-When that changes, each entry belongs here in this form, and the item itself
-must carry a matching `source` field so the credit is visible to the learner
-rather than only to whoever reads this file:
+**Edition matters.** OpenStax licences vary per book, and the pattern is a
+trap: first editions are CC BY 4.0 while second editions are CC BY-NC-SA.
+Measured across their catalogue on 2026-08-11 — 129 books, 46 CC BY, 72
+NC-SA, 11 unstated. "Statistics" is CC BY; "Introductory Statistics 2e",
+"College Algebra 2e", "Elementary Algebra 2e", "Prealgebra 2e",
+"Precalculus 2e", "Algebra 1" and the University Physics volumes are all
+NC-SA and must not be used here.
 
-```
-### <source title>
-- Author: <organisation or person>
-- Licence: CC BY 4.0 · <link to the licence>
-- Source: <link>
-- Adapted: yes/no — <what was changed>
-- Templates: <template ids>
-```
+Only 30 of 1,929 exercises were imported. The pipeline keeps only those whose
+printed solution is a bare number and whose problem text stands alone — the
+subset where a misaligned parse can be detected. A wrong answer key on an app
+built to keep an honest record is worse than having less content.
 
 ## Genres, which are not owned
 
