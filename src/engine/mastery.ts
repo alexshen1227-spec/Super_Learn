@@ -19,6 +19,7 @@
  *  - an unrepaired high-confidence miss (≥80% confidence, wrong) blocks
  *    promotion to independent and flags the skill for review
  */
+import { BURNED_TEMPLATE_IDS } from '../content/burned'
 import type { AttemptEvent, SkillEvidence, SkillState } from '../domain/types'
 import { isPflTemplate } from './pflId'
 
@@ -322,7 +323,24 @@ export function stabilityFactor(reviewSuccesses: number, lapses: number): number
  */
 function isFirstUnaidedSuccess(e: AttemptEvent): boolean {
   if (e.hintLevel > 0) return false
+  if (isBurned(e)) return false
   return e.firstCorrect === true
+}
+
+/**
+ * Was this item's answer in front of the learner before they met it?
+ *
+ * See `content/burned.ts`. Getting one right proves you can recognise
+ * something you have read, which is a different claim from the one this app
+ * exists to make, so a burned success never becomes unaided evidence.
+ *
+ * It falls through to the GUIDED branch rather than to the miss branch: it is
+ * real practice with real spacing, and scoring it as a failure would be as
+ * dishonest in the other direction. A burned WRONG answer is still a miss —
+ * missing a question whose answer you had seen is genuinely informative.
+ */
+export function isBurned(e: Pick<AttemptEvent, 'templateId'>): boolean {
+  return BURNED_TEMPLATE_IDS.has(e.templateId)
 }
 
 function isEventualSuccess(e: AttemptEvent): boolean {
@@ -355,7 +373,7 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
 
   // Ability update. Placement routes rather than proves, and hinted work is
   // not evidence of what this learner can do alone, so neither feeds it.
-  if (e.mode !== 'placement' && e.hintLevel === 0 && Number.isFinite(e.difficulty)) {
+  if (e.mode !== 'placement' && e.hintLevel === 0 && !isBurned(e) && Number.isFinite(e.difficulty)) {
     const expected = 1 / (1 + Math.exp(e.difficulty - tr.ability))
     const k = ABILITY_K / (1 + tr.abilitySamples / ABILITY_K_DECAY)
     tr.ability += k * ((e.firstCorrect === true ? 1 : 0) - expected)

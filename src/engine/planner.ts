@@ -23,6 +23,7 @@ import { ACADEMIC_BUCKETS, BUCKET_BY_ID, ERROR_TAGS } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { difficultyForRate, evidenceFor, stateRank } from './mastery'
 import { effectiveGrade } from './effectiveGrade'
+import { isProvable } from './provable'
 import { dueForms, dueReviews } from './scheduler'
 import { relativeDebt, type AllocationReport } from './allocation'
 import { effectiveAllocation } from './allocationPlus'
@@ -477,7 +478,16 @@ export const STARVED_DEBT = 0.5
 export const STARVED_BOOST = 3.4
 
 /** Placement-cleared material is deprioritised so the frontier moves on. */
-const CAPABLE_PENALTY = 2
+const CAPABLE_PENALTY = 2
+/**
+ * How hard to push the frontier off a skill the content cannot prove.
+ *
+ * Large enough to lose against anything provable, small enough that a bucket
+ * consisting entirely of unprovable skills still plans something rather than
+ * emptying the session.
+ */
+const UNPROVABLE_PENALTY = 4
+
 const CAPABLE_REASON = 'placement already saw this go well, so the next gain is further on'
 
 /**
@@ -601,6 +611,22 @@ export function scoreSkills(
       // while their own chosen track taught two rungs higher.
       const reach = Math.min(skill.gradeBand, effectiveGrade(state.profile) + 1)
       score += Math.max(0, reach - 6) * 0.5
+    }
+    // A skill the CONTENT cannot prove must not park the frontier.
+    //
+    // Independence needs unaided success on `formsRequired` distinct families,
+    // and burned families cannot supply one. A skill with too few clean ones
+    // is never satisfied, so it keeps winning the scoring and the learner
+    // circles it while the rest of the curriculum goes unvisited — coverage in
+    // a simulated year fell from 95 skills to 78 through exactly this. That is
+    // RESEARCH.md §31 arriving by a new route.
+    //
+    // Only once there is guided evidence: the skill is still worth meeting and
+    // still worth practising. What it cannot be is the thing the plan is
+    // organised around, when no amount of work will settle it.
+    if (!isProvable(index, skill.id, skill.bucket) && stateRank(ev.state) >= stateRank('guided')) {
+      score -= UNPROVABLE_PENALTY
+      reasons.push('the app has no unread way left to test this, so it cannot be the focus')
     }
     if (ev.recentMisses > 0) {
       score += 1
