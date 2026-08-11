@@ -41,8 +41,7 @@ import {
   dailyRoute,
   dailyTemplateScore,
   exploreExhausted,
-  type TemplateCoverage,
-} from './plannerPolicy'
+  type TemplateCoverage, withoutTooEarlyNonRoutine,} from './plannerPolicy'
 
 export interface PlannerContext {
   index: ContentIndex
@@ -901,7 +900,13 @@ export function adaptiveSwap(
  * Structure: retrieval warm-up → academic core → rotating lab block → exit.
  */
 export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
-  const { index, evidence, state, now, checkIn } = ctx
+  const { evidence, state, now, checkIn } = ctx
+  // Gate non-routine constructions out of EVERY pool at once rather than at
+  // each of the eight pickers, which is how one of them would eventually get
+  // missed. See `nonRoutineTooEarly`: handing a search problem to someone with
+  // no foothold on the skill is unassisted discovery, the one instructional
+  // move with a negative effect size in the literature.
+  const index = withoutTooEarlyNonRoutine(ctx.index, (s) => evidence.get(s)?.state)
   const rationale: string[] = []
   const blocks: PlannedBlock[] = []
   const alloc = effectiveAllocation(state, evidence, index, now)

@@ -13,6 +13,8 @@
  *  category "0,1,2"; draft → the written text itself (never graded).
  */
 import type { AnswerSpec } from '../domain/types'
+import { gradeConstruct, serializeConstruct, witnessResponse } from './construct'
+import { parseNumeric } from './parseValue'
 
 export interface Verdict {
   ok: boolean
@@ -24,33 +26,7 @@ export interface Verdict {
 
 const WRONG: Verdict = { ok: false, score: 0 }
 
-/** Parse "3/4", "-2 1/2" (mixed), "0.75", "12", "1,200" → number. NaN if unreadable. */
-export function parseNumeric(raw: string): number {
-  const s = raw.trim().replace(/,/g, '')
-  if (!s) return NaN
-  // mixed number: "a b/c" (sign on the whole)
-  const mixed = /^(-?)(\d+)\s+(\d+)\s*\/\s*(\d+)$/.exec(s)
-  if (mixed) {
-    const sign = mixed[1] === '-' ? -1 : 1
-    const whole = Number(mixed[2])
-    const n = Number(mixed[3])
-    const d = Number(mixed[4])
-    if (d === 0) return NaN
-    return sign * (whole + n / d)
-  }
-  const frac = /^(-?\d+(?:\.\d+)?)\s*\/\s*(-?\d+(?:\.\d+)?)$/.exec(s)
-  if (frac) {
-    const d = Number(frac[2])
-    if (d === 0) return NaN
-    return Number(frac[1]) / d
-  }
-  const plain = /^-?(?:\d+\.?\d*|\.\d+)(?:[eE]-?\d+)?$/.exec(s)
-  if (plain) return Number(s)
-  // percent form "45%" — accepted as the number 45, since prompts specify units
-  const pct = /^(-?\d+(?:\.\d+)?)\s*%$/.exec(s)
-  if (pct) return Number(pct[1])
-  return NaN
-}
+export { parseNumeric } from './parseValue'
 
 export function normalizeText(s: string): string {
   return s
@@ -188,6 +164,12 @@ export function validate(spec: AnswerSpec, raw: string): Verdict {
       // must log it as correct: null / score: null so the mastery replay sees
       // exposure and nothing more.
       return { ok: true, score: 0 }
+    case 'construct': {
+      // Many objects satisfy the constraints; `score` is the share of them met,
+      // which drives the repair screen. Only all-of-them is `ok`.
+      const v = gradeConstruct(spec, raw)
+      return v.formatError ? { ok: false, score: 0, formatError: v.formatError } : { ok: v.ok, score: v.score }
+    }
   }
 }
 
@@ -242,6 +224,11 @@ export function describeAnswer(spec: AnswerSpec): string {
       return spec.steps.map((st) => `${st.label}: ${describeAnswer(st.answer)}`).join('  →  ')
     case 'draft':
       return spec.model
+    case 'construct':
+      // Deliberately "one answer that works", never "the answer": showing a
+      // single witness as THE solution would teach exactly the wrong lesson
+      // about a problem that has many.
+      return spec.slots.map((s) => `${s.label} = ${spec.witness[s.key]}`).join(', ')
   }
 }
 
@@ -312,6 +299,8 @@ export function correctResponse(spec: AnswerSpec): string {
       return spec.statements.map((s) => s.category).join(',')
     case 'steps':
       return serializeSteps(spec.steps.map((st) => correctResponse(st.answer)))
+    case 'construct':
+      return witnessResponse(spec)
     case 'draft':
       // A draft has no "correct" text. The audit treats drafts as ungraded and
       // never asserts a verdict on them; this keeps the function total.
@@ -348,5 +337,13 @@ export function wrongResponse(spec: AnswerSpec): string {
       return serializeSteps(spec.steps.map((st, i) => (i === 0 ? wrongResponse(st.answer) : correctResponse(st.answer))))
     case 'draft':
       return '' // a draft cannot be wrong; the audit skips the negative case
+    case 'construct': {
+      // Perturbing ONE slot far off is the reliable way to break a
+      // construction: nudging every slot can land on a different valid answer,
+      // which is a feature of the format and would make this test flaky.
+      const out: Record<string, string> = {}
+      for (const [i, s] of spec.slots.entries()) out[s.key] = String(i === 0 ? (spec.witness[s.key] ?? 0) + 9997 : (spec.witness[s.key] ?? 0))
+      return serializeConstruct(out)
+    }
   }
 }

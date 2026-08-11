@@ -22,6 +22,7 @@ import { formsRequired, STATE_LABEL } from '../engine/mastery'
 import { dailyRoute } from '../engine/plannerPolicy'
 import { isPflTemplate } from '../engine/pflId'
 import { KB_BY_SKILL } from './kb'
+import { serializeConstruct, witnessResponse, witnessSatisfies } from '../engine/construct'
 import { correctResponse, firstFailedStep, serializeSteps, validate, wrongResponse } from '../engine/validate'
 import { matingMoves, movesKeepingMate } from '../engine/chessTools'
 import { puzzleValid } from '../engine/logicGrid'
@@ -1062,6 +1063,135 @@ describe('math tracks resolve against the tree', () => {
 
   it('track ids are unique', () => {
     expect(new Set(MATH_TRACKS.map((t) => t.id)).size).toBe(MATH_TRACKS.length)
+  })
+})
+
+/**
+ * CONSTRUCTED ANSWERS.
+ *
+ * These items ask the learner to BUILD an object and grade it against
+ * constraints, so they fail in ways a single-key item cannot:
+ *
+ *  - the constraints may contradict each other, and the learner searches for
+ *    an object that does not exist and concludes the fault is theirs;
+ *  - the constraints may be so loose that almost anything passes, which looks
+ *    like a hard problem and measures nothing;
+ *  - the grader may reject a CORRECT answer written in another form, which is
+ *    the worst failure of the three: the ladder blocks promotion on unrepaired
+ *    errors, so a picky grader silently parks a learner on a skill they have.
+ *
+ * The third is why `parseNumeric` is shared with the numeric validator rather
+ * than reimplemented — the first version here rejected "3 1/2" and "50%".
+ */
+describe('constructed answers are solvable, discriminating, and forgiving', () => {
+  const SEEDS = 8
+  function constructItems() {
+    const out: { id: string; seed: number; spec: Extract<AnswerSpec, { type: 'construct' }> }[] = []
+    for (const t of BUILTIN_TEMPLATES) {
+      for (let seed = 0; seed < Math.min(SEEDS, Math.max(1, t.variants)); seed++) {
+        let item
+        try {
+          item = t.generate(seed)
+        } catch (e) {
+          throw new Error(`${t.id} seed ${seed} threw during generation: ${String(e)}`)
+        }
+        for (const part of item.parts ?? [{ answer: item.answer }]) {
+          const a = part.answer ?? item.answer
+          if (a?.type === 'construct') out.push({ id: t.id, seed, spec: a })
+        }
+      }
+    }
+    return out
+  }
+
+  it('every construction has at least one solution, and the app knows one', () => {
+    const broken: string[] = []
+    for (const { id, seed, spec } of constructItems()) {
+      const v = witnessSatisfies(spec)
+      if (!v.ok) broken.push(`${id} seed ${seed}: witness fails ${v.failed.map((i) => spec.checks[i].label).join(' / ')}`)
+    }
+    expect(broken, `impossible constructions: ${broken.join('; ')}`).toEqual([])
+  })
+
+  it('the witness round-trips through the real grader', () => {
+    const bad: string[] = []
+    for (const { id, seed, spec } of constructItems()) {
+      const verdict = validate(spec, witnessResponse(spec))
+      if (!verdict.ok) bad.push(`${id} seed ${seed} (${verdict.formatError ?? 'graded wrong'})`)
+    }
+    expect(bad, `the app's own answer was marked wrong: ${bad.join('; ')}`).toEqual([])
+  })
+
+  it('a correct answer written in another form is still accepted', () => {
+    // Fractions, mixed numbers, a leading plus and stray spaces are all things
+    // a learner types. None of them may turn a right answer into a wrong one.
+    const rejected: string[] = []
+    for (const { id, seed, spec } of constructItems()) {
+      const forms: Record<string, string>[] = [{}, {}, {}]
+      for (const s of spec.slots) {
+        const v = spec.witness[s.key]
+        forms[0][s.key] = ` ${v} `
+        forms[1][s.key] = Number.isInteger(v) ? `${v * 3}/3` : String(v)
+        forms[2][s.key] = Number.isInteger(v) && v > 0 ? `+${v}` : String(v)
+      }
+      for (const [i, f] of forms.entries()) {
+        const verdict = validate(spec, serializeConstruct(f))
+        if (!verdict.ok) rejected.push(`${id} seed ${seed} form ${i}: ${verdict.formatError ?? 'marked wrong'}`)
+      }
+    }
+    expect(rejected, `correct answers rejected on formatting alone: ${rejected.join('; ')}`).toEqual([])
+  })
+
+  it('the constraints actually bite — random junk does not pass', () => {
+    // A construction whose constraints accept arbitrary values is decoration.
+    // 200 pseudo-random submissions per item; more than a couple of accidental
+    // passes means the problem is not asking for anything.
+    const loose: string[] = []
+    for (const { id, seed, spec } of constructItems()) {
+      let passes = 0
+      let n = 0
+      for (let k = 0; k < 200; k++) {
+        const guess: Record<string, string> = {}
+        for (const [j, s] of spec.slots.entries()) {
+          // Deterministic pseudo-random spread around the witness scale.
+          const scale = Math.max(4, Math.abs(spec.witness[s.key]) * 2)
+          guess[s.key] = String(Math.round(((k * 7919 + j * 104729) % (2 * scale + 1)) - scale))
+        }
+        n++
+        if (validate(spec, serializeConstruct(guess)).ok) passes++
+      }
+      if (passes / n > 0.02) loose.push(`${id} seed ${seed}: ${((100 * passes) / n).toFixed(0)}% of junk passes`)
+    }
+    expect(loose, `constraints too loose to mean anything: ${loose.join('; ')}`).toEqual([])
+  })
+
+  it('items claiming to be non-routine are not just a generator with more numbers', () => {
+    // `novelty: nonRoutine` is a claim about the learner's experience and the
+    // app repeats it in the coach. Anything asserting it must actually be a
+    // construction, a search, or a puzzle — never a plain single-key item.
+    const OK_KINDS = new Set(['construct', 'steps'])
+    const overclaimed: string[] = []
+    for (const t of BUILTIN_TEMPLATES) {
+      if (t.novelty !== 'nonRoutine') continue
+      const item = t.generate(0)
+      const kinds = (item.parts ?? [{ answer: item.answer }]).map((p) => (p.answer ?? item.answer)?.type)
+      const puzzle = item.chess || item.polyomino || item.logicgrid
+      if (!puzzle && !kinds.some((k) => k && OK_KINDS.has(k))) overclaimed.push(`${t.id} (${kinds.join('/')})`)
+    }
+    expect(overclaimed, `templates claiming nonRoutine without being one: ${overclaimed.join(', ')}`).toEqual([])
+  })
+
+  it('adapted material names a licence this repository can actually carry', () => {
+    // ShareAlike would propagate to the whole repository and NonCommercial is a
+    // term to honour rather than a footnote, so only CC BY and public domain
+    // are permitted — and anything with a source must appear in ATTRIBUTIONS.md.
+    const bad: string[] = []
+    for (const t of BUILTIN_TEMPLATES) {
+      if (!t.source) continue
+      if (t.source.licence !== 'CC BY 4.0' && t.source.licence !== 'public domain') bad.push(`${t.id}: ${t.source.licence}`)
+      if (!t.source.title.trim() || !t.source.author.trim()) bad.push(`${t.id}: incomplete attribution`)
+    }
+    expect(bad, `unusable licences or missing attribution: ${bad.join('; ')}`).toEqual([])
   })
 })
 

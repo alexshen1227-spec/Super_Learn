@@ -2670,6 +2670,124 @@ instead of against a simulation of the null. Any "is this above chance?"
 question in this codebase should compute chance from the actual data, not from
 the number of options.
 
+## 39. Constructed answers, and the limit of generators (2026-08-10)
+
+An outside review of the bank made five criticisms. Measured against 624
+templates and 701 graded checkpoints, four were right and one was half-right:
+
+| claim | measured | verdict |
+| --- | --- | --- |
+| ~95% of content is a number or a choice | 89% of checkpoints; 8% constructed | right |
+| the top of the ladder is thin | 46 of 624 at difficulty 5 (7%) | right |
+| non-math buckets are a sample | math is 298 of 624 templates, 5,503 of 8,173 problems | right |
+| nothing teaches | 47 of 624 carry exposition, and 9 of those are `pfl-*` probes barred from the ladder | right |
+| variants are not novel problems | true about generators; **but the ladder already refuses to reward them** | half-right |
+
+Two findings the reviewer could not see, both worse: physics and meta have
+**zero** difficulty-5 templates (observer has one, coding and insight two), and
+the only real teaching surface in the app is deliberately excluded from
+progress. One kinder: `formKey` is the template id, so all 18 variants of
+`expr-evaluate` are ONE piece of evidence and Independent needs two families.
+Variants buy speed, never rungs. The criticism lands on the ceiling, not the
+accounting.
+
+### 39a. What a generator cannot do, and what can
+
+The half-right claim is the important one. A generator randomises the NUMBERS
+in a fixed question, so the method is recoverable from the question's shape and
+after a few variants nothing is being solved. No volume of extra templates
+fixes that; it is a property of the form.
+
+Construction problems invert it. The method is trivial to state -- "make the
+mean 7" -- and the work is search. There is no shape to recognise because the
+learner is building the shape, so every instance is genuinely worked whatever
+the seed. `ConstructAnswer` grades a learner-built object against declarative
+constraints (`src/engine/construct.ts`): statistics, linear and bilinear forms,
+digit pools, ordering, and relations between two statistics of the same values.
+Many objects satisfy any given problem and all of them are accepted.
+
+This also widens assessability, which was criticism three. Constructed
+reasoning was outside what the app could evaluate; this is constructed and
+still graded exactly, offline, with no model. **It does not close the gap.** A
+proof, a derivation with justification, or an argued explanation remain
+ungradable here and will stay that way while the app has no server and no
+model -- `draft` takes them, compares them against an explicit model, and
+refuses to score them, which is the honest ceiling rather than a keyword
+matcher pretending to comprehend.
+
+Provenance: the digit-placement item uses the widely-practised "open middle"
+genre -- a frame with blanks a solver fills toward a target. The genre is not
+anyone's property; no problem text, target, digit set or constant is taken from
+a published set, and every optimum is found by exhaustive search at generation
+time. `ATTRIBUTIONS.md` records the licence rule for any future adapted
+material: CC BY 4.0 and public domain only, ShareAlike refused because it would
+propagate to this repository, and edition-level verification because
+Illustrative Mathematics' first edition is CC BY while v.360 is CC BY-NC.
+
+### 39b. Optimising the grader against false negatives, deliberately
+
+A strict grader looks safer than a loose one and is not. The mastery ladder
+blocks promotion on unrepaired errors, so a grader that rejects a correct
+answer does not merely annoy -- it silently parks a learner on a skill they
+already hold. The first version of the construct grader shipped its own number
+parser, which rejected `3 1/2` and `50%`, forms the numeric validator has
+accepted since the beginning. Both now share `parseValue.ts`, and the content
+audit asserts that a correct answer written as a fraction, with a leading plus,
+or padded with spaces is still accepted at every seed of every item.
+
+**What this grader still rejects that a human would accept**, stated plainly
+because a grader's blind spots should be written down rather than discovered:
+an unevaluated arithmetic expression (`2^3`, `sqrt(9)`, `12/4 + 1`), a unicode
+fraction glyph, scientific notation with a unit attached, and any answer whose
+slot values are correct but entered against different slot keys than intended
+-- though for every current item the constraints are symmetric, so slot order
+does not matter. Constraints are also evaluated at IEEE double precision with a
+1e-9 tolerance, so a construction requiring exact rational equality at very
+large magnitudes would be at risk; none currently does.
+
+### 39c. The gate that adding content revealed
+
+Registering seven construction items broke three planner simulations, and the
+failures were the point. A COLD learner began receiving difficulty-4 and -5
+constructions and out-scored the strong-placement learner on mean difficulty.
+
+The content was fine; there was no rule saying who it was for. Handing a search
+problem to someone with no foothold on the skill is unassisted discovery, the
+one instructional move with a clearly negative effect size (Alfieri et al.
+2011: d = -0.38 unassisted, +0.30 assisted -- §14). `nonRoutineTooEarly` now
+withholds `novelty: 'nonRoutine'` work until at least one of its skills is past
+`unseen`. The gate is deliberately at the LOWEST rung: the requirement is
+somewhere to search from, not readiness.
+
+Applied once, where `buildSessionPlan` unpacks its context, rather than at each
+of the eight pickers -- which is how one of them would eventually be missed.
+
+The general lesson is worth more than the fix. **Adding content can break the
+planner**, because content and selection are one system. Any future import has
+to run the planner simulations, not only the content audit.
+
+### 39d. Gates added
+
+`contentAudit.test.ts` gains six, all canaried against deliberate breakage
+(56 construct checkpoints over 224 constraints are actually in scope):
+
+1. every construction has a solution and the app knows one;
+2. the witness round-trips through the real grader;
+3. a correct answer in another written form is still accepted;
+4. constraints bite -- under 2% of pseudo-random junk may pass;
+5. nothing claims `nonRoutine` without being a construction, chain or puzzle;
+6. any `source` names a licence this repository can carry.
+
+### 39e. Still open, and not pretended otherwise
+
+Nothing here teaches yet. The lesson type (attempt first, then instruction,
+then a worked example, then a faded one, then solo -- Barbieri et al. 2023
+g = 0.48 over 55 studies for worked examples, gated on novice state by Kalyuga
+et al. 2003's expertise reversal) is designed and unbuilt. So are per-template
+exposure tracking, a dispute flow, an item cooldown with recycled-evidence
+weighting, and the curation pipeline. Breadth outside mathematics remains a
+sample; that is a volume problem no mechanism solves.
+
 **Licensing unchanged from §25**: Brilliant, IXL, DeltaMath, Alcumus, Beast and
 Math Academy are proprietary. Nothing here is text, artwork, a scoring constant
 or a taxonomy lifted from them — only mechanisms described in their own public

@@ -11,6 +11,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '8.9',
+    date: '2026-08-10',
+    title: 'Problems You Have To Build, Not Just Answer',
+    points: [
+      'A criticism worth taking seriously: every question in this app is a generator, so once you have met three versions the method is obvious from the shape and you are not really solving anything any more. That is fine for making a procedure automatic and useless for real problem solving, and adding more questions of the same kind would not have fixed it.',
+      'So there is a new kind of question where you BUILD something instead of answering it. "Write five whole numbers whose mean is 7, median is 5, and range is 12." There is no method to recognise, because you are making the thing. Lots of different answers are correct and the app accepts any of them — it checks whether what you built actually meets the conditions, not whether it matches one stored answer.',
+      'This also widens what the app can grade at all. Before, about nine in every ten graded questions were a number or a multiple choice, because that is what a machine can mark offline. These are genuinely constructed answers that still get marked exactly, with no internet and nothing pretending to understand your writing.',
+      'Seven of them to start: three on statistics and number, two physics ones (design a set of forces, balance a beam), one on planning your own revision, and one where you place digits to get as close as possible to a target — with the app having checked every possible arrangement, so the target it gives you really is the best reachable.',
+      'Two of those land where the ladder was completely empty. Physics had no top-difficulty content at all, and neither did Meta Lab — not "a little", zero. That is now not true.',
+      'Adding them immediately broke three of the planner simulations, which is the system working. A brand-new learner was being handed the hardest new problems before they had met the topic at all. Giving someone a search problem with nothing to search from is the one teaching move the research is actually negative about, so there is now a rule: these wait until you have met the skill at least once. Nothing else in the app is affected.',
+      'And an honesty note about the marking. It accepts your answer written as a fraction, a decimal, a mixed number, with a plus sign or with stray spaces, and in any order, because a marker that rejects a right answer is worse than a generous one — this app blocks you from moving up while you have unrepaired mistakes, so a fussy marker would quietly park you on something you already know.',
+    ],
+  },
+  {
     version: '8.8',
     date: '2026-08-10',
     title: 'The Longest Answer Is No Longer The Answer — In Any Subject',

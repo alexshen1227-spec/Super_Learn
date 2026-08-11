@@ -58,6 +58,50 @@ export function exploreExhausted(templateId: string, use: TemplateCoverage | und
   return isExploreTemplate(templateId) && (use?.lifetime ?? 0) >= EXPLORE_SERVE_LIMIT
 }
 
+/**
+ * A non-routine problem needs something to be non-routine ABOUT.
+ *
+ * `novelty: 'nonRoutine'` items state a goal and make the learner search for
+ * something that satisfies it. Handed to someone with no evidence on the skill
+ * at all, that is unassisted discovery, which is the one instructional move
+ * with a clearly NEGATIVE effect in the literature (Alfieri et al. 2011,
+ * d = −0.38 unassisted against +0.30 assisted — RESEARCH.md §14).
+ *
+ * This was found by the planner simulations rather than reasoned out in
+ * advance: adding seven construction items dropped the mean difficulty test
+ * because a COLD learner started receiving difficulty-4 and -5 constructions
+ * ahead of the strong-placement learner. The content was fine; there was no
+ * rule saying who it was for.
+ *
+ * The gate is deliberately low — `introduced` is one exposure, not mastery —
+ * because the point is a foothold to search from, not readiness.
+ */
+export function nonRoutineTooEarly(t: ItemTemplate, evidenceFor: (skillId: string) => string | undefined): boolean {
+  if (t.novelty !== 'nonRoutine') return false
+  return !t.skillIds.some((s) => {
+    const state = evidenceFor(s)
+    return state !== undefined && state !== 'unseen'
+  })
+}
+
+/**
+ * The same index with too-early non-routine work removed from every pool.
+ *
+ * Applied once where the planner unpacks its context, so no individual picker
+ * can forget it. Returns the ORIGINAL index untouched when nothing is gated,
+ * which is the common case and keeps this off the hot path.
+ */
+export function withoutTooEarlyNonRoutine<
+  I extends { templates: Map<string, ItemTemplate>; bySkill: Map<string, ItemTemplate[]>; byBucket: Map<string, ItemTemplate[]> },
+>(index: I, evidenceFor: (skillId: string) => string | undefined): I {
+  const drop = new Set<string>()
+  for (const t of index.templates.values()) if (nonRoutineTooEarly(t, evidenceFor)) drop.add(t.id)
+  if (!drop.size) return index
+  const filter = (m: Map<string, ItemTemplate[]>) =>
+    new Map([...m].map(([k, list]) => [k, list.filter((t) => !drop.has(t.id))] as const))
+  return { ...index, bySkill: filter(index.bySkill), byBucket: filter(index.byBucket) }
+}
+
 /** Lifetime coverage prevents a deterministic tie-break from starving a family forever. */
 export function buildTemplateCoverage(events: readonly AttemptEvent[], now: number): Map<string, TemplateCoverage> {
   const coverage = new Map<string, TemplateCoverage>()

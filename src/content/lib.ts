@@ -35,6 +35,9 @@ export interface TplOpts {
   authentic?: ItemTemplate['authentic']
   provenance?: string
   version?: number
+  novelty?: ItemTemplate['novelty']
+  cooldownDays?: number
+  source?: ItemTemplate['source']
 }
 
 export type SingleBody = Omit<RenderedItem, 'templateId' | 'version' | 'seed' | 'kind'>
@@ -55,6 +58,9 @@ export function tpl(opts: TplOpts, gen: (rng: Rng, seed: number) => SingleBody):
     ...(opts.transfer ? { transfer: true } : {}),
     ...(opts.calibration ? { calibration: true } : {}),
     ...(opts.authentic ? { authentic: opts.authentic } : {}),
+    ...(opts.novelty ? { novelty: opts.novelty } : {}),
+    ...(opts.cooldownDays ? { cooldownDays: opts.cooldownDays } : {}),
+    ...(opts.source ? { source: opts.source } : {}),
     provenance: opts.provenance ?? PROV,
     generate: (seed: number): RenderedItem => {
       // Variant-fold the seed so equal variants render identically (novelty

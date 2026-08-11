@@ -118,6 +118,7 @@ export type AnswerSpec =
   | ClassifyAnswer
   | StepsAnswer
   | DraftAnswer
+  | ConstructAnswer
 
 export interface NumericAnswer {
   type: 'numeric'
@@ -218,6 +219,74 @@ export interface DraftAnswer {
   minWords?: number
   /** Deliverable-specific prompt for the drafting area. */
   placeholder?: string
+}
+
+/**
+ * A CONSTRUCTED answer: the learner builds an object, and it is judged by
+ * whether it satisfies stated constraints — not by matching one stored key.
+ *
+ * This exists to answer a real criticism. A generator with 18 variants makes a
+ * procedure automatic; after the third variant nothing is being *solved*,
+ * because the method is visible from the shape of the question. Construction
+ * problems invert that: the method is trivial to state ("make the mean 7") and
+ * the work is search. There is no shape to recognise, because the learner is
+ * building the shape.
+ *
+ * It also widens what the app can assess. Everything else here is a number or
+ * a choice; this takes an object the learner invented and still grades it
+ * deterministically, offline, with no model and no server.
+ *
+ * Constraints are DATA, never functions, so a rendered item stays JSON — the
+ * session draft mirrors it, the content audit re-checks it, and `sanitize`
+ * can validate an imported one.
+ */
+export type ConstructCmp = '=' | '!=' | '<' | '<=' | '>' | '>='
+
+/** Summary statistics a constraint can be stated over. */
+export type ConstructStat = 'mean' | 'median' | 'range' | 'min' | 'max' | 'absMax' | 'absMin' | 'sum' | 'product' | 'distinct' | 'spread'
+
+export type ConstructCheck =
+  /** A statistic of the named slots compares to a value. `spread` is max−min of |x−mean|. */
+  | { kind: 'stat'; stat: ConstructStat; of: string[]; cmp: ConstructCmp; value: number; tol?: number; label: string }
+  /** EVERY named slot compares to a value. */
+  | { kind: 'each'; of: string[]; cmp: ConstructCmp; value: number; label: string }
+  /** All named slots hold different values. */
+  | { kind: 'allDifferent'; of: string[]; label: string }
+  /** Named slots read left to right are strictly increasing / decreasing. */
+  | { kind: 'ordered'; of: string[]; dir: 'up' | 'down'; label: string }
+  /** Every slot value is a whole number. */
+  | { kind: 'integer'; of: string[]; label: string }
+  /** Slot values are drawn from `digits`, each usable at most / exactly once. */
+  | { kind: 'digits'; of: string[]; digits: number[]; use: 'atMostOnce' | 'exactlyOnce'; label: string }
+  /** Σ (coefficient × slot) compares to a value. */
+  | { kind: 'linear'; terms: Record<string, number>; cmp: ConstructCmp; value: number; tol?: number; label: string }
+  /** Σ (coefficient × slotA × slotB) compares to a value — torque, area, rate × time. */
+  | { kind: 'bilinear'; terms: { a: string; b: string; c: number }[]; cmp: ConstructCmp; value: number; tol?: number; label: string }
+  /** One named slot IS the min / max / median of the group. */
+  | { kind: 'isStat'; slot: string; stat: ConstructStat; of: string[]; label: string }
+  /** Two statistics of the same slots compare to each other, offset by `by`. */
+  | { kind: 'relate'; left: ConstructStat; right: ConstructStat; of: string[]; cmp: ConstructCmp; by: number; tol?: number; label: string }
+
+export interface ConstructAnswer {
+  type: 'construct'
+  /** What the learner is being asked to build, e.g. "five whole numbers". */
+  what: string
+  /** The boxes to fill, in display order. */
+  slots: { key: string; label: string }[]
+  /** Every check must pass. Each carries the sentence shown when it fails. */
+  checks: ConstructCheck[]
+  /**
+   * One solution the generator found. It proves the problem is satisfiable
+   * (audited) and gives the repair screen something to show. It is NEVER the
+   * only accepted answer — that is the whole point of this format.
+   */
+  witness: Record<string, number>
+  /**
+   * How many solutions exist, when the generator counted them. Shown after the
+   * attempt: "there are 34 ways to do this, and you found one" is the honest
+   * thing to say about a problem with no unique answer.
+   */
+  solutionCount?: number
 }
 
 // ---------------------------------------------------------------- items
@@ -488,6 +557,34 @@ export interface ItemTemplate {
   minutes: number
   /** Present only for deliberate, multi-stage authentic-work simulations. */
   authentic?: AuthenticWorkSpec
+  /**
+   * Does beating this require CHOOSING a method, or only executing one?
+   *
+   * Most of this bank is `routine` and should be: a generator with 18 variants
+   * is how a procedure becomes automatic. But it means the third variant is no
+   * longer problem solving, and the app must not describe it as such. Default
+   * is `routine` — non-routine has to be claimed deliberately and is audited
+   * against the item actually being one (search, construction, or a structure
+   * the generator varies).
+   */
+  novelty?: 'routine' | 'nonRoutine'
+  /**
+   * Minimum days before this template may be served to the same learner again.
+   *
+   * For hand-authored one-shot problems, whose whole value is that you have not
+   * seen them. They are allowed to come back — forgetting is real — but only
+   * after long enough that recall is not what is being tested.
+   */
+  cooldownDays?: number
+  /**
+   * Where the problem came from, when it is not original to this app.
+   *
+   * Only CC BY or public-domain sources are permitted: ShareAlike would
+   * propagate to this repository, and NonCommercial-only material is a licence
+   * term to honour rather than a footnote. Anything set here must also appear
+   * in ATTRIBUTIONS.md, and is shown to the learner on the item.
+   */
+  source?: { title: string; author: string; licence: 'CC BY 4.0' | 'public domain'; url?: string; adapted: boolean }
 }
 
 // ---------------------------------------------------------------- attempts

@@ -41,6 +41,7 @@ import { PATH_QUESTION_TEMPLATES } from './items/pathQuestionExpansion'
 import { PATH_DEPTH_TEMPLATES } from './items/pathQuestionDepth'
 import { AUTHENTIC_WORK_TEMPLATES } from './items/authenticWork'
 import { REAL_WORLD_TEMPLATES } from './items/realWorldPractice'
+import { CONSTRUCT_TEMPLATES } from './items/construct'
 import { GRADE_CORE_TEMPLATES } from './items/gradeCore'
 import { ALGEBRA_ONE_TEMPLATES } from './items/algebraOne'
 import { MIDDLE_DEPTH_TEMPLATES } from './items/middleDepth'
@@ -96,6 +97,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...PATH_DEPTH_TEMPLATES,
   ...AUTHENTIC_WORK_TEMPLATES,
   ...REAL_WORLD_TEMPLATES,
+  ...CONSTRUCT_TEMPLATES,
   ...GRADE_CORE_TEMPLATES,
   ...ALGEBRA_ONE_TEMPLATES,
   ...MIDDLE_DEPTH_TEMPLATES,

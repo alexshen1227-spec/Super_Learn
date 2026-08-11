@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AnswerSpec, AttemptMode, ErrorTag, ItemTemplate, RenderedItem } from '../../domain/types'
 import { ERROR_TAGS } from '../../domain/types'
 import { describeAnswer, describeResponse, firstFailedStep, validate, validatorName } from '../../engine/validate'
+import { checkHolds, parseConstruct, serializeConstruct } from '../../engine/construct'
 import type { ContentIndex } from '../../engine/content-index'
 import { KB_BY_SKILL } from '../../content/kb'
 import type { ActivityRecord } from '../../store/draft'
@@ -1028,6 +1029,80 @@ export function AnswerInput({
           ))}
           <p className="text-[12px] text-faint leading-snug">
             Every line is checked. If the final answer is wrong, this shows which step it came from.
+          </p>
+        </div>
+      )
+    }
+    case 'construct': {
+      // Build an object rather than recall a value. The constraint list stays
+      // on screen while you type, because the work here is search, and hiding
+      // the target would make it a memory test instead.
+      const given = parseConstruct(value) ?? {}
+      const setSlot = (key: string, v: string) => {
+        const next = { ...(parseConstruct(latest.current) ?? {}) }
+        next[key] = v
+        emit(serializeConstruct(next))
+      }
+      const live: Record<string, number> = {}
+      for (const s of spec.slots) {
+        const n = Number((given[s.key] ?? '').trim())
+        if ((given[s.key] ?? '').trim() !== '' && Number.isFinite(n)) live[s.key] = n
+      }
+      const complete = spec.slots.every((s) => s.key in live)
+      return (
+        <div className="space-y-3">
+          {/* Grid, not flex-wrap: with five slots on a phone the fifth wrapped
+              onto its own row and stretched to the full width, so one box was
+              four times the size of the others and read as the important one. */}
+          <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))' }}>
+            {spec.slots.map((s) => (
+              <div key={s.key}>
+                <label className="text-[12px] font-medium text-muted" htmlFor={`slot-${s.key}`}>
+                  {s.label}
+                </label>
+                <input
+                  id={`slot-${s.key}`}
+                  value={given[s.key] ?? ''}
+                  onChange={(e) => setSlot(s.key, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && onSubmit) onSubmit()
+                  }}
+                  inputMode="decimal"
+                  autoComplete="off"
+                  className="mt-1 w-full bg-surface border border-line rounded-xl px-3 py-3 text-[16px] text-center outline-none focus:border-accent"
+                />
+              </div>
+            ))}
+          </div>
+          <ul className="space-y-1.5" aria-label="Conditions your answer must satisfy">
+            {spec.checks.map((c, i) => {
+              // Ticks appear only once every box holds a number. Grading a
+              // half-filled row would flash "wrong" at someone mid-typing.
+              const state = !complete ? 'idle' : checkHolds(c, live) ? 'met' : 'unmet'
+              return (
+                <li key={i} className="flex items-start gap-2 text-[13px] leading-snug">
+                  <span
+                    aria-hidden
+                    className={`mt-px h-4 w-4 shrink-0 rounded-full border grid place-items-center text-[10px] ${
+                      state === 'met'
+                        ? 'bg-ok/15 border-ok/50 text-ok'
+                        : state === 'unmet'
+                          ? 'border-line-strong text-faint'
+                          : 'border-line text-faint'
+                    }`}
+                  >
+                    {state === 'met' ? '✓' : ''}
+                  </span>
+                  <span className={state === 'met' ? 'text-muted' : ''}>
+                    {c.label}
+                    {complete ? <span className="sr-only">{state === 'met' ? ' — satisfied' : ' — not yet satisfied'}</span> : null}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="text-[12px] text-faint leading-snug">
+            More than one answer works. Any set of values meeting every condition is correct.
           </p>
         </div>
       )
