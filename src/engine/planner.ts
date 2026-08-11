@@ -24,6 +24,7 @@ import type { ContentIndex } from './content-index'
 import { difficultyForRate, evidenceFor, stateRank } from './mastery'
 import { effectiveGrade } from './effectiveGrade'
 import { isProvable } from './provable'
+import { evidenceEvents, suppressedTemplateIds } from './dispute'
 import { dueForms, dueReviews } from './scheduler'
 import { relativeDebt, type AllocationReport } from './allocation'
 import { effectiveAllocation } from './allocationPlus'
@@ -43,7 +44,7 @@ import {
   dailyRoute,
   dailyTemplateScore,
   exploreExhausted,
-  type TemplateCoverage, withoutTooEarlyNonRoutine,} from './plannerPolicy'
+  type TemplateCoverage, withoutTooEarlyNonRoutine, withoutTemplates,} from './plannerPolicy'
 
 export interface PlannerContext {
   index: ContentIndex
@@ -522,7 +523,7 @@ export function scoreSkills(
   const out: SkillScore[] = []
   // Is the learner currently cruising? If so, owned skills come back into play
   // for DEPTH rather than being retired.
-  const cruising = stretchSignal(state.events, now).adjust > 0
+  const cruising = stretchSignal(evidenceEvents(state.events, state.disputes), now).adjust > 0
   const track = state.profile.mathTrack ? TRACK_BY_ID.get(state.profile.mathTrack) ?? null : null
   const trackSkills = track ? new Set(track.units.flatMap((u) => u.skillIds)) : null
   const frontierUnit = track ? trackFrontierUnit(track, evidence) : null
@@ -936,10 +937,19 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   // missed. See `nonRoutineTooEarly`: handing a search problem to someone with
   // no foothold on the skill is unassisted discovery, the one instructional
   // move with a negative effect size in the literature.
-  const index = withoutTooEarlyNonRoutine(ctx.index, (s) => evidence.get(s)?.state)
+  // Repeatedly contested, or confirmed broken: stop serving it.
+  const suppressed = suppressedTemplateIds(ctx.state.disputes)
+  const index = withoutTooEarlyNonRoutine(withoutTemplates(ctx.index, suppressed), (s) => evidence.get(s)?.state)
   const rationale: string[] = []
   const blocks: PlannedBlock[] = []
-  const alloc = effectiveAllocation(state, evidence, index, now)
+  // Quarantine splits two ways, and conflating them would be a bug in either
+  // direction. A disputed attempt must not inform EVIDENCE — mastery, the
+  // stretch signal, allocation debt, calibration. It must still count as
+  // EXPOSURE, or disputing an item would make the planner more likely to serve
+  // that very item again straight away.
+  const judged = evidenceEvents(state.events, state.disputes)
+  const forEvidence = judged.length === state.events.length ? state : { ...state, events: judged }
+  const alloc = effectiveAllocation(forEvidence, evidence, index, now)
   const report = alloc.report
   const conservative = state.sessions.length < 3
   const mission = activeMission(state, now)
@@ -959,10 +969,10 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   }
   const used = recentlyUsedForms(state.events, now)
   const templateUse = recentTemplateUse(state.events, now)
-  const recentGraded = state.events.filter((e) => e.t >= now - 28 * 86_400_000 && e.mode !== 'placement')
+  const recentGraded = judged.filter((e) => e.t >= now - 28 * 86_400_000 && e.mode !== 'placement')
   // Is the diet currently under or over this learner? Silent until there is
   // enough graded evidence to say (engine/stretch.ts).
-  const stretch = stretchSignal(state.events, now)
+  const stretch = stretchSignal(judged, now)
   if (stretch.why && stretch.adjust !== 0) rationale.push(stretch.why)
   /*
    * While the dial is asking for easier work, template selection has to want

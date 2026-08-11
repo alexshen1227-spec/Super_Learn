@@ -25,12 +25,14 @@ import type {
   Forecast,
   PlacementResult,
   FieldPlan,
-  ProblemReport,
+  ProblemReport,
+  DisputeEvent,
   Profile,
   SessionRecord,
 } from '../domain/types'
 import { initialState } from '../domain/types'
-import { deriveEvidence, formsRequired, STATE_LABEL, stateRank } from '../engine/mastery'
+import { deriveEvidence, formsRequired, STATE_LABEL, stateRank } from '../engine/mastery'
+import { evidenceEvents } from '../engine/dispute'
 import { uid } from '../engine/rng'
 import { sanitizeState } from './sanitize'
 import { SKILL_BY_ID } from '../content/skills'
@@ -63,6 +65,8 @@ export type Action =
   | { type: 'revise-forecast'; id: string; probability: number }
   | { type: 'resolve-forecast'; id: string; outcome: boolean; note: string }
   | { type: 'add-report'; report: ProblemReport }
+  | { type: 'raise-dispute'; dispute: DisputeEvent }
+  | { type: 'resolve-dispute'; dispute: DisputeEvent }
   | { type: 'clear-reports' }
   | { type: 'add-plan'; plan: FieldPlan }
   | { type: 'answer-plan'; id: string; outcome: FieldPlan['outcome']; t: number }
@@ -80,8 +84,8 @@ export type Action =
  * diffing evidence before/after the appended events.
  */
 function promotionDecisions(prev: AppState, nextEvents: AttemptEvent[], all: AttemptEvent[]): CoachDecision[] {
-  const before = deriveEvidence(prev.events, Date.now())
-  const after = deriveEvidence(all, Date.now())
+  const before = deriveEvidence(evidenceEvents(prev.events, prev.disputes), Date.now())
+  const after = deriveEvidence(evidenceEvents(all, prev.disputes), Date.now())
   const out: CoachDecision[] = []
   const touched = new Set(nextEvents.flatMap((e) => e.skillIds))
   for (const skillId of touched) {
@@ -193,6 +197,12 @@ export function reduceState(state: AppState, action: Action): AppState {
       }
     case 'add-report':
       return { ...state, reports: [...state.reports, action.report].slice(-200) }
+    // Both dispute actions APPEND. Resolving does not edit the record that
+    // raised it, so the history of what was contested stays readable and the
+    // status is always a replay rather than a stored flag.
+    case 'raise-dispute':
+    case 'resolve-dispute':
+      return { ...state, disputes: [...state.disputes, action.dispute].slice(-500) }
     case 'clear-reports':
       // Reports are the learner's own notes-to-self about broken items, not
       // evidence — deleting them touches nothing derived. (Attempt events, by
@@ -413,5 +423,6 @@ export function useEvidence() {
     const id = setInterval(() => setTick((t) => t + 1), 60_000)
     return () => clearInterval(id)
   }, [])
-  return useMemo(() => deriveEvidence(state.events, Date.now()), [state.events, tick])
+  // Disputed attempts never reach any derived number — see engine/dispute.ts.
+  return useMemo(() => deriveEvidence(evidenceEvents(state.events, state.disputes), Date.now()), [state.events, state.disputes, tick])
 }

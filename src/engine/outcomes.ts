@@ -1,4 +1,5 @@
 /** Honest 28-day training-dose and learning-outcome summary. */
+import { evidenceEvents } from './dispute'
 import type { AppState, AttemptEvent, SkillState } from '../domain/types'
 import { deriveEvidence, stateRank } from './mastery'
 import { isPflTemplate } from './pfl'
@@ -50,8 +51,9 @@ export function outcomeReport(state: AppState, now: number, days = 28, dailyTarg
   const gradedAttempts = events.filter(
     (e) => !isPflTemplate(e.templateId) && (e.firstCorrect !== null || e.score !== null),
   ).length
-  const before = deriveEvidence(state.events.filter((e) => e.t < cutoff), cutoff)
-  const current = deriveEvidence(state.events, now)
+  const usable = evidenceEvents(state.events, state.disputes)
+  const before = deriveEvidence(usable.filter((e) => e.t < cutoff), cutoff)
+  const current = deriveEvidence(usable, now)
   const ids = new Set([...before.keys(), ...current.keys()])
   let newIndependent = 0
   let newRetained = 0

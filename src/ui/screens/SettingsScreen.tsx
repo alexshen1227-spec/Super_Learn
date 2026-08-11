@@ -3,6 +3,7 @@
  * (export / import / sample / full reset), storage status, and About with the
  * research grounding. Every claim about data lives here in plain language.
  */
+import { DisputeQueue } from './DisputeQueue'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../../store/store'
 import { useNav } from '../nav'
@@ -573,6 +574,10 @@ export function SettingsScreen() {
           onClick={() => setConfirmReset(true)}
         />
         <Divider />
+        {/* Contested attempts sit above the report rows: they are the only
+            thing here the learner may still want to act on. Renders nothing
+            when there is nothing open. */}
+        <DisputeQueue />
         {/* Always present, never a dead button: with no reports filed this is
             static text saying where reports come from, because the row used to
             appear only after the first report and was impossible to find when

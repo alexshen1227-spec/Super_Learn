@@ -876,6 +876,38 @@ export interface AppSettings {
   quietHours: { start: number; end: number } | null
 }
 
+/**
+ * A DISPUTE: "this attempt was graded against me and it should not have been."
+ *
+ * Every other correction in this app is the learner changing their answer.
+ * This one is the learner challenging the RECORD, and it exists because the
+ * record is the product. A wrong grade that silently lowers a mastery estimate
+ * teaches the app something false about its only user, shortens their review
+ * intervals, and steps their difficulty down — and they have no way to say so.
+ *
+ * Quarantine first, adjudicate later. From the moment it is raised the attempt
+ * is excluded from mastery, from the stretch signal and from allocation debt,
+ * because the alternative — leaving it counted until someone decides — means
+ * the disputed evidence is doing damage during exactly the window in which its
+ * validity is in doubt. Resolving it is not urgent; getting it out of the
+ * numbers is.
+ *
+ * Append-only, like everything else here: raising and resolving are separate
+ * records and the current status is derived by replay. Nothing is edited, so
+ * the history of what was contested stays readable.
+ */
+export type DisputeOutcome =
+  /** The grade was right; I misread or mis-clicked. Counts normally again. */
+  | 'my-error'
+  /** The item is wrong. The attempt never counts, and the item is suppressed. */
+  | 'item-bug'
+  /** The item is fine but it is filed under the wrong skill. Attempt discarded. */
+  | 'wrong-skill'
+
+export type DisputeEvent =
+  | { id: string; t: number; kind: 'raised'; attemptId: string; templateId: string; itemVersion: number; seed: number; note: string }
+  | { id: string; t: number; kind: 'resolved'; attemptId: string; templateId: string; outcome: DisputeOutcome; note: string }
+
 export interface ProblemReport {
   id: string
   t: number
@@ -1013,6 +1045,8 @@ export interface AppState {
   coachLog: CoachDecision[]
   forecasts: Forecast[]
   reports: ProblemReport[]
+  /** Append-only challenges to the RECORD. See DisputeEvent. */
+  disputes: DisputeEvent[]
   /** If-then plans. Self-reported, never evidence — see FieldPlan. */
   plans: FieldPlan[]
   placement: PlacementResult | null
@@ -1070,6 +1104,7 @@ export function initialState(): AppState {
     coachLog: [],
     forecasts: [],
     reports: [],
+    disputes: [],
     plans: [],
     placement: null,
     customPacks: [],

@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '9.0',
+    date: '2026-08-10',
+    title: 'You Can Now Argue With The App, And Two Things It Was Wrong About You',
+    points: [
+      'You can contest a grade. Flag any question you have already answered and tick "this was marked against me and it should not have been" — the attempt stops counting immediately. Not when it gets sorted out: immediately. It leaves your progress, your difficulty and your practice balance the moment you raise it, because the alternative is the disputed mark doing damage during exactly the time its fairness is in doubt.',
+      'Settling it later is up to you and there is no nagging, because nothing is being counted against you while it sits there. Three answers: I misread it (the mark goes back on your record, including when it hurts), the question is wrong, or the question is fine but filed under the wrong topic. Only the first restores it. A question you contest twice, or confirm is broken, stops being served.',
+      'The maths track you pick in Settings now decides how hard the app aims. It always chose WHICH topics you get, but the two places that pick how high to reach were both reading the school year you typed on the first screen and ignoring the course you said you were taking. If you are in year 7 doing Algebra I, placement was starting you three rungs down the ladder and making you climb.',
+      'Harder to say, and more important: 204 questions can no longer count as proof you know something. Their answers appeared in the assistant transcript you read while this app was being built — mostly while fixing the longest-answer bias. You will still get them, they still count as practice and still get spaced, but they cannot be the thing that says you learned it. An app that cannot tell "I can do this" from "I read this" is not measuring anything.',
+      'That cost is real and worth naming: 23 topics out of 123 no longer have enough unread questions to reach the top rung, and 6 have none at all. The app now keeps a ranked list of exactly which ones, and that list decides what gets added next.',
+      'It also uncovered a bug worth more than the flag. A topic that can never be completed used to trap the planner: it kept getting picked because it was never satisfied, and a simulated year of study went from covering 95 topics to 78. The app now knows the difference between "you have not proved this yet" and "this cannot be proved here" — the second is the app’s fault, not yours, and it stops hogging your sessions.',
+    ],
+  },
+  {
     version: '8.9',
     date: '2026-08-10',
     title: 'Problems You Have To Build, Not Just Answer',

@@ -1306,14 +1306,44 @@ function HintSheet({ open, onClose, hints, shown, onMore }: { open: boolean; onC
 }
 
 function ReportDialog({ open, onClose, templateId, version, seed }: { open: boolean; onClose: () => void; templateId: string; version: number; seed: number }) {
-  const { dispatch } = useStore()
+  const { state, dispatch } = useStore()
   const [note, setNote] = useState('')
+  const [contest, setContest] = useState(false)
+  // The attempt this report is about: the most recent graded one on this exact
+  // item. Found by lookup rather than threaded down through the player, and
+  // absent when the flag is opened before submitting — in which case there is
+  // no grade to contest and the option is simply not offered.
+  const attempt = useMemo(() => {
+    if (!open) return null
+    for (let i = state.events.length - 1; i >= 0; i--) {
+      const e = state.events[i]
+      if (e.templateId === templateId && e.seed === seed && e.firstCorrect !== null) return e
+    }
+    return null
+  }, [open, state.events, templateId, seed])
   return (
     <Modal open={open} onClose={onClose} title="Report a problem">
       <p className="text-muted text-sm">
         Describe what's wrong (unclear wording, wrong answer, broken interaction). Reports are stored locally and go
         out only if you export them — nothing is transmitted.
       </p>
+      {attempt ? (
+        <label className="mt-3 flex items-start gap-2.5 bg-surface2 border border-line rounded-xl p-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={contest}
+            onChange={(e) => setContest(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+          />
+          <span className="text-[14px] leading-snug">
+            <span className="font-medium">This was marked against me and it should not have been.</span>
+            <span className="block text-muted text-[13px] mt-0.5">
+              The attempt stops counting straight away — no effect on mastery, difficulty or your practice balance —
+              and stays out until you say what happened. You do not have to decide now.
+            </span>
+          </span>
+        </label>
+      ) : null}
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value.slice(0, 1000))}
@@ -1324,12 +1354,20 @@ function ReportDialog({ open, onClose, templateId, version, seed }: { open: bool
         className="w-full mt-3"
         disabled={note.trim().length < 4}
         onClick={() => {
-          dispatch({ type: 'add-report', report: { id: uid('pr'), t: Date.now(), templateId, itemVersion: version, seed, note: note.trim() } })
+          const t = Date.now()
+          dispatch({ type: 'add-report', report: { id: uid('pr'), t, templateId, itemVersion: version, seed, note: note.trim() } })
+          if (contest && attempt) {
+            dispatch({
+              type: 'raise-dispute',
+              dispute: { id: uid('dp'), t, kind: 'raised', attemptId: attempt.id, templateId, itemVersion: version, seed, note: note.trim() },
+            })
+          }
           setNote('')
+          setContest(false)
           onClose()
         }}
       >
-        Save report
+        {contest && attempt ? 'Save report and stop it counting' : 'Save report'}
       </Button>
     </Modal>
   )

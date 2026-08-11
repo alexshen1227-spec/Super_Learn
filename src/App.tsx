@@ -1,3 +1,4 @@
+import { evidenceEvents } from './engine/dispute'
 import { Component, lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { useStore } from './store/store'
@@ -159,7 +160,7 @@ function Shell() {
   useEffect(() => {
     if (!ready || !state.onboarded || state.sampleMode) return
     const check = () => {
-      const due = dueReviews(deriveEvidence(state.events, Date.now()), Date.now())
+      const due = dueReviews(deriveEvidence(evidenceEvents(state.events, state.disputes), Date.now()), Date.now())
       maybeNotifyReviews(state.settings, due.length)
     }
     check()

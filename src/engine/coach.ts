@@ -4,6 +4,7 @@
  * evidence, a confidence grade based on sample size, and what observation
  * would change it. Sparse data yields "not enough evidence", not filler.
  */
+import { evidenceEvents } from './dispute'
 import type {
   AppState,
   AttemptEvent,
@@ -186,7 +187,7 @@ export function coachBeliefs(
    * not change it — the learner cannot check a decision they were never told
    * about. Stated as a belief with its evidence, like everything else here.
    */
-  const stretch = stretchSignal(state.events, now)
+  const stretch = stretchSignal(evidenceEvents(state.events, state.disputes), now)
   if (stretch.accuracy !== null && stretch.why) {
     const cruising = stretch.adjust > 0
     const easing = stretch.adjust < 0

@@ -23,6 +23,7 @@ import type {
   Forecast,
   PlacementResult,
   ProblemReport,
+  DisputeEvent,
   Profile,
   SessionRecord,
 } from '../domain/types'
@@ -285,6 +286,40 @@ function sanitizePlan(raw: unknown): FieldPlan | null {
   }
 }
 
+/**
+ * A dispute, rebuilt rather than trusted.
+ *
+ * Fields are assigned unconditionally from validated values — never spread and
+ * patched — so an import cannot smuggle in an extra key. `kind` and `outcome`
+ * are checked against the closed sets, because an unrecognised outcome would
+ * fall through the quarantine switch and quietly start counting again.
+ */
+function sanitizeDispute(raw: unknown): DisputeEvent | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const r = raw as Record<string, unknown>
+  const attemptId = str(r.attemptId, '', 64)
+  const templateId = str(r.templateId, '', 80)
+  if (!attemptId || !templateId) return null
+  const id = str(r.id, `dp${Math.random().toString(36).slice(2, 8)}`, 40)
+  const t = num(r.t, 0, 4102444800000, Date.now())
+  const note = str(r.note, '', 1000)
+  if (r.kind === 'resolved') {
+    const outcome = r.outcome
+    if (outcome !== 'my-error' && outcome !== 'item-bug' && outcome !== 'wrong-skill') return null
+    return { id, t, kind: 'resolved', attemptId, templateId, outcome, note }
+  }
+  return {
+    id,
+    t,
+    kind: 'raised',
+    attemptId,
+    templateId,
+    itemVersion: num(r.itemVersion, 0, 9999, 1),
+    seed: num(r.seed, 0, 0x7fffffff, 0),
+    note,
+  }
+}
+
 function sanitizeReport(raw: unknown): ProblemReport | null {
   if (typeof raw !== 'object' || raw === null) return null
   const r = raw as Record<string, unknown>
@@ -415,6 +450,10 @@ export function sanitizeState(raw: unknown): AppState {
       .map(sanitizeReport)
       .filter((p): p is ProblemReport => p !== null)
       .slice(-200),
+    disputes: (Array.isArray(r.disputes) ? r.disputes : [])
+      .map(sanitizeDispute)
+      .filter((d): d is DisputeEvent => d !== null)
+      .slice(-500),
     plans: (Array.isArray(r.plans) ? r.plans : [])
       .map(sanitizePlan)
       .filter((p): p is FieldPlan => p !== null)

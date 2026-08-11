@@ -195,3 +195,13 @@ export function dailyTemplateScore(
     (preferCalibration && template.calibration ? 1.2 : 0)
   )
 }
+
+/** The same index with named templates removed from every pool. */
+export function withoutTemplates<
+  I extends { templates: Map<string, ItemTemplate>; bySkill: Map<string, ItemTemplate[]>; byBucket: Map<string, ItemTemplate[]> },
+>(index: I, drop: ReadonlySet<string>): I {
+  if (!drop.size) return index
+  const filter = (m: Map<string, ItemTemplate[]>) =>
+    new Map([...m].map(([k, list]) => [k, list.filter((t) => !drop.has(t.id))] as const))
+  return { ...index, bySkill: filter(index.bySkill), byBucket: filter(index.byBucket) }
+}
