@@ -7,7 +7,7 @@ Ordered by the project's own tie-breakers: fixing a way the app is wrong about
 the learner beats adding anything; honest evidence beats more content;
 measurement beats features; depth in maths beats breadth elsewhere.
 
-Last reviewed: 2026-08-10.
+Last reviewed: 2026-08-11.
 
 ---
 
@@ -96,10 +96,37 @@ The 48-hour `retained` rung in `mastery.ts` was NOT changed. It is load-bearing
 for the planner, the coach and the review scheduler, and the goal says to stop
 and ask before touching mastery. The strict measure sits beside it instead.
 
-OPEN QUESTION for a future session: should the ladder's `retained` rung move
-from 48 hours to 14 days to match? That would make one number instead of two,
-at the cost of much slower review scheduling and a large drop in reported
-progress. It needs a decision, not a default.
+SETTLED 2026-08-11: leave the 48-hour rung alone. Both measures now show on
+Progress and that is the intended end state, not a stopgap.
+
+The reasoning had to be corrected. The claim first written here — that moving
+the rung to 14 days would cause "a large drop in reported progress" — was
+asserted without measuring and is WRONG. Simulated learner-year:
+
+| accuracy | independent | "Retained" badge (48h) | survived (14d + new family) |
+| --- | --- | --- | --- |
+| 85% | 77 | 77 | **75** |
+| 60% | 51 | 50 | **52** |
+
+They land within a couple of skills of each other, and at 60% the STRICTER
+measure is higher. The reason is the review ladder: it spaces returns at
+1/3/10/30 days, so by the time a skill comes back a fortnight has usually
+passed anyway and the 48-hour threshold almost never binds. The strict count
+can exceed the badge because it does not require the ladder to have promoted
+the skill first — two unaided wins on different families, 14 days apart, is
+enough on its own.
+
+The real argument against merging them is different and was only found while
+checking: `RETENTION_GAP_MS` is used for TWO things. As well as the retention
+rung it decides whether a transfer attempt crossed the "a real delay"
+dimension (`crossedDimensions` in mastery.ts). Moving it to 14 days would
+silently make Transferred harder to earn as a side effect. If the constants
+are ever unified, SPLIT IT FIRST so retention and transfer-delay can move
+independently.
+
+Caveat on the measurement: it simulates daily practice. A pattern with long
+gaps spaces returns further apart, which pushes the two measures closer
+together rather than apart, so the conclusion should hold or strengthen.
 
 ### 7b. Original north-star spec, for reference
 Delayed retention checks (unaided re-test at 14+ days, hints unavailable,
@@ -115,11 +142,14 @@ from three months ago; how many focused minutes did each retained skill cost.
 
 ## Known gaps in what has shipped
 
-### 23 skills cannot currently be proven
-Marking 204 templates burned left **6 skills with no clean template family at
-all** and **17 more below the number independence requires**. They are still
+### 21 skills cannot currently be proven
+Marking 204 templates burned left 6 skills with no clean template family at all
+and 17 more below the number independence requires. The OpenStax import fixed
+three, so it now stands at **4 fully blocked and 17 thin**. They are still
 taught and practised; they cannot reach Independent. `poolPressure()` ranks
-them worst-first and that ranking is the import shortlist for step 6.
+them worst-first and that ranking is the import shortlist.
+
+Still fully blocked: `i-abduce`, `c-decomp`, `i-commit`, `x-stuck`.
 
 This is the honest cost of the burned flag rather than a defect, but it is a
 real ceiling on the north-star metric and should not be forgotten because it
@@ -169,6 +199,20 @@ cannot be where it is acquired. Accepted, per the fourth tie-breaker.
   becomes a way to quietly delete inconvenient evidence.
 - **The licence audit gate now fires against a real source** (OpenStax
   Statistics, CC BY 4.0). It had never been exercised before this.
+- **A diagram reached 11 servings against a soft cap of 9** under the cap-1
+  cooldown variants, and the cause was never found. That variant is not
+  shipped, so nothing is broken today — but the mechanism is unexplained and
+  would matter if the cap is revisited after content is imported.
+- **The 30 imported items carry answers parsed from OpenStax’ printed
+  solutions**, not answers this app derived. The filter drops everything it
+  cannot cross-check (1,929 down to 30), but a misparse would be invisible from
+  inside. If one looks wrong, dispute it — that flow exists and works.
+- **`sessionRhythm` lost its same-day-review proxy assertion.** It filed each
+  warm-up under its template’s PRIMARY skill, so a warm-up chosen for a due
+  SECONDARY skill was counted under a name it was not chosen for, and the count
+  drifted with every selection change. Replaced by an exact same-template
+  measure, which is 0. If a genuine same-skill spacing collapse ever returns,
+  nothing now catches it directly.
 - **The Browser pane intermittently stops compositing**, so screenshots fail
   while every DOM tool keeps working (see CLAUDE.md). Cause unknown; it is a
   pane-visibility problem outside the app.
