@@ -124,12 +124,10 @@ describe('nothing is waiting on a door that is already open', () => {
 /**
  * The ceiling on `owned` is not a free parameter.
  *
- * A skill can only reach Independent if enough of its template families can
- * still carry unaided evidence, and burned families cannot (see
- * `content/burned.ts`). So the honest bar is "nearly every skill the content
- * can actually prove", derived here rather than typed in — import content and
- * this tightens by itself; burn more items and it loosens by exactly as much
- * as is justified, and no more.
+ * A skill can only reach Independent if it has enough distinct template
+ * families to clear the bar. So the honest ceiling is "nearly every skill the
+ * content can actually prove", derived here rather than typed in, and it
+ * re-tightens by itself as content is added.
  */
 const PROVABLE = SKILLS.filter((s) => {
   const pool = DEFAULT_INDEX.bySkill.get(s.id) ?? []
@@ -140,11 +138,9 @@ describe('the frontier keeps moving for a learner who is doing well', () => {
   /*
    * The pre-fix numbers at this accuracy were 58 touched / 34 owned.
    *
-   * `owned` fell from ~95 to ~78 when 204 templates were marked burned, and
-   * that drop is arithmetic rather than regression: 23 of 123 skills no longer
-   * have enough unread families to reach the bar. Coverage did NOT fall with
-   * it — an unprovable skill used to park the frontier and drag `touched` down
-   * to 78 as well, which was a real bug and is fixed in `provable.ts`.
+   * An unprovable skill used to park the frontier and drag coverage down with
+   * it — a real bug, fixed in `provable.ts`, which is why the ceiling below is
+   * expressed against what the content can prove rather than a flat number.
    */
   it('covers most of the curriculum over a year at high accuracy', () => {
     const run = simulate(365, 0.85)

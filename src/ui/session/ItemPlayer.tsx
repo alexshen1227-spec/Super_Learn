@@ -55,6 +55,7 @@ export function ItemPlayer({
   template,
   mode,
   record,
+  attemptId,
   askConfidence,
   onSnapshot,
   onFinish,
@@ -67,6 +68,8 @@ export function ItemPlayer({
   template: ItemTemplate
   mode: AttemptMode
   record: ActivityRecord
+  /** Id the attempt will be logged under, known before the event is written. */
+  attemptId: string
   askConfidence: boolean
   onSnapshot: (r: Partial<ActivityRecord>) => void
   onFinish: (result: ActivityResult, elapsedSec: number) => void
@@ -460,6 +463,18 @@ export function ItemPlayer({
         </span>
       </div>
 
+      {/* Credit where the problem came from. CC BY requires attribution, and
+          ATTRIBUTIONS.md promises it is visible to the learner rather than only
+          to whoever reads the repository — which was not true until now. Quiet
+          by design: it is a credit line, not a badge. */}
+      {template.source ? (
+        <p className="text-[11px] text-faint leading-snug mb-3">
+          Problem from <span className="font-medium">{template.source.title}</span> by {template.source.author}, used
+          under {template.source.licence}
+          {template.source.adapted ? ' and adapted' : ''}.
+        </p>
+      ) : null}
+
       {template.authentic && parts ? (
         <Card className="p-4 mb-3 border-accent/30 bg-accent-soft/30">
           <div className="flex items-start justify-between gap-3">
@@ -762,7 +777,7 @@ export function ItemPlayer({
       ) : null}
 
       <HintSheet open={hintOpen} onClose={() => setHintOpen(false)} hints={activeHints} shown={hintsShown} onMore={revealHint} />
-      <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} templateId={template.id} version={template.version} seed={item.seed} />
+      <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} templateId={template.id} version={template.version} seed={item.seed} attemptId={attemptId} graded={firstResponse !== null} />
     </div>
   )
 }
@@ -1311,29 +1326,23 @@ function HintSheet({ open, onClose, hints, shown, onMore }: { open: boolean; onC
   )
 }
 
-function ReportDialog({ open, onClose, templateId, version, seed }: { open: boolean; onClose: () => void; templateId: string; version: number; seed: number }) {
-  const { state, dispatch } = useStore()
+function ReportDialog({ open, onClose, templateId, version, seed, attemptId, graded }: { open: boolean; onClose: () => void; templateId: string; version: number; seed: number; attemptId: string; graded: boolean }) {
+  const { dispatch } = useStore()
   const [note, setNote] = useState('')
   const [contest, setContest] = useState(false)
-  // The attempt this report is about: the most recent graded one on this exact
-  // item. Found by lookup rather than threaded down through the player, and
-  // absent when the flag is opened before submitting — in which case there is
-  // no grade to contest and the option is simply not offered.
-  const attempt = useMemo(() => {
-    if (!open) return null
-    for (let i = state.events.length - 1; i >= 0; i--) {
-      const e = state.events[i]
-      if (e.templateId === templateId && e.seed === seed && e.firstCorrect !== null) return e
-    }
-    return null
-  }, [open, state.events, templateId, seed])
+  // `attemptId` is the id this activity WILL be logged under, handed down from
+  // the session rather than looked up. The lookup version could never find
+  // anything: the event is not written until the activity finishes, so the
+  // contest option was unreachable at the only moment a learner wants it —
+  // right after seeing a mark they disagree with. `graded` gates it on an
+  // answer actually having been submitted; there is nothing to contest before.
   return (
     <Modal open={open} onClose={onClose} title="Report a problem">
       <p className="text-muted text-sm">
         Describe what's wrong (unclear wording, wrong answer, broken interaction). Reports are stored locally and go
         out only if you export them — nothing is transmitted.
       </p>
-      {attempt ? (
+      {graded ? (
         <label className="mt-3 flex items-start gap-2.5 bg-surface2 border border-line rounded-xl p-3 cursor-pointer">
           <input
             type="checkbox"
@@ -1362,10 +1371,10 @@ function ReportDialog({ open, onClose, templateId, version, seed }: { open: bool
         onClick={() => {
           const t = Date.now()
           dispatch({ type: 'add-report', report: { id: uid('pr'), t, templateId, itemVersion: version, seed, note: note.trim() } })
-          if (contest && attempt) {
+          if (contest) {
             dispatch({
               type: 'raise-dispute',
-              dispute: { id: uid('dp'), t, kind: 'raised', attemptId: attempt.id, templateId, itemVersion: version, seed, note: note.trim() },
+              dispute: { id: uid('dp'), t, kind: 'raised', attemptId, templateId, itemVersion: version, seed, note: note.trim() },
             })
           }
           setNote('')
@@ -1373,7 +1382,7 @@ function ReportDialog({ open, onClose, templateId, version, seed }: { open: bool
           onClose()
         }}
       >
-        {contest && attempt ? 'Save report and stop it counting' : 'Save report'}
+        {contest ? 'Save report and stop it counting' : 'Save report'}
       </Button>
     </Modal>
   )

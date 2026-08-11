@@ -33,6 +33,9 @@ export function NorthStarPanel() {
   const star = useMemo(() => northStar(state.events, state.disputes, now), [state.events, state.disputes, now])
   const weeks = useMemo(() => durableByWeek(star, now, 12), [star, now])
   const peak = Math.max(1, ...weeks.map((w) => w.proved))
+  // A full-height plot holding twelve zeroes reads as a chart that failed to
+  // load, not as an honest empty one. Keep the baseline, drop the empty band.
+  const anyWeek = weeks.some((w) => w.proved > 0)
 
   return (
     <Card className="p-4">
@@ -75,8 +78,14 @@ export function NorthStarPanel() {
 
       <div className="mt-5 pt-4 border-t border-line">
         <h3 className="text-[14px] font-medium">Skills proved per week</h3>
-        <p className="text-[12px] text-muted leading-snug mt-0.5">Twelve weeks. Empty weeks are drawn empty.</p>
-        <div className="flex items-end gap-1 mt-3 h-16" role="img" aria-label={`Skills proved per week: ${weeks.map((w) => w.proved).join(', ')}`}>
+        <p className="text-[12px] text-muted leading-snug mt-0.5">
+          {anyWeek ? 'Twelve weeks. Empty weeks are drawn empty.' : 'Twelve weeks, all of them still empty.'}
+        </p>
+        <div
+          className={`flex items-end gap-1 mt-3 ${anyWeek ? 'h-16' : 'h-2'}`}
+          role="img"
+          aria-label={`Skills proved per week: ${weeks.map((w) => w.proved).join(', ')}`}
+        >
           {weeks.map((w) => (
             <div key={w.weekStart} className="flex-1 flex flex-col justify-end h-full">
               <div

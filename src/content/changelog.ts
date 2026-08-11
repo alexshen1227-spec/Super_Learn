@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '9.3',
+    date: '2026-08-11',
+    title: 'Four Things That Were Announced But Did Not Work',
+    points: [
+      'Contesting a grade was described in 9.0 and could not actually be done. The tick-box only appeared once the app could find the attempt being disputed, and the attempt is not written down until the whole question is finished — so it was missing at the one moment anyone wants it, right after seeing a mark they disagree with, and gone by the time it existed. The flag now knows in advance which attempt it is talking about. Raise it, and the mark stops counting immediately.',
+      'Problems borrowed from an open textbook were meant to carry a credit line naming the book, its author and its licence. The attributions file promised it; the screen never showed it. It shows it now, above the question, on every borrowed problem.',
+      'The weekly chart on Progress reserved its full height even when all twelve weeks were empty, which left a tall blank band that reads as a chart that failed to load rather than an honest zero. An all-empty chart is now a single quiet line under a caption that says so.',
+      'The answer box could be crashed. A deliberately absurd input — a few thousand nested brackets, or a number too large for a computer to hold — either overflowed while being read or came back as infinity and was then compared against the real answer. Both are now refused as unreadable, which is what they are.',
+    ],
+  },
+  {
     version: '9.2',
     date: '2026-08-11',
     title: 'Undoing Something The App Had Got Wrong',

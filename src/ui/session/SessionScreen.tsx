@@ -824,6 +824,11 @@ const EMPTY_MODE_NOTE: Record<string, string> = {
   const commonProps = {
     item,
     template,
+    // The id this attempt will be logged under. Passed in rather than looked
+    // up, because the event is not written until the activity FINISHES — so a
+    // dispute raised mid-question had nothing to point at, and by the time the
+    // event existed the player had moved on. That made the flow unreachable.
+    attemptId: `e:${plan?.id ?? 'session'}:${blockIndex}:${actIndex}`,
     mode: activity!.mode,
     record,
     askConfidence: Boolean(template.calibration) && state.settings.confidencePrompts !== 'minimal',

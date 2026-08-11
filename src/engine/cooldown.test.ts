@@ -14,8 +14,9 @@
 import { describe, expect, it } from 'vitest'
 import { MIN_TEMPLATE_GAP_DAYS, buildSessionPlan, templateKey } from './planner'
 import { deriveEvidence, evidenceFor, stateRank } from './mastery'
-import { cooldownPressure } from './provable'
+import { cooldownPressure, poolPressure } from './provable'
 import { DEFAULT_INDEX } from '../content/registry'
+import { SKILLS } from '../content/skills'
 import { initialState, type AppState, type AttemptEvent } from '../domain/types'
 
 const DAY = 86_400_000
@@ -219,5 +220,28 @@ describe('a skill retrieved hours ago does not come straight back', () => {
       .blocks.flatMap((b) => b.activities)
       .flatMap((a) => DEFAULT_INDEX.templates.get(a.templateId)?.skillIds ?? [])
     expect(served.length).toBeGreaterThan(0)
+  })
+})
+
+describe('pool pressure still names thin content', () => {
+  // Lost its only coverage when burned.test.ts was deleted. It is the shortlist
+  // that decides what to import next, so it must not be allowed to rot.
+  it('reports nothing while every skill clears the bar', () => {
+    const rows = poolPressure(DEFAULT_INDEX, SKILLS.map((s) => s.id))
+    expect(rows.map((r) => `${r.skillId} ${r.clean}/${r.required}`)).toEqual([])
+  })
+
+  it('CONTROL: it does flag a skill whose pool is genuinely too thin', () => {
+    // Without this the test above passes for a function that always returns [].
+    const thin = { bySkill: new Map([['made-up', [DEFAULT_INDEX.templates.values().next().value!]]]) }
+    const rows = poolPressure(thin, ['made-up'])
+    expect(rows).toHaveLength(1)
+    expect(rows[0].clean).toBe(1)
+    expect(rows[0].blocked).toBe(false)
+  })
+
+  it('marks a skill with no content at all as blocked', () => {
+    const none = { bySkill: new Map([['made-up', [] as never[]]]) }
+    expect(poolPressure(none, ['made-up'])).toEqual([])
   })
 })

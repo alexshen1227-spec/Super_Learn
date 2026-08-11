@@ -64,9 +64,6 @@ function cmp(a: number, op: ConstructCmp, b: number, tol = 0): boolean {
   }
 }
 
-export function cmpWord(op: ConstructCmp): string {
-  return { '=': 'exactly', '!=': 'not', '<': 'less than', '<=': 'at most', '>': 'more than', '>=': 'at least' }[op]
-}
 
 /** Summary statistics a constraint can be stated over. Total on non-empty input. */
 export function statOf(stat: ConstructStat, xs: number[]): number {
@@ -231,7 +228,3 @@ export function witnessResponse(spec: ConstructAnswer): string {
   return serializeConstruct(out)
 }
 
-/** Plain-language rendering of the constraint list, for the prompt and repair. */
-export function describeChecks(spec: ConstructAnswer): string[] {
-  return spec.checks.map((c) => c.label)
-}

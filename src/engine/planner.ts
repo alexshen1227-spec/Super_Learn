@@ -661,7 +661,7 @@ export function scoreSkills(
     // A skill the CONTENT cannot prove must not park the frontier.
     //
     // Independence needs unaided success on `formsRequired` distinct families,
-    // and burned families cannot supply one. A skill with too few clean ones
+    // A skill with too few families for the independence bar
     // is never satisfied, so it keeps winning the scoring and the learner
     // circles it while the rest of the curriculum goes unvisited — coverage in
     // a simulated year fell from 95 skills to 78 through exactly this. That is

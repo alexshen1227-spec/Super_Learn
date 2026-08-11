@@ -171,3 +171,37 @@ describe('the grader accepts a value however a person writes it', () => {
     expect(gradeConstruct(fiveNumbers, sub).ok).toBe(true)
   })
 })
+
+describe('the grader survives hostile input', () => {
+  // A grader is a hostile-input surface even with one user: a paste accident
+  // is enough. Two thousand open brackets used to overflow the stack and take
+  // the player down with it.
+  it('does not crash or hang on pathological input', () => {
+    const evil = [
+      '('.repeat(2000) + '1',
+      '1'.repeat(5000),
+      '9'.repeat(400),
+      '1e309',
+      '2^1000000',
+      'sqrt('.repeat(500) + '4' + ')'.repeat(500),
+      '1/0',
+      '((((((((((1))))))))))',
+    ]
+    for (const s of evil) {
+      const started = Date.now()
+      const v = parseExpression(s)
+      expect(Date.now() - started, `slow on ${s.slice(0, 20)}`).toBeLessThan(500)
+      // Never a value the grader could act on: NaN, or a real finite number.
+      expect(Number.isNaN(v) || Number.isFinite(v), `${s.slice(0, 20)} -> ${v}`).toBe(true)
+    }
+  })
+
+  it('an overflowing number is unreadable, not wrong', () => {
+    // Infinity is finite-looking enough to reach a constraint check and be
+    // scored as a wrong answer rather than reported as unreadable.
+    expect(Number.isNaN(parseExpression('9'.repeat(400)))).toBe(true)
+    const v = gradeConstruct(fiveNumbers, sub({ a: '9'.repeat(400), b: 4, c: 5, d: 12, e: 13 }))
+    expect(v.formatError).toBeTruthy()
+    expect(v.failed).toEqual([])
+  })
+})

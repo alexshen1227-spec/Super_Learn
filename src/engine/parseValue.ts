@@ -11,6 +11,9 @@
  */
 
 /** Parse "3/4", "-2 1/2" (mixed), "0.75", "12", "1,200", "45%", "+5" → number. NaN if unreadable. */
+/** NaN unless the value is a real, representable number. */
+const finite = (n: number) => (Number.isFinite(n) ? n : NaN)
+
 export function parseNumeric(raw: string): number {
   const s = raw.trim().replace(/,/g, '').replace(/^\+/, '')
   if (!s) return NaN
@@ -31,7 +34,10 @@ export function parseNumeric(raw: string): number {
     return Number(frac[1].replace(/\s+/g, '')) / d
   }
   const plain = /^-?\s*(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.exec(s)
-  if (plain) return Number(s.replace(/\s+/g, ''))
+  // Overflow is not a readable number. Without this, 400 nines parses as
+  // Infinity, which is finite-looking enough to reach a grader and be marked
+  // wrong instead of reported as unreadable.
+  if (plain) return finite(Number(s.replace(/\s+/g, '')))
   // percent form "45%" — accepted as the number 45, since prompts specify units
   const pct = /^(-?\s*\d+(?:\.\d+)?)\s*%$/.exec(s)
   if (pct) return Number(pct[1].replace(/\s+/g, ''))
@@ -64,12 +70,23 @@ const UNICODE_FRACTIONS: Record<string, number> = {
   '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875,
 }
 
+/**
+ * Longest input treated as an expression.
+ *
+ * A grader is a hostile-input surface even with one user: a paste accident is
+ * enough. Two thousand open brackets overflowed the stack and took the whole
+ * player down with a RangeError, so depth and length are both bounded rather
+ * than trusted.
+ */
+const MAX_EXPRESSION_CHARS = 200
+const MAX_DEPTH = 24
+
 export function parseExpression(raw: string): number {
   const plain = parseNumeric(raw)
   if (!Number.isNaN(plain)) return plain
 
   let s = raw.trim().replace(/,/g, '').replace(/\s+/g, '')
-  if (!s) return NaN
+  if (!s || s.length > MAX_EXPRESSION_CHARS) return NaN
   // Typographic operators and unicode fractions become their plain equivalents.
   s = s.replace(/[×·]/g, '*').replace(/[÷]/g, '/').replace(/[−–—]/g, '-').replace(/\*\*/g, '^')
   for (const [glyph, value] of Object.entries(UNICODE_FRACTIONS)) s = s.split(glyph).join(`(${value})`)
@@ -77,6 +94,7 @@ export function parseExpression(raw: string): number {
   if (!/^(?:sqrt|[-+*/^().\d])+$/.test(s)) return NaN
 
   let at = 0
+  let depth = 0
   const eat = (c: string) => (s[at] === c ? (at++, true) : false)
 
   // expr := term (('+' | '-') term)*
@@ -114,12 +132,16 @@ export function parseExpression(raw: string): number {
     if (s.startsWith('sqrt', at)) {
       at += 4
       if (!eat('(')) return NaN
+      if (++depth > MAX_DEPTH) return NaN
       const v = expr()
+      depth--
       if (!eat(')')) return NaN
       return v < 0 ? NaN : Math.sqrt(v)
     }
     if (eat('(')) {
+      if (++depth > MAX_DEPTH) return NaN
       const v = expr()
+      depth--
       return eat(')') ? v : NaN
     }
     const start = at
@@ -130,6 +152,7 @@ export function parseExpression(raw: string): number {
   }
 
   const value = expr()
-  // Anything left over means the string was not fully understood.
-  return at === s.length && Number.isFinite(value) ? value : NaN
+  // Anything left over means the string was not fully understood. `finite`
+  // also rules out an overflow from something like 2^1000000.
+  return at === s.length ? finite(value) : NaN
 }
