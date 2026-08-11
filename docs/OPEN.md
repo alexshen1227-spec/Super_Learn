@@ -7,7 +7,12 @@ Ordered by the project's own tie-breakers: fixing a way the app is wrong about
 the learner beats adding anything; honest evidence beats more content;
 measurement beats features; depth in maths beats breadth elsewhere.
 
-Last reviewed: 2026-08-11 (third pass).
+Last reviewed: 2026-08-11 (fourth pass).
+
+**Numbers measured before 2026-08-11 are STALE.** Removing the burned-item
+flag changed the baseline for anything involving owned skills or pool depth —
+a simulated year went from 77 owned to 123. Tables below are marked where they
+were taken under the old baseline; treat them as directional, not current.
 
 ---
 
@@ -19,7 +24,9 @@ skips a due review, the twelve-hour rest applied to the family warm-up path,
 `cooldownPressure()`, and retention no longer counting a repaired repeat.
 
 NOT shipped, deliberately: "never the same template twice in a session" as an
-absolute rule, and the 30-day window. Measured over simulated years:
+absolute rule, and the 30-day window. Measured over simulated years — STALE,
+taken while the burned flag was suppressing 204 templates, so the absolute
+values are far too low. The RANKING is what mattered and should survive:
 
 | config | owned @85% | owned @55% |
 | --- | --- | --- |
@@ -29,13 +36,16 @@ absolute rule, and the 30-day window. Measured over simulated years:
 | cap 2 + repeat-if-well-fitted | 68 | **31** |
 
 Every version that reduced repetition cost a STRUGGLING learner owned skills —
-RESEARCH.md §37j re-derived. The cap-1 variants also pushed one diagram to 11
-servings against a soft cap of 9, cause not found. The measured cap of 2
-stands.
+RESEARCH.md §37j re-derived. The measured cap of 2 stands.
 
-Worth revisiting IF the thin pools get filled by step 6: the trade exists
-because there is not enough content at the right difficulty, so importing may
-dissolve it rather than balance it.
+The diagram-at-11-servings note that used to sit here is RESOLVED, and was a
+real bug in the shipped planner rather than an artefact of the variant. See the
+smaller-items list below.
+
+WORTH REDOING. The trade existed because there was not enough content at the
+right difficulty, and the pool is now much deeper than when this was measured:
+every template can carry evidence again and nothing sits below the independence
+bar. A repeat of this experiment might find the cost has gone.
 
 ### 5b. Original cooldown spec, for reference
 Suppress recently-seen problems without ever blocking a due skill review.
@@ -62,8 +72,10 @@ Yield was deliberately low: 1,929 exercises down to 30. Only bare-numeric
 solutions with self-contained problem text survive, because that is the subset
 where a misaligned parse is detectable.
 
-Result: skills below the independence bar 23 to 21; fully blocked 6 to 4.
-`s-hypo`, `s-corr` and `m-sampling` are fixed.
+Result AT THE TIME: skills below the independence bar 23 to 21, fully blocked
+6 to 4. Both numbers are now 0 for a different reason — the burned flag that
+caused them was withdrawn — so the import's real contribution is 30 items of
+human-authored statistics, not the unblocking.
 
 The "still blocked" skills listed here originally — `i-abduce`, `c-decomp`,
 `i-commit`, `x-stuck` — were blocked by the burned-item flag, not by a content
@@ -77,9 +89,10 @@ problems, because those are this app's own constructions rather than a school
 subject with textbooks behind it.
 
 Next options, roughly by promise: OpenStax *Introductory Business Statistics*
-and the CC BY algebra titles for more maths depth; pre-1930 public domain
-logic and puzzle texts for `i-abduce`; accepting that `x-stuck` and `c-decomp`
-may have to stay generator-backed.
+and the CC BY algebra titles for more maths depth; pre-1930 public domain logic
+and puzzle texts if a reasoning pool ever needs them. No longer urgent, since
+nothing is starved — this is now about DEPTH and about problems a generator
+cannot produce, not about filling holes.
 
 ### 6b. Original curation spec, for reference
 Import human-authored problems. CC BY 4.0 and public domain only —
@@ -106,6 +119,9 @@ Progress and that is the intended end state, not a stopgap.
 The reasoning had to be corrected. The claim first written here — that moving
 the rung to 14 days would cause "a large drop in reported progress" — was
 asserted without measuring and is WRONG. Simulated learner-year:
+
+STALE ABSOLUTE VALUES (taken while the burned flag was active; owned has since
+roughly doubled). The comparison between the columns is the point and holds:
 
 | accuracy | independent | "Retained" badge (48h) | survived (14d + new family) |
 | --- | --- | --- | --- |
@@ -187,14 +203,14 @@ explicit model, and refuses to score. That is the ceiling, not a gap to be
 closed by cleverness, and it should not be papered over with keyword matching.
 
 ### Nothing in the app teaches from zero
-47 of 624 templates carry any exposition, and 9 of those are `pfl-*` probes
+47 of 661 templates carry any exposition, and 9 of those are `pfl-*` probes
 which are deliberately barred from the ladder. This is a real gap, and the
 project has decided NOT to close it: lectures do that job, and the app's stated
 purpose is proving retention rather than delivering instruction. Recorded so
 the decision stays a decision rather than an oversight.
 
 ### Breadth outside mathematics is a sample
-Maths is 298 of 624 templates and 5,503 of 8,173 generated problems. Every
+Maths is 329 of 661 templates and 5,602 of 8,323 generated problems. Every
 other bucket is a probe that can maintain knowledge acquired elsewhere but
 cannot be where it is acquired. Accepted, per the fourth tie-breaker.
 
