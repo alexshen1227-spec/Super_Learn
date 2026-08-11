@@ -148,8 +148,23 @@ describe('the frontier keeps moving for a learner who is doing well', () => {
    */
   it('covers most of the curriculum over a year at high accuracy', () => {
     const run = simulate(365, 0.85)
-    expect(run.touched, `only ${run.touched}/122 skills were ever served`).toBeGreaterThan(95)
-    expect(run.owned, `${run.owned} owned against ${PROVABLE} provable`).toBeGreaterThan(PROVABLE - 25)
+    // Floor lowered 95 -> 90 on 2026-08-11, with the cause established first.
+    // Enforcing the diagram cap on the warm-up path (it leaked there, seven
+    // servings against a limit of three) moved coverage by exactly one skill,
+    // 95 to 94. Checked before changing this: NO skill is reachable only
+    // through a diagram, so nothing became unreachable — the planner simply
+    // chooses differently. The guard exists to catch the §31 failure where
+    // coverage collapsed to 58, and 90 still catches that by a wide margin.
+    expect(run.touched, `only ${run.touched}/122 skills were ever served`).toBeGreaterThan(90)
+    // A SHARE of what the content can prove, not a fixed offset.
+    //
+    // The offset was the wrong shape and importing 30 items exposed it:
+    // `PROVABLE` rose to 102 while `owned` stayed at 77, so adding content
+    // tightened the bound past what a learner actually reaches in a year.
+    // Owning more skills takes more time, not the same time — the two do not
+    // track one for one. A ratio holds as the bank grows, which is the point
+    // of deriving it at all.
+    expect(run.owned, `${run.owned} owned of ${PROVABLE} provable`).toBeGreaterThan(PROVABLE * 0.65)
   })
 
   it('does not park on one skill or one question family', () => {
@@ -166,6 +181,6 @@ describe('the frontier keeps moving for a learner who is doing well', () => {
     // A struggling learner is further from the ceiling than a strong one; the
     // gap is the point of the test, so it is expressed against the same
     // derived number rather than a second unexplained constant.
-    expect(run.owned, `${run.owned} owned against ${PROVABLE} provable`).toBeGreaterThan(PROVABLE - 65)
+    expect(run.owned, `${run.owned} owned of ${PROVABLE} provable`).toBeGreaterThan(PROVABLE * 0.3)
   })
 })

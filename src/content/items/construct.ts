@@ -277,7 +277,7 @@ const digitTarget = tpl(
         'The tens digits decide almost everything — the units digits only ever move the product by a few dozen. Fix the tens digits first, then tune.',
         `Try tens digits near ${Math.floor(Math.sqrt(target) / 10)} and adjust. The best possible is ${best} away from ${target}.`,
       ],
-      explanation: `**${10 * bestAt[0] + bestAt[1]} × ${10 * bestAt[2] + bestAt[3]} = ${product}**, which is ${best} from ${target}. ${ties > 1 ? `There are ${ties} arrangements that tie for best.` : 'That arrangement is unique.'}\n\nEvery arrangement was checked, so ${best} really is the closest reachable — this is not a target someone guessed at.\n\nThe method that works is not multiplication, it is estimation followed by adjustment: get the tens digits roughly right using a square root, then let the units digits close the gap. That two-phase habit — coarse first, then refine — is what makes mental arithmetic fast, and it is invisible if you only ever compute products you were handed.`,
+      explanation: `${ties > 1 ? `**One** arrangement that gets there is ` : '**'}**${10 * bestAt[0] + bestAt[1]} × ${10 * bestAt[2] + bestAt[3]} = ${product}**, which is ${best} from ${target}. ${ties > 1 ? `${ties} different arrangements tie for best, so if you found another one that also lands ${best} away, it is equally right.` : 'That arrangement is the only one that gets this close.'}\n\nEvery arrangement was checked, so ${best} really is the closest reachable — this is not a target someone guessed at.\n\nThe method that works is not multiplication, it is estimation followed by adjustment: get the tens digits roughly right using a square root, then let the units digits close the gap. That two-phase habit — coarse first, then refine — is what makes mental arithmetic fast, and it is invisible if you only ever compute products you were handed.`,
     }
   },
 )
@@ -299,21 +299,35 @@ const integerPair = tpl(
     novelty: 'nonRoutine',
   },
   (rng) => {
-    const p = [3, 5, 7, 11, 13][rint(rng, 0, 4)]
-    const q = [4, 6, 8, 9, 17][rint(rng, 0, 4)]
-    const x0 = rint(rng, 2, 9)
-    const y0 = rint(rng, 2, 9)
-    const total = p * x0 + q * y0
-    // Count every positive solution so the explanation can be exact.
-    const sols: [number, number][] = []
-    for (let x = 1; x * p < total; x++) {
-      const rest = total - p * x
-      if (rest > 0 && rest % q === 0) sols.push([x, rest / q])
+    // Resample until the problem has MORE THAN ONE answer.
+    //
+    // The player tells the learner "more than one answer works", and at three
+    // of eight seeds this used to have exactly one — so the app was stating
+    // something false on screen. Found by a gate that asks whether a second
+    // solution exists at all, which is the only way an over-strict constraint
+    // set shows up: every other check here only asks whether wrong answers are
+    // refused.
+    let p = 3
+    let q = 4
+    let total = 0
+    let sols: [number, number][] = []
+    for (let tries = 0; tries < 200; tries++) {
+      p = [3, 5, 7, 11, 13][rint(rng, 0, 4)]
+      q = [4, 6, 8, 9, 17][rint(rng, 0, 4)]
+      total = p * rint(rng, 2, 9) + q * rint(rng, 2, 9)
+      sols = []
+      for (let x = 1; x * p < total; x++) {
+        const rest = total - p * x
+        if (rest > 0 && rest % q === 0) sols.push([x, rest / q])
+      }
+      if (sols.length >= 2) break
     }
-    const witness = sols[0] ?? [x0, y0]
+    // The resample loop guarantees at least two; the fallback exists only so
+    // the type is total, and is unreachable in practice.
+    const witness = sols[0] ?? [1, (total - p) / q]
     return {
       title: 'Only whole numbers allowed',
-      prompt: `Find **whole numbers A and B**, both at least 1, with\n\n> **${p}·A + ${q}·B = ${total}**\n\nFractions are not allowed. There is at least one answer.`,
+      prompt: `Find **whole numbers A and B**, both at least 1, with\n\n> **${p}·A + ${q}·B = ${total}**\n\nFractions are not allowed. More than one pair works.`,
       answer: construct(
         'two whole numbers',
         [

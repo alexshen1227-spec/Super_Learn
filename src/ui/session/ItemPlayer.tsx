@@ -1101,8 +1101,14 @@ export function AnswerInput({
               )
             })}
           </ul>
+          {/* Conditional, because it is a factual claim. `nr-integer-pair` had
+              exactly one answer at three of eight seeds while this line
+              promised otherwise. The generators now guarantee a second answer,
+              and this stops the copy asserting it regardless. */}
           <p className="text-[12px] text-faint leading-snug">
-            More than one answer works. Any set of values meeting every condition is correct.
+            {spec.solutionCount === 1
+              ? 'There is exactly one set of values that works here.'
+              : 'More than one answer works. Any set of values meeting every condition is correct.'}
           </p>
         </div>
       )

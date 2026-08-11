@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ConstructAnswer } from '../domain/types'
 import { checkHolds, gradeConstruct, serializeConstruct, statOf, witnessResponse, witnessSatisfies } from './construct'
 import { validate, wrongResponse } from './validate'
+import { parseExpression } from './parseValue'
 
 const sub = (v: Record<string, number | string>) =>
   serializeConstruct(Object.fromEntries(Object.entries(v).map(([k, x]) => [k, String(x)])))
@@ -127,5 +128,46 @@ describe('the shared validator agrees', () => {
   })
   it('garbage is a format error, not a score', () => {
     expect(validate(fiveNumbers, 'not json').formatError).toBeTruthy()
+  })
+})
+
+describe('the grader accepts a value however a person writes it', () => {
+  // Optimised against FALSE NEGATIVES on purpose. The ladder blocks promotion
+  // on unrepaired errors, so a grader that rejects a correct answer silently
+  // parks a learner on a skill they already hold. These were the forms
+  // docs/OPEN.md listed as rejected.
+  const forms: [string, number][] = [
+    ['2^3', 8],
+    ['sqrt(9)', 3],
+    ['12/4 + 1', 4],
+    ['(3+5)/2', 4],
+    ['½', 0.5],
+    ['¾', 0.75],
+    ['3 1/2', 3.5],
+    ['50%', 50],
+    ['+7', 7],
+    [' 12 ', 12],
+    ['2 × 3', 6],
+    ['10 ÷ 4', 2.5],
+    ['−5', -5],
+    ['1,200', 1200],
+    ['2**3', 8],
+  ]
+  for (const [text, value] of forms) {
+    it(`reads ${JSON.stringify(text)} as ${value}`, () => {
+      expect(parseExpression(text)).toBeCloseTo(value, 9)
+    })
+  }
+
+  it('still refuses things that are not numbers', () => {
+    for (const junk of ['', 'x', 'abc', '3 + ', '(3', 'sqrt', 'sqrt(-4)', '1/0', '3..4', 'drop table']) {
+      expect(Number.isNaN(parseExpression(junk)), junk).toBe(true)
+    }
+  })
+
+  it('a constructed answer written as an expression is accepted', () => {
+    // 1, 4, 5, 12, 13 — the witness — written every which way.
+    const sub = serializeConstruct({ a: '2-1', b: '8/2', c: 'sqrt(25)', d: '3*4', e: '10+3' })
+    expect(gradeConstruct(fiveNumbers, sub).ok).toBe(true)
   })
 })

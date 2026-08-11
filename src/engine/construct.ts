@@ -22,7 +22,7 @@
  * can re-verify every constraint it will ever show a learner.
  */
 import type { ConstructAnswer, ConstructCheck, ConstructCmp, ConstructStat } from '../domain/types'
-import { parseNumeric } from './parseValue'
+import { parseExpression } from './parseValue'
 
 /** Learner input travels as a JSON object of slot key → raw string. */
 export function serializeConstruct(values: Record<string, string>): string {
@@ -193,7 +193,7 @@ export function gradeConstruct(spec: ConstructAnswer, raw: string): ConstructVer
       unreadable.push(slot.label)
       continue
     }
-    const n = parseNumeric(text)
+    const n = parseExpression(text)
     if (Number.isNaN(n)) unreadable.push(slot.label)
     else values[slot.key] = n
   }

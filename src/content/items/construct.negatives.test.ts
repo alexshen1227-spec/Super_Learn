@@ -368,3 +368,83 @@ describe('constructed answers reject wrong answers, not just accept right ones',
     expect(missed, missed.join('; ')).toEqual([])
   })
 })
+
+describe('right answers are accepted, not just wrong ones rejected', () => {
+  const items = constructItems()
+
+  /**
+   * Search for assignments that satisfy every constraint, other than the
+   * generator's own witness.
+   *
+   * Deterministic. Tries the witness perturbed in small ways first, then a
+   * wider random sweep, because most alternative solutions sit close to a
+   * known one and a purely random search over five slots finds nothing.
+   */
+  function otherSolutions(spec: ConstructAnswer, want: number): Record<string, number>[] {
+    const keys = spec.slots.map((s) => s.key)
+    const found: Record<string, number>[] = []
+    const seen = new Set<string>()
+    let st = 987654321
+    const rnd = (n: number) => ((st = (st * 1103515245 + 12345) & 0x7fffffff) % n)
+    const consider = (v: Record<string, number>) => {
+      if (found.length >= want) return
+      if (!spec.checks.every((c) => checkHolds(c, v))) return
+      const key = keys.map((k) => v[k]).join(',')
+      if (seen.has(key) || key === keys.map((k) => spec.witness[k]).join(',')) return
+      seen.add(key)
+      found.push(v)
+    }
+    // Swaps and small nudges around the witness.
+    for (let i = 0; i < keys.length && found.length < want; i++) {
+      for (let j = i + 1; j < keys.length && found.length < want; j++) {
+        const v = { ...spec.witness }
+        ;[v[keys[i]], v[keys[j]]] = [v[keys[j]], v[keys[i]]]
+        consider(v)
+      }
+    }
+    for (let tries = 0; tries < 40000 && found.length < want; tries++) {
+      const v = { ...spec.witness }
+      const howMany = 1 + rnd(Math.min(3, keys.length))
+      for (let k = 0; k < howMany; k++) v[keys[rnd(keys.length)]] += rnd(25) - 12
+      consider(v)
+    }
+    return found
+  }
+
+  it('every construction really does have more than one answer', () => {
+    // The player tells the learner "More than one answer works. Any set of
+    // values meeting every condition is correct." A seed with a UNIQUE
+    // solution makes that a lie, and is the signature of a constraint set that
+    // is too strict — the failure mode no other gate here can see, because
+    // every other test only asks whether wrong answers are refused.
+    const unique: string[] = []
+    for (const { id, seed, spec } of items) {
+      // `solutionCount` is authoritative where the generator counted by
+      // exhaustive search; the local search below is a fallback and is weak on
+      // structured constraints — it could not find the second solution to a
+      // linear equation, which needs a coordinated move along the lattice
+      // rather than an independent nudge per slot.
+      const known = spec.solutionCount
+      if (known !== undefined) {
+        if (known < 2) unique.push(`${id} seed ${seed} (generator counted ${known})`)
+        continue
+      }
+      if (!otherSolutions(spec, 1).length) unique.push(`${id} seed ${seed}`)
+    }
+    expect(unique, `constructions with only one possible answer: ${unique.join('; ')}`).toEqual([])
+  })
+
+  it('every alternative answer the search finds is actually accepted', () => {
+    // Guards the gap between `checkHolds` and the real grading path — parsing,
+    // serialising, the validator entry point. A constraint could hold while
+    // the submission that expresses it is still refused.
+    const rejected: string[] = []
+    for (const { id, seed, spec } of items) {
+      for (const alt of otherSolutions(spec, 4)) {
+        const sub = serializeConstruct(Object.fromEntries(Object.entries(alt).map(([k, v]) => [k, String(v)])))
+        if (!validate(spec, sub).ok) rejected.push(`${id} seed ${seed}`)
+      }
+    }
+    expect(rejected, `valid answers the grader refused: ${rejected.join('; ')}`).toEqual([])
+  })
+})

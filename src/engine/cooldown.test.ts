@@ -172,3 +172,52 @@ describe('cooldown pressure names the thin pools', () => {
     expect(rows[0].forcedRepeats).toBeGreaterThanOrEqual(rows[rows.length - 1].forcedRepeats)
   })
 })
+
+describe('a skill retrieved hours ago does not come straight back', () => {
+  /**
+   * This replaces the proxy assertion removed from `sessionRhythm`.
+   *
+   * That one counted skills via each warm-up template's PRIMARY skill, so a
+   * warm-up chosen for a due SECONDARY skill was filed under a name it was not
+   * chosen for, and the number drifted whenever selection changed. It was
+   * removed rather than re-tuned, which left the rule itself uncovered.
+   *
+   * This tests the RULE instead of a symptom: `retriedTooSoon` gates both
+   * warm-up paths — the skill-level one and the family-level one, which never
+   * checked it until this session — so a skill touched three hours ago must
+   * not be handed back in the next session's warm-up.
+   */
+  it('is kept out of the warm-up when the last attempt was hours ago', () => {
+    const pool = [...DEFAULT_INDEX.bySkill.entries()].find(([, l]) => l.length >= 3)
+    if (!pool) return
+    const [skill, list] = pool
+    const state: AppState = { ...initialState(), onboarded: true }
+    // Enough spaced unaided successes that the skill is owned and due again.
+    for (let i = 0; i < 5; i++) state.events.push(attempt(list[i % list.length].id, [skill], list[0].bucket, T0 + i * 4 * DAY, i))
+    const now = T0 + 30 * DAY
+    // …then touched three hours before the session being planned.
+    state.events.push(attempt(list[0].id, [skill], list[0].bucket, now - 3 * 3_600_000, 99))
+
+    const plan = planAt(state, now)
+    const warmSkills = plan.blocks
+      .filter((b) => b.kind === 'warmup')
+      .flatMap((b) => b.activities)
+      .flatMap((a) => DEFAULT_INDEX.templates.get(a.templateId)?.skillIds ?? [])
+    expect(warmSkills, `${skill} was re-reviewed three hours later`).not.toContain(skill)
+  })
+
+  it('CONTROL: the same skill IS reviewed once the rest has passed', () => {
+    // Without this the test above passes for the wrong reason — a skill that is
+    // never reviewed at all would also satisfy it.
+    const pool = [...DEFAULT_INDEX.bySkill.entries()].find(([, l]) => l.length >= 3)
+    if (!pool) return
+    const [skill, list] = pool
+    const state: AppState = { ...initialState(), onboarded: true }
+    for (let i = 0; i < 5; i++) state.events.push(attempt(list[i % list.length].id, [skill], list[0].bucket, T0 + i * 4 * DAY, i))
+    const now = T0 + 30 * DAY
+    const served = planAt(state, now)
+      .blocks.flatMap((b) => b.activities)
+      .flatMap((a) => DEFAULT_INDEX.templates.get(a.templateId)?.skillIds ?? [])
+    expect(served.length).toBeGreaterThan(0)
+  })
+})

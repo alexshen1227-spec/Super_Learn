@@ -37,3 +37,99 @@ export function parseNumeric(raw: string): number {
   if (pct) return Number(pct[1].replace(/\s+/g, ''))
   return NaN
 }
+
+/**
+ * A richer parse, for CONSTRUCTED answers only.
+ *
+ * `parseNumeric` above is what grades ordinary numeric questions, and it stays
+ * deliberately literal: if a question asks you to work out 12 ÷ 4 + 1, then
+ * accepting the string "12/4 + 1" would credit you for typing the question
+ * back. That risk is real and the strictness is correct there.
+ *
+ * A construction has no such risk, because the answer is an object you invent
+ * and the prompt cannot contain it. "Give five numbers with mean 7" tells you
+ * nothing you could restate. So here the whole point is to accept every way a
+ * person might write a value they have worked out — `2^3`, `sqrt(9)`, `½`,
+ * `12/4 + 1`, `(3+5)/2` — because the mastery ladder blocks promotion on
+ * unrepaired errors, and a grader that rejects a right answer silently parks
+ * the learner on a skill they already hold.
+ *
+ * Deliberately tiny: numbers, + − × ÷, powers, brackets and sqrt. No
+ * variables, no other functions, no coercion of things that are not numbers.
+ * Returns NaN on anything it does not fully understand rather than guessing.
+ */
+const UNICODE_FRACTIONS: Record<string, number> = {
+  '½': 0.5, '⅓': 1 / 3, '⅔': 2 / 3, '¼': 0.25, '¾': 0.75,
+  '⅕': 0.2, '⅖': 0.4, '⅗': 0.6, '⅘': 0.8, '⅙': 1 / 6, '⅚': 5 / 6,
+  '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875,
+}
+
+export function parseExpression(raw: string): number {
+  const plain = parseNumeric(raw)
+  if (!Number.isNaN(plain)) return plain
+
+  let s = raw.trim().replace(/,/g, '').replace(/\s+/g, '')
+  if (!s) return NaN
+  // Typographic operators and unicode fractions become their plain equivalents.
+  s = s.replace(/[×·]/g, '*').replace(/[÷]/g, '/').replace(/[−–—]/g, '-').replace(/\*\*/g, '^')
+  for (const [glyph, value] of Object.entries(UNICODE_FRACTIONS)) s = s.split(glyph).join(`(${value})`)
+  if (!/^[-+*/^().\d]|sqrt/.test(s)) return NaN
+  if (!/^(?:sqrt|[-+*/^().\d])+$/.test(s)) return NaN
+
+  let at = 0
+  const eat = (c: string) => (s[at] === c ? (at++, true) : false)
+
+  // expr := term (('+' | '-') term)*
+  const expr = (): number => {
+    let v = term()
+    for (;;) {
+      if (eat('+')) v += term()
+      else if (eat('-')) v -= term()
+      else return v
+    }
+  }
+  // term := power (('*' | '/') power)*
+  const term = (): number => {
+    let v = power()
+    for (;;) {
+      if (eat('*')) v *= power()
+      else if (eat('/')) {
+        const d = power()
+        if (d === 0) return NaN
+        v /= d
+      } else return v
+    }
+  }
+  // power := unary ('^' power)?   — right-associative, as written by hand
+  const power = (): number => {
+    const base = unary()
+    return eat('^') ? base ** power() : base
+  }
+  const unary = (): number => {
+    if (eat('-')) return -unary()
+    if (eat('+')) return unary()
+    return atom()
+  }
+  const atom = (): number => {
+    if (s.startsWith('sqrt', at)) {
+      at += 4
+      if (!eat('(')) return NaN
+      const v = expr()
+      if (!eat(')')) return NaN
+      return v < 0 ? NaN : Math.sqrt(v)
+    }
+    if (eat('(')) {
+      const v = expr()
+      return eat(')') ? v : NaN
+    }
+    const start = at
+    while (at < s.length && /[\d.]/.test(s[at])) at++
+    if (at === start) return NaN
+    const n = Number(s.slice(start, at))
+    return Number.isFinite(n) ? n : NaN
+  }
+
+  const value = expr()
+  // Anything left over means the string was not fully understood.
+  return at === s.length && Number.isFinite(value) ? value : NaN
+}

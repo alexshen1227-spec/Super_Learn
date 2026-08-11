@@ -1122,6 +1122,15 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     // Two due skills can name the same family; without this the second one
     // re-serves the identical question.
     if (formsExhausted(template, used)) continue
+    // A DIAGRAM is exposure, and exposure does not repeat well. This loop
+    // serves a due FAMILY by looking it up directly, so it bypassed
+    // `pickTemplates` and with it the exposure cap: measured over 240 days, one
+    // diagram went three times through the core block, hit its cap, and then
+    // came back four more times through here as its family review fell due —
+    // seven servings against a limit of three. Dragging the same slider again
+    // re-reads a caption; the graded checkpoint attached to it is what deserves
+    // spacing, and that is scheduled separately.
+    if (exploreExhausted(template.id, templateUse.get(template.id))) continue
     // The same twelve-hour rest the skill-level path below enforces. This loop
     // reviews a due FAMILY and never checked it, so a skill retrieved three
     // hours ago could come straight back through this door — which is massing

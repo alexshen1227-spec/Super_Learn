@@ -178,6 +178,20 @@ describe('diagrams do not repeat like retrieval items', () => {
     // rather than flaking the release gate under parallel load.
   }, 60_000)
 
+  it('the warm-up path cannot smuggle a diagram past its cap', () => {
+    // The cap used to be enforced only inside `pickTemplates`. The first
+    // warm-up loop serves a due FAMILY by looking the template up directly, so
+    // it never consulted the cap: over 240 days one diagram went three times
+    // through core, exhausted itself, then returned FOUR more times through the
+    // warm-up as its family review fell due. Seven servings against a limit of
+    // three, and invisible to every test that only looked at whole-run totals
+    // with generous headroom.
+    for (const acc of [0.3, 0.7]) {
+      const { served } = run(240, acc)
+      const over = [...served.entries()].filter(([, n]) => n > EXPLORE_SERVE_LIMIT * 2)
+      expect(over.map(([id, n]) => `${id} ${n}x`), `accuracy ${acc}`).toEqual([])
+    }
+  }, 120_000)
   it('stops offering a diagram once it has been explored a few times', () => {
     for (const acc of [0.3, 0.7]) {
       const { served } = run(240, acc)
@@ -234,4 +248,5 @@ describe('the pixel-space checks actually detect things', () => {
     expect(off.length).toBeGreaterThan(0)
     expect(clippedMarks({ ...base, marks: [{ x: 5, label: 'mean 50' }] })).toEqual([])
   })
+
 })

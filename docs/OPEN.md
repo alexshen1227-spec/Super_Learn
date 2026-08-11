@@ -7,7 +7,7 @@ Ordered by the project's own tie-breakers: fixing a way the app is wrong about
 the learner beats adding anything; honest evidence beats more content;
 measurement beats features; depth in maths beats breadth elsewhere.
 
-Last reviewed: 2026-08-11.
+Last reviewed: 2026-08-11 (second pass).
 
 ---
 
@@ -155,17 +155,28 @@ This is the honest cost of the burned flag rather than a defect, but it is a
 real ceiling on the north-star metric and should not be forgotten because it
 was deliberate.
 
-### The construct grader has a known false-negative class
-`docs/RESEARCH.md` §39b lists what it rejects that a person would accept: an
-unevaluated expression (`2^3`, `sqrt(9)`, `12/4 + 1`), a unicode fraction
-glyph, scientific notation with a unit attached. No item currently needs any of
-these, so nothing is broken today; adding one that does would break quietly.
+### ~~The construct grader has a known false-negative class~~ CLOSED
+`parseExpression` now accepts `2^3`, `sqrt(9)`, `12/4 + 1`, `(3+5)/2`, unicode
+fractions, mixed numbers, percentages, typographic operators and thousands
+separators, and still refuses anything it cannot fully parse. Used ONLY by the
+constructed-answer grader: for an ordinary numeric question, accepting
+"12/4 + 1" would credit typing the question back, and the strictness there is
+correct. A construction cannot be restated from its prompt, so it has no such
+risk.
 
-### Nothing catches an over-strict constraint
-Four layers now catch a construct constraint that is too loose or outright
-wrong (§39d). None catches one that is too STRICT in a way the witness happens
-to satisfy — it would reject correct answers and every gate would stay green.
-The only defence is the hand-written positives.
+### ~~Nothing catches an over-strict constraint~~ CLOSED
+A gate now asks the question the others cannot: does a SECOND valid answer
+exist? The player promises "more than one answer works", so a unique solution
+makes the app state something false on screen.
+
+It found one immediately. `nr-integer-pair` had exactly ONE answer at three of
+eight seeds. It now resamples until at least two exist, the gate prefers the
+generator’s own exhaustive count over its local search, and the player’s claim
+is conditional rather than asserted.
+
+`nr-digit-target` was flagged by the same gate and was a false alarm — 2 to 4
+solutions per seed, the search was just too weak to find them. Verified before
+changing anything.
 
 ### Constructed argument remains ungradable
 Proofs, derivations with justification, and explanations cannot be graded
@@ -189,30 +200,29 @@ cannot be where it is acquired. Accepted, per the fourth tie-breaker.
 
 ## Smaller, still open
 
-- **`nr-digit-target` accepts any arrangement matching the optimal distance,**
-  not only the optimal arrangement. Correct as specified, but the explanation
-  claims a specific pairing; a learner who ties by another route reads a
-  mismatch.
+- ~~**`nr-digit-target`'s explanation claims a specific pairing**~~ CLOSED. It
+  now says how many arrangements tie and that another one landing the same
+  distance away is equally right.
 - **Dispute resolution has no reminder, deliberately.** Open disputes are
   already out of the numbers, so there is no urgency — but if one is never
   settled, the attempt is silently discarded forever. Watch whether that
   becomes a way to quietly delete inconvenient evidence.
 - **The licence audit gate now fires against a real source** (OpenStax
   Statistics, CC BY 4.0). It had never been exercised before this.
-- **A diagram reached 11 servings against a soft cap of 9** under the cap-1
-  cooldown variants, and the cause was never found. That variant is not
-  shipped, so nothing is broken today — but the mechanism is unexplained and
-  would matter if the cap is revisited after content is imported.
+- ~~**A diagram reached 11 servings against a soft cap**~~ CLOSED, and it was a
+  real bug in the SHIPPED planner rather than only the unshipped variant. The
+  first warm-up loop serves a due FAMILY by looking the template up directly,
+  bypassing `pickTemplates` and with it the exposure cap: three servings
+  through core, then four more through the warm-up as the family review fell
+  due. Seven against a limit of three, now 3, with a regression test.
 - **The 30 imported items carry answers parsed from OpenStax’ printed
   solutions**, not answers this app derived. The filter drops everything it
   cannot cross-check (1,929 down to 30), but a misparse would be invisible from
   inside. If one looks wrong, dispute it — that flow exists and works.
-- **`sessionRhythm` lost its same-day-review proxy assertion.** It filed each
-  warm-up under its template’s PRIMARY skill, so a warm-up chosen for a due
-  SECONDARY skill was counted under a name it was not chosen for, and the count
-  drifted with every selection change. Replaced by an exact same-template
-  measure, which is 0. If a genuine same-skill spacing collapse ever returns,
-  nothing now catches it directly.
+- ~~**`sessionRhythm` lost its same-day-review proxy**~~ CLOSED. The rule it
+  protected is now tested directly rather than by proxy: a skill attempted three
+  hours ago must not reappear in the next warm-up, with a CONTROL proving the
+  same skill IS reviewed once the rest has passed.
 - **The Browser pane intermittently stops compositing**, so screenshots fail
   while every DOM tool keeps working (see CLAUDE.md). Cause unknown; it is a
   pane-visibility problem outside the app.
