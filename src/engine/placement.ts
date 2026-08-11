@@ -12,6 +12,7 @@ import type {
   Profile,
 } from '../domain/types'
 import type { ContentIndex } from './content-index'
+import { effectiveGrade } from './effectiveGrade'
 
 /** Math ladder ordered easy → hard. Placement walks it adaptively. */
 export const MATH_LADDER: string[] = [
@@ -61,8 +62,12 @@ export interface PlacementProgress {
 }
 
 export function startPlacement(profile: Profile, now: number): PlacementProgress {
-  // Start near the reported grade: grade 8 → m-lineqmulti (index 4).
-  const grade = profile.gradeLevel ?? 8
+  // Start near the learner's EFFECTIVE grade: grade 8 → m-lineqmulti (index 4).
+  // The chosen maths track outranks the year they typed, because someone in
+  // year 7 taking Algebra I should not be probed at year-7 material and made
+  // to climb. Placement walks in both directions, so starting a rung high
+  // costs one item; starting several rungs low costs most of the session.
+  const grade = effectiveGrade(profile)
   const ladderIndex = grade <= 6 ? 0 : grade === 7 ? 2 : grade === 8 ? 4 : grade === 9 ? 5 : 6
   return {
     phase: 'math',

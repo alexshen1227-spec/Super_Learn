@@ -22,6 +22,7 @@ import type {
 import { ACADEMIC_BUCKETS, BUCKET_BY_ID, ERROR_TAGS } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { difficultyForRate, evidenceFor, stateRank } from './mastery'
+import { effectiveGrade } from './effectiveGrade'
 import { dueForms, dueReviews } from './scheduler'
 import { relativeDebt, type AllocationReport } from './allocation'
 import { effectiveAllocation } from './allocationPlus'
@@ -595,7 +596,10 @@ export function scoreSkills(
       // and something still has to be picked. Break that tie upward: prefer
       // the most advanced material the learner is cleared for, capped just
       // above their stated grade so "start high" never becomes "start lost".
-      const reach = Math.min(skill.gradeBand, (state.profile.gradeLevel ?? 8) + 1)
+      // effectiveGrade, not the typed year: the cap used to bite hardest on an
+      // accelerated learner, pinning reach one rung above their school year
+      // while their own chosen track taught two rungs higher.
+      const reach = Math.min(skill.gradeBand, effectiveGrade(state.profile) + 1)
       score += Math.max(0, reach - 6) * 0.5
     }
     if (ev.recentMisses > 0) {
