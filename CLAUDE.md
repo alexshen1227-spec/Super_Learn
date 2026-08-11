@@ -202,6 +202,26 @@ simulated learner, check the actual distribution — estimates from reading the
 source have been badly wrong more than once (a regex undercounted 307 templates
 as 161 and produced the wrong conclusions about which categories were starved).
 
+## The app is self-contained
+
+**Nothing the app does may depend on what happened in a build transcript.**
+
+This was violated once and is worth stating outright. Problem text printed
+into an assistant conversation was treated as "the learner has seen the
+answer", and 204 templates were blocked from carrying evidence on that basis.
+The inference was wrong — the learner had not read those stretches — and the
+cost was heavy: four skills became unprovable and a simulated year lost a
+third of its owned skills.
+
+Two things follow. Being wrong in the CAUTIOUS direction is still being wrong;
+a pessimistic error is not a safe error when the whole product is an honest
+record. And the app has to be judgeable on its own behaviour: what it knows
+about the learner comes from attempts inside it, full stop. If a session shows
+a problem in chat, that is a fact about the chat, not about the learner.
+
+"I have seen this recently" already has a home — the review ladder and the
+template cooldown, both keyed off events in the app.
+
 ## Correctness rules (the ones people break)
 
 1. **Content answers are COMPUTED, never hand-typed.** A generator derives its

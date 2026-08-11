@@ -19,7 +19,6 @@
  * signal that should decide what gets imported next.
  */
 import type { AttemptEvent, ItemTemplate } from '../domain/types'
-import { BURNED_TEMPLATE_IDS } from '../content/burned'
 import { formsRequired } from './mastery'
 
 export interface PoolPressure {
@@ -39,9 +38,17 @@ interface IndexLike {
   bySkill: Map<string, ItemTemplate[]>
 }
 
-/** Families for a skill that can still carry unaided evidence. */
+/**
+ * Families for a skill that can carry unaided evidence.
+ *
+ * Every template counts again. This once excluded the burned list, which left
+ * 6 skills unreachable and 17 more short of the bar; that exclusion was
+ * withdrawn once the learner said they had not read the transcripts it was
+ * inferred from. Kept as a function because the pool/bar comparison is still
+ * the right shape for finding thin content.
+ */
 export function cleanPool(index: IndexLike, skillId: string): ItemTemplate[] {
-  return (index.bySkill.get(skillId) ?? []).filter((t) => !BURNED_TEMPLATE_IDS.has(t.id))
+  return index.bySkill.get(skillId) ?? []
 }
 
 /**

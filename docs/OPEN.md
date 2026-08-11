@@ -7,7 +7,7 @@ Ordered by the project's own tie-breakers: fixing a way the app is wrong about
 the learner beats adding anything; honest evidence beats more content;
 measurement beats features; depth in maths beats breadth elsewhere.
 
-Last reviewed: 2026-08-11 (second pass).
+Last reviewed: 2026-08-11 (third pass).
 
 ---
 
@@ -65,12 +65,16 @@ where a misaligned parse is detectable.
 Result: skills below the independence bar 23 to 21; fully blocked 6 to 4.
 `s-hypo`, `s-corr` and `m-sampling` are fixed.
 
-STILL BLOCKED, and not fixable from this source: `i-abduce`, `c-decomp`,
-`i-commit`, `x-stuck`. The thinnest pools are reasoning skills — abduction,
-commitment, decomposition, working while stuck — and no openly licensed
-statistics or algebra text contains problems about them. This is the central
-obstacle to finishing step 6: the abundant CC BY sources serve pools that are
-already healthy, and the starved pools have no obvious open source at all.
+The "still blocked" skills listed here originally — `i-abduce`, `c-decomp`,
+`i-commit`, `x-stuck` — were blocked by the burned-item flag, not by a content
+shortage. With that removed they are fine, and nothing in the bank is below the
+independence bar.
+
+The observation underneath it still stands and is worth keeping: the openly
+licensed sources are all mathematics and statistics. If a reasoning pool ever
+does run thin, there is no obvious CC BY text of "spot the best explanation"
+problems, because those are this app's own constructions rather than a school
+subject with textbooks behind it.
 
 Next options, roughly by promise: OpenStax *Introductory Business Statistics*
 and the CC BY algebra titles for more maths depth; pre-1930 public domain
@@ -142,18 +146,16 @@ from three months ago; how many focused minutes did each retained skill cost.
 
 ## Known gaps in what has shipped
 
-### 21 skills cannot currently be proven
-Marking 204 templates burned left 6 skills with no clean template family at all
-and 17 more below the number independence requires. The OpenStax import fixed
-three, so it now stands at **4 fully blocked and 17 thin**. They are still
-taught and practised; they cannot reach Independent. `poolPressure()` ranks
-them worst-first and that ranking is the import shortlist.
+### ~~21 skills cannot currently be proven~~ WITHDRAWN
+This was a consequence of the burned-item flag, which has been removed: it
+rested on an inference that the learner had read problem text printed into a
+build transcript, and they had not. Measured after removal — 661 templates,
+**0 skills below the independence bar, 0 blocked**. The four that had been
+unreachable (`i-abduce`, `c-decomp`, `i-commit`, `x-stuck`) are fine.
 
-Still fully blocked: `i-abduce`, `c-decomp`, `i-commit`, `x-stuck`.
-
-This is the honest cost of the burned flag rather than a defect, but it is a
-real ceiling on the north-star metric and should not be forgotten because it
-was deliberate.
+The rule that replaced it is in CLAUDE.md: nothing the app does may depend on
+what happened in a build transcript. `poolPressure()` survives and still finds
+thin content — it simply counts every template now.
 
 ### ~~The construct grader has a known false-negative class~~ CLOSED
 `parseExpression` now accepts `2^3`, `sqrt(9)`, `12/4 + 1`, `(3+5)/2`, unicode

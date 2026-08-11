@@ -11,6 +11,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '9.2',
+    date: '2026-08-11',
+    title: 'Undoing Something The App Was Wrong About You',
+    points: [
+      'Last update said 204 questions could no longer prove you had learned anything, because their answers had appeared in the assistant conversation while this app was being built. You said you never actually read those bits. You are the only person who would know, so that is that — all 204 count normally again.',
+      'It mattered more than it sounds. Four topics had become impossible to prove you knew: working out the likeliest explanation from clues, breaking a coding job into pieces, making a promise believable by removing your own options, and telling productive struggle from being properly stuck. Every question the app had for those was blocked. They all work again.',
+      'The numbers, over a simulated year of practice: skills you could reach the top rung on went from 77 back to 123, and 21 topics that were stuck below the bar are now at zero.',
+      'The real lesson is a rule the app now follows: nothing it thinks about you may depend on what happened in a coding conversation. If a question gets shown in chat, that is a fact about the chat, not about you. What the app knows about you comes from what you actually do in it — and "I have seen this recently" was already handled properly by the review schedule and the repeat gap.',
+      'Also reverted a change that made practice questions wait a fortnight before repeating. It was measured and the trade was not worth it, and the number came from a passing remark rather than a decision. The one-day floor stays: the same question never twice in a sitting or again the next day, with the review ladder doing the real spacing.',
+    ],
+  },
+  {
+    version: '9.2',
+    date: '2026-08-11',
+    title: 'Undoing Something The App Was Wrong About You',
+    points: [
+      'Last update said 204 questions could no longer prove you had learned anything, because their answers had appeared in the assistant conversation while this app was being built. You said you never actually read those bits. You are the only person who would know, so that is that — all 204 count normally again.',
+      'It mattered more than it sounds. Four topics had become impossible to prove you knew: working out the likeliest explanation from clues, breaking a coding job into pieces, making a promise believable by removing your own options, and telling productive struggle from being properly stuck. Every question the app had for those was blocked. They all work again.',
+      'The numbers, over a simulated year of practice: skills you could reach the top rung on went from 77 back to 123, and 21 topics that were stuck below the bar are now at zero.',
+      'The real lesson is a rule the app now follows: nothing it thinks about you may depend on what happened in a coding conversation. If a question gets shown in chat, that is a fact about the chat, not about you. What the app knows about you comes from what you actually do in it — and "I have seen this recently" was already handled properly by the review schedule and the repeat gap.',
+      'Also reverted a change that made practice questions wait a fortnight before repeating. It was measured and the trade was not worth it, and the number came from a passing remark rather than a decision. The one-day floor stays: the same question never twice in a sitting or again the next day, with the review ladder doing the real spacing.',
+    ],
+  },
+  {
     version: '9.1',
     date: '2026-08-11',
     title: 'The Number This App Is Actually For',

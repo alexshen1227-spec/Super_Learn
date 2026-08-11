@@ -9,14 +9,13 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { AttemptEvent, DisputeEvent } from '../domain/types'
-import { BURNED_TEMPLATE_IDS } from '../content/burned'
 import { BUILTIN_TEMPLATES } from '../content/registry'
 import { DURABLE_GAP_DAYS, QUARTER_DAYS, durableByWeek, northStar } from './northStar'
 
 const DAY = 86_400_000
 const T0 = Date.UTC(2026, 0, 6, 9)
 const SKILL = 'm-fractions'
-const CLEAN = BUILTIN_TEMPLATES.filter((t) => !BURNED_TEMPLATE_IDS.has(t.id)).map((t) => t.id)
+const CLEAN = BUILTIN_TEMPLATES.map((t) => t.id)
 
 let n = 0
 function ev(over: Partial<AttemptEvent> & { t: number; templateId: string }): AttemptEvent {
@@ -80,13 +79,6 @@ describe('a durable skill is hard to earn', () => {
     ])
     expect(s.durable).toEqual([])
     expect(s.everUnaided).toBe(0)
-  })
-
-  it('an item whose answer was read elsewhere cannot prove it', () => {
-    const burned = [...BURNED_TEMPLATE_IDS][0]
-    expect(burned).toBeTruthy()
-    const s = star([ev({ t: T0, templateId: CLEAN[0] }), ev({ t: T0 + 20 * DAY, templateId: burned })])
-    expect(s.durable).toEqual([])
   })
 
   it('a disputed attempt cannot prove it while it is quarantined', () => {

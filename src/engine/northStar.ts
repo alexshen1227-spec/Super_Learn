@@ -15,15 +15,14 @@
  * decides what to practise next, the other decides what may be claimed.
  *
  * Everything here is derived by replay, adds no event fields, and applies the
- * same exclusions as the ladder — hinted work, placement, burned items whose
- * answers were read elsewhere, and disputed attempts under quarantine.
+ * same exclusions as the ladder — hinted work, placement, and disputed
+ * attempts under quarantine.
  *
  * EVERY NUMBER CAN REFUSE TO EXIST. A rate computed from two skills is noise
  * wearing a decimal point, so thin evidence returns null and the dashboard
  * says so rather than printing a confident figure.
  */
 import type { AttemptEvent, DisputeEvent } from '../domain/types'
-import { BURNED_TEMPLATE_IDS } from '../content/burned'
 import { evidenceEvents } from './dispute'
 
 const DAY = 86_400_000
@@ -76,7 +75,7 @@ export interface NorthStar {
 }
 
 function usable(e: AttemptEvent): boolean {
-  return e.mode !== 'placement' && !BURNED_TEMPLATE_IDS.has(e.templateId)
+  return e.mode !== 'placement'
 }
 
 /** Unaided means first submission, zero hints. Repaired never counts here. */

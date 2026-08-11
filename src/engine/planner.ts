@@ -140,6 +140,7 @@ export const templateKey = (templateId: string) => `tpl:${templateId}`
  */
 export const MIN_TEMPLATE_GAP_DAYS = 1
 
+
 /** Served so recently that a repeat tests recall of the answer, not the skill. */
 function onCooldown(use: TemplateCoverage | undefined, gapDays: number): boolean {
   return use !== undefined && use.daysSince <= gapDays
