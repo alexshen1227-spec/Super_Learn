@@ -48,6 +48,7 @@ import { ALGORITHMS_TEMPLATES } from './items/algorithmsLab'
 import { META_DEPTH_TEMPLATES } from './items/metaDepth'
 import { OBSERVER_DEPTH_TEMPLATES } from './items/observerDepth'
 import { DECISIONS_DEPTH_TEMPLATES } from './items/decisionsDepth'
+import { INQUIRY_DEPTH_TEMPLATES } from './items/inquiryDepth'
 import { UNCERTAINTY_TEMPLATES } from './items/uncertaintyLab'
 import { UNSEEN_TEMPLATES } from './items/unseenLab'
 import { CHOICE_TEMPLATES } from './items/choiceLab'
@@ -117,6 +118,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...META_DEPTH_TEMPLATES,
   ...OBSERVER_DEPTH_TEMPLATES,
   ...DECISIONS_DEPTH_TEMPLATES,
+  ...INQUIRY_DEPTH_TEMPLATES,
   ...UNCERTAINTY_TEMPLATES,
   ...UNSEEN_TEMPLATES,
   ...CHOICE_TEMPLATES,
