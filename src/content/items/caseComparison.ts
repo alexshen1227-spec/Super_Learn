@@ -69,7 +69,7 @@ function comparisonItem(rng: Rng, set: CaseSet) {
     ],
     parts: [
       part('Compare', {
-        study: `CASE 1 — ${set.a.title}\n\n${set.a.text}\n\n---\n\nCASE 2 — ${set.b.title}\n\n${set.b.text}`,
+        study: `CASE 1 — ${set.a.title}\n\n${set.a.text}\n\nCASE 2 — ${set.b.title}\n\n${set.b.text}`,
         studySeconds: 90,
         prompt:
           'In your own words: what is the same about how these two situations WORK? Ignore the surface — the people, the setting, the subject. Describe the shared structure and what it means for what should be done.',
