@@ -19,7 +19,7 @@ import type {
   SkillEvidence,
   SkillNode,
 } from '../domain/types'
-import { ACADEMIC_BUCKETS, BUCKET_BY_ID, ERROR_TAGS } from '../domain/types'
+import { ACADEMIC_BUCKETS, BUCKETS, BUCKET_BY_ID, ERROR_TAGS } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { difficultyForRate, evidenceFor, stateRank } from './mastery'
 import { effectiveGrade } from './effectiveGrade'
@@ -556,7 +556,7 @@ const CAPABLE_REASON = 'placement already saw this go well, so the next gain is 
  * the intent the old early-`break` was serving crudely — stated as a number
  * now, so it can be reasoned about instead of being a control-flow accident.
  */
-export const MATH_CORE_MARGIN = 2
+export const MATH_CORE_MARGIN = 1
 
 /** The first unit in the track with any skill not yet independent. */
 export function trackFrontierUnit(
@@ -1284,8 +1284,42 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     }
   }
 
-  // ---- 2. Academic core
-  const academicDebtOrder = [...ACADEMIC_BUCKETS].sort(
+  /*
+   * Starvation is a BONUS, never an override. An override hijacked the core
+   * block away from the placement-informed frontier in the learner's first
+   * sessions — caught by two existing tests, which is exactly what they are
+   * for. As a bonus, a due review (+3) or a mission still outranks it.
+   *
+   * Gated on an hour of real history so a bucket cannot count as "starved"
+   * before the learner has done anything at all.
+   */
+  const historyEnough = report.totalMinutes >= 60
+  // ---- 2. Core block
+  /*
+   * WHO MAY HOLD THE CORE BLOCK.
+   *
+   * For most of this app's life the answer was "one of the four academic
+   * buckets", full stop. The core is the largest block in a session, so those
+   * four had exclusive access to roughly half of every day while the six Path
+   * buckets shared a single ~25% rotation — even though the Paths carry 52% of
+   * the target allocation between them. That is the structural reason
+   * mathematics was DELIVERED at 34-38% against a 26% target while Human
+   * Insight sat at 2-3%: the imbalance was never in the allocation table, it
+   * was in which blocks each area was allowed to occupy.
+   *
+   * A Path bucket may now take the core block, but only when it is genuinely
+   * STARVING — the same bar an academic bucket has to clear to displace
+   * mathematics. In ordinary operation the core is still academic and the
+   * session still looks the way it always has; a Path only takes it when the
+   * allocation says it has been badly under-served, which is exactly when the
+   * rotation alone has failed to fix it.
+   */
+  const starvingPaths = historyEnough
+    ? BUCKETS.map((b) => b.id).filter(
+        (b) => !ACADEMIC_BUCKETS.includes(b) && relativeDebt(report, b) >= STARVED_DEBT,
+      )
+    : []
+  const academicDebtOrder = [...ACADEMIC_BUCKETS, ...starvingPaths].sort(
     (a, b) => relativeDebt(report, b) - relativeDebt(report, a),
   )
   /*
@@ -1307,16 +1341,6 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   let coreEffective = -Infinity
   let starvedPick: BucketId | null = null
   /*
-   * Starvation is a BONUS, never an override. An override hijacked the core
-   * block away from the placement-informed frontier in the learner's first
-   * sessions — caught by two existing tests, which is exactly what they are
-   * for. As a bonus, a due review (+3) or a mission still outranks it.
-   *
-   * Gated on an hour of real history so a bucket cannot count as "starved"
-   * before the learner has done anything at all.
-   */
-  const historyEnough = report.totalMinutes >= 60
-  /*
    * Math's incumbency is a TIE-BREAKER, not a shield. Adding it on top of the
    * course tilt (TRACK_BONUS + TRACK_UNIT_BONUS = 1.7) put a track-boosted math
    * skill at +3.7 against a starving bucket's +3.4, and physics fell back to 0%
@@ -1327,7 +1351,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
    */
   const anyStarving =
     historyEnough &&
-    ACADEMIC_BUCKETS.some(
+    academicDebtOrder.some(
       (b) => b !== 'math' && relativeDebt(report, b) >= STARVED_DEBT && scoreSkills(b, ctx, report).length > 0,
     )
   for (const bucket of academicDebtOrder) {
