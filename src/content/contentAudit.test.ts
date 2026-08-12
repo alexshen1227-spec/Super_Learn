@@ -1283,6 +1283,42 @@ describe('multiple choice does not leak the answer through option length', () =>
     expect(over, `buckets where the longest answer gives it away: ${over.join('; ')}`).toEqual([])
   })
 
+  /*
+   * The bucket test can be passed by a bucket containing one thoroughly broken
+   * template, because 140 healthy option sets dilute 12 bad ones below the 5%
+   * excess threshold. A learner does not meet a bucket average; they meet a
+   * template, repeatedly, for years. So each template is also checked on its
+   * own — with a much looser bar, because a handful of option sets is a small
+   * sample and chance alone will sometimes put the key at the top.
+   */
+  it('no single template rewards picking the longest option', () => {
+    const over: string[] = []
+    for (const t of BUILTIN_TEMPLATES) {
+      let n = 0
+      let long = 0
+      for (let seed = 0; seed < Math.min(SAMPLE_SEEDS, Math.max(1, t.variants)); seed++) {
+        let item
+        try {
+          item = t.generate(seed)
+        } catch {
+          continue
+        }
+        for (const part of item.parts ?? [{ answer: item.answer }]) {
+          const a = part.answer ?? item.answer
+          if (!a || a.type !== 'mcq' || a.options.length < 3) continue
+          const lens = a.options.map((o) => o.length)
+          const others = lens.filter((_, j) => j !== a.correct)
+          const hi = Math.max(...others)
+          n++
+          if (lens[a.correct] > hi * (1 + CUE_MARGIN) && lens[a.correct] - hi >= CUE_CHARS) long++
+        }
+      }
+      // Needs enough sets to mean anything, and then a clear majority.
+      if (n >= 5 && long / n > 0.6) over.push(`${t.id}: key is visibly longest in ${long}/${n} option sets`)
+    }
+    expect(over, `templates where the longest answer gives it away: ${over.join('; ')}`).toEqual([])
+  })
+
   it('no bucket rewards eliminating the shortest option', () => {
     const over: string[] = []
     for (const [bucket, e] of tally()) {

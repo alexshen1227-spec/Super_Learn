@@ -125,7 +125,7 @@ const TRADE_SETS: CaseSet[] = [
     key: 'Each side cares about the issues by different amounts, so trading whole issues beats splitting each one',
     decoys: [
       'Both sides want the same thing, so the only fair answer is to divide everything evenly',
-      'One side is being unreasonable, so a neutral person should decide the split for them',
+      'One side is being unreasonable about this, so a neutral outsider should decide the whole split for them',
       'The issues are too tangled to separate, so the sides should take turns getting priority',
       'Each side should give up the thing it wants most, since that is what compromise means',
     ],
@@ -134,7 +134,7 @@ const TRADE_SETS: CaseSet[] = [
       key: 'Give each one final say over the thing they care about most, and none over the other',
       decoys: [
         'Keep co-approving everything but set a strict time limit on each argument',
-        'Alternate: one of them decides everything on this album, the other on the next',
+        'Alternate completely: one of them decides everything on this album, and the other decides everything on the next',
         'Bring in the drummer as a third vote to break every tie that comes up',
         'Split each decision in half so both feel equally heard about lyrics and artwork',
       ],
@@ -163,7 +163,7 @@ const TRADE_SETS: CaseSet[] = [
       'Both sides need the same things, so the only defensible rule is an even split',
       'The side with the greater need should simply receive the larger total share',
       'Because the total is fixed, any gain for one side has to be a loss for the other',
-      'Rotating who gets priority is fairer than letting either side specialise at all',
+      'Rotating which side gets priority each month is fairer than letting either of them specialise at all',
     ],
     transfer: {
       text: 'Two housemates are dividing a grocery order. One is fussy about coffee and indifferent to bread; the other buys expensive bread and drinks whatever coffee is there. They currently buy the mid-range version of everything.',
@@ -172,7 +172,7 @@ const TRADE_SETS: CaseSet[] = [
         'Keep buying mid-range on both, since that is the fairest possible outcome',
         'Let whoever spends more money that month choose both items outright',
         'Buy the expensive version of both and split the higher bill evenly',
-        'Alternate weeks, so each housemate gets their preferred item every other week',
+        'Alternate week by week, so that each housemate gets the good version of their own preferred item every other week',
       ],
     },
     why: 'Mid-range on everything is the even split in disguise. It spends the same money and satisfies nobody, precisely because the two people care unequally.',
@@ -216,7 +216,7 @@ const SELECTION_SETS: CaseSet[] = [
       'In both cases the data was filtered before anyone read it, and the filter is related to the outcome being asked about. People whose business failed are less likely to still be in the entrepreneurs forum answering questions; people who abandoned the app are less likely to review it. So the visible group is not a sample of everyone who tried — it is a sample of everyone who tried AND stayed, which is exactly the group that would look successful whether or not the thing works. Answering the real question needs the people who left.',
     key: 'Whether someone appears in the data depends on the outcome, so the visible group is not everyone who tried',
     decoys: [
-      'The samples are too small, so gathering several thousand more responses would settle it',
+      'The samples are simply too small, so gathering several thousand more responses from the same place would settle it',
       'The respondents are lying about their outcomes to look better in front of strangers',
       'Averages hide variation, so the median rather than the mean should have been reported',
       'The two groups were asked different questions, so their answers cannot be compared at all',
@@ -227,7 +227,7 @@ const SELECTION_SETS: CaseSet[] = [
       decoys: [
         'Survey more current team members to confirm the twice-a-day figure is accurate',
         'Ask the athletes whether they personally believe the early training was decisive',
-        'Compare the team against athletes in a different sport with different training',
+        'Compare this national team against athletes in a different sport who trained on a completely different schedule',
         'Check whether the athletes started at exactly nine rather than at eight or ten',
       ],
     },
@@ -254,7 +254,7 @@ const SELECTION_SETS: CaseSet[] = [
     decoys: [
       'The numbers are too small to be reliable and need several more years of data',
       'The people reporting the data have an incentive to make their own work look good',
-      'Correlation was mistaken for causation because no experiment was ever conducted',
+      'Correlation was mistaken for causation here, because no controlled experiment was ever actually conducted at all',
       'The two measures used different definitions, so the comparison was never valid',
     ],
     transfer: {
@@ -264,7 +264,7 @@ const SELECTION_SETS: CaseSet[] = [
         'The recovery measure was probably subjective and should have been timed instead',
         'The sample of referred patients is too small to support a firm conclusion',
         'Patients knew they were receiving a new programme and tried harder because of it',
-        'Physiotherapists may have recorded the outcomes of their own patients generously',
+        'The physiotherapists may have recorded the outcomes of their own referred patients more generously than others',
       ],
     },
     why: 'A filter that selects on the outcome makes the data agree with the claim whether or not the claim is true, which is what makes it worse than a small sample rather than a version of one.',
@@ -308,7 +308,7 @@ const OUTSIDE_SETS: CaseSet[] = [
       'Both estimates were built from the inside: listing the steps of this particular job and adding up how long each should take. Both had a record of very similar jobs sitting right there, and both ignored it. Adding up steps systematically misses everything that is not a step — the interruptions, the rework, the waiting. Starting from the distribution of what similar cases actually took, and then adjusting for the few genuine differences in this one, uses the missing information instead of re-deriving it.',
     key: 'Both built the estimate from this job’s steps while ignoring how long similar jobs really took',
     decoys: [
-      'Both were too optimistic because the people involved wanted the answer to be small',
+      'Both were too optimistic because the people doing the estimating wanted the answer to come out small',
       'Both broke the work into stages that were too coarse to be estimated accurately',
       'Both failed to add a safety margin on top of the figure they had already produced',
       'Both should have asked a more experienced person to check the numbers first',
@@ -319,7 +319,7 @@ const OUTSIDE_SETS: CaseSet[] = [
       decoys: [
         'Add a fixed 20% contingency on top of the £180 they calculated from the costs',
         'Re-check the itemised list carefully to find the costs that were left out',
-        'Ask the society treasurer whether £180 sounds about right for an event',
+        'Ask the society treasurer whether £180 sounds about right for an event of roughly this kind and size',
         'Budget £180 and raise more money later if the event turns out to cost more',
       ],
     },
@@ -342,7 +342,107 @@ const outsideComparison = tpl(
   (rng, seed) => comparisonItem(rng, cycle(seed, OUTSIDE_SETS)),
 )
 
+
+// ------------------------------------------------------ entry point: the base
+
+/*
+ * Every skill needs a way in that a struggling learner can actually take, and
+ * the audit enforces it: something at two stars or below. This is the easiest
+ * shared structure in the file and the one most likely to be met in real life
+ * on the same day it is learned.
+ */
+const BASE_SETS: CaseSet[] = [
+  {
+    principle: 'A percentage change says nothing until you know what it started from',
+    a: {
+      title: 'The fastest-growing club',
+      text: 'The chess club announces that membership grew by 200% this term and is now the fastest-growing club in the school. Last term it had three members. It now has nine.',
+    },
+    b: {
+      title: 'A worrying rise',
+      text: 'A shop reports that customer complaints have doubled since it changed suppliers, and the manager is considering changing back. Complaints went from one last month to two this month.',
+    },
+    criteria: [
+      'Say what number each percentage or multiple is being taken OF',
+      'Say what the change looks like once you use the counts instead',
+      'Say what you would need to know before deciding either figure matters',
+    ],
+    model:
+      'Both statements describe a real change and both make it sound larger than it is, because the starting number is small and hidden. Three to nine really is a 200% rise, and one to two really is a doubling, but a change of six people and a change of one complaint are not big facts. The percentage is doing the work that the raw counts would not do. Before either number means anything you need the base it was taken from, and usually the size of the group it came out of.',
+    key: 'The percentage hides how small the starting number was, so the change sounds larger than it is',
+    decoys: [
+      'The figures were probably calculated wrongly and should be checked again carefully',
+      'Percentages are never a fair way to describe change and counts should always be used',
+      'Both of the changes are genuinely large, and the raw counts simply understate what actually happened here',
+      'The two cases measure different things, so their percentages cannot be compared at all',
+    ],
+    transfer: {
+      text: 'A small app announces that downloads are up 400% this week and calls it a breakout. The week before, it was downloaded twice.',
+      key: 'Ask what the starting number was — four hundred percent of two is ten downloads',
+      decoys: [
+        'Check whether the 400% figure was worked out from the correct time period',
+        'Compare it against how much other apps in the same category grew that week',
+        'Wait several more weeks to see whether the growth rate continues to hold up',
+        'Ask whether those downloads came from real users rather than from automated traffic of some kind',
+      ],
+    },
+    why: 'The trap is that nothing said is false. Both figures are correct, and both are useless without the base — which is exactly why the base is the thing left out.',
+  },
+  {
+    principle: 'A percentage change says nothing until you know what it started from',
+    a: {
+      title: 'Twice as likely',
+      text: 'A headline says a certain habit makes a rare illness twice as likely. The illness affects about one person in fifty thousand. The article does not mention that figure.',
+    },
+    b: {
+      title: 'Half the price',
+      text: 'A stall advertises a snack at half price. It was priced at forty pence and is now twenty. The sign is the largest thing on the stall.',
+    },
+    criteria: [
+      'Say what the starting quantity is in each case',
+      'Say what the change amounts to once the starting quantity is used',
+      'Say why the presentation makes the change feel larger than it is',
+    ],
+    model:
+      'Both use a relative change where the absolute one is tiny. Doubling a risk of one in fifty thousand gives two in fifty thousand, which is still a risk almost nobody will meet; halving forty pence saves twenty pence. Neither statement is untrue and neither is informative on its own, because a ratio deliberately drops the scale it was taken from. The question in both cases is the same: twice as much as what, and half of what?',
+    key: 'A ratio drops the scale it came from, so a tiny absolute change can be stated as a large one',
+    decoys: [
+      'Relative changes are misleading by their nature and should always be treated as a form of advertising',
+      'The absolute change is what matters, so the relative figure is simply always wrong',
+      'Both claims are exaggerated, and the true change is smaller than either states',
+      'The two cases cannot be compared because one is a risk and one is a price',
+    ],
+    transfer: {
+      text: 'A council says a new bin policy cut street litter by 50%. A volunteer group had counted eight pieces of litter on the street before the policy.',
+      key: 'Fifty percent of eight is four pieces — ask for the counts, not the percentage',
+      decoys: [
+        'Ask whether the council counted litter the same way the volunteers did',
+        'Ask whether the reduction has held up over more than one measurement',
+        'Ask whether the policy caused the change or something else did instead',
+        'Ask whether other nearby streets saw a similar reduction over exactly the same period of time',
+      ],
+    },
+    why: 'Both real questions — was it measured the same way, did it last — are good ones, and neither is the one this pair is about. The structure here is the missing base, not the missing method.',
+  },
+]
+
+const baseComparison = tpl(
+  {
+    id: 'cc-base-rate-size',
+    name: 'Two cases: per cent of what?',
+    skillIds: ['x-compare', 'm-percent'],
+    bucket: 'meta',
+    difficulty: 2,
+    variants: BASE_SETS.length,
+    minutes: 6,
+    kind: 'multi',
+    transfer: true,
+  },
+  (rng, seed) => comparisonItem(rng, cycle(seed, BASE_SETS)),
+)
+
 export const CASE_COMPARISON_TEMPLATES: ItemTemplate[] = [
+  baseComparison,
   tradeComparison,
   selectionComparison,
   outsideComparison,
