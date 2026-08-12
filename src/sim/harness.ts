@@ -132,6 +132,11 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
   const seedsSeen = new Map<string, Set<number>>()
   let repeatMinutes = 0
   let plannerFailures = 0
+  // Counted here, not read from `state.sessions`: the reducer keeps only the
+  // most recent 2000 records, so a learner doing three a day would report 2000
+  // sessions after five years instead of 5,475 — and every per-session rate
+  // computed from it would be inflated by the same factor.
+  let sessionsRun = 0
   let peakDue = 0
   const byYear: SimResult['byYear'] = []
   const firstSeenYear = new Map<string, number>()
@@ -234,6 +239,7 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
       // The planner reads `state.sessions` — the every-third-session retention
       // exit and the "still calibrating" guard both key off its length. A
       // harness that never records one silently simulates a different app.
+      sessionsRun += 1
       const record: SessionRecord = {
         id: plan.id,
         startedAt: now,
@@ -286,7 +292,7 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
   return {
     name: spec.name,
     days,
-    sessions: state.sessions.length,
+    sessions: sessionsRun,
     attempts: state.events.length,
     focusedMinutes: Math.round(totalMin),
     served,

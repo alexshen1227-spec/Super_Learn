@@ -244,3 +244,94 @@ cannot be where it is acquired. Accepted, per the fourth tie-breaker.
 - **The Browser pane intermittently stops compositing**, so screenshots fail
   while every DOM tool keeps working (see CLAUDE.md). Cause unknown; it is a
   pane-visibility problem outside the app.
+
+---
+
+## The five-year expansion (2026-08-11) — what it fixed, and what it did not
+
+Full write-up of the evidence in `docs/RESEARCH.md` §40. This section records
+only what is still OPEN, with the numbers that measured it.
+
+### Closed by this pass
+
+- **Two planner cadences froze after 2000 sessions.** `state.sessions` is capped
+  at 2000 records and both cadences counted with it, so the retention exit fired
+  every session forever and applied work stopped entirely. Now counted from the
+  event log (`engine/sessionOrdinal.ts`).
+- **The maths aim never left the stated course.** Ten skills that exist in the
+  app were unreachable in five years. `engine/effectiveTrack.ts` walks `next`
+  once the stated course is fully proved, and says so in the session rationale.
+- **The bank was a two-year bank.** 661 → 832 templates, 123 → 150 skills,
+  8,323 → 10,337 variants; every non-maths bucket grew, and the Paths gained a
+  prerequisite ladder they did not have.
+
+### Still open, measured
+
+**Human Insight cannot reach its 5% floor on short sessions.** Measured across
+38 five-year runs: 2.4-2.9% on 15m, 20m, 2x15m, 3x20m and split-day shapes,
+against 5.8-8.3% on 30m and longer. The mechanism is structural rather than a
+content shortage — tripling the bucket's content did not move it. On a short
+session the lab block is a SINGLE item shared across ten buckets, so any bucket
+reachable only through the rotation lands near `labBudget / 10`. The academic
+buckets also appear in the core block and Meta Lab also receives the retention
+exit; Human Insight has neither, and the lowest target of any bucket. The gate
+in `fiveYear.sim.ts` holds the starvation line (2%) and does not pretend the
+floor is met.
+
+Options not taken, and why: raising the default share is a product decision
+about the balance between four named Paths and would not fix the mechanism;
+giving short sessions two lab slots would lengthen the session past what the
+learner chose.
+
+**At 60 minutes a day the app runs dry in year one.** That learner meets 765 of
+~800 question families inside twelve months, leaving years three to five with
+almost nothing new. Three 20-minute sessions is the same story. This is the size
+of the bank, not a scheduling fault, and the corresponding gate excludes those
+volumes BY THEIR MINUTES rather than by name, so a future expansion lets them
+back in automatically.
+
+**A struggling learner meets about two thirds of the app.** At a flat 40%
+first-try accuracy the five-year figure is 56 of 150 skills owned; a learner
+whose accuracy fades to 30% reaches 108. This is the frontier logic working as
+intended and is recorded so nobody later reads it as coverage failure. The
+coverage gate is scoped to learners whose frontier is actually moving.
+
+**Review backlogs do not clear for learners who fade or stop.** 58-100 items due
+after five years for the fading and the cooled-off shapes. A failed review is
+re-queued by design, so a backlog under sustained failure is the schedule
+telling the truth. Worth watching only if it appears for a learner who is
+succeeding.
+
+**132 templates still overstate their variant count**, all mildly (70-95% of
+declared render distinctly) and all from ordinary collisions between random
+draws. The two that mattered — declaring 12 and 14 while asking five questions —
+are fixed by indexing parameters off the folded seed instead of drawing them.
+`src/sim/variants.sim.ts` gates the catastrophic case at 60%.
+
+**A pigeonhole probe is narrower than it was.** `pfl-pigeonhole` measures cold
+pick-up of an idea the app never teaches. The new Puzzle Lab skill `z-extremal`
+includes a guarantee-by-counting item that is a pigeonhole argument without
+naming it, so the probe now measures pick-up of the NAMED general principle
+only. A third item that stated the general argument outright was removed rather
+than let the claim quietly rot; the narrowing is written into the probe's own
+comment.
+
+### A note on measuring the measurement
+
+Three separate findings in this pass turned out to be defects in the probe
+rather than in the app, and all three pointed the same way — making the app look
+worse than it was:
+
+- the harness omitted `aboutSkillIds`, which pinned the retention exit's
+  rotation to one target and reported 2 of 51 variants in use (it uses all 51);
+- the variant probe ignored the puzzle payloads and reported the polyomino
+  generators rendering 1 distinct item out of 30 (they render all 30);
+- the harness read `sessions` from the same 2000-capped list the planner bug was
+  about, inflating every per-session rate for a multi-session learner by up to
+  2.7x — which produced a template "served 2,484 times in 2,000 sessions" that
+  was really 2,484 in 5,475.
+
+The fix that this suggests is not more caution; it is that any alarming
+simulation result should be re-derived a second way before anything is changed
+because of it. One attempted fix based on the third of these made the product
+worse and was caught by an existing test.
