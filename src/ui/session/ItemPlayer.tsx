@@ -923,7 +923,16 @@ export function AnswerInput({
       return (
         <div>
           <p className="text-[12px] text-muted mb-2">Tap in order — first step first. Tap a placed step to remove it.</p>
-          <ol className="space-y-1.5 mb-3 min-h-10">
+          {/*
+            Reserve the slot only once something is IN it.
+            `min-h-10` was unconditional, so before the first tap the item drew
+            a 40-pixel empty band between the instruction and the options —
+            which reads as a component that failed to load rather than as an
+            empty list. Same defect class as the all-empty weekly chart on
+            Progress, and caught the same way: by screenshotting it rather than
+            by reading the DOM, where the markup looked perfectly correct.
+          */}
+          <ol className={`space-y-1.5 ${chosen.length ? 'mb-3 min-h-10' : ''}`}>
             {chosen.map((i, pos) => (
               <li key={i}>
                 <button
