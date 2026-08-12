@@ -17,6 +17,5 @@ sim-*.json
 # a *Depth.ts glob: five long-standing files match that pattern, and ignoring
 # them would silently drop real content the moment anyone re-added them.
 # Delete these lines as each package lands.
-src/content/items/observerDepth.ts
 src/content/items/decisionsDepth.ts
 src/content/items/inquiryDepth.ts
