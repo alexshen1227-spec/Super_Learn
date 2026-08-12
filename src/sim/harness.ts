@@ -21,7 +21,7 @@ import { buildSessionPlan } from '../engine/planner'
 import { DEFAULT_INDEX } from '../content/registry'
 import { deriveEvidence } from '../engine/mastery'
 import { northStar } from '../engine/northStar'
-import { initialState, type AppState, type BucketId, type SessionRecord, type SkillEvidence } from '../domain/types'
+import { initialState, type AppState, type AttemptEvent, type BucketId, type SessionRecord, type SkillEvidence } from '../domain/types'
 
 const DAY = 86_400_000
 
@@ -112,6 +112,8 @@ export interface SimResult {
   skillMinutes: Record<string, number>
   /** Day index on which each skill was first served. */
   firstReachedDay: Record<string, number>
+  /** The raw event log, for building import/export fixtures. */
+  eventsForExport: AttemptEvent[]
   /** Per-year snapshots of owned / durable / skillsTouched. */
   byYear: { year: number; owned: number; durable: number; touched: number; minutes: number }[]
 }
@@ -348,6 +350,7 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
     plannerFailures,
     exhaustedTemplates: exhausted,
     freshTemplatesByYear,
+    eventsForExport: state.events,
     skillMinutes,
     firstReachedDay,
     byYear,

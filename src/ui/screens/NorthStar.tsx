@@ -14,7 +14,8 @@
 import { useMemo } from 'react'
 import { useStore } from '../../store/store'
 import { DURABLE_GAP_DAYS, QUARTER_DAYS, durableByWeek, northStar } from '../../engine/northStar'
-import { SKILL_BY_ID } from '../../content/skills'
+import { SKILL_BY_ID, SKILLS } from '../../content/skills'
+import { curriculumEnd } from '../../engine/curriculumEnd'
 import { Card } from '../components'
 
 function Figure({ value, label, sub }: { value: string; label: string; sub?: string }) {
@@ -36,6 +37,10 @@ export function NorthStarPanel() {
   // A full-height plot holding twelve zeroes reads as a chart that failed to
   // load, not as an honest empty one. Keep the baseline, drop the empty band.
   const anyWeek = weeks.some((w) => w.proved > 0)
+  const end = useMemo(
+    () => curriculumEnd(state.events, state.disputes, SKILLS, now),
+    [state.events, state.disputes, now],
+  )
 
   return (
     <Card className="p-4">
@@ -55,6 +60,40 @@ export function NorthStarPanel() {
         />
         <Figure value={String(star.transferred)} label="Used in a new context" sub="counted separately, never added in" />
       </div>
+
+      {/*
+        Where the ground runs out.
+        A curriculum is finite, and the app used to say nothing when a learner
+        reached the end of it — carrying on serving reviews while they assumed
+        more was coming. Simulation says how finite: at an hour a day every one
+        of the 150 skills is proved by year two, and years three to five hold
+        almost nothing new. Nothing is celebrated here and nothing unlocks; the
+        app just admits where the edge is, and what practice is for afterwards.
+      */}
+      {end.stage !== 'early' ? (
+        <div className="mt-5 pt-4 border-t border-line">
+          <h3 className="text-[14px] font-medium">
+            {end.stage === 'complete' ? 'You have reached the end of what this app teaches' : 'You are near the end of what this app teaches'}
+          </h3>
+          <p className="text-[13px] text-muted leading-snug mt-1">
+            {end.stage === 'complete' ? (
+              <>
+                {end.durable} of its {end.total} skills have survived the {DURABLE_GAP_DAYS}-day bar
+                {end.remaining > 0 ? `, and ${end.remaining} ${end.remaining === 1 ? 'has' : 'have'} not been met yet` : ''}.
+                Practice from here is maintenance rather than new ground: reviews arrive when something is due, and
+                harder versions and transfer questions keep coming, but the app has no more topics to introduce. That is
+                the app running out, not you — the next gain is using these somewhere real.
+              </>
+            ) : (
+              <>
+                {end.durable} of {end.total} skills have survived the {DURABLE_GAP_DAYS}-day bar, and {end.remaining}{' '}
+                {end.remaining === 1 ? 'topic has' : 'topics have'} not been met yet. Worth knowing in advance: this app
+                is a finite curriculum, so at some point new topics stop arriving and practice becomes maintenance.
+              </>
+            )}
+          </p>
+        </div>
+      ) : null}
 
       <div className="mt-5 pt-4 border-t border-line">
         <h3 className="text-[14px] font-medium">The last three months</h3>

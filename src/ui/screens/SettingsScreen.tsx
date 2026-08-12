@@ -38,6 +38,25 @@ export function hourLabel(h: number): string {
   return h < 12 ? `${h} AM` : `${h - 12} PM`
 }
 
+/**
+ * Wait until the browser has actually PAINTED.
+ *
+ * `setTimeout(0)` schedules a macrotask, which usually lands after a paint and
+ * sometimes does not — and "sometimes" is not good enough for a message whose
+ * whole job is to appear before ten seconds of blocked main thread. A frame
+ * callback followed by a task is the reliable pair: rAF runs just before the
+ * paint, the task after it.
+ */
+function afterPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof requestAnimationFrame !== 'function') {
+      setTimeout(resolve, 0)
+      return
+    }
+    requestAnimationFrame(() => setTimeout(resolve, 0))
+  })
+}
+
 export function SettingsScreen() {
   const { state, dispatch, enterSample, exitSample, resetAll } = useStore()
   const { back, go } = useNav()
@@ -48,6 +67,22 @@ export function SettingsScreen() {
   const [confirmReports, setConfirmReports] = useState(false)
   const [importMsg, setImportMsg] = useState<string | null>(null)
   const [pendingImport, setPendingImport] = useState<ReturnType<typeof importState> | null>(null)
+  /*
+   * Importing a real history is SLOW, and it used to be silently slow.
+   *
+   * Measured on a two-year export built by the simulator: 6.2 MB, 10,044
+   * attempts. Reading and validating the file took about 4 seconds and applying
+   * it about 6 more, all of it on the main thread with no indication that
+   * anything was happening. Ten seconds of a frozen app is indistinguishable
+   * from a crash, and the people most likely to hit it are the ones with the
+   * most to lose.
+   *
+   * Neither step can move off the main thread without a worker, and the state
+   * has to be rebuilt synchronously to stay consistent. What it CAN do is say
+   * so, and yield a frame first so the message actually paints before the work
+   * blocks everything.
+   */
+  const [busy, setBusy] = useState<string | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [deadlineOpen, setDeadlineOpen] = useState(false)
   const [authorOpen, setAuthorOpen] = useState(false)
@@ -155,13 +190,20 @@ export function SettingsScreen() {
   }
 
   const onImportFile = async (file: File) => {
-    const text = await file.text()
-    const result = importState(text)
-    if (!result.ok) {
-      setImportMsg(result.error)
-      return
+    setBusy('Reading and checking the file…')
+    // Let the message paint before the synchronous validation blocks the frame.
+    await afterPaint()
+    try {
+      const text = await file.text()
+      const result = importState(text)
+      if (!result.ok) {
+        setImportMsg(result.error)
+        return
+      }
+      setPendingImport(result)
+    } finally {
+      setBusy(null)
     }
-    setPendingImport(result)
   }
 
   const onImportPack = async (file: File) => {
@@ -768,15 +810,31 @@ export function SettingsScreen() {
           open={true}
           onCancel={() => setPendingImport(null)}
           onConfirm={() => {
-            dispatch({ type: 'replace', state: pendingImport.state })
+            const incoming = pendingImport.state
             setPendingImport(null)
-            setImportMsg('Import complete — progress recomputed from the imported evidence.')
+            setBusy(`Rebuilding progress from ${pendingImport.counts.events.toLocaleString()} attempts…`)
+            // Wait for the message to be on screen before the rebuild takes
+            // the main thread for several seconds.
+            void afterPaint().then(() => {
+              dispatch({ type: 'replace', state: incoming })
+              setBusy(null)
+              setImportMsg('Import complete — progress recomputed from the imported evidence.')
+            })
           }}
           title="Replace current data?"
           body={`The file contains ${pendingImport.counts.events} attempts and ${pendingImport.counts.sessions} sessions. Importing replaces what's currently on this device.`}
           confirmLabel="Import"
           danger
         />
+      ) : null}
+      {busy ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-x-0 bottom-24 mx-auto w-fit max-w-[92vw] z-50 bg-surface2 border border-line rounded-xl px-4 py-3 text-[14px] shadow-lg"
+        >
+          {busy}
+        </div>
       ) : null}
       <AboutSheet open={aboutOpen} onClose={() => setAboutOpen(false)} />
       {authorOpen ? <PackAuthor open={authorOpen} onClose={() => setAuthorOpen(false)} /> : null}
