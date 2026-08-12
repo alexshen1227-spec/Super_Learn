@@ -122,6 +122,13 @@ const ALL_SKILLS: string[] = (() => {
   return [...s]
 })()
 
+/** The area a cross-area item's minutes belong to (see allocationReport). */
+function aboutSkillBucket(tpl: { generate: (s: number) => { extraSkillIds?: string[] } }, seed: number): BucketId | null {
+  const about = tpl.generate(seed).extraSkillIds?.[0]
+  if (!about) return null
+  return (DEFAULT_INDEX.skills.get(about)?.bucket as BucketId | undefined) ?? null
+}
+
 export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(2026, 0, 5, 16)): SimResult {
   const rand = rng(spec.seed)
   let state: AppState = {
@@ -183,8 +190,16 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
           if (already > 0) repeatMinutes += tpl.minutes
           seenThisSession.set(tpl.id, already + 1)
 
-          served[tpl.bucket] = (served[tpl.bucket] ?? 0) + tpl.minutes
-          bucketMinutes[tpl.bucket] = (bucketMinutes[tpl.bucket] ?? 0) + tpl.minutes
+          // Charged the same way `allocationReport` charges it, or the gate
+          // would be grading the planner against a different ledger from the
+          // one the planner optimises. The retention exit lives in Meta Lab but
+          // asks about a skill from any area, and its minutes belong to that
+          // area — without this, Meta reads ~4 points above target purely
+          // because the exit is counted twice.
+          const chargedTo = tpl.id === 'x-explain-back' ? aboutSkillBucket(tpl, a.seed) : null
+          const charged = chargedTo ?? tpl.bucket
+          served[charged] = (served[charged] ?? 0) + tpl.minutes
+          bucketMinutes[charged] = (bucketMinutes[charged] ?? 0) + tpl.minutes
           minutesHere += tpl.minutes
           templateServes.set(tpl.id, (templateServes.get(tpl.id) ?? 0) + 1)
           if (!firstSeenYear.has(tpl.id)) {

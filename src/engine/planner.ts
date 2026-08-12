@@ -530,7 +530,36 @@ export const GATEWAY_BONUS = 1.6
  * so 0.5 means "served less than half of what was promised" — a shortfall the
  * ordinary score nudge has already failed to close. HEURISTIC.
  */
-export const STARVED_DEBT = 0.5
+/*
+ * REVISED 2026-08-12. 0.5 turned out to sit BELOW where the problem lives: a
+ * bucket parked at 60-70% of its target never reaches the bar, so nothing ever
+ * intervenes and it stays there indefinitely. Measured across the five-year
+ * matrix, Human Insight held 4.3-5.0% against a 7% target (debt 0.29-0.39) and
+ * physics 3.3-4.9% against 7% (debt 0.30-0.53) — mostly under the old bar, both
+ * permanently short. 0.3 is "served below seventy per cent of target", which
+ * catches a persistent shortfall while leaving ordinary week-to-week drift
+ * alone. HEURISTIC, checked by the five-year gate rather than argued.
+ */
+export const STARVED_DEBT = 0.4
+
+/**
+ * The bar a PATH bucket has to clear to compete for the core block.
+ *
+ * Deliberately gentler than `STARVED_DEBT`, because the two thresholds answer
+ * different questions. An academic bucket already reaches the core in the
+ * ordinary rotation of `academicDebtOrder`; 0.5 asks "is this desperate enough
+ * to take the block away from mathematics". A Path bucket has NO other route
+ * to the core, and the rotation it does have is one slot shared ten ways
+ * against targets summing to 52% — so it can sit at 60% of target indefinitely
+ * without anything intervening.
+ *
+ * MEASURED: Human Insight settled at 4.3-5.0% against a 7% target across the
+ * multi-session and goal-tilted shapes, which is a relative debt of 0.29-0.39 —
+ * comfortably under 0.5, so the rescue never fired. 0.2 means "served below
+ * four fifths of target", which is where the shortfall actually lives.
+ * HEURISTIC, and checked by the five-year gate rather than argued.
+ */
+export const PATH_CORE_DEBT = 0.2
 
 /** How hard a starved bucket pushes for the core block. Below a due review (3)
  *  on purpose: retention still outranks balance. HEURISTIC. */
@@ -1316,7 +1345,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
    */
   const starvingPaths = historyEnough
     ? BUCKETS.map((b) => b.id).filter(
-        (b) => !ACADEMIC_BUCKETS.includes(b) && relativeDebt(report, b) >= STARVED_DEBT,
+        (b) => !ACADEMIC_BUCKETS.includes(b) && relativeDebt(report, b) >= PATH_CORE_DEBT,
       )
     : []
   const academicDebtOrder = [...ACADEMIC_BUCKETS, ...starvingPaths].sort(
