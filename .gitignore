@@ -19,3 +19,9 @@ sim-*.json
 # Delete these lines as each package lands.
 src/content/items/decisionsDepth.ts
 src/content/items/inquiryDepth.ts
+
+# Authoring scratch. Agents write these while working and delete them after;
+# committed once by accident, so they are ignored rather than remembered.
+*.selfcheck.test.ts
+*.scan.test.ts
+selfcheck-*.txt
