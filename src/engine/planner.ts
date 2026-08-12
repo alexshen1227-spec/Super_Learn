@@ -33,6 +33,7 @@ import { uid } from './rng'
 import { explainSeedFor, lastExplainedAt, pickExplainTarget } from '../content/items/methodDrills'
 import { activeMission, missionPriority, missionReadiness } from './mission'
 import { sessionOrdinal } from './sessionOrdinal'
+import { goalSkillIds } from './goals'
 import type { RepairTarget } from './errors'
 import { calendarDaysUntil } from './time'
 import { calibrationGap } from './calibration'
@@ -492,6 +493,16 @@ export const TRACK_UNIT_BONUS = 0.5
 export const TRACK_PREREQ_BONUS = 0.8
 
 /**
+ * A goal that names specific skills nudges those skills.
+ *
+ * Sized just under `TRACK_BONUS`: the course the learner is actually sitting
+ * in outranks a preference about what they would like to get better at, and
+ * both sit below a due review. Same law as every other tilt in this file —
+ * bounded, always accompanied by a visible reason, and never a filter.
+ */
+export const GOAL_SKILL_BONUS = 1.0
+
+/**
  * THE GATEWAY BONUS — for a skill that is locking another bucket out entirely.
  *
  * Found by simulation, not by reading the code: every physics skill sits behind
@@ -573,6 +584,7 @@ export function scoreSkills(
   const cruising = stretchSignal(evidenceEvents(state.events, state.disputes), now).adjust > 0
   // The course to AIM at, which is the stated one until the learner has
   // proved all of it — then the next one. See engine/effectiveTrack.ts.
+  const goalSkills = goalSkillIds(state.profile.goals)
   const aim = effectiveTrack(state.profile, evidence)
   const track = aim.track
   const trackSkills = track ? new Set(track.units.flatMap((u) => u.skillIds)) : null
@@ -700,6 +712,12 @@ export function scoreSkills(
     if (mission.boost > 0) {
       score += mission.boost
       if (mission.reason) reasons.push(mission.reason)
+    }
+    // A goal that names this skill: the smallest tilt in the file, and the
+    // only one whose reason cites why the skill is on the list at all.
+    if (goalSkills.has(skill.id)) {
+      score += GOAL_SKILL_BONUS
+      reasons.push('one of the few skills with measured carry-over to new situations, and your goal asks for those')
     }
     // Course membership: a small open tilt toward the learner's actual class.
     if (track && trackSkills!.has(skill.id)) {

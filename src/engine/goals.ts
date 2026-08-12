@@ -36,6 +36,86 @@ const GOAL_WEIGHTS: Record<string, Partial<Record<BucketId, number>>> = {
   'Walk the four Paths': { observer: 1, investigator: 1, strategist: 1, insight: 1 },
   'Learn how to learn': { meta: 3, science: 1 },
   'Stronger science & physics': { science: 2, physics: 2 },
+  'Everyday reasoning & judgement': { investigator: 2, observer: 1, meta: 1, science: 1, strategist: 1 },
+}
+
+/**
+ * Goals that also point at SPECIFIC SKILLS, not only at areas.
+ *
+ * A bucket tilt is too blunt for "everyday reasoning". The Investigator Lab
+ * holds both natural-frequency Bayes and equilibrium game theory; only one of
+ * those has evidence of carrying into a new situation, and a bucket-level
+ * nudge cannot tell them apart. So this goal names the skills.
+ *
+ * THE SELECTION RULE IS EVIDENCE, NOT PLAUSIBILITY. Every skill below is here
+ * because a controlled study measured the thing moving to a case the learner
+ * had not trained on (docs/RESEARCH.md §40):
+ *
+ *   - comparing two surface-different cases to extract the shared structure
+ *     (Gentner, Loewenstein & Thompson 2003 — .59 vs .22 transfer against an
+ *     active control that held the content identical);
+ *   - natural frequencies instead of percentages (McDowell & Jacobs 2017,
+ *     meta-analysis, 24% vs 4%; Sedlmeier & Gigerenzer 2001 for the durability);
+ *   - reference classes and the outside view (Mellers et al. 2014, Chang et al.
+ *     2016 — the one training component that correlated with real forecasting
+ *     accuracy inside a randomised four-year tournament);
+ *   - the law of large numbers taught as an abstract rule with worked examples
+ *     across unrelated settings (Fong, Krantz & Nisbett 1986 — improvement as
+ *     large in untaught domains as in taught ones);
+ *   - fallacy and evidence evaluation, which is also the only part of this
+ *     that any adopted US standard actually names (CCSS ELA RI.9-10.8).
+ *
+ * DELIBERATELY ABSENT: confirmation bias. The 2025 meta-analysis of 54 RCTs
+ * singles it out as the bias education essentially fails to shift, and a goal
+ * that promised to fix it would be promising something the app cannot do.
+ * Also absent: anything resting on puzzle, memory or "brain training"
+ * practice, where effects collapse to nothing against active controls.
+ *
+ * The bonus this produces is small and always carries its reason on screen —
+ * the same law as the course tilt. It cannot exclude anything.
+ */
+const GOAL_SKILLS: Record<string, string[]> = {
+  'Everyday reasoning & judgement': [
+    'x-compare',
+    'x-transfer',
+    'i-natfreq',
+    'i-refclass',
+    'i-samplesize',
+    'i-conditional',
+    'i-fallacy',
+    'i-bayes',
+    'o-selection',
+    'o-expect',
+    'o-claimtype',
+    'o-frame',
+    'st-tradeoff',
+    'st-secondorder',
+    'st-sunk',
+    'h-attribution',
+    'h-projection',
+    's-corr',
+    's-design',
+    's-sources',
+  ],
+  // The existing goals keep bucket-level tilts only. Naming skills for them
+  // would be inventing precision the evidence does not support.
+}
+
+/**
+ * Skills the chosen goals point at directly. Empty for every goal that has no
+ * evidence-backed skill list, which is most of them.
+ */
+export function goalSkillIds(goals: string[]): Set<string> {
+  const out = new Set<string>()
+  for (const g of goals) for (const id of GOAL_SKILLS[g] ?? []) out.add(id)
+  return out
+}
+
+/** Plain-language note for the goals that name skills. Null when none do. */
+export function goalSkillNote(goals: string[]): string | null {
+  const named = goals.filter((g) => GOAL_SKILLS[g]?.length)
+  if (!named.length) return null
+  return 'This goal also favours specific topics, not just areas — the handful where a study has actually measured the skill carrying over to a situation the learner had not practised. It is a nudge, and nothing else is dropped.'
 }
 
 /**

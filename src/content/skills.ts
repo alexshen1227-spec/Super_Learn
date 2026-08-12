@@ -265,6 +265,26 @@ const observer = defineCourse(
         { id: 'o-memory', name: 'Memory techniques', bucket: 'observer', prereqs: ['o-recall'], gradeBand: 7, blurb: 'Method of loci and structured encoding, tested with delayed recall.' },
       ],
     },
+    {
+      /*
+       * Seeing what is NOT there. Each of these is a specific, nameable way a
+       * scene or a dataset can mislead someone who is looking carefully — which
+       * is the Observer Lab's whole subject, extended past the single scene.
+       */
+      id: 'u-unseen',
+      name: 'What is not in front of you',
+      skills: [
+        { id: 'o-selection', name: 'Who is missing from the data', bucket: 'observer', prereqs: ['o-obsinf'], gradeBand: 9, blurb: 'Survivors, volunteers and reviewers are not a random sample — find the filter before reading the result.' },
+        { id: 'o-expect', name: 'What would I see if it were false?', bucket: 'observer', prereqs: ['o-obsinf'], gradeBand: 8, blurb: 'Evidence only counts when it would have looked different had the claim been wrong.' },
+        { id: 'o-anchor', name: 'First numbers and first impressions', bucket: 'observer', prereqs: ['o-bias'], gradeBand: 9, blurb: 'Notice when an opening figure has quietly set the range you are arguing inside.' },
+        { id: 'o-frame', name: 'Same fact, different framing', bucket: 'observer', prereqs: ['o-obsinf'], gradeBand: 8, blurb: 'Restate a claim in its opposite frame and check whether your reaction survives.' },
+        /* CCSS RH.6-8.8 and RST.6-8.8: distinguish fact, reasoned judgment
+         * based on findings, and speculation. A three-way classification with a
+         * real key, and one of very few reasoning lines in US standards that a
+         * machine can grade honestly. */
+        { id: 'o-claimtype', name: 'Fact, judgement, or guess', bucket: 'observer', prereqs: ['o-obsinf'], gradeBand: 8, blurb: 'Sort a passage into what was measured, what was concluded from it, and what was simply supposed.' },
+      ],
+    },
   ],
 )
 
@@ -285,6 +305,45 @@ const investigator = defineCourse(
         { id: 'i-abduce', name: 'Best explanation', bucket: 'investigator', prereqs: ['i-hypo'], gradeBand: 9, blurb: 'Generate the explanations, then rank them by what they cover and what they assume.' },
       ],
     },
+    {
+      /*
+       * Numbers under uncertainty, chosen for evidence rather than for looking
+       * rigorous (RESEARCH.md §40).
+       *
+       * `i-natfreq`: counts out of a whole group, never bare percentages.
+       * Meta-analysed at 24% correct vs 4% for the same problems written as
+       * conditional probabilities (McDowell & Jacobs 2017, 35 articles) — and
+       * the frequency TREE is what survives 15 weeks where the formula decays
+       * from 86% to 50% (Sedlmeier & Gigerenzer 2001).
+       *
+       * `i-refclass`: the outside view. The one component of the Good Judgment
+       * Project's training that correlated with actual forecasting accuracy
+       * inside a randomised four-year tournament (Mellers 2014, Chang 2016).
+       *
+       * `i-samplesize`: the law of large numbers, taught as an abstract rule
+       * plus worked examples across several unrelated settings. Fong, Krantz &
+       * Nisbett (1986) found the improvement was as large in UNTAUGHT domains
+       * as in taught ones — one of very few genuine domain-general results.
+       */
+      id: 'u-uncertainty',
+      name: 'Numbers under uncertainty',
+      skills: [
+        { id: 'i-natfreq', name: 'Counting people, not percentages', bucket: 'investigator', prereqs: ['i-bayes'], gradeBand: 9, blurb: 'Rewrite any probability question as a count out of a group, and the hard ones stop being hard.' },
+        { id: 'i-refclass', name: 'Reference classes & the outside view', bucket: 'investigator', prereqs: ['i-forecast'], gradeBand: 9, blurb: 'Before reasoning about this case, ask how similar cases actually turned out.' },
+        { id: 'i-samplesize', name: 'How much a sample can tell you', bucket: 'investigator', prereqs: ['i-forecast'], gradeBand: 8, blurb: 'Small samples swing wildly. Know when a difference is a finding and when it is the sample size.' },
+        { id: 'i-diagnostic', name: 'How much this evidence moves things', bucket: 'investigator', prereqs: ['i-natfreq'], gradeBand: 10, blurb: 'Evidence is only strong when it is much likelier under one explanation than the others.' },
+        { id: 'i-conditional', name: 'If-then and what follows', bucket: 'investigator', prereqs: ['i-logic'], gradeBand: 9, blurb: 'Which check actually tests a rule, and which one only looks like it does.' },
+        /*
+         * The ONE place the app's reasoning content has a genuine, citable
+         * standards hook. CCSS ELA RI.9-10.8 requires students to "identify
+         * false statements and fallacious reasoning" outright, and RI.8.8 to
+         * "recognize when irrelevant evidence is introduced". There is no
+         * adopted K-12 reasoning standard beyond this; everything else in the
+         * Paths is the app's own construction and says so.
+         */
+        { id: 'i-fallacy', name: 'Named ways an argument breaks', bucket: 'investigator', prereqs: ['i-logic'], gradeBand: 9, blurb: 'A closed list of specific, nameable faults — and the practice of finding which one is present.' },
+      ],
+    },
   ],
 )
 
@@ -302,6 +361,16 @@ const strategist = defineCourse(
         { id: 'st-ethics', name: 'Ethical strategy', bucket: 'strategist', prereqs: ['st-decomp'], gradeBand: 8, blurb: 'Win while keeping honesty, consent, and other people’s agency intact.' },
       ],
     },
+    {
+      id: 'u-choosing',
+      name: 'Choosing under constraint',
+      skills: [
+        { id: 'st-tradeoff', name: 'Trade-offs & dominated options', bucket: 'strategist', prereqs: ['st-decomp'], gradeBand: 8, blurb: 'Drop the options that lose on every count, then trade what you want least for what you want most.' },
+        { id: 'st-reversible', name: 'Reversibility & keeping options', bucket: 'strategist', prereqs: ['st-decomp'], gradeBand: 8, blurb: 'A cheap mistake you can undo is worth more than a careful one you cannot.' },
+        { id: 'st-secondorder', name: 'And then what happens?', bucket: 'strategist', prereqs: ['st-premortem'], gradeBand: 9, blurb: 'Follow a plan past its first effect to what people do in response to it.' },
+        { id: 'st-sunk', name: 'What is already spent', bucket: 'strategist', prereqs: ['st-ev'], gradeBand: 9, blurb: 'Decide from here forward. What it already cost cannot be recovered by continuing.' },
+      ],
+    },
   ],
 )
 
@@ -315,6 +384,30 @@ const insight = defineCourse(
         { id: 'h-emotion', name: 'Perspective-taking', bucket: 'insight', prereqs: [], gradeBand: 7, blurb: 'Name emotions precisely; hold multiple readings of a situation.' },
         { id: 'h-influence', name: 'Influence defense', bucket: 'insight', prereqs: [], gradeBand: 8, blurb: 'Recognize pressure tactics, false urgency, and dark patterns.' },
         { id: 'h-boundary', name: 'Boundaries & de-escalation', bucket: 'insight', prereqs: [], gradeBand: 8, blurb: 'Say no clearly, cool conflicts down, and know when to get help.' },
+      ],
+    },
+    {
+      /*
+       * Reading situations, still strictly DEFENSIVE. Every skill here is about
+       * correcting your OWN reading of a situation — situation vs character,
+       * assuming others share your view, hearing the interest under a demand.
+       * None of it teaches reading other people for advantage, which the
+       * founding brief rules out as content law.
+       *
+       * Attribution and projection are two of the three biases with the
+       * clearest replicated training effects (Morewedge et al. 2015; Heerma van
+       * Voss et al. 2025). Confirmation bias is deliberately NOT given its own
+       * skill here: the 2025 meta-analysis of 54 RCTs singles it out as the one
+       * education essentially fails to shift, and a skill the app cannot move
+       * would be a promise it cannot keep.
+       */
+      id: 'u-reading',
+      name: 'Reading situations honestly',
+      skills: [
+        { id: 'h-attribution', name: 'Situation or person?', bucket: 'insight', prereqs: ['h-emotion'], gradeBand: 8, blurb: 'We explain our own behaviour by circumstances and other people’s by character. Check which one the evidence supports.' },
+        { id: 'h-projection', name: 'Assuming they see it as you do', bucket: 'insight', prereqs: ['h-emotion'], gradeBand: 8, blurb: 'Your own view feels like the obvious one. Estimate how many people actually share it.' },
+        { id: 'h-interests', name: 'The interest under the position', bucket: 'insight', prereqs: ['h-emotion'], gradeBand: 9, blurb: 'What someone demands and what they need are different things — and only one of them is negotiable.' },
+        { id: 'h-repair', name: 'Repair after it goes wrong', bucket: 'insight', prereqs: ['h-boundary'], gradeBand: 8, blurb: 'What an apology has to contain to actually work, and what turns one into a second injury.' },
       ],
     },
   ],
@@ -335,6 +428,28 @@ const meta = defineCourse(
         { id: 'x-stuck', name: 'Working while stuck', bucket: 'meta', prereqs: [], gradeBand: 7, blurb: 'Tell progress-that-feels-bad from genuinely stuck — and know what each one asks you to do.' },
       ],
     },
+    {
+      /*
+       * The transfer unit. Every skill here is chosen because a controlled study
+       * measured it moving to a NEW case, which is a much shorter list than the
+       * one most learning apps work from (RESEARCH.md §40).
+       *
+       * `x-compare` is the load-bearing one: reading two surface-different cases
+       * that share a structure and writing what they have in common transferred
+       * 2-3x better than studying the same two cases separately, with an active
+       * control holding the content identical (Gentner, Loewenstein & Thompson
+       * 2003). Guided comparison beat a bare "compare these" 90% to 70%, which
+       * is why the written comparison here is prompted rather than open.
+       */
+      id: 'u-transfer',
+      name: 'Making it travel',
+      skills: [
+        { id: 'x-compare', name: 'Two cases, one structure', bucket: 'meta', prereqs: [], gradeBand: 8, blurb: 'Read two situations that look nothing alike, find what they share, and state the principle underneath.' },
+        { id: 'x-transfer', name: 'Noticing when a method applies', bucket: 'meta', prereqs: ['x-compare'], gradeBand: 9, blurb: 'Most people are reminded of old problems by surface details. Practise being reminded by structure instead.' },
+        { id: 'x-interleave', name: 'Mixing practice on purpose', bucket: 'meta', prereqs: ['x-learn'], gradeBand: 8, blurb: 'Why practice that jumps between problem types feels worse and works better.' },
+        { id: 'x-desirable', name: 'Difficulty that helps', bucket: 'meta', prereqs: ['x-learn'], gradeBand: 8, blurb: 'Tell the effort that builds memory from the effort that just wastes time.' },
+      ],
+    },
   ],
 )
 
@@ -348,6 +463,24 @@ const puzzle = defineCourse(
         { id: 'z-chess', name: 'Chess tactics', bucket: 'puzzle', prereqs: [], gradeBand: 7, blurb: 'Forcing moves, candidate discipline, and the opponent’s best reply.' },
         { id: 'z-spatial', name: 'Spatial assembly', bucket: 'puzzle', prereqs: [], gradeBand: 6, blurb: 'Fit pieces under rotation — plan placements before committing.' },
         { id: 'z-deduce', name: 'Constraint deduction', bucket: 'puzzle', prereqs: [], gradeBand: 7, blurb: 'Logic grids: squeeze certainty out of overlapping constraints.' },
+      ],
+    },
+    {
+      /*
+       * Puzzle Lab had three skills carrying 49 templates, which is a whole
+       * area of the app resting on almost no structure. These four are the
+       * METHODS that puzzles teach, framed as skills in their own right —
+       * never as a route to general intelligence, which the meta-analytic
+       * record is clear does not follow from puzzle practice (Sala & Gobet
+       * 2016/2017: effects collapse to nothing against active controls).
+       */
+      id: 'u-search',
+      name: 'Search & structure',
+      skills: [
+        { id: 'z-invariant', name: 'Invariants & parity', bucket: 'puzzle', prereqs: ['z-deduce'], gradeBand: 8, blurb: 'Find the quantity that never changes, and a whole class of attempts is ruled out at once.' },
+        { id: 'z-search', name: 'Systematic search & pruning', bucket: 'puzzle', prereqs: ['z-deduce'], gradeBand: 8, blurb: 'Order the possibilities so that checking one kills many, instead of guessing and restarting.' },
+        { id: 'z-extremal', name: 'Start from the extreme case', bucket: 'puzzle', prereqs: ['z-deduce'], gradeBand: 9, blurb: 'The largest, smallest or first thing is often forced — and forces everything else.' },
+        { id: 'z-sequence', name: 'Patterns & sequences', bucket: 'puzzle', prereqs: [], gradeBand: 7, blurb: 'Find the rule that generates a run, and check it against the case you did not use to find it.' },
       ],
     },
   ],

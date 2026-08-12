@@ -23,6 +23,9 @@ import { SKILLS } from '../../content/skills'
 import { addLocalDaysISO, localDateISO } from '../../engine/time'
 import { rebalanceAllocationPercentage } from '../../engine/allocationTargets'
 
+/** The one goal that names specific skills; see engine/goals.ts. */
+const REASONING_GOAL = 'Everyday reasoning & judgement'
+
 /**
  * Quiet hours are stored as a 0-23 hour so the comparison stays trivial, but
  * they are DISPLAYED on the 12-hour clock the learner actually reads times in.
@@ -291,6 +294,23 @@ export function SettingsScreen() {
                 </button>
               ))}
             </div>
+            {/*
+              This goal makes a bigger claim than the others, so it has to be
+              honest about the size of it on the screen where it is chosen —
+              not only in the research ledger. What it does is real and narrow;
+              what it deliberately does not promise is general thinking gains.
+            */}
+            {state.profile.goals.includes(REASONING_GOAL) ? (
+              <p className="text-[12px] text-muted mt-2 leading-snug bg-surface2 border border-line rounded-lg p-2.5">
+                <span className="font-medium">About “{REASONING_GOAL}”.</span> It leans practice toward a short list of
+                topics where a study has actually measured the skill working on a problem the learner had not practised
+                — comparing two unlike cases to find the shared structure, counting people instead of using percentages,
+                checking how similar cases really turned out, judging what a sample size can support, and naming the
+                specific ways an argument breaks. It does not promise to make anyone a better thinker in general; no app
+                can, and the research on that is not close. It also stays away from confirmation bias, which is the one
+                thing teaching reliably fails to shift.
+              </p>
+            ) : null}
           </div>
           <div>
             <span className="text-[13px] font-medium text-muted">Default session length</span>

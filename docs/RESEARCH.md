@@ -2792,3 +2792,219 @@ sample; that is a volume problem no mechanism solves.
 Math Academy are proprietary. Nothing here is text, artwork, a scoring constant
 or a taxonomy lifted from them — only mechanisms described in their own public
 writing, reimplemented from scratch against this app's own measurements.
+
+## 40. Five years, and what is actually known about training reasoning (2026-08-11)
+
+The brief: make the app good for a **five-year** learner, make every area rich,
+and add a goal aimed at real-life reasoning that genuinely does what it says.
+Two of those are volume problems. The third is an evidence problem, and it is
+the one that could have gone badly, so it was researched before anything was
+built.
+
+### 40a. What five years measured — the app was a two-year app
+
+Six five-year simulations through the real planner (`src/sim/`), across session
+lengths, multi-session days and missed weeks. The headline: **owned skills
+plateaued at ~105 of 123 by year 3**, and years 3-5 bought roughly ten skills
+for thirty thousand minutes. Three distinct causes, all invisible at one year:
+
+1. **`state.sessions` is capped at 2000 records**, and two planner cadences
+   counted with `state.sessions.length`. Past the cap it freezes: `2000 % 3` is
+   permanently 2, so the retention exit fired EVERY session forever; `2000 % 4`
+   is never 3, so authentic applied work was never scheduled again. Measured at
+   three sessions a day: 4,138 serves of one 4-minute item, Meta Lab at 19.4%
+   against a ~5% target, Human Insight squeezed to 2.0%. Fixed by counting
+   distinct session ids in the event log, which is never truncated.
+2. **A maths course is finite and the aim never left it.** Starting at Math 8,
+   the learner retained the entire course inside two years and then reviewed it
+   for three more — one exponent template served 688 times, all fifteen variants
+   worn out — while ten skills that EXIST in the app were never scheduled once.
+   `effectiveTrack` now walks `next` once the stated course is fully proved.
+   Unreached skills over five years: 11 to 1. A ten-minute-a-day learner went
+   from 107 skills to all 123.
+3. **The content bank is a two-year bank.** With the first two fixed, the
+   plateau simply arrives sooner. 123 skills is the whole app; 259 templates
+   wore out their entire declared variant pool inside five years. That is not a
+   mechanism problem and no scheduler fixes it.
+
+A methodological note worth keeping: the first version of this measurement
+reported the retention exit serving 2 of its 51 variants. That was **the
+harness**, not the app — the fixture omitted `aboutSkillIds`, which is what the
+rotation reads. The app serves all 51. A simulation is a fixture and can lie in
+exactly the direction that makes a bug look worse.
+
+### 40b. Training that transfers — the honest list
+
+Searched, read, and tiered. The short version: **most of what an app would want
+to claim here is not supported, and the small supported part is worth building
+properly.**
+
+**EVIDENCE — replicated, with a measured effect on something the learner did not
+train on:**
+
+- **Case comparison / analogical encoding.** Gentner, Loewenstein & Thompson
+  (2003, *J. Educational Psychology* 95(2)). Two surface-different cases that
+  share a structure, with the learner asked to describe what they have in
+  common, transferred to a NEW case at .59 vs .22 for studying the same two
+  cases separately (Exp 2; second structure .38 vs .16). Exp 3 reached live
+  behaviour: guided analogy 90%, bare "compare these" 70%, separate cases 55%,
+  baseline 37%. Schema quality mediated it (42% vs 13% stated the full
+  principle) and predicted transfer. Loewenstein et al. (1999, *Psychonomic
+  Bulletin & Review* 6(4)) held it across a one-week delay.
+  **Why this one counts more than the rest of the literature:** the control
+  holds the content identical and varies only the instruction. That is the
+  design quality the chess, music and working-memory literatures lack.
+  **Limits, stated:** one research group, negotiation domain, students, delays
+  up to a week, and "far transfer" means a structurally similar new case — not
+  an unrelated part of life.
+  *Built as:* `x-compare`, and the three-checkpoint shape in
+  `content/items/caseComparison.ts` — both cases, a PROMPTED ungraded written
+  comparison, then a graded principle question, then a graded THIRD case.
+- **Natural frequencies.** Gigerenzer & Hoffrage (1995, *Psych Review* 102(4));
+  McDowell & Jacobs (2017, *Psych Bulletin* 143(12)) meta-analysed 35 articles
+  and 226 estimates: **24% correct vs 4%**, odds ratio 7.1. Sedlmeier &
+  Gigerenzer (2001, *JEP:General* 130(3)) is the durability result and the
+  reason the app teaches a frequency TREE and not Bayes' formula: at 15 weeks
+  the tree held 93% to 100% while formula training decayed 86% to 50%.
+  **Limits:** after the best known fix, three quarters still get it wrong. The
+  programme calls itself a **"boost"** — a local fix with no aspiration beyond
+  the current context. That is the right register for the app's copy too.
+  *Built as:* `i-natfreq`.
+- **Reference classes / the outside view.** Mellers et al. (2014, *Psych
+  Science* 25(5)); Chang et al. (2016, *JDM* 11(5)). A randomised four-year
+  forecasting tournament, ~1,000+ forecasters a year; under an hour of
+  probabilistic-reasoning training improved Brier scores **6-11%**, sustained
+  across all four years, and self-reported use of comparison classes was the
+  component that correlated with accuracy.
+  **Limits:** measured entirely inside the forecasting task. It does not show
+  calibration improving unrelated everyday decisions, and two large recent
+  experiments (N = 610, N = 871; Martin & Mandel 2025, *Futures & Foresight
+  Science* 7) found outcome and scoring-rule feedback alone did nothing at all.
+  *Built as:* `i-refclass`.
+- **Abstract rule plus worked examples across several surface domains.** Fong,
+  Krantz & Nisbett (1986, *Cognitive Psychology* 18(3)): brief law-of-large-
+  numbers training improved statistical reasoning on everyday problems, and
+  **improvement was as large in untaught domains as taught ones**. Fong &
+  Nisbett (1991, *JEP:General* 120(1)) adds the part that matters to a
+  scheduler: after two weeks there was **no decline in the trained domain and a
+  significant decline in the untrained one**. If that generalises, transfer
+  items need SHORTER intervals than same-domain items, not equal ones.
+  *Built as:* `i-samplesize`, taught abstractly then exampled across unrelated
+  settings. The scheduling consequence is recorded here and NOT yet built.
+- **Interactive practice beats exposition, for the thing that matters.** Rhodes
+  et al. (2017, *Games and Culture* 12(3)) is the independent evaluation: games
+  beat video on **procedural** knowledge (not committing the bias) and had no
+  advantage on **declarative** knowledge (naming it). So the app grades the
+  first, never the second.
+
+**HEURISTIC — plausible, and the app must say so:**
+
+- **Debiasing training generally.** The famous numbers (Morewedge et al. 2015,
+  *Policy Insights* 2(1), d up to 1.74) are pre-post within-subject on a
+  purpose-built self-report scale **with no untrained control**, and the
+  anchoring subscale had alpha of .52-.62. The defensible figure is the 2025
+  meta-analysis of **54 RCTs and 10,941 participants: g = 0.26** (Swaryandini et
+  al., *Nature Human Behaviour* 9(12)). Real-world transfer rests on a **single
+  quasi-experimental study** — Sellier, Scopelliti & Morewedge (2019, *Psych
+  Science* 30(9)), OR 0.55 — where assignment came from scheduling accident
+  rather than randomisation. The 2021 systematic review (Korteling et al.,
+  *Frontiers in Psychology* 12:629354) concludes there is "insufficient evidence
+  that bias mitigation interventions will substantially help people to make
+  better decisions in real life conditions."
+- **Argument mapping.** The circulated ~0.8 SD per semester traces to an
+  **unpublished master's thesis** (Alvarez Ortiz 2007), and Huber & Kuncel
+  (2016, *RER* 86(2)) point out it implies ~6.24 SD across a degree, which is
+  not a real quantity. One genuinely automated, machine-graded study exists —
+  Butchart et al. (2009, *AJET* 25(2)), 0.45 SD — which is why argument mapping
+  is on the "maybe build" list and not in the goal's skill set. **The 0.8 SD
+  figure must not appear anywhere in this app.**
+- **Fermi estimation.** No study has tested whether it improves general
+  estimation or reasoning. Worth having as a skill in its own right and as
+  base-rate practice; the copy says so.
+- **Premortems.** The "30% more reasons" is Mitchell, Russo & Pennington (1989,
+  *JBDM* 2(1)) and counts REASONS GENERATED, not their quality. The only
+  quantitative test of the technique itself is a 2010 ISCRAM conference paper
+  (178 students) showing reduced confidence.
+- **Checklists.** Haynes et al. (2009, *NEJM* 360) is before-after with no
+  concurrent control; Urbach et al. (2014, *NEJM* 370) is the population-level
+  replication across 100+ hospitals — adjusted 30-day mortality 0.71% to 0.65%,
+  not significant. Not a model for a reasoning app.
+
+**REFUSED — in the neuromyth table, with numbers:**
+
+| Claim | Evidence against |
+|---|---|
+| Brain training improves general cognition | Owen et al. 2010, *Nature* 465, **N = 11,430**: gains on trained tasks, no transfer |
+| Brain training improves everyday cognition | Simons et al. 2016, *PSPI* 17(3): "little evidence… improves everyday cognitive performance" |
+| Working-memory training raises intelligence | Melby-Lervag, Redick & Hulme 2016, *PPS* 11(4), 145 comparisons: no convincing far transfer |
+| Chess instruction improves maths | Sala & Gobet 2017, *Learning & Behavior* 45(4): N = 233 vs checkers, N = 52 vs Go — **no significant difference** |
+| Music training raises cognition | Sala & Gobet 2017/2020: 0.25 vs passive controls, **0.03 vs active** |
+| Puzzles or spatial training transfer to maths | Sala & Gobet 2017 Table 1; Xu & LeFevre 2016 |
+
+The generalisation that ties them together: **effect size is inversely related
+to design quality.** Swap a passive control for an active one and these collapse
+to zero. That is the single most useful line in the whole table, and it is why
+this app's own puzzle content carries no transfer claim at all.
+
+### 40c. The goal, and what it deliberately does not promise
+
+`Everyday reasoning & judgement` is the first goal that names SKILLS rather than
+only areas, because a bucket tilt cannot tell natural-frequency Bayes from
+equilibrium game theory and only one of those has carry-over evidence. The bonus
+is 1.0 — under the course tilt, well under a due review — and it always renders
+its reason.
+
+Two absences are deliberate and both are pinned by a test in
+`engine/goalSkills.test.ts`:
+
+- **Confirmation bias.** The 2025 meta-analysis singles it out as the bias
+  education essentially fails to shift; Sellier's own mechanism analysis found
+  training suppressed confirming arguments without significantly increasing
+  disconfirming ones (d = 0.11, n.s.). A goal that promised to fix it would be
+  promising something the app cannot deliver.
+- **Anything resting on puzzle, memory or chess practice.** See the table.
+
+The Settings copy says what the goal leans toward, and says outright that it
+does not promise better thinking in general.
+
+### 40d. Standards, and the honest gap
+
+Audited against the real documents. Maths (CA CCSSM) runs Grade 8 to Algebra I
+to Geometry to Algebra II to Precalculus and the app's track ladder already
+mirrors it; ~76-90% of statements are offline-assessable, with **Geometry the
+worst at 24% proof-production**. Science must be audited against **SEPs and
+CCCs, not performance expectations** — the NRC's 2014 assessment report is
+explicit that a PE needs a multi-component task set, so claiming PE coverage
+from single items would be exactly the overclaim this ledger exists to prevent.
+GAISE II Level C is the richest seam at **22 of 29 essentials assessable**.
+CSTA 3A/3B is 31 of 58, concentrated in algorithm analysis, recursion tracing
+and bit representations.
+
+For reasoning there is **no adopted K-12 standard at all**. The only citable
+hooks in US standards are CCSS ELA **RI.8.8** ("recognize when irrelevant
+evidence is introduced"), **RI.9-10.8** ("identify false statements and
+fallacious reasoning"), and **RH.6-8.8 / RST.6-8.8** (fact vs reasoned judgment
+vs speculation). Texas approved a Logic I course (PEIMS N1290100, 2025-26) with
+a closed fallacy taxonomy, but it is an elective innovative course outside TEKS.
+Everything else — P21's 4Cs, Portrait of a Graduate, AAC&U VALUE, PISA Creative
+Thinking — is either uncoded, human-rated, or both.
+
+So the honest statement, and the one the app makes: **the reasoning content is
+the app's own construction**, anchored to RI.8 and RH.8 where it genuinely
+matches and to nothing where it does not. That is consistent with the founding
+brief, which always said the four Paths were original constructions.
+
+One practical warning recorded for later: Cognitive Reflection Test items are
+near single-use for one learner — their entire published limitation is prior
+exposure — so anything in that shape belongs behind the longest cooldown in the
+app, in generated-variant families, never in normal rotation.
+
+### 40e. Version traps found while auditing standards
+
+Recorded so a later agent does not re-derive them. CSTA's 3A/3B identifiers are
+the **2017** revision; a 2026 revision retires them. California publishes its
+own CS codes (`9-12.*` / `9-12S.*`) which differ from CSTA's, and California is
+the alignment this app claims elsewhere. And the CA Precalculus course has no
+chapter in the 2023 Mathematics Framework — its only CDE course definition is
+the 2015-published chapter of the previous framework, now 404 on cde.ca.gov.
+Superseded but not replaced.
