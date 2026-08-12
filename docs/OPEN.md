@@ -335,3 +335,75 @@ The fix that this suggests is not more caution; it is that any alarming
 simulation result should be re-derived a second way before anything is changed
 because of it. One attempted fix based on the third of these made the product
 worse and was caught by an existing test.
+
+---
+
+## Closing the 2026-08-11 items (2026-08-12)
+
+### CLOSED — Human Insight could not reach its floor
+
+Not a content shortage: tripling the bucket did not move it. The cause was that
+`STARVED_DEBT`, the bar a bucket must cross before the planner intervenes, was
+set BELOW where the problem lived. At 0.5 — "served less than half of target" —
+a bucket parked at 60-70% never reaches the bar, so nothing ever intervenes and
+it stays there. Insight held 4.3-5.0% against 7% (debt 0.29-0.39); physics held
+3.3-4.9% against 7%. A threshold set below the problem is invisible: nothing
+fails, the number is simply always a bit wrong.
+
+Fixed by `PATH_CORE_DEBT = 0.2` (a gentler, separate bar for a Path competing
+for the core block, which is the only route it has) and `STARVED_DEBT` 0.5 to
+0.4. 0.3 was tried and is too aggressive — the planner thrashes between starving
+buckets, `sessionRhythm` caught it reviewing a skill twice in a day, and the
+lightest learner's coverage collapsed.
+
+Delivered against target at 30 minutes a day is now within about a point
+everywhere except mathematics, which runs ~3 points high because a learner who
+owns 70 of 150 maths skills reviews more maths.
+
+### CLOSED, by admitting it rather than fixing it — the bank runs out
+
+At an hour a day every skill is owned by year two and every one clears the
+14-day bar; years three to five hold almost nothing new. No realistic amount of
+authoring changes that, because the curriculum is finite by design. The actual
+defect was the SILENCE: the app carried on serving reviews and never said the
+ground had run out, which is the same failure as a progress bar that keeps
+moving.
+
+`engine/curriculumEnd.ts` derives the state and Progress says it plainly, with
+the same refusal-to-exist rule as every other number here — a learner who has
+met a third of the bank is never told they are near the end of it.
+
+### NEW, and the most important thing found this pass
+
+**The five-year gate was never deterministic, and nobody noticed.**
+
+`pickSeed` uses `Math.random` to look for an unused variant, so the same
+simulated learner played twice meets different questions. Measured spread
+between two runs of the same matrix: **1 skill of coverage and 0.4 points of
+delivered share**. The gate was built without accounting for it, so a borderline
+assertion flipped depending on what else ran first — which presented as tests
+interfering with each other and was really just noise.
+
+Two consequences, both stated rather than quietly fixed:
+
+1. **Any difference this session smaller than that spread was never real.** The
+   larger movements (maths 38% -> ~30%, Insight 2.4% -> 6.8%) are far outside
+   it and stand. Anything quoted to a tenth of a point should be read as
+   plus-or-minus half a point.
+2. A gate that flakes is worse than no gate, because it teaches people to
+   re-run until it passes.
+
+`Math.random` is now pinned per run inside the harness — deliberately there
+rather than in the app, since the randomness is wanted in real use so two
+learners on the same day do not get identical variants.
+
+### Still open
+
+- **Physics is now the thinnest-served area** at 3.8-4.9% against a 7% target on
+  multi-session and goal-tilted shapes. Same shape of problem as Insight had,
+  one rung further down; the fix that worked for Paths does not apply because
+  physics already reaches the core through the ordinary academic rotation.
+- **Mathematics delivers ~3 points above target** through the review queue. This
+  is arguably correct and is recorded so nobody later reads it as bias.
+- Everything under "Still open, measured" from the previous section that is not
+  named above remains as written.

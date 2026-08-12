@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '10.1',
+    date: '2026-08-12',
+    title: 'The Balance Was Never In The Settings',
+    points: [
+      'Mathematics was taking about 38% of practice against a target of 26%, and lowering the target had barely moved it — one point for five. The reason was that the largest block of every session was reserved for four subjects (maths, physics, coding, scientific reasoning), while the six thinking Paths shared a single smaller slot between them, even though together they carry more than half the intended balance. A Path can now take that block, but only when it has been genuinely under-served. Mathematics now lands near 30%, and every other area within about a point of where it should be.',
+      'A second cause was a rescue that could never fire. The app steps in when an area falls behind, but the line was drawn at "served less than half of what was promised" — so an area sitting at two thirds of its share stayed there forever, because nothing ever noticed. Human Insight had been stuck at 4-5% against a 7% target for exactly that reason. The line now sits where the problem actually is.',
+      'Practice screens gained about 340 more questions: the four Paths, Puzzle Lab, Meta Lab, science and coding all grew, and the whole bank is now roughly 1,000 questions across 150 topics with 11,879 versions. Meta Lab had three topics that were literally never scheduled in a year of daily use; all of them are now reachable.',
+      'Progress now tells you when you have reached the end. The app teaches a finite number of things, and at an hour a day it runs out around the second year — which is completion, not failure, but the app used to say nothing and simply keep serving reviews. It now says plainly how many topics have survived the 14-day bar, how many are left, and that practice from there is maintenance rather than new ground.',
+      'Importing your own backup no longer looks like a crash. A two-year history is about six megabytes and took roughly ten seconds to read and rebuild with nothing on screen at all. It now says what it is doing, and waits for that message to actually appear before starting the work.',
+      'Small things: the placement summary said "Measured 1 skills directly across 1 areas" — that and six other counts now read like English. The step-ordering question drew an empty grey band above its options before anything was placed, which looked like a piece of the page had failed to load.',
+    ],
+  },
+  {
     version: '10.0',
     date: '2026-08-11',
     title: 'Built For Five Years, Not One',

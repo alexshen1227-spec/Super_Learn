@@ -131,8 +131,45 @@ function aboutSkillBucket(tpl: { generate: (s: number) => { extraSkillIds?: stri
   return (DEFAULT_INDEX.skills.get(about)?.bucket as BucketId | undefined) ?? null
 }
 
+/*
+ * `Math.random` is installed ONCE and reseeded per run.
+ *
+ * Reassigning a built-in on every call deoptimises the hot paths that use it —
+ * measured at more than a threefold slowdown of the whole matrix, from about
+ * 215 seconds to over 600. Installing the replacement a single time and moving
+ * only its seed costs nothing.
+ */
+let pinnedState = 1
+function pinRandom(seed: number): void {
+  pinnedState = seed >>> 0
+}
+Math.random = () => {
+  pinnedState = (pinnedState * 1664525 + 1013904223) >>> 0
+  return pinnedState / 4294967296
+}
+
 export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(2026, 0, 5, 16)): SimResult {
   const rand = rng(spec.seed)
+  /*
+   * THE PLANNER USES `Math.random`, so a simulation is not reproducible
+   * unless that is pinned too.
+   *
+   * `pickSeed` draws up to 24 random seeds looking for an unused variant, so
+   * the same learner played twice meets different questions and reaches a
+   * slightly different set of skills. Measured spread between two runs of the
+   * same matrix: 1 skill of coverage and 0.4 points of delivered share. The
+   * five-year gate was built without noticing, so a borderline assertion
+   * flipped depending on what else had run first — which looked like tests
+   * interfering with each other and was really just noise.
+   *
+   * Two consequences worth stating plainly. Any measured difference smaller
+   * than that spread was never real. And a gate that flakes is worse than no
+   * gate, because it teaches people to re-run until it passes.
+   *
+   * Pinned HERE rather than in the app: the randomness is wanted in real use,
+   * so two learners on the same day do not get identical variants.
+   */
+  pinRandom((spec.seed ^ 0x5eed) >>> 0)
   let state: AppState = {
     ...initialState(),
     profile: { ...initialState().profile, mathTrack: spec.mathTrack, gradeLevel: spec.grade, goals: spec.goals },
