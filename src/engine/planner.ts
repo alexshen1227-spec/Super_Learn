@@ -23,6 +23,7 @@ import { ACADEMIC_BUCKETS, BUCKET_BY_ID, ERROR_TAGS } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { difficultyForRate, evidenceFor, stateRank } from './mastery'
 import { effectiveGrade } from './effectiveGrade'
+import { effectiveTrack, effectiveTrackCeiling } from './effectiveTrack'
 import { isProvable } from './provable'
 import { evidenceEvents, suppressedTemplateIds } from './dispute'
 import { dueForms, dueReviews } from './scheduler'
@@ -31,12 +32,13 @@ import { effectiveAllocation } from './allocationPlus'
 import { uid } from './rng'
 import { explainSeedFor, lastExplainedAt, pickExplainTarget } from '../content/items/methodDrills'
 import { activeMission, missionPriority, missionReadiness } from './mission'
+import { sessionOrdinal } from './sessionOrdinal'
 import type { RepairTarget } from './errors'
 import { calendarDaysUntil } from './time'
 import { calibrationGap } from './calibration'
 import { stretchSignal } from './stretch'
 import { isPflTemplate } from './pfl'
-import { TRACK_BY_ID, type MathTrack } from '../content/tracks'
+import { type MathTrack } from '../content/tracks'
 import { getReadyReport } from './getReady'
 import {
   buildTemplateCoverage,
@@ -569,7 +571,10 @@ export function scoreSkills(
   // Is the learner currently cruising? If so, owned skills come back into play
   // for DEPTH rather than being retired.
   const cruising = stretchSignal(evidenceEvents(state.events, state.disputes), now).adjust > 0
-  const track = state.profile.mathTrack ? TRACK_BY_ID.get(state.profile.mathTrack) ?? null : null
+  // The course to AIM at, which is the stated one until the learner has
+  // proved all of it — then the next one. See engine/effectiveTrack.ts.
+  const aim = effectiveTrack(state.profile, evidence)
+  const track = aim.track
   const trackSkills = track ? new Set(track.units.flatMap((u) => u.skillIds)) : null
   const frontierUnit = track ? trackFrontierUnit(track, evidence) : null
 
@@ -655,7 +660,10 @@ export function scoreSkills(
       // effectiveGrade, not the typed year: the cap used to bite hardest on an
       // accelerated learner, pinning reach one rung above their school year
       // while their own chosen track taught two rungs higher.
-      const reach = Math.min(skill.gradeBand, effectiveGrade(state.profile) + 1)
+      // The ceiling has to move with the course too, or a learner who has
+      // finished Math 8 stays capped at grade-8 difficulty forever.
+      const aimGrade = effectiveTrackCeiling(state.profile, evidence) ?? effectiveGrade(state.profile)
+      const reach = Math.min(skill.gradeBand, aimGrade + 1)
       score += Math.max(0, reach - 6) * 0.5
     }
     // A skill the CONTENT cannot prove must not park the frontier.
@@ -1002,6 +1010,16 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   const alloc = effectiveAllocation(forEvidence, evidence, index, now)
   const report = alloc.report
   const conservative = state.sessions.length < 3
+  // Cadenced blocks count from this, never `state.sessions.length` — that list
+  // is capped at 2000 and freezes, which turns one cadence permanently on and
+  // the other permanently off. See engine/sessionOrdinal.ts.
+  const ordinal = sessionOrdinal(state)
+  const aimNow = effectiveTrack(state.profile, evidence)
+  if (aimNow.advancedFrom && aimNow.track) {
+    rationale.push(
+      `You have proved every skill in ${aimNow.advancedFrom.name}, so the maths emphasis has moved on to ${aimNow.track.name}. Nothing is dropped — finished skills still come back on their review schedule. Set your course in Settings if this is wrong.`,
+    )
+  }
   const mission = activeMission(state, now)
   if (mission?.skillIds?.length) {
     const ready = missionReadiness(mission, state, index, evidence, now)
@@ -1050,7 +1068,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
    * reasoning already keeps readiness probes out of short sessions.
    */
   const explainTarget =
-    !short && state.sessions.length % 3 === 2
+    !short && ordinal % 3 === 2
       ? pickExplainTarget(evidence, lastExplainedAt(state.events))
       : null
   const explainSeed = explainTarget !== null ? explainSeedFor(explainTarget) : null
@@ -1226,7 +1244,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     checkIn.energy !== 'low' &&
     !conservative &&
     mission === null &&
-    state.sessions.length % 4 === 3
+    ordinal % 4 === 3
   if (applicationDay) {
     const warmPlannedMinutes = warmActs.length ? Math.max(2, warmMin) : 0
     const application = pickAuthenticApplication(ctx, report, total - warmPlannedMinutes, templateUse)

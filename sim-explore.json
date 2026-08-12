@@ -1,0 +1,1079 @@
+[
+ {
+  "name": "30m daily",
+  "days": 1825,
+  "sessions": 1825,
+  "attempts": 14149,
+  "focusedMinutes": 52022,
+  "served": {
+   "math": 20825,
+   "observer": 3487.5,
+   "science": 3648,
+   "investigator": 4286,
+   "coding": 3641.5,
+   "strategist": 4645,
+   "puzzle": 3253,
+   "meta": 3133.5,
+   "physics": 2684,
+   "insight": 2418
+  },
+  "share": {
+   "math": 40.03152542698692,
+   "observer": 6.7039589400536315,
+   "science": 7.0124852224561,
+   "investigator": 8.238901223532578,
+   "coding": 6.9999903885893335,
+   "strategist": 8.929000509404766,
+   "puzzle": 6.253183779783359,
+   "meta": 6.023471064848188,
+   "physics": 5.159405245907942,
+   "insight": 4.648078198437185
+  },
+  "skillsTouched": 122,
+  "totalSkills": 123,
+  "untouched": [
+   "x-stuck"
+  ],
+  "rungs": {
+   "retained": 107,
+   "transferred": 15
+  },
+  "owned": 122,
+  "durable": 122,
+  "everUnaided": 122,
+  "minutesPerDurable": 737.5860655737705,
+  "transferEvents": 2012,
+  "distinctTemplates": 632,
+  "totalTemplates": 661,
+  "maxTemplateServes": 544,
+  "topTemplates": [
+   {
+    "id": "nr-build-skew",
+    "bucket": "math",
+    "serves": 544,
+    "variants": 12,
+    "variantsSeen": 12
+   },
+   {
+    "id": "x-explain-back",
+    "bucket": "meta",
+    "serves": 485,
+    "variants": 51,
+    "variantsSeen": 51
+   },
+   {
+    "id": "ca-a1-standard-deviation",
+    "bucket": "math",
+    "serves": 449,
+    "variants": 24,
+    "variantsSeen": 24
+   },
+   {
+    "id": "depth-i-hypothesis-synthesis",
+    "bucket": "investigator",
+    "serves": 214,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "depth-o-dossier",
+    "bucket": "observer",
+    "serves": 213,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "unit-rate-convert",
+    "bucket": "math",
+    "serves": 202,
+    "variants": 12,
+    "variantsSeen": 12
+   },
+   {
+    "id": "trend-predict",
+    "bucket": "math",
+    "serves": 182,
+    "variants": 32,
+    "variantsSeen": 32
+   },
+   {
+    "id": "var-compare",
+    "bucket": "math",
+    "serves": 181,
+    "variants": 16,
+    "variantsSeen": 16
+   },
+   {
+    "id": "hs-trend-line",
+    "bucket": "math",
+    "serves": 181,
+    "variants": 30,
+    "variantsSeen": 30
+   },
+   {
+    "id": "stats-mad",
+    "bucket": "math",
+    "serves": 180,
+    "variants": 32,
+    "variantsSeen": 31
+   },
+   {
+    "id": "unit-dimensional",
+    "bucket": "math",
+    "serves": 172,
+    "variants": 4,
+    "variantsSeen": 4
+   },
+   {
+    "id": "obs-source-memory",
+    "bucket": "observer",
+    "serves": 158,
+    "variants": 4,
+    "variantsSeen": 4
+   }
+  ],
+  "medianTemplateServes": 11,
+  "sameSessionRepeatMinutes": 785,
+  "dueAtEnd": 1,
+  "peakDue": 25,
+  "plannerFailures": 0,
+  "exhaustedTemplates": 259,
+  "byYear": [
+   {
+    "year": 1,
+    "owned": 114,
+    "durable": 114,
+    "touched": 115,
+    "minutes": 10513
+   },
+   {
+    "year": 2,
+    "owned": 119,
+    "durable": 119,
+    "touched": 120,
+    "minutes": 20904
+   },
+   {
+    "year": 3,
+    "owned": 122,
+    "durable": 122,
+    "touched": 122,
+    "minutes": 31292
+   },
+   {
+    "year": 4,
+    "owned": 122,
+    "durable": 122,
+    "touched": 122,
+    "minutes": 41670
+   },
+   {
+    "year": 5,
+    "owned": 122,
+    "durable": 122,
+    "touched": 122,
+    "minutes": 52022
+   }
+  ],
+  "wallSeconds": 5
+ },
+ {
+  "name": "10m daily",
+  "days": 1825,
+  "sessions": 1825,
+  "attempts": 7333,
+  "focusedMinutes": 21304,
+  "served": {
+   "math": 8664,
+   "observer": 1642.5,
+   "investigator": 1922,
+   "strategist": 1869,
+   "puzzle": 1605,
+   "insight": 1144.5,
+   "meta": 1040,
+   "coding": 1140,
+   "science": 1048.5,
+   "physics": 1228.5
+  },
+  "share": {
+   "math": 40.66841907622982,
+   "observer": 7.709819752159219,
+   "investigator": 9.021779947427714,
+   "strategist": 8.773000375516334,
+   "puzzle": 7.533796470146451,
+   "insight": 5.372230567029666,
+   "meta": 4.88171235448742,
+   "coding": 5.351107773188134,
+   "science": 4.921610965076981,
+   "physics": 5.7665227187382655
+  },
+  "skillsTouched": 123,
+  "totalSkills": 123,
+  "untouched": [],
+  "rungs": {
+   "retained": 99,
+   "transferred": 24
+  },
+  "owned": 123,
+  "durable": 123,
+  "everUnaided": 123,
+  "minutesPerDurable": 259.2073170731707,
+  "transferEvents": 486,
+  "distinctTemplates": 600,
+  "totalTemplates": 661,
+  "maxTemplateServes": 184,
+  "topTemplates": [
+   {
+    "id": "unit-dimensional",
+    "bucket": "math",
+    "serves": 184,
+    "variants": 4,
+    "variantsSeen": 4
+   },
+   {
+    "id": "unit-rate-convert",
+    "bucket": "math",
+    "serves": 183,
+    "variants": 12,
+    "variantsSeen": 12
+   },
+   {
+    "id": "depth-h-safety-synthesis",
+    "bucket": "insight",
+    "serves": 163,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "depth-o-dossier",
+    "bucket": "observer",
+    "serves": 155,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "unit-convert",
+    "bucket": "math",
+    "serves": 152,
+    "variants": 2,
+    "variantsSeen": 2
+   },
+   {
+    "id": "depth-i-hypothesis-synthesis",
+    "bucket": "investigator",
+    "serves": 152,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "depth-st-portfolio",
+    "bucket": "strategist",
+    "serves": 118,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "real-project-triage",
+    "bucket": "strategist",
+    "serves": 116,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "c-expr-order",
+    "bucket": "coding",
+    "serves": 91,
+    "variants": 12,
+    "variantsSeen": 12
+   },
+   {
+    "id": "adv-meta-evidence",
+    "bucket": "meta",
+    "serves": 82,
+    "variants": 4,
+    "variantsSeen": 4
+   },
+   {
+    "id": "meta-interleave",
+    "bucket": "meta",
+    "serves": 82,
+    "variants": 4,
+    "variantsSeen": 4
+   },
+   {
+    "id": "c-vars-trace",
+    "bucket": "coding",
+    "serves": 79,
+    "variants": 12,
+    "variantsSeen": 12
+   }
+  ],
+  "medianTemplateServes": 8,
+  "sameSessionRepeatMinutes": 12,
+  "dueAtEnd": 3,
+  "peakDue": 35,
+  "plannerFailures": 0,
+  "exhaustedTemplates": 193,
+  "byYear": [
+   {
+    "year": 1,
+    "owned": 93,
+    "durable": 93,
+    "touched": 98,
+    "minutes": 4181
+   },
+   {
+    "year": 2,
+    "owned": 121,
+    "durable": 121,
+    "touched": 121,
+    "minutes": 8489
+   },
+   {
+    "year": 3,
+    "owned": 122,
+    "durable": 122,
+    "touched": 122,
+    "minutes": 12799
+   },
+   {
+    "year": 4,
+    "owned": 122,
+    "durable": 122,
+    "touched": 122,
+    "minutes": 17084
+   },
+   {
+    "year": 5,
+    "owned": 123,
+    "durable": 123,
+    "touched": 123,
+    "minutes": 21304
+   }
+  ],
+  "wallSeconds": 2
+ },
+ {
+  "name": "45m daily",
+  "days": 1825,
+  "sessions": 1825,
+  "attempts": 25483,
+  "focusedMinutes": 75637,
+  "served": {
+   "math": 36982,
+   "observer": 4685,
+   "science": 3933.5,
+   "investigator": 5720.5,
+   "coding": 4258,
+   "strategist": 5654,
+   "physics": 3942,
+   "puzzle": 4354.5,
+   "insight": 2484,
+   "meta": 3623.5
+  },
+  "share": {
+   "math": 48.89405978555469,
+   "observer": 6.194058463450427,
+   "science": 5.200497111202189,
+   "investigator": 7.5630974258630035,
+   "coding": 5.629519943942779,
+   "strategist": 7.475177492497059,
+   "physics": 5.211734997421897,
+   "puzzle": 5.7571030051429855,
+   "insight": 3.2841069846768116,
+   "meta": 4.790644790248159
+  },
+  "skillsTouched": 120,
+  "totalSkills": 123,
+  "untouched": [
+   "x-focus",
+   "x-method",
+   "x-stuck"
+  ],
+  "rungs": {
+   "retained": 109,
+   "transferred": 10,
+   "guided": 1
+  },
+  "owned": 119,
+  "durable": 119,
+  "everUnaided": 120,
+  "minutesPerDurable": 883.2773109243698,
+  "transferEvents": 2976,
+  "distinctTemplates": 624,
+  "totalTemplates": 661,
+  "maxTemplateServes": 712,
+  "topTemplates": [
+   {
+    "id": "nr-build-skew",
+    "bucket": "math",
+    "serves": 712,
+    "variants": 12,
+    "variantsSeen": 12
+   },
+   {
+    "id": "ca-a1-standard-deviation",
+    "bucket": "math",
+    "serves": 705,
+    "variants": 24,
+    "variantsSeen": 24
+   },
+   {
+    "id": "x-explain-back",
+    "bucket": "meta",
+    "serves": 660,
+    "variants": 51,
+    "variantsSeen": 51
+   },
+   {
+    "id": "unit-rate-convert",
+    "bucket": "math",
+    "serves": 559,
+    "variants": 12,
+    "variantsSeen": 12
+   },
+   {
+    "id": "stats-mad",
+    "bucket": "math",
+    "serves": 529,
+    "variants": 32,
+    "variantsSeen": 32
+   },
+   {
+    "id": "var-compare",
+    "bucket": "math",
+    "serves": 527,
+    "variants": 16,
+    "variantsSeen": 16
+   },
+   {
+    "id": "hs-trend-line",
+    "bucket": "math",
+    "serves": 482,
+    "variants": 30,
+    "variantsSeen": 30
+   },
+   {
+    "id": "trend-predict",
+    "bucket": "math",
+    "serves": 482,
+    "variants": 32,
+    "variantsSeen": 32
+   },
+   {
+    "id": "os-stat-22",
+    "bucket": "math",
+    "serves": 416,
+    "variants": 1,
+    "variantsSeen": 1
+   },
+   {
+    "id": "os-stat-25",
+    "bucket": "math",
+    "serves": 416,
+    "variants": 1,
+    "variantsSeen": 1
+   },
+   {
+    "id": "os-stat-1",
+    "bucket": "math",
+    "serves": 415,
+    "variants": 1,
+    "variantsSeen": 1
+   },
+   {
+    "id": "os-stat-6",
+    "bucket": "math",
+    "serves": 415,
+    "variants": 1,
+    "variantsSeen": 1
+   }
+  ],
+  "medianTemplateServes": 14,
+  "sameSessionRepeatMinutes": 2424,
+  "dueAtEnd": 2,
+  "peakDue": 19,
+  "plannerFailures": 0,
+  "exhaustedTemplates": 289,
+  "byYear": [
+   {
+    "year": 1,
+    "owned": 118,
+    "durable": 118,
+    "touched": 119,
+    "minutes": 15323
+   },
+   {
+    "year": 2,
+    "owned": 119,
+    "durable": 119,
+    "touched": 120,
+    "minutes": 30433
+   },
+   {
+    "year": 3,
+    "owned": 119,
+    "durable": 119,
+    "touched": 120,
+    "minutes": 45462
+   },
+   {
+    "year": 4,
+    "owned": 119,
+    "durable": 119,
+    "touched": 120,
+    "minutes": 60533
+   },
+   {
+    "year": 5,
+    "owned": 119,
+    "durable": 119,
+    "touched": 120,
+    "minutes": 75637
+   }
+  ],
+  "wallSeconds": 8
+ },
+ {
+  "name": "3 x 20m daily",
+  "days": 1825,
+  "sessions": 2000,
+  "attempts": 36310,
+  "focusedMinutes": 109197,
+  "served": {
+   "math": 57304,
+   "observer": 5395.5,
+   "science": 4724,
+   "investigator": 7346.5,
+   "strategist": 7390,
+   "puzzle": 5157.5,
+   "coding": 5269.5,
+   "physics": 5209.5,
+   "insight": 2132.5,
+   "meta": 9268
+  },
+  "share": {
+   "math": 52.47763216938194,
+   "observer": 4.941069809610154,
+   "science": 4.326126175627536,
+   "investigator": 6.727748930831433,
+   "strategist": 6.767585190069324,
+   "puzzle": 4.723115103894796,
+   "coding": 4.825682024231435,
+   "physics": 4.770735459765378,
+   "insight": 1.9528924787311006,
+   "meta": 8.4874126578569
+  },
+  "skillsTouched": 120,
+  "totalSkills": 123,
+  "untouched": [
+   "x-focus",
+   "x-method",
+   "x-stuck"
+  ],
+  "rungs": {
+   "retained": 110,
+   "transferred": 9,
+   "guided": 1
+  },
+  "owned": 119,
+  "durable": 119,
+  "everUnaided": 120,
+  "minutesPerDurable": 1273.6512605042017,
+  "transferEvents": 4370,
+  "distinctTemplates": 623,
+  "totalTemplates": 661,
+  "maxTemplateServes": 1822,
+  "topTemplates": [
+   {
+    "id": "x-explain-back",
+    "bucket": "meta",
+    "serves": 1822,
+    "variants": 51,
+    "variantsSeen": 51
+   },
+   {
+    "id": "nr-build-skew",
+    "bucket": "math",
+    "serves": 1323,
+    "variants": 12,
+    "variantsSeen": 12
+   },
+   {
+    "id": "ca-a1-standard-deviation",
+    "bucket": "math",
+    "serves": 1176,
+    "variants": 24,
+    "variantsSeen": 24
+   },
+   {
+    "id": "unit-dimensional",
+    "bucket": "math",
+    "serves": 993,
+    "variants": 4,
+    "variantsSeen": 4
+   },
+   {
+    "id": "unit-rate-convert",
+    "bucket": "math",
+    "serves": 899,
+    "variants": 12,
+    "variantsSeen": 12
+   },
+   {
+    "id": "stats-mad",
+    "bucket": "math",
+    "serves": 875,
+    "variants": 32,
+    "variantsSeen": 32
+   },
+   {
+    "id": "var-compare",
+    "bucket": "math",
+    "serves": 874,
+    "variants": 16,
+    "variantsSeen": 16
+   },
+   {
+    "id": "hs-trend-line",
+    "bucket": "math",
+    "serves": 873,
+    "variants": 30,
+    "variantsSeen": 30
+   },
+   {
+    "id": "trend-predict",
+    "bucket": "math",
+    "serves": 873,
+    "variants": 32,
+    "variantsSeen": 32
+   },
+   {
+    "id": "unit-convert",
+    "bucket": "math",
+    "serves": 852,
+    "variants": 2,
+    "variantsSeen": 2
+   },
+   {
+    "id": "os-stat-22",
+    "bucket": "math",
+    "serves": 694,
+    "variants": 1,
+    "variantsSeen": 1
+   },
+   {
+    "id": "os-stat-1",
+    "bucket": "math",
+    "serves": 693,
+    "variants": 1,
+    "variantsSeen": 1
+   }
+  ],
+  "medianTemplateServes": 15,
+  "sameSessionRepeatMinutes": 1587,
+  "dueAtEnd": 2,
+  "peakDue": 7,
+  "plannerFailures": 0,
+  "exhaustedTemplates": 294,
+  "byYear": [
+   {
+    "year": 1,
+    "owned": 119,
+    "durable": 119,
+    "touched": 120,
+    "minutes": 21972
+   },
+   {
+    "year": 2,
+    "owned": 119,
+    "durable": 119,
+    "touched": 120,
+    "minutes": 43671
+   },
+   {
+    "year": 3,
+    "owned": 119,
+    "durable": 119,
+    "touched": 120,
+    "minutes": 65439
+   },
+   {
+    "year": 4,
+    "owned": 119,
+    "durable": 119,
+    "touched": 120,
+    "minutes": 87439
+   },
+   {
+    "year": 5,
+    "owned": 119,
+    "durable": 119,
+    "touched": 120,
+    "minutes": 109197
+   }
+  ],
+  "wallSeconds": 31
+ },
+ {
+  "name": "30m, weekends off, occasional week away",
+  "days": 1825,
+  "sessions": 1085,
+  "attempts": 8530,
+  "focusedMinutes": 31165,
+  "served": {
+   "math": 11411,
+   "observer": 2224.5,
+   "science": 2392,
+   "investigator": 2619.5,
+   "coding": 2251,
+   "strategist": 2672,
+   "puzzle": 2021,
+   "insight": 1713,
+   "meta": 2009,
+   "physics": 1852
+  },
+  "share": {
+   "math": 36.61479223487887,
+   "observer": 7.137814856409434,
+   "science": 7.675276752767528,
+   "investigator": 8.4052623134927,
+   "coding": 7.222846141504894,
+   "strategist": 8.573720519813893,
+   "puzzle": 6.484838761431092,
+   "insight": 5.49655061768009,
+   "meta": 6.4463340285576765,
+   "physics": 5.942563773463822
+  },
+  "skillsTouched": 121,
+  "totalSkills": 123,
+  "untouched": [
+   "m-variables",
+   "x-stuck"
+  ],
+  "rungs": {
+   "retained": 107,
+   "transferred": 14
+  },
+  "owned": 121,
+  "durable": 121,
+  "everUnaided": 121,
+  "minutesPerDurable": 442.8471074380165,
+  "transferEvents": 1077,
+  "distinctTemplates": 629,
+  "totalTemplates": 661,
+  "maxTemplateServes": 285,
+  "topTemplates": [
+   {
+    "id": "x-explain-back",
+    "bucket": "meta",
+    "serves": 285,
+    "variants": 51,
+    "variantsSeen": 51
+   },
+   {
+    "id": "nr-build-skew",
+    "bucket": "math",
+    "serves": 187,
+    "variants": 12,
+    "variantsSeen": 12
+   },
+   {
+    "id": "ca-a1-standard-deviation",
+    "bucket": "math",
+    "serves": 149,
+    "variants": 24,
+    "variantsSeen": 24
+   },
+   {
+    "id": "depth-o-dossier",
+    "bucket": "observer",
+    "serves": 139,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "depth-i-hypothesis-synthesis",
+    "bucket": "investigator",
+    "serves": 103,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "depth-st-portfolio",
+    "bucket": "strategist",
+    "serves": 74,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "real-project-triage",
+    "bucket": "strategist",
+    "serves": 73,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "adv-avg-speed",
+    "bucket": "physics",
+    "serves": 65,
+    "variants": 16,
+    "variantsSeen": 16
+   },
+   {
+    "id": "depth-o-corroboration",
+    "bucket": "observer",
+    "serves": 61,
+    "variants": 8,
+    "variantsSeen": 8
+   },
+   {
+    "id": "ca-hs-two-way-conditional",
+    "bucket": "math",
+    "serves": 59,
+    "variants": 36,
+    "variantsSeen": 29
+   },
+   {
+    "id": "adv-obs-layers",
+    "bucket": "observer",
+    "serves": 58,
+    "variants": 4,
+    "variantsSeen": 4
+   },
+   {
+    "id": "p-whats-wrong",
+    "bucket": "physics",
+    "serves": 58,
+    "variants": 9,
+    "variantsSeen": 9
+   }
+  ],
+  "medianTemplateServes": 8,
+  "sameSessionRepeatMinutes": 526,
+  "dueAtEnd": 0,
+  "peakDue": 26,
+  "plannerFailures": 0,
+  "exhaustedTemplates": 224,
+  "byYear": [
+   {
+    "year": 1,
+    "owned": 89,
+    "durable": 87,
+    "touched": 92,
+    "minutes": 6253
+   },
+   {
+    "year": 2,
+    "owned": 119,
+    "durable": 114,
+    "touched": 120,
+    "minutes": 12605
+   },
+   {
+    "year": 3,
+    "owned": 120,
+    "durable": 120,
+    "touched": 121,
+    "minutes": 18840
+   },
+   {
+    "year": 4,
+    "owned": 121,
+    "durable": 121,
+    "touched": 121,
+    "minutes": 24972
+   },
+   {
+    "year": 5,
+    "owned": 121,
+    "durable": 121,
+    "touched": 121,
+    "minutes": 31165
+   }
+  ],
+  "wallSeconds": 2
+ },
+ {
+  "name": "30m daily, all-in on chess",
+  "days": 1825,
+  "sessions": 1825,
+  "attempts": 14215,
+  "focusedMinutes": 51702,
+  "served": {
+   "math": 20792.5,
+   "observer": 2300,
+   "science": 3692,
+   "puzzle": 7446,
+   "coding": 3446,
+   "physics": 2605,
+   "investigator": 3173.5,
+   "strategist": 3629,
+   "meta": 2769.5,
+   "insight": 1848
+  },
+  "share": {
+   "math": 40.2164347262652,
+   "observer": 4.4486136765857855,
+   "science": 7.140992040849879,
+   "puzzle": 14.401903232981635,
+   "coding": 6.665183795441138,
+   "physics": 5.038538533698248,
+   "investigator": 6.138119783758691,
+   "strategist": 7.019138709708616,
+   "meta": 5.356711120567102,
+   "insight": 3.5743643801437095
+  },
+  "skillsTouched": 118,
+  "totalSkills": 123,
+  "untouched": [
+   "x-learn",
+   "x-calib",
+   "x-focus",
+   "x-method",
+   "x-stuck"
+  ],
+  "rungs": {
+   "retained": 105,
+   "transferred": 13
+  },
+  "owned": 118,
+  "durable": 118,
+  "everUnaided": 118,
+  "minutesPerDurable": 709.8305084745763,
+  "transferEvents": 2058,
+  "distinctTemplates": 622,
+  "totalTemplates": 661,
+  "maxTemplateServes": 554,
+  "topTemplates": [
+   {
+    "id": "nr-build-skew",
+    "bucket": "math",
+    "serves": 554,
+    "variants": 12,
+    "variantsSeen": 12
+   },
+   {
+    "id": "x-explain-back",
+    "bucket": "meta",
+    "serves": 492,
+    "variants": 51,
+    "variantsSeen": 51
+   },
+   {
+    "id": "ca-a1-standard-deviation",
+    "bucket": "math",
+    "serves": 463,
+    "variants": 24,
+    "variantsSeen": 24
+   },
+   {
+    "id": "chess-m2-king-walk",
+    "bucket": "puzzle",
+    "serves": 229,
+    "variants": 1,
+    "variantsSeen": 1
+   },
+   {
+    "id": "chess-end-escort2",
+    "bucket": "puzzle",
+    "serves": 229,
+    "variants": 1,
+    "variantsSeen": 1
+   },
+   {
+    "id": "chess-m2-quiet-b",
+    "bucket": "puzzle",
+    "serves": 228,
+    "variants": 1,
+    "variantsSeen": 1
+   },
+   {
+    "id": "chess-m2-qh1",
+    "bucket": "puzzle",
+    "serves": 228,
+    "variants": 1,
+    "variantsSeen": 1
+   },
+   {
+    "id": "chess-end-clear-path",
+    "bucket": "puzzle",
+    "serves": 228,
+    "variants": 1,
+    "variantsSeen": 1
+   },
+   {
+    "id": "chess-m2-deflect",
+    "bucket": "puzzle",
+    "serves": 227,
+    "variants": 1,
+    "variantsSeen": 1
+   },
+   {
+    "id": "unit-rate-convert",
+    "bucket": "math",
+    "serves": 220,
+    "variants": 12,
+    "variantsSeen": 12
+   },
+   {
+    "id": "hs-trend-line",
+    "bucket": "math",
+    "serves": 205,
+    "variants": 30,
+    "variantsSeen": 30
+   },
+   {
+    "id": "trend-predict",
+    "bucket": "math",
+    "serves": 203,
+    "variants": 32,
+    "variantsSeen": 32
+   }
+  ],
+  "medianTemplateServes": 10,
+  "sameSessionRepeatMinutes": 990,
+  "dueAtEnd": 2,
+  "peakDue": 26,
+  "plannerFailures": 0,
+  "exhaustedTemplates": 241,
+  "byYear": [
+   {
+    "year": 1,
+    "owned": 116,
+    "durable": 111,
+    "touched": 116,
+    "minutes": 10479
+   },
+   {
+    "year": 2,
+    "owned": 117,
+    "durable": 117,
+    "touched": 117,
+    "minutes": 20867
+   },
+   {
+    "year": 3,
+    "owned": 118,
+    "durable": 118,
+    "touched": 118,
+    "minutes": 31142
+   },
+   {
+    "year": 4,
+    "owned": 118,
+    "durable": 118,
+    "touched": 118,
+    "minutes": 41409
+   },
+   {
+    "year": 5,
+    "owned": 118,
+    "durable": 118,
+    "touched": 118,
+    "minutes": 51702
+   }
+  ],
+  "wallSeconds": 4
+ }
+]
