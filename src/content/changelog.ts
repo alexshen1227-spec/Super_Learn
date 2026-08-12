@@ -11,6 +11,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '10.0',
+    date: '2026-08-11',
+    title: 'Built For Five Years, Not One',
+    points: [
+      'The app was quietly a two-year app. Played forward through five years of daily use, a learner ran out of new material after about two years and then spent three more reviewing it — one exponent question served 688 times with every one of its fifteen versions worn out — while ten topics that already existed in the app were never once scheduled. Three separate causes, none of which showed up in a single year of use.',
+      'The first was a counter that breaks. The app keeps the last 2000 session records, and two schedules counted with that list, so once it stopped growing the retention check fired every single session forever and real-world applied projects stopped being scheduled at all. At three sessions a day that arrives inside two years.',
+      'The second was that a maths course is finite and the app never left it. Once every skill in the chosen course is proved, the emphasis now moves to the next course, and the session notes say so plainly. What was typed in Settings is never overwritten — that is the learner’s own fact about their life. Unreached topics across five years went from eleven to one, and a ten-minute-a-day learner went from reaching 107 topics to reaching all of them.',
+      'The third was simply the size of the bank, so it grew by a quarter: 661 questions to 832, 123 topics to 150, and 8,323 versions to 10,337. Every area outside mathematics grew — Human Insight had three topics and now has ten, Puzzle Lab had 49 questions resting on three topics and now covers seven, Meta Lab went from eight topics to 21. The four Paths have a real order to work through for the first time.',
+      'The new topics were chosen against evidence rather than against what sounds impressive. Comparing two cases that look nothing alike to find the shared structure; writing probabilities as counts of people instead of percentages; asking how similar past cases actually turned out before reasoning about this one; what a sample size can and cannot support; and a closed list of named ways an argument breaks. Each of those has a controlled study behind it measuring the skill working on a problem the learner had not practised.',
+      'There is a new goal in Settings: Everyday reasoning and judgement. It is the first goal that steers toward specific topics rather than whole areas, because an area contains both the things that carry over and the things that do not. It says on the screen where it is chosen that it cannot promise better thinking in general, and it deliberately leaves out the one bias that education reliably fails to shift.',
+      'All of this is now checked by simulating 38 different learners through five years each — ten to sixty minutes a day, one to three sessions, weekends off, term breaks, people who fade, people who start late, every goal alone and in combination. Everything the run found is written down, including two things it cannot fix: on very short sessions Human Insight still gets less than its fair share, and at an hour a day the whole bank is seen inside the first year.',
+    ],
+  },
+  {
     version: '9.3',
     date: '2026-08-11',
     title: 'Four Things That Were Announced But Did Not Work',
