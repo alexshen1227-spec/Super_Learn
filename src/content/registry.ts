@@ -44,6 +44,7 @@ import { REAL_WORLD_TEMPLATES } from './items/realWorldPractice'
 import { CONSTRUCT_TEMPLATES } from './items/construct'
 import { CASE_COMPARISON_TEMPLATES } from './items/caseComparison'
 import { TRANSFER_LAB_TEMPLATES } from './items/transferLab'
+import { ALGORITHMS_TEMPLATES } from './items/algorithmsLab'
 import { IMPORTED_TEMPLATES } from './items/imported'
 import { GRADE_CORE_TEMPLATES } from './items/gradeCore'
 import { ALGEBRA_ONE_TEMPLATES } from './items/algebraOne'
@@ -103,6 +104,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...CONSTRUCT_TEMPLATES,
   ...CASE_COMPARISON_TEMPLATES,
   ...TRANSFER_LAB_TEMPLATES,
+  ...ALGORITHMS_TEMPLATES,
   ...IMPORTED_TEMPLATES,
   ...GRADE_CORE_TEMPLATES,
   ...ALGEBRA_ONE_TEMPLATES,
