@@ -269,8 +269,17 @@ export function SettingsScreen() {
           <div>
             <span className="text-[13px] font-medium text-muted">Learning focus</span>
             <p className="text-[12px] text-faint mt-0.5">
-              The goals from setup, editable anytime. Together they tilt the long-run balance by a bounded ~12 points —
+              The goals from setup, editable anytime. Together they tilt the long-run balance by a bounded ~18 points —
               nothing you leave unpicked is dropped; every area keeps its floor.
+              {state.settings.coachManagedAllocations ? null : (
+                <>
+                  {' '}
+                  <span className="text-warn font-medium">
+                    They are doing nothing at the moment: you have taken manual control of the balance below, and your
+                    sliders win. Switch the coach back on if you want your goals to steer it.
+                  </span>
+                </>
+              )}
             </p>
             <div className="flex gap-1.5 mt-1.5 flex-wrap">
               {GOAL_PRESETS.map((g) => (

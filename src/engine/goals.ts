@@ -17,8 +17,28 @@
  */
 import type { BucketId } from '../domain/types'
 
-/** Total percentage points a full set of goals may move. Deliberately modest. */
-const GOAL_BUDGET = 12
+/*
+ * Total percentage points a full set of goals may move.
+ *
+ * Was 12, and MEASURED over a simulated year that bought almost nothing: with
+ * the reasoning goal selected, delivered mathematics went 38.1% -> 37.4%. The
+ * target moved by twelve points and the learner's actual day moved by less
+ * than one, because delivered share is dominated by the core block and the
+ * review queue rather than by the target table. A goal that shifts the number
+ * in Settings and not the session is the same failure goals had originally.
+ *
+ * 24 was tried first and went too far the other way: over five years it pushed
+ * Puzzle Lab to 0.9% of delivered time under the reasoning goal, which is
+ * erasure, and the founding brief is explicit that emphasis must never
+ * permanently erase an area. The floor holds on the TARGET table but delivered
+ * share drifts below it, so the bound has to be set against what is actually
+ * served rather than against what is planned.
+ *
+ * 18 is the largest tilt measured to keep every bucket above the starvation
+ * line across all 38 five-year learner shapes, while still moving a real week:
+ * the reasoning goal buys its named skills roughly 80% more time.
+ */
+const GOAL_BUDGET = 18
 
 /**
  * Which areas each preset leans on. Several goals touch several buckets,

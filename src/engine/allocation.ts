@@ -29,19 +29,43 @@ function zeroRecord(): Record<BucketId, number> {
   return Object.fromEntries(BUCKETS.map((b) => [b.id, 0])) as Record<BucketId, number>
 }
 
+/**
+ * Which bucket a minute belongs to.
+ *
+ * Nearly always the item's own bucket. The exception is the retention exit,
+ * which asks the learner to explain back a skill they have already retained —
+ * from ANY area. Its template lives in Meta Lab, so every one of its minutes
+ * was charged to Meta Lab's share, and it runs every third session.
+ *
+ * MEASURED over a simulated year: `x-explain` absorbed 1,168 of Meta Lab's
+ * ~1,600 minutes — 73% of the area's entire budget — and five of Meta Lab's
+ * own skills were never scheduled once, including one the reasoning goal
+ * explicitly names. Explaining a maths skill back is maths retention work, so
+ * it is charged to the area of the skill being explained. When the event does
+ * not say (older events, or a target outside the skill list), it falls back to
+ * the item's own bucket, exactly as before.
+ */
+function bucketFor(e: AttemptEvent, skillBucket?: (id: string) => BucketId | undefined): BucketId {
+  const about = e.aboutSkillIds?.[0]
+  if (!about || !skillBucket) return e.bucket
+  return skillBucket(about) ?? e.bucket
+}
+
 export function allocationReport(
   events: AttemptEvent[],
   settings: AppSettings,
   now: number,
   /** Optional coach-tuned percentages; defaults to the user's base. */
   targetsOverride?: Record<BucketId, number>,
+  /** Resolves a skill id to its bucket, so cross-area work is charged fairly. */
+  skillBucket?: (id: string) => BucketId | undefined,
 ): AllocationReport {
   const percentages = targetsOverride ?? settings.allocations
   const minutes = zeroRecord()
   const cutoff = now - WINDOW_MS
   for (const e of events) {
     if (e.t < cutoff || e.mode === 'placement') continue
-    minutes[e.bucket] += e.elapsedSec / 60
+    minutes[bucketFor(e, skillBucket)] += e.elapsedSec / 60
   }
   const totalMinutes = Object.values(minutes).reduce((a, b) => a + b, 0)
   const actual = zeroRecord()

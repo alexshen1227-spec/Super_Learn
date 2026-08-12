@@ -60,6 +60,15 @@ export default defineConfig({
   // below the repo root, and discovering their copied tests doubled the suite.
   test: {
     include: ['src/**/*.test.{ts,tsx}'],
+    /*
+     * Two tests are legitimately slow: the chess bank re-runs a real search for
+     * every tactic, and the content audit renders all 832 templates across many
+     * seeds. Both pass comfortably alone and both intermittently tripped the
+     * 5-second default when the suite ran them alongside everything else — a
+     * flake that says nothing about the code and would fail a CI run at random.
+     */
+    testTimeout: 120_000,
+    hookTimeout: 120_000,
   },
   build: {
     rollupOptions: {

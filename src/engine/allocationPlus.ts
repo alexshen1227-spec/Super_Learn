@@ -109,6 +109,6 @@ export function effectiveAllocation(
   now: number,
 ): EffectiveAllocation {
   const tuning = tuneTargets(state, evidence, index, now)
-  const report = allocationReport(state.events, state.settings, now, tuning.targets)
+  const report = allocationReport(state.events, state.settings, now, tuning.targets, (id) => index.skills.get(id)?.bucket)
   return { ...tuning, report }
 }

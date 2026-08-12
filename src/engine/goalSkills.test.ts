@@ -27,8 +27,8 @@ describe('goals that name skills', () => {
     const one = goalTilt([REASONING])
     const total = Object.values(one.deltas).reduce((a, b) => a + b, 0)
     // The whole point of the budget: one goal or six, the movement is bounded.
-    expect(total).toBeGreaterThan(11)
-    expect(total).toBeLessThan(13)
+    expect(total).toBeGreaterThan(17)
+    expect(total).toBeLessThan(19)
     expect(one.note).toBeTruthy()
   })
 

@@ -108,6 +108,10 @@ export interface SimResult {
    * actually runs out.
    */
   freshTemplatesByYear: number[]
+  /** Focused minutes attributed to each skill (a multi-skill item counts once per skill). */
+  skillMinutes: Record<string, number>
+  /** Day index on which each skill was first served. */
+  firstReachedDay: Record<string, number>
   /** Per-year snapshots of owned / durable / skillsTouched. */
   byYear: { year: number; owned: number; durable: number; touched: number; minutes: number }[]
 }
@@ -141,6 +145,8 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
   const byYear: SimResult['byYear'] = []
   const firstSeenYear = new Map<string, number>()
   const freshTemplatesByYear = [0, 0, 0, 0, 0]
+  const skillMinutes: Record<string, number> = {}
+  const firstReachedDay: Record<string, number> = {}
 
   for (let day = 0; day < days; day++) {
     const t0 = startAt + day * DAY
@@ -189,6 +195,10 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
           if (!seedsSeen.has(tpl.id)) seedsSeen.set(tpl.id, new Set())
           seedsSeen.get(tpl.id)!.add(a.seed % Math.max(1, tpl.variants))
 
+          for (const id of tpl.skillIds) {
+            skillMinutes[id] = (skillMinutes[id] ?? 0) + tpl.minutes
+            if (firstReachedDay[id] === undefined) firstReachedDay[id] = day
+          }
           const prior = Math.min(...tpl.skillIds.map((id) => skillTries.get(id) ?? 0))
           for (const id of tpl.skillIds) skillTries.set(id, (skillTries.get(id) ?? 0) + 1)
           const ctx: AttemptContext = {
@@ -323,6 +333,8 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
     plannerFailures,
     exhaustedTemplates: exhausted,
     freshTemplatesByYear,
+    skillMinutes,
+    firstReachedDay,
     byYear,
   }
 }
