@@ -1,0 +1,55 @@
+49 templates
+
+iq-logic-sort | i-logic | d3 | v12 | 3.5m | single | investigator
+iq-logic-contrapositive | i-logic,i-conditional | d3 | v12 | 2.5m | single | investigator
+iq-logic-counterexample | i-logic | d3 | v12 | 2.5m | single | transfer | investigator
+iq-logic-chain | i-logic | d3 | v10 | 3m | single | investigator
+iq-hypo-separate | i-hypo | d4 | v8 | 4m | multi | investigator
+iq-hypo-favourite | i-hypo | d3 | v10 | 3m | single | investigator
+iq-hypo-three | i-hypo | d4 | v8 | 3.5m | single | investigator
+iq-hypo-predict | i-hypo | d3 | v8 | 4.5m | multi | transfer | investigator
+iq-fc-brier-total | i-forecast | d3 | v12 | 3.5m | single | calibration | investigator
+iq-fc-order | i-forecast | d4 | v12 | 4m | single | investigator
+iq-fc-track | i-forecast | d3 | v12 | 4m | multi | calibration | investigator
+iq-fc-resolve | i-forecast | d2 | v10 | 2.5m | single | investigator
+iq-ab-cover | i-abduce | d3 | v8 | 3.5m | single | investigator
+iq-ab-assume | i-abduce | d4 | v12 | 3m | single | investigator
+iq-ab-rank | i-abduce | d4 | v10 | 3.5m | single | investigator
+iq-game-dominant | i-game | d3 | v12 | 3m | single | investigator
+iq-game-maximin | i-game | d3 | v12 | 3m | single | investigator
+iq-eq-best-response | i-equilibrium | d3 | v12 | 3m | single | investigator
+iq-eq-stable | i-equilibrium | d4 | v12 | 3.5m | single | investigator
+iq-commit-remove | i-commit | d4 | v10 | 4.5m | multi | investigator
+iq-commit-credible | i-commit | d3 | v10 | 3m | single | investigator
+iq-nf-mix | i-natfreq | d3 | v12 | 3m | single | investigator
+iq-rc-narrower | i-refclass | d4 | v12 | 3.5m | single | investigator
+iq-ss-regress | i-samplesize | d3 | v10 | 3m | single | investigator
+iq-dg-absence | i-diagnostic | d4 | v12 | 3m | single | investigator
+iq-cd-only-if | i-conditional | d3 | v12 | 3m | multi | investigator
+iq-fl-hidden | i-fallacy,i-logic | d3 | v12 | 3m | single | investigator
+iq-bayes-double | i-bayes,i-natfreq | d4 | v12 | 5m | multi | calibration | investigator
+pq-est-scaling | p-estimate | d3 | v12 | 2.5m | single | physics
+pq-est-rank | p-estimate | d2 | v10 | 3m | single | physics
+pq-est-tens | p-estimate | d3 | v12 | 2.5m | single | physics
+pq-meas-units | p-measure | d3 | v12 | 3m | single | physics
+pq-meas-limit | p-measure | d3 | v10 | 3m | single | transfer | physics
+pq-meas-convert | p-measure | d3 | v12 | 2.5m | single | physics
+pq-den-scale | p-density | d3 | v12 | 2.5m | single | physics
+pq-den-float | p-density | d3 | v12 | 3.5m | multi | physics
+pq-den-pressure | p-density | d3 | v12 | 3m | multi | physics
+pq-mom-scale | p-momentum | d2 | v12 | 2m | single | physics
+pq-mom-stop | p-momentum | d3 | v12 | 3.5m | multi | physics
+pq-mom-collide | p-momentum | d3 | v12 | 3m | single | physics
+pq-cir-series | p-circuits | d3 | v12 | 2.5m | single | physics
+pq-cir-divide | p-circuits | d3 | v12 | 2.5m | single | physics
+pq-cir-reason | p-circuits | d3 | v10 | 2.5m | single | physics
+pq-wav-scale | p-waves | d3 | v12 | 2.5m | single | physics
+pq-wav-catch | p-waves,p-measure | d3 | v10 | 3m | single | transfer | physics
+pq-wav-period | p-waves | d2 | v12 | 2m | single | physics
+pq-gra-velocity-story | p-graphs | d3 | v10 | 3m | single | transfer | physics
+pq-gra-area | p-graphs | d4 | v12 | 3m | single | physics
+pq-gra-rank | p-graphs | d3 | v10 | 3m | single | physics
+
+PRIMARY i-logic=4 i-hypo=4 i-forecast=4 i-abduce=3 i-game=2 i-equilibrium=2 i-commit=2 i-natfreq=1 i-refclass=1 i-samplesize=1 i-diagnostic=1 i-conditional=1 i-fallacy=1 i-bayes=1 p-estimate=3 p-measure=3 p-density=3 p-momentum=3 p-circuits=3 p-waves=3 p-graphs=3
+
+ANY i-logic=5 i-conditional=2 i-hypo=4 i-forecast=4 i-abduce=3 i-game=2 i-equilibrium=2 i-commit=2 i-natfreq=2 i-refclass=1 i-samplesize=1 i-diagnostic=1 i-fallacy=1 i-bayes=1 p-estimate=3 p-measure=4 p-density=3 p-momentum=3 p-circuits=3 p-waves=3 p-graphs=3

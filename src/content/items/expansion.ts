@@ -282,7 +282,7 @@ const freeFall = tpl(
       answer: numeric(askD ? d : 10 * t),
       hints: [
         askD ? 'd = ½ g t² — square the time first.' : 'Speed gained = g × t (it gains 10 m/s every second).',
-        askD ? `t² = ${t * t}.` : `${t} seconds × 10 m/s each second.`,
+        askD ? `Square the time first: t² = ${t * t}.` : `${t} seconds × 10 m/s each second.`,
         `Worked path: **${askD ? d : 10 * t}**.`,
       ],
       explanation: askD
@@ -306,7 +306,7 @@ const power = tpl(
       answer: numeric(w / t),
       hints: [
         'Power = energy per time: P = W/t.',
-        `${w} ÷ ${t}.`,
+        `Divide the work by the time: ${w} ÷ ${t}.`,
         `Worked path: **${w / t} W**.`,
       ],
       explanation: `P = W/t = ${w}/${t} = **${w / t} W** — a watt is one joule per second. Power is a RATE: the same work done twice as fast is twice the power, same energy.`,

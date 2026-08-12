@@ -311,7 +311,7 @@ const volConeSphere = tpl(
       answer,
       hints: [
         kind === 'cylinder' ? 'Base area times height.' : kind === 'cone' ? 'A cone is exactly one third of its cylinder.' : 'V = (4/3)πr³ — cube the radius first.',
-        kind === 'sphere' ? `r³ = ${r ** 3}.` : `r² = ${r * r}${kind === 'cone' ? `, and one third of ${r * r * h}` : `, times h = ${h}`}.`,
+        kind === 'sphere' ? `Cube the radius before anything else: r³ = ${r ** 3}.` : `r² = ${r * r}${kind === 'cone' ? `, and one third of ${r * r * h}` : `, times h = ${h}`}.`,
       ],
       explanation:
         kind === 'cylinder'

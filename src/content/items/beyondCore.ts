@@ -122,7 +122,7 @@ const rationalExponent = tpl(
       answer: numeric(val),
       hints: [
         `The denominator is a root, the numerator a power: (${isCube ? '³√' : '√'}${base})^${num}.`,
-        `${isCube ? '³√' : '√'}${base} = ${root}.`,
+        `Take the root first: ${isCube ? '³√' : '√'}${base} = ${root}.`,
         `Worked path: ${root}^${num} = **${val}**.`,
       ],
       explanation: `x^(m/n) = (ⁿ√x)^m: root first (${isCube ? '³√' : '√'}${base} = ${root}), then power (${root}^${num} = **${val}**). Root-first keeps every intermediate small. The notation is not decoration — it is what makes the exponent rules (add when multiplying, multiply when raising) keep working beyond whole numbers, which is why it exists at all.`,

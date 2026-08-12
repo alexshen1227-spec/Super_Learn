@@ -310,7 +310,7 @@ const circleEquation = tpl(
         wantRadius
           ? 'The right-hand side is r SQUARED, not r.'
           : 'The number inside the bracket is subtracted from x, so read off what makes the bracket zero.',
-        wantRadius ? `r² = ${r * r}.` : `x ${sx} = 0 when x = ${h}.`,
+        wantRadius ? `The equation stores r²: ${r * r}.` : `x ${sx} = 0 when x = ${h}.`,
         `Worked path: **${wantRadius ? r : h}**.`,
       ],
       explanation:
@@ -632,7 +632,7 @@ const percentPoints = tpl(
       answer: numeric(points),
       hints: [
         'Percentage points are the plain difference between the two percentages.',
-        `${to} − ${from}.`,
+        `Subtract the start from the end: ${to} − ${from}.`,
         `Worked path: **${points}**.`,
       ],
       explanation:

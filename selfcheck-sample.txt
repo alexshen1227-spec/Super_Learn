@@ -1,0 +1,217 @@
+
+
+===== iq-hypo-separate seed 1 =====
+PROMPT: A fridge has stopped keeping food properly cold.
+
+Two explanations are on the table: the door seal has failed, or the thermostat has stuck at its warmest setting.
+
+Select **every** check below that would come out DIFFERENTLY depending on which explanation is right.
+ANSWER: {"type":"multi","options":["Write down how warm the cabinet is at the same hour every day for a week","Listen for whether the motor runs at all during a quiet hour","Read the temperature at the top and at the bottom of the cabinet","Look for a line of condensation along one edge of the door","Shut the door on a sheet of paper and try to pull the paper out"],"correct":[1,3,4]}
+PARTS: undefined
+EXPL: The 3 checks worth doing are the ones whose two predictions differ:
+
+- Shut the door on a sheet of paper and try to pull the paper out
+  - If the door seal has failed: the paper slides free.
+  - If the thermostat has stuck at its warmest setting: the paper is gripped.
+- Listen for whether the motor runs at all during a quiet hour
+  - If the door seal has failed: the motor runs almost constantly.
+  - If the thermostat has stuck at its warmest setting: the motor barely starts.
+- Read the temperature at the top and at the bottom of the cabinet
+  - If the door seal has failed: both read too warm.
+  - If the thermostat has stuck at its warmest setting: both read too warm.
+- Look for a line of condensation along one edge of the door
+  - If the door seal has failed: a damp line along one edge.
+  - If the thermostat has stuck at its warmest setting: no damp line anywhere.
+- Write down how warm the cabinet is at the same hour every day for a week
+  - If the door seal has failed: too warm every day.
+  - If the thermostat has stuck at its warmest setting: too warm every day.
+
+The rest are not careless suggestions — they are the kind of thing people really do. Repeating the observation that started the whole thing, gathering more of the same, moving the object somewhere else: each feels like work and each returns the same answer whichever explanation is true, so each leaves you exactly where you began.
+
+The habit that fixes this is writing the two predictions BEFORE acting. A check you cannot predict two different outcomes for is not a check.
+HINTS: Take one check at a time and write down two predictions for it: what you would see if the first explanation is right, and what you would see if the second one is. // If those two predictions are the same sentence, the check is worthless here — no matter how sensible or thorough it sounds. // Worked path: 3 of the 5 checks give different results under the two explanations. The others give the same result either way.
+
+===== iq-fc-brier-total seed 1 =====
+PROMPT: A gardening group made three forecasts in March.
+
+- The first beans would be up within two weeks — said **80%**, and it **happened**.
+- The frost would return after the clocks changed — said **30%**, and it **happened**.
+- The water butt would run dry before June — said **20%**, and it **did not happen**.
+
+The score for one forecast is **(probability − outcome)²**, where the outcome counts as 1 if it happened and 0 if it did not. Lower is better.
+
+What do the three scores add up to?
+ANSWER: {"type":"numeric","answer":0.57}
+PARTS: undefined
+EXPL: (0.8 − 1)² = 0.04, (0.3 − 1)² = 0.49, (0.2 − 0)² = 0.04, so the three add up to **0.57**.
+
+The heaviest single term is the 30% forecast on something that happened, at 0.49. That is the squaring doing its job: the further a forecast sat from what actually occurred, the more it costs, and the cost climbs faster than the distance does.
+
+Two facts about this scoring rule are worth carrying. A flat 50% always scores exactly 0.25, whatever happens — so hedging is safe and can never be good. And the rule is built so that the lowest score you can expect comes from writing down the probability you actually believe; shading a number to protect your average makes your expected score worse, not better. That is what makes a scored forecast an honest claim rather than a hedge.
+HINTS: Turn each outcome into a number first — 1 for happened, 0 for did not — and turn each percentage into a decimal. // Then subtract, square, and only add at the very end. Squaring is what makes the sign stop mattering. // Worked path: (0.8 − 1)² = 0.04, (0.3 − 1)² = 0.49, (0.2 − 0)² = 0.04. Adding those gives **0.57**.
+
+===== iq-ab-cover seed 1 =====
+PROMPT: A school library finds books going missing from one section only.
+
+Four things are known:
+
+1. Only the graphic-novel shelves lose books.
+2. The losses happen on Tuesdays and Thursdays.
+3. The security gate never sounds.
+4. The section sits out of sight of the desk.
+
+Four explanations are on the table:
+
+- **Explanation A.** Books are being taken out through the fire door beside that section.
+  - Accounts for: 1, 3, 4.
+  - Has to assume: the fire door alarm is off.
+- **Explanation B.** Books are being taken through the fire door, the gate has been sabotaged, and the timetable puts a free period there twice a week.
+  - Accounts for: 1, 2, 3, 4.
+  - Has to assume: the gate was sabotaged; the fire alarm was disabled; two separate people are involved.
+- **Explanation C.** Books are being taken during the two free periods that section is unsupervised, and carried out unscanned.
+  - Accounts for: 1, 2, 3, 4.
+  - Has to assume: the gate only reads the tags at the desk.
+- **Explanation D.** The books are being reshelved wrongly by helpers and are still in the building.
+  - Accounts for: 1.
+  - Has to assume: nobody has searched the other shelves.
+
+Which is the strongest explanation? An explanation is stronger when it accounts for more of the facts, and weaker for every extra thing it has to assume.
+ANSWER: {"type":"mcq","options":["Explanation D","Explanation B","Explanation A","Explanation C"],"correct":3}
+PARTS: undefined
+EXPL: **Explanation C.** It accounts for all four facts while assuming only 1 thing.
+
+The dangerous rival is Explanation B, which also accounts for everything — and that is exactly what makes it dangerous. It buys the last few facts by assuming 3 separate things all happened to be true at once, and every one of those is a further claim that could be wrong. An explanation that can be made to fit anything, given enough extra assumptions, is not telling you much about this case.
+
+The two thin explanations fail the other way: they leave facts sitting there unexplained, and a fact you have decided to ignore is still a fact.
+
+Worth being honest about: there is no proven exchange rate between "one more fact covered" and "one more assumption needed". Nothing measured says how to trade them. What the comparison does reliably do is stop the widest explanation winning simply because it is widest.
+HINTS: Two numbers per explanation: how many of the four facts it accounts for, and how many separate things it has to assume. // Start by crossing off the ones that leave facts unexplained. Then compare what is left on assumptions alone. // Worked path: **Explanation C** accounts for all four and assumes 1. Explanation B also accounts for all four but assumes 3.
+
+===== iq-game-dominant seed 1 =====
+PROMPT: Two clubs share a hall and each decides when to book its slot.
+
+You pick Early or Later; the other club picks Early or Later. Neither of you sees the other is choice first.
+
+Your points of usefulness:
+
+- You Early, they Early: **2**
+- You Early, they Later: **6**
+- You Later, they Early: **7**
+- You Later, they Later: **8**
+
+Do you have a choice that is better for you whatever they do?
+ANSWER: {"type":"mcq","options":["Early — better whichever they choose","It depends on their choice, so neither is always better","Later — better whichever they choose","Both actions add up to the same total across the row, so it makes no difference"],"correct":2}
+PARTS: undefined
+EXPL: **Later — better whichever they choose**
+
+If they Early you get 2 for Early against 7 for Later. If they Later you get 6 against 8.
+
+The same action wins in both columns, so it wins whatever they do — and that is worth knowing, because it means you can choose without predicting them at all. Guessing their move is the hardest part of any game like this, and a dominant action lets you skip it entirely.
+
+The common mistake is adding each row up and comparing the totals. That silently assumes the two columns are equally likely, which nothing here says.
+HINTS: Compare down the columns, not across the rows. Their choice is fixed inside a column, so a column is a fair comparison of your two options. // If they Early: 2 against 7. If they Later: 6 against 8. // Worked path: **Later — better whichever they choose**
+
+===== iq-eq-stable seed 1 =====
+PROMPT: Two clubs share a hall and each decides when to book its slot.
+
+Your points of usefulness comes first in each line, theirs second:
+
+- You Early, they Early: you **2**, they **9**
+- You Early, they Later: you **6**, they **2**
+- You Later, they Early: you **7**, they **5**
+- You Later, they Later: you **8**, they **8**
+
+In one of these four pairings, neither side could do better by changing their own choice on their own. Which one?
+ANSWER: {"type":"mcq","options":["You Early, they Later","You Later, they Early","You Later, they Later","You Early, they Early"],"correct":2}
+PARTS: undefined
+EXPL: **You Later, they Later**
+
+Check it from both sides. If you switched on your own you would go from 8 to 6, which is worse for you. If they switched on their own they would go from 8 to 5, which is worse for them. Neither has a reason to move, so it holds.
+
+A stable pairing is not the same as the best pairing. There may well be a cell here where you both score higher — and it is still not stable, because getting there needs both of you to move at once, and each of you would gain by stepping back off it alone. That gap between "stable" and "good for everyone" is most of what makes agreements hard, and it is why the useful question is often not "what should we do?" but "what would each of us do next if we agreed?"
+
+The usual mistake is looking for the pair with the biggest total. Nobody in this game is choosing the total.
+HINTS: Take each pairing in turn and ask two separate questions: could you gain by switching while they stay put, and could they gain by switching while you stay put? // If either answer is yes, that pairing falls apart. Only the one where both answers are no can hold. // Worked path: at **You Later, they Later** you have 8 against 6 for switching, and they have 8 against 5 for switching.
+
+===== iq-commit-remove seed 1 =====
+PROMPT: Two clubs can share one hall booking instead of paying for two evenings. Sharing saves **£80** a month between the two of you, and you have to agree how to split it. If you cannot agree, nothing is shared and both of you save nothing at all.
+
+You are considering voting your share into a locked account that only pays out at that level, at **£56** for you — before the other club has said anything.
+ANSWER: undefined
+PARTS: [["If neither side does anything unusual and you simply split the £80 evenly, how much do you get, in pounds?",{"type":"numeric","answer":40,"unit":"£"}],["Now suppose the commitment is real and they can verify it. How much is left for them, in pounds?",{"type":"numeric","answer":24,"unit":"£"}],["Why did the commitment change the outcome?",{"type":"mcq","options":["It was a bigger demand, and bigger demands tend to win out in the end","It took a choice away from the other side, leaving them with nothing at all to decide about","It sounded more determined than before","It was public and could not be taken back, so their best reply changed"],"correct":3}]]
+EXPL: Without a commitment the two of you are arguing over £80 with no reason for either side to give way, and an even £40 each is where that usually lands.
+
+Once the commitment is genuinely made, their choice is no longer "how much of the £80 do I get" — it is "£24 or nothing". They take the £24, and you end up with £56.
+
+What did the work is not the size of the demand. It is that the demand became TRUE: an option you used to have was removed in a way the other side can check, so their best reply changed. A claim that you would not go below £56 carries none of that force, because both of you know it could be dropped in the next sentence.
+
+Two limits worth stating. This only works while the other side is still better off agreeing than walking away, so a commitment set too high destroys the deal and leaves you with nothing. And it only works because it is honest and visible — a bluff dressed up as a commitment is not the same move, it stops working the first time it is called, and it is the sort of tactic that only pays while nobody is looking closely.
+HINTS: Work out what each side ends up with in each of the two situations, and compare each amount with what they would get from no agreement at all. // With nothing said, an even split of £80 is the obvious landing point. With the commitment made, the only question left for them is whether £24 beats nothing. // Worked path: £40 each without the commitment, and £56 to you with it, because £24 still beats £0 for them.
+
+===== iq-bayes-double seed 1 =====
+PROMPT: Out of **1000** apples in one delivery, **100** are bruised inside.
+
+Every one goes through the light scanner, which gives a mark to **80%** of those that are bruised inside and to **20%** of those that do not.
+
+Everything the light scanner flags then goes through a hand check, which is a completely separate method — and it happens to behave the same way: a mark for **80%** of those that are bruised inside and for **20%** of those that do not.
+
+Work through the 1000 in two stages.
+ANSWER: undefined
+PARTS: [["How many of the 1000 apples get a mark from the light scanner?",{"type":"numeric","answer":260}],["Those 260 now go through a hand check. How many of them get a mark again?",{"type":"numeric","answer":100}],["What happened to the share of the flagged pile that really has the fault?",{"type":"mcq","options":["Straight up to 100%, because two separate checks agreeing settles it","Down to about 36%, because the second check ruled more out","Unchanged at about 31%","Up from about 31% to about 64%"],"correct":3}]]
+EXPL: The first check flags 80 + 180 = **260**, of which 80 really are bruised inside — about 31%.
+
+The second check is applied to that pile, and to each half of it separately: 80% of the 80 real ones is 64, and 20% of the 180 false ones is 36. So 100 are flagged twice, and **64** of those really are bruised inside — about 64%.
+
+What has changed is not the checks. Each is the same check it always was; what changed is the group it was applied to. The first check ran on a pile that was 10% affected, and the second ran on a pile that was already 31% affected, and a check is worth far more when the thing is common in the group being checked.
+
+One condition has to be stated, because it is doing a lot of work: the second check has to be INDEPENDENT of the first — a genuinely different method that fails for different reasons. Two checks that share a weakness will agree with each other on exactly the cases the first one got wrong, and the improvement calculated above simply does not happen. In real life that is the usual situation, which is why "we checked it twice" is a much weaker claim than it sounds.
+HINTS: Do one stage at a time, and at every stage keep the group split into two: the ones that really do have it, and the ones that do not. // After the first check the flagged pile holds 80 that really are bruised inside and 180 that do not. The second check is then applied to those two groups separately. // Worked path: 260 flagged first time, 100 flagged again — and of those, 64 really are bruised inside.
+
+===== pq-meas-units seed 1 =====
+PROMPT: A technician has measured three things about a falling weight: a mass **m** in kilograms, a length **L** in metres and a time **T** in seconds.
+
+Which of these combinations comes out with the units of **an acceleration**?
+
+Work it out from the units alone. No arithmetic is needed and no values are given.
+ANSWER: {"type":"mcq","options":["L × T","m × L ÷ T","m × L × L ÷ T","L ÷ (T × T)"],"correct":3}
+PARTS: undefined
+EXPL: **L ÷ (T × T)** — its units come out as metres per second per second, which is exactly an acceleration.
+
+Nothing here needed a number. Carrying units through a calculation turns them into a check that runs alongside the arithmetic and catches a whole class of mistake before any of the arithmetic happens: an inverted division, a missing factor, a squared quantity that should not have been squared.
+
+It is also the cheapest thing you can do to an answer you are unsure of. If the units of your result do not match the units of the thing you were asked for, the result is wrong, and no amount of rechecking the arithmetic will fix it.
+HINTS: Treat the units like algebra: multiply them, divide them, and cancel what appears on both sides. // An acceleration is measured in metres per second per second. Build that out of kilograms, metres and seconds and see which line matches. // Worked path: **L ÷ (T × T)** gives metres per second per second.
+
+===== pq-den-float seed 1 =====
+PROMPT: A piece of a lump of stone has a mass of **1200 g** and takes up **400 cm³**.
+
+It is lowered into water, whose density is **1 g/cm³**.
+ANSWER: undefined
+PARTS: [["What is the density of the object, in grams per cubic centimetre?",{"type":"numeric","answer":3,"unit":"g/cm³"}],["Placed in water at 1 g/cm³, what does it do?",{"type":"mcq","options":["Cannot be told from these numbers","Hovers wherever it is placed","Floats to the top","Sinks to the base"],"correct":3}]]
+EXPL: Its density is 1200 ÷ 400 = **3 g/cm³**, against **1 g/cm³** for the water, so it **sinks**.
+
+What decides it is a comparison of two densities and nothing else. The mass on its own tells you nothing: a 1200 g object floats or sinks depending entirely on how much room it takes up, which is why a steel ship floats and a steel bolt does not.
+
+A useful check on the arithmetic: the answer should feel right for the material. If a piece of a lump of stone came out at 30 g/cm³ — ten times the value above — that would be denser than most metals, and the misplaced factor of ten would be visible without rechecking anything.
+HINTS: Mass on its own decides nothing here. Two objects of the same mass behave completely differently if one of them takes up ten times the space. // Work out how many grams each cubic centimetre of the object carries, then compare that with the 1 g/cm³ of the water. // Worked path: 1200 ÷ 400 = 3 g/cm³, which is more than 1.
+
+===== pq-gra-rank seed 1 =====
+PROMPT: A trolley is pushed along a straight aisle. Its position is recorded at five moments:
+
+- At **0 s** the position is **60 m**
+- At **2 s** the position is **72 m**
+- At **7 s** the position is **52 m**
+- At **10 s** the position is **61 m**
+- At **14 s** the position is **69 m**
+
+Rank the four segments by **speed**, fastest first.
+ANSWER: {"type":"order","options":["Segment 1, from 0 s to 2 s","Segment 2, from 2 s to 7 s","Segment 3, from 7 s to 10 s","Segment 4, from 10 s to 14 s"],"correct":[0,1,2,3]}
+PARTS: undefined
+EXPL: Working each one out: segment 1: 12 m in 2 s, so 6 m/s; segment 2: 20 m in 5 s, so 4 m/s; segment 3: 9 m in 3 s, so 3 m/s; segment 4: 8 m in 4 s, so 2 m/s.
+
+Fastest first: segment 1 (6 m/s), segment 2 (4 m/s), segment 3 (3 m/s), segment 4 (2 m/s).
+
+Two traps are built into this. The stretches last different lengths of time, so comparing the jumps in position alone gets the order wrong. And segment 2 runs BACKWARDS — the position falls — which does not make its speed negative or small: speed is the size of the change, and something returning quickly is moving quickly.
+
+On a position-time graph all of this is the steepness of the line, downhill counting the same as uphill. Steepness is speed; height is only where it is.
+HINTS: Speed is not the position and it is not the change in position either. It is the change in position divided by the time that change took. // The four stretches last 2, 5, 3, 4 seconds, and they are not all the same length — so the biggest jump in position is not automatically the fastest. // Worked path: segment 1: 12 m in 2 s, so 6 m/s; segment 2: 20 m in 5 s, so 4 m/s; segment 3: 9 m in 3 s, so 3 m/s; segment 4: 8 m in 4 s, so 2 m/s.

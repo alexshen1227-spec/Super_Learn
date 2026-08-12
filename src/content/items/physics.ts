@@ -303,7 +303,7 @@ const kineticEnergy = tpl(
       answer: numeric(ke),
       hints: [
         'KE = ½ m v².',
-        `v² = ${v * v}.`,
+        `Square the speed before anything else: v² = ${v * v}.`,
         `Worked path: ½ × ${m} × ${v * v} = **${ke} J**.`,
       ],
       explanation: `KE = ½mv² = ½ × ${m} × ${v * v} = **${ke} J**. Square the speed FIRST, then halve and multiply.`,

@@ -48,7 +48,7 @@ const decimalOperations = tpl(
       title: 'Share a decimal amount',
       prompt: `A **${dividend} L** batch is split equally among **${divisor}** containers. How many litres go in each?`,
       answer: numeric(quotient, { tolerance: 0.005, unit: 'L' }),
-      hints: ['Equal sharing means division.', `${dividend} ÷ ${divisor}.`, `Worked path: **${quotient} L**.`],
+      hints: ['Equal sharing means division.', `Divide the whole amount by the number of shares: ${dividend} ÷ ${divisor}.`, `Worked path: **${quotient} L**.`],
       explanation: `${dividend} ÷ ${divisor} = **${quotient} L**. Multiplying ${quotient} by ${divisor} rebuilds the full batch, which is the clean check.`
     }
   },
@@ -461,7 +461,7 @@ const complexAdd = tpl(
       title: 'Real with real, imaginary with imaginary',
       prompt: `For (${a} + ${b}i) ${subtract ? '−' : '+'} (${c} + ${d}i), what is the coefficient of i in simplified form?`,
       answer: numeric(imag),
-      hints: ['Treat i terms as like terms.', `${b} ${subtract ? '−' : '+'} ${d}.`, `Worked path: **${imag}**.`],
+      hints: ['Treat i terms as like terms.', `Combine only the i coefficients: ${b} ${subtract ? '−' : '+'} ${d}.`, `Worked path: **${imag}**.`],
       explanation: `The imaginary parts combine independently: ${b} ${subtract ? '−' : '+'} ${d} = **${imag}**, so the coefficient of i is ${imag}.`
     }
   },

@@ -27,7 +27,11 @@ const trigAngleSide = tpl(
       answer: numeric(Math.round(val * 100) / 100, { tolerance: 0.005 }),
       hints: [
         mode === 'sin' ? 'sin = opposite / hypotenuse.' : mode === 'cos' ? 'cos = adjacent / hypotenuse.' : 'tan = opposite / adjacent.',
-        mode === 'sin' ? `${opp}/${hyp}.` : mode === 'cos' ? `${adj}/${hyp}.` : `${opp}/${adj}.`,
+        mode === 'sin'
+          ? `Put the two sides in as a ratio: ${opp}/${hyp}.`
+          : mode === 'cos'
+            ? `Put the two sides in as a ratio: ${adj}/${hyp}.`
+            : `Put the two sides in as a ratio: ${opp}/${adj}.`,
         `Worked path: **${Math.round(val * 100) / 100}**.`,
       ],
       explanation: `${mode}(θ) = ${mode === 'sin' ? `opposite/hypotenuse = ${opp}/${hyp}` : mode === 'cos' ? `adjacent/hypotenuse = ${adj}/${hyp}` : `opposite/adjacent = ${opp}/${adj}`} = **${Math.round(val * 100) / 100}**. The ratio choice IS the skill — SOH-CAH-TOA is a filing system, and the misfiled ratio is the dominant trig error. Note the ratio came out the same for every ${3 * 2}-${4 * 2}-${5 * 2}-shaped triangle: ratios depend on the ANGLE, not the size, which is the whole reason trig works.`,

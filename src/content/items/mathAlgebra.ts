@@ -948,7 +948,7 @@ const circleA = tpl(
       answer: numeric(ans, { tolerance: 0.2 }),
       hints: [
         'A = πr² — squared radius, then π.',
-        `r² = ${r * r}.`,
+        `Square the radius first: r² = ${r * r}.`,
         `Worked path: π × ${r * r} ≈ **${ans}**.`,
       ],
       explanation: `A = πr² = π × ${r * r} ≈ **${ans}**. Sanity check: it should land between the inner square (2r² = ${2 * r * r}) and outer square (4r² = ${4 * r * r}).`,
