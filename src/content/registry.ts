@@ -45,6 +45,7 @@ import { CONSTRUCT_TEMPLATES } from './items/construct'
 import { CASE_COMPARISON_TEMPLATES } from './items/caseComparison'
 import { TRANSFER_LAB_TEMPLATES } from './items/transferLab'
 import { ALGORITHMS_TEMPLATES } from './items/algorithmsLab'
+import { META_DEPTH_TEMPLATES } from './items/metaDepth'
 import { UNCERTAINTY_TEMPLATES } from './items/uncertaintyLab'
 import { UNSEEN_TEMPLATES } from './items/unseenLab'
 import { CHOICE_TEMPLATES } from './items/choiceLab'
@@ -111,6 +112,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...CASE_COMPARISON_TEMPLATES,
   ...TRANSFER_LAB_TEMPLATES,
   ...ALGORITHMS_TEMPLATES,
+  ...META_DEPTH_TEMPLATES,
   ...UNCERTAINTY_TEMPLATES,
   ...UNSEEN_TEMPLATES,
   ...CHOICE_TEMPLATES,

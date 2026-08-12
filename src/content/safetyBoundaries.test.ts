@@ -90,6 +90,33 @@ const BANNED_CLAIM = new RegExp(
   'i',
 )
 
+/*
+ * Templates permitted to NAME a neuromyth, because naming it is how they refuse
+ * it. RESEARCH.md is explicit that recording what the evidence does not support
+ * is as valuable as recording what it does, and an app that cannot say the
+ * words "learning style" cannot tell a learner that matching teaching to one
+ * has been tested and does not work.
+ *
+ * Two locks, so this stays a permission rather than a hole:
+ *   - the template must be listed here BY ID, and
+ *   - its rendered text must actually contain a refutation.
+ * A new template that merely happens to mention a myth still fails.
+ */
+const MAY_REFUTE_A_MYTH = new Set(['md-le-not-supported'])
+
+/**
+ * Language that marks the mention as a refusal rather than a claim.
+ *
+ * Written as a plain regex literal on purpose. The first version was produced
+ * by a generator script and its word-boundary escape became an actual
+ * BACKSPACE character, so the pattern matched nothing and the permission below
+ * never applied — the same escaping trap CLAUDE.md already records. A matcher
+ * that matches nothing looks exactly like one that works, so it is pinned
+ * against known strings in the matcher test.
+ */
+const REFUTES =
+  /(does not (?:improve|work|help|hold)|has been tested|no (?:good )?evidence|not supported|is a myth|fails to|did not (?:improve|hold))/i
+
 interface Render {
   id: string
   scenario: string
@@ -132,6 +159,12 @@ describe('the safety boundaries are content law', () => {
     expect(POINTER.test('involve a trusted adult or school authority')).toBe(true)
     expect(POINTER.test('Stop replying and handle it by yourself.')).toBe(false)
 
+    // The refutation permission is only safe while this actually matches. It
+    // shipped once as a backspace character and matched nothing at all.
+    expect(REFUTES.test('has been tested directly and does not improve results')).toBe(true)
+    expect(REFUTES.test('there is no good evidence for it')).toBe(true)
+    expect(REFUTES.test('matching teaching to a learning style helps')).toBe(false)
+
     // Recognition must pass; instruction must not.
     expect(INSTRUCTION.test('Notice when someone tries to make you feel guilty for saying no.')).toBe(false)
     expect(INSTRUCTION.test('Guilt-tripping is a pressure tactic worth naming.')).toBe(false)
@@ -173,6 +206,9 @@ describe('the safety boundaries are content law', () => {
     const offenders: string[] = []
     for (const r of RENDERS) {
       if (!BANNED_CLAIM.test(r.text)) continue
+      // Naming a myth in order to refuse it is allowed, for listed templates
+      // whose text actually does the refusing.
+      if (MAY_REFUTE_A_MYTH.has(r.id.split('@')[0]) && REFUTES.test(r.text)) continue
       const at = r.text.search(BANNED_CLAIM)
       offenders.push(`${r.id}: …${r.text.slice(Math.max(0, at - 70), at + 90).replace(/\n/g, ' ')}…`)
     }
