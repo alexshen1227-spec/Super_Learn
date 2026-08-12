@@ -139,14 +139,23 @@ const skewSet = tpl(
     skillIds: ['m-stats', 'm-variability'],
     bucket: 'math',
     difficulty: 5,
-    variants: 12,
+    // 12 declared, 5 distinct: `gap` was the only generated value the learner
+    // could see, so eleven of the twelve variants asked one of five questions.
+    // The ceiling now varies too, and the count matches what is really produced
+    // (src/sim/variants.sim.ts measures this).
+    variants: 20,
     minutes: 5,
     novelty: 'nonRoutine',
     transfer: true,
   },
-  (rng) => {
-    const gap = rint(rng, 2, 6)
-    const cap = 60
+  (rng, seed) => {
+    // Derived from the folded seed, not drawn from the rng: random draws over a
+    // 20-combination space collide, so 20 declared variants rendered 12. Indexing
+    // guarantees each combination appears exactly once per cycle — the same
+    // reasoning as `cycle()` in lib.ts, applied to parameters instead of cases.
+    const CAPS = [40, 50, 60, 80] as const
+    const gap = 2 + (seed % 5)
+    const cap = CAPS[Math.floor(seed / 5) % CAPS.length]
     // Search for a witness: five values in range whose mean exceeds median by gap.
     let found: number[] | null = null
     for (let tries = 0; tries < 4000 && !found; tries++) {
@@ -506,15 +515,24 @@ const schedule = tpl(
     skillIds: ['x-method', 'x-focus'],
     bucket: 'meta',
     difficulty: 5,
-    variants: 14,
+    // 14 declared, 5 distinct — `total` was the only visible variable, and it
+    // was DRAWN rather than indexed, so most seeds collided. Six totals and
+    // three floors, both indexed off the folded seed: 18 declared, 18 rendered.
+    variants: 18,
     minutes: 5,
     novelty: 'nonRoutine',
     transfer: true,
   },
-  (rng) => {
-    const total = rint(rng, 4, 8) * 30
+  (rng, seed) => {
+    // Indexed rather than drawn, for the same reason as `nr-build-skew` above.
+    const FLOORS = [15, 20, 25] as const
+    // Six totals x three floors = 18 genuinely different problems. `sessions`
+    // stays at four: the prompt names four sessions and the answer has four
+    // slots, so varying it here would have made the wording disagree with the
+    // task — which is how a variant count gets inflated in the first place.
+    const total = (4 + (seed % 6)) * 30
     const sessions = 4
-    const floor = 20
+    const floor = FLOORS[Math.floor(seed / 6) % FLOORS.length]
     // Search a witness: four session lengths, decreasing is NOT required, but
     // the last must be the shortest and no two may match.
     let w: number[] | null = null
