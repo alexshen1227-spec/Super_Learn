@@ -97,6 +97,17 @@ export interface SimResult {
   plannerFailures: number
   /** Templates whose whole variant pool was exhausted at least once. */
   exhaustedTemplates: number
+  /**
+   * Template families met for the FIRST time in each year.
+   *
+   * Owned-skill count is the wrong measure of whether a long run is still
+   * worth doing: a diligent learner finishing a finite curriculum is success,
+   * not failure, and the count necessarily flattens near the top. What would
+   * make years three to five hollow is the app having nothing left to SHOW —
+   * so this counts genuinely new question families, which is the thing that
+   * actually runs out.
+   */
+  freshTemplatesByYear: number[]
   /** Per-year snapshots of owned / durable / skillsTouched. */
   byYear: { year: number; owned: number; durable: number; touched: number; minutes: number }[]
 }
@@ -123,6 +134,8 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
   let plannerFailures = 0
   let peakDue = 0
   const byYear: SimResult['byYear'] = []
+  const firstSeenYear = new Map<string, number>()
+  const freshTemplatesByYear = [0, 0, 0, 0, 0]
 
   for (let day = 0; day < days; day++) {
     const t0 = startAt + day * DAY
@@ -163,6 +176,11 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
           bucketMinutes[tpl.bucket] = (bucketMinutes[tpl.bucket] ?? 0) + tpl.minutes
           minutesHere += tpl.minutes
           templateServes.set(tpl.id, (templateServes.get(tpl.id) ?? 0) + 1)
+          if (!firstSeenYear.has(tpl.id)) {
+            firstSeenYear.set(tpl.id, day)
+            const y = Math.min(4, Math.floor(day / 365))
+            freshTemplatesByYear[y] += 1
+          }
           if (!seedsSeen.has(tpl.id)) seedsSeen.set(tpl.id, new Set())
           seedsSeen.get(tpl.id)!.add(a.seed % Math.max(1, tpl.variants))
 
@@ -298,6 +316,7 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
     peakDue,
     plannerFailures,
     exhaustedTemplates: exhausted,
+    freshTemplatesByYear,
     byYear,
   }
 }

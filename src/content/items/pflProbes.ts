@@ -190,6 +190,15 @@ const simpsonsParadox = tpl(
 /**
  * Pigeonhole — guarantees existence without ever naming the box. Absent from
  * the tree (verified by grep over the rendered bank); reachable from integers.
+ *
+ * NARROWED 2026-08-11, and worth saying out loud. The Puzzle Lab now teaches
+ * `z-extremal`, and one of its items (`ze-drawer-guarantee`) asks how many
+ * draws GUARANTEE a match — which is a pigeonhole argument in a concrete
+ * instance, even though it never names the principle and does not trip the
+ * term-based gate below. So this probe still measures cold pick-up of the
+ * NAMED, GENERAL principle, and no longer measures a learner meeting the
+ * counting idea for the very first time. A third item that stated the general
+ * argument outright was removed rather than let this claim quietly rot.
  */
 const pigeonhole = tpl(
   {

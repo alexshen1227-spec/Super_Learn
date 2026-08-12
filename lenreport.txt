@@ -1,0 +1,199 @@
+
+### h-attr-entry  sets=12 keyLongest=3 keyShortOutlier=0 ranks={0,1,2}
+  # 0 key  45 others [44 46 49]
+  # 1 key  48 others [48 49 50]
+  # 2 key  50 others [37 45 46]  <<KEY-LONGEST
+  # 3 key  45 others [38 38 45]
+  # 4 key  45 others [38 38 47]
+  # 5 key  45 others [44 47 47]
+  # 6 key  44 others [41 43 45]
+  # 7 key  43 others [40 41 46]
+  # 8 key  49 others [42 45 45]  <<KEY-LONGEST
+  # 9 key  49 others [39 44 49]
+  #10 key  43 others [43 43 45]
+  #11 key  46 others [42 42 44]  <<KEY-LONGEST
+
+### h-attr-mirror  sets=10 keyLongest=4 keyShortOutlier=0 ranks={0,1,2,3}
+  # 0 key  62 others [57 59 59]  <<KEY-LONGEST
+  # 1 key  56 others [52 55 58]
+  # 2 key  57 others [51 55 56]  <<KEY-LONGEST
+  # 3 key  52 others [53 54 56]
+  # 4 key  66 others [47 55 56]  <<KEY-LONGEST
+  # 5 key  56 others [58 58 59]
+  # 6 key  55 others [50 57 58]
+  # 7 key  56 others [51 55 55]  <<KEY-LONGEST
+  # 8 key  60 others [53 57 60]
+  # 9 key  54 others [58 63 69]
+
+### h-attr-onefact  sets=12 keyLongest=11 keyShortOutlier=0 ranks={0,1}
+  # 0 key  58 others [49 53 57]  <<KEY-LONGEST
+  # 1 key  53 others [47 53 56]
+  # 2 key  57 others [47 52 56]  <<KEY-LONGEST
+  # 3 key  56 others [48 49 53]  <<KEY-LONGEST
+  # 4 key  56 others [41 47 50]  <<KEY-LONGEST
+  # 5 key  57 others [49 50 53]  <<KEY-LONGEST
+  # 6 key  53 others [49 50 50]  <<KEY-LONGEST
+  # 7 key  54 others [48 51 53]  <<KEY-LONGEST
+  # 8 key  53 others [45 46 51]  <<KEY-LONGEST
+  # 9 key  56 others [50 52 53]  <<KEY-LONGEST
+  #10 key  51 others [45 45 45]  <<KEY-LONGEST
+  #11 key  56 others [44 51 51]  <<KEY-LONGEST
+
+### h-attr-verdict  sets=10 keyLongest=5 keyShortOutlier=0 ranks={0,2,3}
+  # 0 key  47 others [42 43 44]  <<KEY-LONGEST
+  # 1 key  42 others [43 44 47]
+  # 2 key  43 others [42 44 47]
+  # 3 key  47 others [42 43 44]  <<KEY-LONGEST
+  # 4 key  42 others [43 44 47]
+  # 5 key  47 others [42 43 44]  <<KEY-LONGEST
+  # 6 key  43 others [42 44 47]
+  # 7 key  47 others [42 43 44]  <<KEY-LONGEST
+  # 8 key  42 others [43 44 47]
+  # 9 key  47 others [42 43 44]  <<KEY-LONGEST
+
+### h-attr-groups  sets=8 keyLongest=3 keyShortOutlier=0 ranks={0,1,2,3}
+  # 0 key  57 others [52 56 57]
+  # 1 key  57 others [54 54 54]  <<KEY-LONGEST
+  # 2 key  52 others [52 53 54]
+  # 3 key  61 others [47 52 55]  <<KEY-LONGEST
+  # 4 key  63 others [53 57 64]
+  # 5 key  59 others [57 58 58]  <<KEY-LONGEST
+  # 6 key  57 others [54 56 57]
+  # 7 key  47 others [51 52 59]
+
+### h-proj-entry  sets=12 keyLongest=3 keyShortOutlier=0 ranks={0,1,2,3}
+  # 0 key  59 others [52 54 58]  <<KEY-LONGEST
+  # 1 key  53 others [55 56 59]
+  # 2 key  55 others [50 59 59]
+  # 3 key  56 others [52 52 55]  <<KEY-LONGEST
+  # 4 key  54 others [48 54 55]
+  # 5 key  56 others [51 53 56]
+  # 6 key  51 others [54 56 57]
+  # 7 key  53 others [51 53 53]
+  # 8 key  60 others [50 52 54]  <<KEY-LONGEST
+  # 9 key  55 others [50 53 59]
+  #10 key  53 others [50 55 57]
+  #11 key  50 others [54 58 59]
+
+### h-proj-plan  sets=10 keyLongest=1 keyShortOutlier=0 ranks={0,1,2,3}
+  # 0 key  55 others [54 56 56]
+  # 1 key  53 others [54 54 55]
+  # 2 key  52 others [53 54 55]
+  # 3 key  54 others [55 58 59]
+  # 4 key  57 others [52 55 56]  <<KEY-LONGEST
+  # 5 key  56 others [54 55 56]
+  # 6 key  55 others [54 57 61]
+  # 7 key  56 others [47 55 58]
+  # 8 key  54 others [55 56 56]
+  # 9 key  55 others [52 55 57]
+
+### h-proj-transfer  sets=8 keyLongest=0 keyShortOutlier=0 ranks={1,2,3}
+  # 0 key  52 others [49 50 54]
+  # 1 key  48 others [51 53 57]
+  # 2 key  51 others [52 54 55]
+  # 3 key  50 others [48 50 53]
+  # 4 key  44 others [51 51 51]
+  # 5 key  51 others [49 52 53]
+  # 6 key  52 others [54 54 55]
+  # 7 key  52 others [53 54 55]
+
+### h-int-entry  sets=12 keyLongest=3 keyShortOutlier=0 ranks={0,1,2,3}
+  # 0 key  76 others [61 65 72]  <<KEY-LONGEST
+  # 1 key  71 others [70 72 73]
+  # 2 key  70 others [62 64 71]
+  # 3 key  70 others [61 65 78]
+  # 4 key  78 others [61 62 72]  <<KEY-LONGEST
+  # 5 key  71 others [66 69 72]
+  # 6 key  75 others [63 65 76]
+  # 7 key  66 others [58 58 76]
+  # 8 key  76 others [62 66 71]  <<KEY-LONGEST
+  # 9 key  51 others [58 63 73]
+  #10 key  72 others [61 64 73]
+  #11 key  73 others [69 69 73]
+
+### h-int-question  sets=10 keyLongest=5 keyShortOutlier=0 ranks={0,1,2,3}
+  # 0 key  72 others [65 69 73]
+  # 1 key  71 others [62 67 67]  <<KEY-LONGEST
+  # 2 key  62 others [68 69 71]
+  # 3 key  66 others [66 67 68]
+  # 4 key  69 others [64 68 68]  <<KEY-LONGEST
+  # 5 key  66 others [64 68 68]
+  # 6 key  70 others [65 65 65]  <<KEY-LONGEST
+  # 7 key  69 others [61 63 65]  <<KEY-LONGEST
+  # 8 key  68 others [61 68 70]
+  # 9 key  70 others [61 64 64]  <<KEY-LONGEST
+
+### h-int-both  sets=10 keyLongest=0 keyShortOutlier=0 ranks={1,2,3}
+  # 0 key  69 others [76 77 78]
+  # 1 key  70 others [72 80 83]
+  # 2 key  66 others [71 74 74]
+  # 3 key  71 others [66 71 75]
+  # 4 key  66 others [69 76 78]
+  # 5 key  65 others [72 73 76]
+  # 6 key  72 others [75 77 80]
+  # 7 key  69 others [77 77 80]
+  # 8 key  62 others [71 75 75]
+  # 9 key  73 others [72 74 75]
+
+### h-int-fake  sets=10 keyLongest=0 keyShortOutlier=7 ranks={3}
+  # 0 key  64 others [80 82 83]  <<KEY-SHORT-OUTLIER
+  # 1 key  71 others [87 88 92]  <<KEY-SHORT-OUTLIER
+  # 2 key  68 others [78 80 82]
+  # 3 key  66 others [77 82 86]  <<KEY-SHORT-OUTLIER
+  # 4 key  61 others [78 79 80]  <<KEY-SHORT-OUTLIER
+  # 5 key  59 others [84 84 89]  <<KEY-SHORT-OUTLIER
+  # 6 key  69 others [74 75 78]
+  # 7 key  64 others [68 69 72]
+  # 8 key  64 others [83 85 90]  <<KEY-SHORT-OUTLIER
+  # 9 key  57 others [75 82 85]  <<KEY-SHORT-OUTLIER
+
+### h-int-cases  sets=6 keyLongest=0 keyShortOutlier=0 ranks={2,3,4}
+  # 0 key  86 others [93 99 100 105]
+  # 0 key  91 others [88 90 93 96]
+  # 1 key  97 others [93 99 100 100]
+  # 1 key  88 others [89 91 95 99]
+  # 2 key  84 others [93 95 95 99]
+  # 2 key  85 others [87 91 96 97]
+
+### h-rep-entry  sets=12 keyLongest=0 keyShortOutlier=1 ranks={2,3}
+  # 0 key 110 others [115 118 128]
+  # 1 key 102 others [108 119 125]
+  # 2 key 115 others [123 125 128]
+  # 3 key 122 others [123 123 132]
+  # 4 key 123 others [121 132 132]
+  # 5 key 122 others [125 130 134]
+  # 6 key 119 others [126 126 131]
+  # 7 key 120 others [125 127 135]
+  # 8 key 122 others [120 132 134]
+  # 9 key 121 others [122 125 132]
+  #10 key 124 others [127 128 134]
+  #11 key 111 others [128 130 131]  <<KEY-SHORT-OUTLIER
+
+### h-rep-notready  sets=10 keyLongest=1 keyShortOutlier=1 ranks={0,3}
+  # 0 key 108 others [98 99 106]  <<KEY-LONGEST
+  # 1 key 101 others [104 107 109]
+  # 2 key  97 others [104 108 111]
+  # 3 key  88 others [101 104 104]
+  # 4 key  92 others [95 108 111]
+  # 5 key  96 others [100 102 105]
+  # 6 key  96 others [102 103 108]
+  # 7 key  96 others [104 104 106]
+  # 8 key  78 others [98 99 104]  <<KEY-SHORT-OUTLIER
+  # 9 key  90 others [97 99 107]
+
+### h-rep-studio  sets=12 keyLongest=0 keyShortOutlier=6 ranks={0,1,2,3}
+  # 0 key 112 others [101 109 112]
+  # 0 key  87 others [104 107 108]  <<KEY-SHORT-OUTLIER
+  # 1 key 112 others [106 115 119]
+  # 1 key  86 others [104 106 108]  <<KEY-SHORT-OUTLIER
+  # 2 key 108 others [107 109 109]
+  # 2 key  80 others [98 102 103]  <<KEY-SHORT-OUTLIER
+  # 3 key 113 others [112 114 116]
+  # 3 key  75 others [100 105 108]  <<KEY-SHORT-OUTLIER
+  # 4 key 103 others [113 116 119]
+  # 4 key  80 others [102 104 104]  <<KEY-SHORT-OUTLIER
+  # 5 key 111 others [100 110 114]
+  # 5 key  76 others [101 104 105]  <<KEY-SHORT-OUTLIER
+
+
+BUCKET TOTALS over 164 sets: obsLongest=1 (expected 0.8)  obsShortest=15 (expected 4.5)
