@@ -11,6 +11,9 @@ import { Button, Chip, Segmented } from '../components'
 import { MATH_TRACKS } from '../../content/tracks'
 import { GOAL_PRESETS } from '../../engine/goals'
 
+/** Shares the honesty note with Settings; see engine/goals.ts. */
+const REASONING_GOAL = 'Everyday reasoning & judgement'
+
 
 const COURSE_PRESETS = ['Math 8', 'Algebra 1', 'Pre-Algebra', 'Physical Science', 'Life Science', 'Computer Science']
 
@@ -180,6 +183,20 @@ export function Onboarding() {
             </button>
           ))}
         </div>
+        {/*
+          The same honesty note Settings shows. A goal that names what it can
+          and cannot do belongs at the moment it is CHOSEN, not only where it is
+          later edited — otherwise the first impression is the promise and the
+          correction is buried.
+        */}
+        {profile.goals.includes(REASONING_GOAL) ? (
+          <p className="text-[12px] text-muted mt-2 leading-snug bg-surface2 border border-line rounded-lg p-2.5">
+            <span className="font-medium">About “{REASONING_GOAL}”.</span> It leans practice toward a short list of
+            topics where a study has actually measured the skill working on a problem the learner had not practised. It
+            does not promise to make anyone a better thinker in general — no app can, and the research on that is not
+            close.
+          </p>
+        ) : null}
       </div>
     </div>,
 
