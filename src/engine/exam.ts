@@ -15,6 +15,7 @@ import type { AppState, ItemTemplate, SkillEvidence } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { mulberry32, shuffle } from './rng'
 import { stateRank } from './mastery'
+import { count } from './plural'
 
 export type ExamSize = 'short' | 'standard' | 'long'
 
@@ -98,7 +99,7 @@ export function buildExam(
     plan: {
       items: mixed.map((p) => ({ templateId: p.template.id, seed: p.seed })),
       suggestedMinutes,
-      note: `${mixed.length} questions across ${mixed.length} skills, mixed order, drawn from everything you've practiced. Blind grading — answers are checked only at the end.`,
+      note: `${count(mixed.length, 'question')} across ${count(mixed.length, 'skill')}, mixed order, drawn from everything you've practiced. Blind grading — answers are checked only at the end.`,
     },
   }
 }

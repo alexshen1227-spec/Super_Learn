@@ -41,6 +41,7 @@ import { stretchSignal } from './stretch'
 import { isPflTemplate } from './pfl'
 import { type MathTrack } from '../content/tracks'
 import { getReadyReport } from './getReady'
+import { count } from './plural'
 import {
   buildTemplateCoverage,
   coverageAdjustment,
@@ -1880,7 +1881,7 @@ export function buildCheckpointPlan(ctx: PlannerContext, skillIds: string[], uni
           label: `${unitName} checkpoint`,
           minutes: Math.max(5, activities.length * 2),
           activities,
-          why: `Two questions on each of ${covered.length} skills from ${unitName}. Two rather than one because a single question cannot tell a lucky guess from something you actually still own.`,
+          why: `Two questions on each of ${count(covered.length, 'skill')} from ${unitName}. Two rather than one because a single question cannot tell a lucky guess from something you actually still own.`,
         },
       ]
     : []

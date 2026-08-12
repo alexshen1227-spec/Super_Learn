@@ -22,6 +22,7 @@ import { TRACK_BY_ID, trackSkillIds } from '../content/tracks'
 import { calendarDaysUntil } from './time'
 import { stretchSignal } from './stretch'
 import { malRuleProfile } from './malRules'
+import { count } from './plural'
 
 function recentEvents(events: AttemptEvent[], now: number, days: number): AttemptEvent[] {
   const cutoff = now - days * 86_400_000
@@ -126,7 +127,7 @@ export function coachBeliefs(
       id: 'course-track',
       statement: done
         ? `Your ${track.name} course is fully owned — every skill in it is independent or better.${track.next && TRACK_BY_ID.get(track.next) ? ` ${TRACK_BY_ID.get(track.next)!.name} is the natural next course.` : ''}`
-        : `In your ${track.name} course, ${owned.length} of ${ids.length} skills are independent or better.`,
+        : `In your ${track.name} course, ${owned.length} of ${count(ids.length, 'skill')} ${ids.length === 1 ? 'is' : 'are'} independent or better.`,
       confidence: 'high',
       evidence: [
         `Counted from the evidence ladder: a course skill counts only at independent+, never from having seen it in class.`,
@@ -399,7 +400,7 @@ export function todayInsight(
   if (hce.length)
     return `You have ${hce.length} confident error${hce.length > 1 ? 's' : ''} waiting for repair — clearing those beats new material today.`
   const due = dueReviews(evidence, now)
-  if (due.length >= 3) return `${due.length} reviews are due; retrieval first, then new ground.`
+  if (due.length >= 3) return `${count(due.length, 'review')} ${due.length === 1 ? 'is' : 'are'} due; retrieval first, then new ground.`
   const bn = findBottleneck(index, evidence, state)
   if (bn) return `${bn.name} is blocking ${bn.dependents} downstream skill${bn.dependents > 1 ? 's' : ''} — today's core targets it.`
   const gap = calibrationGap(recentEvents(state.events, now, 28))

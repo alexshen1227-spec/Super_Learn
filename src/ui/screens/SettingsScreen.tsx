@@ -22,6 +22,7 @@ import { PackAuthor } from '../PackAuthor'
 import { SKILLS } from '../../content/skills'
 import { addLocalDaysISO, localDateISO } from '../../engine/time'
 import { rebalanceAllocationPercentage } from '../../engine/allocationTargets'
+import { count } from '../../engine/plural'
 
 /** The one goal that names specific skills; see engine/goals.ts. */
 const REASONING_GOAL = 'Everyday reasoning & judgement'
@@ -822,7 +823,7 @@ export function SettingsScreen() {
             })
           }}
           title="Replace current data?"
-          body={`The file contains ${pendingImport.counts.events} attempts and ${pendingImport.counts.sessions} sessions. Importing replaces what's currently on this device.`}
+          body={`The file contains ${count(pendingImport.counts.events, 'attempt')} and ${count(pendingImport.counts.sessions, 'session')}. Importing replaces what's currently on this device.`}
           confirmLabel="Import"
           danger
         />

@@ -13,6 +13,7 @@ import type {
 } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { effectiveGrade } from './effectiveGrade'
+import { count } from './plural'
 
 /** Math ladder ordered easy → hard. Placement walks it adaptively. */
 export const MATH_LADDER: string[] = [
@@ -200,7 +201,7 @@ export function summarizePlacement(
   const measured = p.results.filter((r) => !r.skipped && r.correct !== null)
   const summary: string[] = []
   summary.push(
-    `Measured ${measured.length} skills directly across ${new Set(measured.map((r) => index.skills.get(r.skillId)?.bucket)).size} areas.`,
+    `Measured ${count(measured.length, 'skill')} directly across ${count(new Set(measured.map((r) => index.skills.get(r.skillId)?.bucket)).size, 'area')}.`,
   )
   if (gaps.length) summary.push(`Prerequisite gaps to close first: ${gaps.join(', ')}.`)
   else summary.push('No prerequisite gaps surfaced in the probed range.')

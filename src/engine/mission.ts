@@ -9,6 +9,7 @@ import type { AppState, Deadline, SkillEvidence } from '../domain/types'
 import type { ContentIndex } from './content-index'
 import { evidenceFor, stateRank } from './mastery'
 import { calendarDaysUntil } from './time'
+import { count } from './plural'
 
 export interface MissionReadiness {
   mission: Deadline
@@ -138,7 +139,7 @@ export function missionPriority(
     if (targets.includes(skillId)) {
       const candidate = {
         boost: 3.5 + urgency,
-        reason: `it is a target for “${mission.title}” (${days} days)`,
+        reason: `it is a target for “${mission.title}” (${count(days, 'day')})`,
       }
       if (candidate.boost > best.boost) best = candidate
       continue
