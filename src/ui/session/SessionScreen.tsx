@@ -1138,15 +1138,24 @@ function ExitScreen({
         <div className="flex-1 flex flex-col justify-center pb-20">
           <h1 className="font-display text-2xl font-bold">Take {planFor} outside</h1>
           <p className="text-muted text-sm mt-1 leading-relaxed">
-            You have held this one long enough to use it. Name a situation that actually recurs in your week, and the
-            move you want it to trigger. Writing it is the whole exercise — nothing to come back and read.
+            You have held this one long enough to use it. Name a situation that actually recurs in your week —{' '}
+            <span className="font-medium">say where as well as when</span> — and the move you want it to trigger.
+            Writing it is the whole exercise; nothing to come back and read.
           </p>
+          {/*
+            The cue wording is not decoration. In the 642-test meta-analysis
+            (Sheeran, Listrom & Gollwitzer 2024) a cue naming a time AND a place
+            runs at d = .46 against .25 for a time alone, and the strongest cues
+            of all are task junctures — starting something, finishing it, the
+            moment of being asked. Elaborating HOW or HOW LONG drops it back to
+            .24, so the copy deliberately never asks for either.
+          */}
           <label className="block mt-4">
-            <span className="text-[13px] font-medium text-muted">If…</span>
+            <span className="text-[13px] font-medium text-muted">If… (when and where)</span>
             <input
               value={cue}
               onChange={(e) => setCue(e.target.value.slice(0, 240))}
-              placeholder="someone pushes me to decide right now"
+              placeholder="someone pushes me to decide on the spot, at the lunch table"
               className="mt-1 w-full bg-surface border border-line rounded-xl px-4 py-3 text-[16px] outline-none focus:border-accent"
             />
           </label>

@@ -474,11 +474,41 @@ raise the odds, and keep measuring what it can actually see.
 - **Claim**: an if-then plan naming a specific cue ("if situation Y, then I do
   Z") substantially narrows the gap between intending an action and performing
   it, by making the cue itself trigger the behaviour.
-- **Source**: Gollwitzer & Sheeran (2006), *Implementation intentions and goal
-  achievement: a meta-analysis of effects and processes*, Advances in
-  Experimental Social Psychology 38 — d = 0.65 across 94 independent tests and
-  over 8,000 participants.
-  https://www.semanticscholar.org/paper/c4deb3507fe725ce6363c1735f1ba83bab20d665
+- **Source, CORRECTED 2026-08-12**: this entry cited Gollwitzer & Sheeran
+  (2006), d = 0.65 across 94 tests. **That number is roughly four times the
+  current best estimate and must not be quoted again.** The same authors have
+  published a far larger update: Sheeran, Listrom & Gollwitzer (2024), *The when
+  and how of planning: meta-analysis of the scope and components of
+  implementation intentions in 642 tests*, European Review of Social Psychology
+  36(1).
+  https://kops.uni-konstanz.de/server/api/core/bitstreams/d703c468-46e9-47fc-8900-d32d7d19c8d9/content
+  - Overall **d = .36** [.33, .40] across 642 tests.
+  - Egger's b = 1.06 — the authors themselves call it substantial publication
+    bias. Trim-and-fill d = .35; **Robust Bayesian correction d = .15**
+    [.08, .22], with extreme evidence both for an effect AND for the bias.
+  - **This app sits in the worst cell of every moderator**: field rather than
+    lab (.27 vs .49), online delivery (.31 vs .53 in person), a horizon of weeks
+    to months (1–6 months: **.19**), and an adolescent learner, where the whole
+    literature is 25 tests against 557 adult ones. A children's meta-analysis
+    (Breitwieser et al. 2026, *BJP*, g = 0.31, 42 studies, N = 12,957) finds the
+    effect **stronger in YOUNGER children**, which points away from a
+    secondary-school user.
+  - Honest expectation for the feature as built: **d ≈ 0.2, possibly 0.15 after
+    bias correction**, on an outcome the app cannot verify because it is
+    self-reported. It stays because it is cheap, honest, and never touches
+    evidence — not because it is strong.
+- **Component moderators, and what they changed here.** The same paper measures
+  the parts, and two of them were being got wrong:
+  - **One plan at a time.** 1 plan d = .41, 2 plans .30, **3 plans d = .07**.
+    The benefit is essentially gone by the third. `planCandidate` used to
+    exclude only skills that already HAD a plan while the caller suppressed new
+    ones only once a follow-up fell due — fourteen days later — so a learner
+    could accumulate one open plan per session. Fixed, and pinned by a test.
+  - **Cue should name a place as well as a moment** (time+place d = .46 vs time
+    alone .25), and **must not ask how or how long** (elaborating that drops it
+    to .24). Task junctures — starting, finishing, the moment of being asked —
+    are the strongest cues at .49–.64.
+  - **Rehearsing the plan once** raises it from .33 to .50 (k = 59).
 - **Status: IMPLEMENTED 2026-08-07** — `engine/fieldPlan.ts`, prompted at the
   session exit. Once a Path skill reaches **Retained** (not merely Independent:
   asking someone to carry a technique into their week before it survives a
@@ -3008,3 +3038,191 @@ the alignment this app claims elsewhere. And the CA Precalculus course has no
 chapter in the 2023 Mathematics Framework — its only CDE course definition is
 the 2015-published chapter of the previous framework, now 404 on cde.ca.gov.
 Superseded but not replaced.
+
+## 41. What actually makes anything transfer (2026-08-12)
+
+§40 asked which SKILLS have carry-over evidence and answered it. This asks the
+different question: what DESIGN makes anything transfer out of a practice app at
+all. Mechanism and format, not skill selection.
+
+### 41a. The headline, stated first
+
+**No app can make someone functionally smarter, and the evidence is strong
+enough that the claim must never appear here.** §29a already carries the number
+(g = 0.00 far transfer against active controls). This pass adds that the same
+collapse appears INSIDE the mechanisms this app already relies on.
+
+The defensible smaller claim: *taught, named, abstract rules, practised until
+they can be produced unprompted on surface-different material, are retrievable
+later in situations resembling the ones they were practised on.* That is
+Perkins & Salomon's high-road transfer via bridging plus Fong/Nisbett rule
+training (§40b). Everything below raises the odds on that sentence. None of it
+raises general ability.
+
+There is also **no honest base rate for far transfer**: Barnett & Ceci (2002)
+argue explicitly that pooling this literature would mislead, because the studies
+lack common structure. Anyone quoting one number is quoting a subliterature.
+
+### 41b. The negative result that matters most
+
+**Pan & Rickard (2018), *Psychological Bulletin* 144(7), 710-756.** 192 effect
+sizes, 122 experiments, N = 10,382, against a restudy control.
+
+Overall d = 0.40. By category: different test FORMAT d = .58; application and
+inference d = .32; **problem-solving d = .29, p = .10 n.s.; rearranged
+stimulus-response d = .22, p = .066 n.s.; untested material d = .16, p = .20
+n.s.**
+
+Two moderators survive joint fitting: *response congruency* (same answer,
+different question) +.35, and *elaborated retrieval* (explanatory feedback
+processed after retrieval) +.22. With both, d = .78. With neither, d = .21 —
+and the publication-bias-adjusted intercept with neither is **d = 0.015**,
+negative on one subset.
+
+**Consequence: retrieval practice reliably transfers across question FORMAT and
+does not reliably transfer to problem-solving or to unpractised material.** §1
+is safe as written because it claims retention. Nothing may start claiming that
+reviewing a skill builds transferable competence.
+
+Butler (2010) is the strongest positive study and cannot be used here: its
+participants were TOLD the final test related to what they had studied, which is
+Detterman's objection and §22's own gate.
+
+### 41c. The measurement result that should worry us most
+
+**Schwartz & Bransford (1998), *Cognition and Instruction* 16(4), 475-522.** The
+main effect (contrasting cases before the telling, not after) is useful. The
+finding this app needs is buried in the method:
+
+**Their true/false verification test sat at 93% accuracy in EVERY condition with
+no difference between them, while the uncued prediction task showed a strong
+crossover — and verification scores predicted prediction performance not at all,
+F(1,18) = 0.21, p > .6.**
+
+The app's whole ladder is built from graded correctness. So **a skill can be
+fully Retained and carry no information about whether it will ever be used.**
+`northStar`'s "durable" is a retention measure and its docstring says so; it
+must never drift into transfer language.
+
+Related: Barnett & Ceci's own text defines their "memory demands" dimension as
+whether the learner must SELECT the approach or merely execute a prompted one —
+i.e. spontaneity. §21 maps that dimension onto answer format, which is really
+the modality dimension. **The app is not currently measuring spontaneity at
+all.** Gick & Holyoak size the gap: ~30% solve after reading a structurally
+identical story, ~75-80% once TOLD to use it. Roughly two-thirds of people who
+already hold the solution fail to retrieve it unprompted. That gap, not
+knowledge, is the target.
+
+### 41d. The app is the retrieval cue
+
+Morris, Bransford & Franks (1977) — transfer-appropriate processing: semantic
+encoding beats rhyme encoding on a recognition test, and **rhyme encoding beats
+semantic on a rhyme test**. There is no "deep" encoding in the abstract; it is
+good or bad relative to the retrieval demand.
+
+Smith & Vela (2001), 93 studies: incidental environmental context-dependence
+d = .28. Smith, Glenberg & Bjork (1978): studying in two rooms beat studying
+twice in one, including when tested in a THIRD room.
+
+**For a single-device app the context that risks becoming the cue is the app
+itself** — its layout, phrasing register, answer widgets, time of day. A skill
+practised only inside Axiom Lab has Axiom Lab as part of its cue. This is the
+strongest theoretical argument in the whole pass for varying surface features
+within a skill's pool, and nothing currently measures that.
+
+### 41e. Self-explanation — the most directly applicable number
+
+**Bisra, Liu, Nesbit, Salimi & Winne (2018), *Educational Psychology Review*
+30(3), 703-725.** 69 effect sizes, N = 5,917: **g = 0.55**. The moderator that
+matters: prompts asking learners to explain a CONCEPT significantly outperform
+metacognitive prompts asking about their planning or performance.
+
+**Tan et al. (2025), *Educational Psychology Review*** (secondary — abstract
+only): 204 effect sizes, digital environments, overall g = .46, **transfer
+g = .33**, better for conceptual than procedural.
+
+So self-explanation delivered exactly as this app delivers it — typed, digital,
+ungraded — is worth about **g = 0.33 on transfer**. Modest, real, quotable. The
+explain-back exit already uses a CONCEPT prompt, which is the stronger class; it
+must not be "improved" later into "how did you approach this?".
+
+### 41f. Gamification — the refusal is defensible, and it is not free
+
+**Sailer & Homner (2020), *Educational Psychology Review* 32, 77-112.** Overall
+cognitive g = .49, motivational .36, behavioural .25. Restricted to
+high-methodological-rigor studies: **cognitive g = .42 [.14, .68] on nine
+studies; motivational g = .22, p = .20 n.s.; behavioural g = .27, p = .22 n.s.**
+
+Read honestly: there is a small cognitive-learning effect that survives
+filtering, resting on nine studies, and the motivation and behaviour effects do
+not survive at all. Points, badges and leaderboards were not the active
+ingredient in anything; game fiction and competition-with-collaboration were,
+and a solo offline app can use neither.
+
+Set beside §29d (performance-contingent rewards, d = -0.80 on free-choice
+intrinsic motivation), the founding brief's refusal is evidentially defensible.
+**It is not costless — the refusal declines a g ≈ .42 cognitive effect — and
+this ledger should say so rather than pretend the evidence is one-sided.**
+
+Also: Deslauriers et al. (2019, *PNAS* 116(39)) — randomised, identical
+materials, same instructor: active-learning students **learned more and rated
+their own learning lower**. Any UI that lets perceived fluency drive what gets
+practised next will systematically select the worse option. The planner derives
+from performance rather than preference, which is the right side of this.
+
+### 41g. Corrections this pass forced
+
+- **§20b was overclaiming by roughly four times.** Corrected in place; see that
+  entry. d = 0.65 (94 tests) is superseded by d = .36 raw / .15 bias-corrected
+  (642 tests), and this app sits in the worst cell of every moderator.
+- **A real bug fell out of the same paper.** One plan d = .41, three plans
+  d = .07 — yet `planCandidate` excluded only skills that already had a plan
+  while the caller suppressed new ones only once a follow-up fell due fourteen
+  days later, so a learner could accumulate one open plan per session. Fixed and
+  pinned.
+- **§21's Barnett & Ceci caveat can be lifted**: the primary PDF does extract as
+  text at rapunselshair.pbworks.com/f/barnett_2002.pdf and all nine dimensions
+  verify. §22's Detterman citation can be strengthened the same way — Barnett &
+  Ceci quote him directly, including the line that matters here: *"Telling
+  subjects to use a principle is not transfer. It is following instructions"*
+  (Detterman 1993, p. 10).
+
+### 41h. Built, and still to build
+
+**Done in this pass** (cheap, and each tied to a moderator): one open plan at a
+time; the cue asks for a place as well as a moment (d = .46 vs .25) and
+deliberately never asks how or how long (which drops it to .24).
+
+**Not done, ranked.** Each is recorded so a later session does not re-derive it:
+
+1. Rehearse the if-then plan exactly once at save time (no rehearsal .33 →
+   rehearsed once .50). A single echo on the confirm step, not a log screen.
+2. Author response-congruent review pairs — same answer, different question form
+   (d = .58 vs .28). Content work, not engine work.
+3. Elaborative rather than merely corrective feedback after a retrieval (+.22).
+4. A surface-diversity audit per skill: refuse the `transferred` rung when a
+   skill's whole pool shares one surface context. HEURISTIC threshold over an
+   EVIDENCE mechanism (41d).
+5. Contrasting cases BEFORE the explanation, not after — §20a already records
+   that most Path explanations do the failing order.
+6. A genuine spontaneity probe: several taught principles plausible, none named
+   in the prompt, "none of these applies" a real answer. The only thing that
+   would measure Barnett & Ceci's memory-demands dimension rather than modality.
+7. Concreteness fading as an authored sequence, concrete → faded → abstract and
+   never reversed (Fyfe et al. 2014/2015 — EVIDENCE for children's maths,
+   HEURISTIC elsewhere).
+
+### 41i. Refused, with numbers
+
+| Claim | Against it |
+|---|---|
+| Retrieval practice builds transferable competence | Pan & Rickard 2018: problem-solving d = .29 p = .10 n.s.; untested material d = .16 p = .20 n.s.; adjusted intercept d = 0.015 |
+| An if-then plan will make a technique fire in real life | Sheeran 2024: field .27, online .31, 1-6 months .19, RoBMA-corrected .15 |
+| 66 days makes a habit | Lally 2010: median 66 days AMONG THOSE WHO PLATEAUED; curve fit good for 39 of 96; behaviours were eating and exercise, not cognitive moves |
+| Gamification is motivating | Sailer & Homner high-rigor: motivational g = .22 p = .20 n.s.; behavioural .27 p = .22 n.s. |
+| Varied examples transfer strongly | Brady 2004: d ≈ .19 applied vs .57 lab, and it is a motor-skill literature |
+| Concreteness fading is established for transfer | Fyfe et al. 2014 is a systematic review with NO pooled effect; direct tests are grade 2-3 maths |
+| Faded worked examples produce far transfer | Reliable for near transfer only |
+| Passing the app's checkpoints shows the idea is usable | Schwartz & Bransford: verification 93% in every condition, predicted nothing (p > .6) |
+| Bridging is proven | Perkins & Salomon 1988 is a practitioner article; its support is 1980s vote-counts that would fail §29a's standard |
+| There is a known base rate for far transfer | Barnett & Ceci argue pooling would mislead |

@@ -117,3 +117,39 @@ describe('plans are never evidence', () => {
     expect(evidence.get('o-recall')).toBeUndefined()
   })
 })
+
+
+describe('only one plan is open at a time', () => {
+  /*
+   * The bug: `planCandidate` excluded skills that already HAD a plan, and the
+   * caller suppressed new ones only once a follow-up fell due — fourteen days
+   * later. Between those points a learner could collect a new plan for a
+   * different skill every session.
+   *
+   * The meta-analysis says that is not a tidiness problem but the mechanism
+   * failing: one plan d = .41, two .30, three d = .07 (Sheeran, Listrom &
+   * Gollwitzer 2024, 642 tests). More plans make the feature worse.
+   */
+  const twoRetained = [...retainedObserverEvents('o-obsinf'), ...retainedObserverEvents('o-recall')]
+  const at = T0 + 4 * DAY
+
+  it('offers nothing while an earlier plan is still unanswered', () => {
+    const open: FieldPlan = {
+      id: 'p1', t: at - DAY, skillId: 'o-obsinf',
+      cue: 'someone pushes me to decide now', action: 'ask what the usual case looks like',
+      askedAt: null, outcome: null,
+    }
+    const state = stateWith(twoRetained, [open])
+    expect(planCandidate(state, deriveEvidence(twoRetained, at), bucketOf)).toBeNull()
+  })
+
+  it('offers one again once the earlier plan has been answered', () => {
+    const answered: FieldPlan = {
+      id: 'p1', t: at - 20 * DAY, skillId: 'o-obsinf',
+      cue: 'someone pushes me to decide now', action: 'ask what the usual case looks like',
+      askedAt: at - DAY, outcome: 'used',
+    }
+    const state = stateWith(twoRetained, [answered])
+    expect(planCandidate(state, deriveEvidence(twoRetained, at), bucketOf)).toBe('o-recall')
+  })
+})

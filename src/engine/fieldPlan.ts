@@ -35,6 +35,24 @@ export function planCandidate(
   evidence: Map<string, SkillEvidence>,
   bucketOf: (skillId: string) => string | undefined,
 ): string | null {
+  /*
+   * ONE OPEN PLAN AT A TIME.
+   *
+   * This used to exclude only skills that ALREADY had a plan, and the caller
+   * suppressed new ones only once a follow-up fell DUE — which is fourteen days
+   * later. In that window a learner could be handed a fresh plan for a
+   * different skill every single session, quietly accumulating a dozen open
+   * intentions nobody was tracking.
+   *
+   * That is not a cosmetic pile-up, it is the mechanism failing. The 642-test
+   * meta-analysis (Sheeran, Listrom & Gollwitzer 2024) finds one plan at
+   * d = .41, two at .30, and THREE at d = .07 — the benefit is essentially gone
+   * by the third. Handing out more of them makes the feature worse, not weaker.
+   *
+   * So: while any plan is still awaiting its follow-up, there is no candidate.
+   */
+  const openPlan = state.plans.some((p) => p.askedAt === null)
+  if (openPlan) return null
   const planned = new Set(state.plans.map((p) => p.skillId))
   let best: { skillId: string; at: number } | null = null
   for (const ev of evidence.values()) {
