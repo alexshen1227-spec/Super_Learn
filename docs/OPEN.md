@@ -407,3 +407,78 @@ learners on the same day do not get identical variants.
   is arguably correct and is recorded so nobody later reads it as bias.
 - Everything under "Still open, measured" from the previous section that is not
   named above remains as written.
+
+---
+
+## The first three days are a maths app (2026-08-12)
+
+Found because the owner reset their progress, which made the first-run
+experience suddenly the live question. Almost everything verified until now has
+been a five-year aggregate; the opening fortnight had never been looked at.
+
+**Measured on a fresh profile at 25 minutes a day:**
+
+| day | items | mathematics |
+|---|---|---|
+| 1 | 10 | 7 |
+| 2 | 10 | 8 |
+| 3 | 10 | 8 |
+| 4 | 9 | 2 |
+| 5 | 7 | 0 |
+
+Unbroken runs of six maths items at 25 minutes and eight at 45. It corrects
+sharply on day four, because every balancing mechanism in `planner.ts` keys off
+DEBT and `historyEnough` requires 60 minutes of practice before any of it
+switches on. Before that there is no debt to balance.
+
+The app introduces itself as ten areas and then spends a learner's first three
+days on one of them.
+
+### What the cause is NOT
+
+Array ordering. On a cold start every bucket has identical relative debt, the
+sort is stable, and `ACADEMIC_BUCKETS` lists mathematics first — so rotating the
+starting point looked like the obvious fix. **It changed nothing**, because the
+core bucket is chosen by SCORE, not by position. That attempt was written,
+measured, found to be a no-op, and reverted rather than shipped with a comment
+claiming an effect it did not have.
+
+### What the cause is
+
+Mathematics legitimately outscores everything early. Its skills are the
+cross-bucket GATEWAYS — physics sits behind `m-units` and `m-exponents` — and
+`prereqLeverage`/`GATEWAY_BONUS` correctly rank a door nobody can get through
+above a door already open. The chosen course adds its own tilt on top. That
+logic is right and should not be weakened.
+
+Note that coding and science are NOT gated: `c-vars` and `s-hypo` have no
+prerequisites at all. They are available on day one and simply lose on score.
+
+### The fix that was tried, and why it was reverted
+
+The block mathematics wins is up to eight items, which is most of a 25-minute
+session — so winning the core once means owning the day. Capping the core to
+three items before any history exists left the session **under-filled**: 20.5
+planned minutes against a 30-minute request, where the floor is 24. Capping at
+five filled the session but broke something more important — a learner who
+placed STRONG got a lower mean difficulty than a cold learner (2.7 against 2.9),
+because shrinking the core dilutes it with rotation items and the core is where
+placement-aware difficulty aiming happens.
+
+So breadth and difficulty-aiming currently live in the same block, and shrinking
+it trades one for the other. Reverted.
+
+### What a real fix needs
+
+Either the rotation and top-up blocks become placement-aware so difficulty
+survives a smaller core, or the first few sessions get a deliberate breadth slot
+that is separate from the core rather than carved out of it. Both are larger
+than a tuning change and want measuring properly, including against the
+`difficultyFloor` test which is doing its job here.
+
+**Open product question for the owner, not a bug to fix unilaterally:** is
+front-loading the gateway skills the right first impression? It is defensible —
+you cannot do quantitative physics before units — and it self-corrects inside a
+week. The counter-argument is that a first impression is worth more than three
+days of optimal sequencing, and that coding and science could carry breadth on
+day one at no pedagogical cost.
