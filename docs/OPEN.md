@@ -482,3 +482,34 @@ you cannot do quantitative physics before units — and it self-corrects inside 
 week. The counter-argument is that a first impression is worth more than three
 days of optimal sequencing, and that coding and science could carry breadth on
 day one at no pedagogical cost.
+
+### Update 2026-08-12: four attempts, none shipped
+
+Tried again with the free rein and failed four different ways. Recording all of
+them, because the pattern is the finding.
+
+1. **Rotate the cold-start bucket order** — no-op. The core bucket is chosen by
+   score, not array position.
+2. **Cap the cold-start core at three items** — under-fills the session: 20.5
+   planned minutes against a 30-minute request, floor 24.
+3. **Cap it at five** — fills the session, but a STRONG placement then gets
+   EASIER maths than a cold learner (2.83 against 3.17, measured on maths items
+   alone). The core's item count is doing difficulty work: it ramps through a
+   skill's templates, so taking items away takes the hard tail away.
+4. **Widen the rotation budget instead of capping the core** (0.25 to 0.4 of the
+   session before any history) — makes sessions longer than the learner asked
+   for, and still moves the difficulty number.
+
+The coupling is the point: **breadth, session length and difficulty aiming are
+all carried by the same block**, and every lever that buys one spends another.
+This is not a tuning constant, and four failed attempts is enough evidence that
+it wants the structural change already described above rather than another try.
+
+One thing did improve. `difficultyFloor.test.ts` was averaging difficulty across
+the WHOLE plan to test a claim about the maths frontier — the fixture marks
+every MATHS skill strong, and a rotation item's difficulty is aimed at its own
+skill, so being strong at maths correctly does not make an Observer question
+harder. Averaging them together meant any breadth/core change moved the number
+for reasons unrelated to the frontier. Narrowed to maths items, and CANARIED:
+making the frontier ignore the placement signal still fails it (2.56 against
+2.78), so it caught what it was written for.

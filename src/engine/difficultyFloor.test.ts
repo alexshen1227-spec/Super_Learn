@@ -57,13 +57,28 @@ describe('a strong placement starts the learner high', () => {
   it('does not park the frontier on material placement already cleared', () => {
     const cold = planFor({ ...initialState(), onboarded: true })
     const strong = planFor(strongMathState())
-    const meanOf = (plan: ReturnType<typeof planFor>) => {
-      const d: number[] = plan.blocks.flatMap((b) =>
-        b.activities.map((a) => (DEFAULT_INDEX.templates.get(a.templateId)?.difficulty ?? 0) as number),
-      )
-      return d.reduce((x: number, y: number) => x + y, 0) / Math.max(1, d.length)
+    /*
+     * MATHS items only, because that is what this test is actually about: the
+     * fixture marks every MATHS skill 'strong' and asks that the frontier not
+     * park on material placement already cleared.
+     *
+     * It used to average the WHOLE plan, which conflates the claim with the
+     * lab rotation — and a rotation item's difficulty is aimed at ITS OWN
+     * skill, so being strong at maths correctly does not make an Observer
+     * question harder. Averaging them together meant any change to the
+     * breadth/core balance moved this number for reasons that have nothing to
+     * do with the frontier. Narrowed to the subject; the canary below proves
+     * it still catches the thing it was written for.
+     */
+    const mathMeanOf = (plan: ReturnType<typeof planFor>) => {
+      const d = plan.blocks
+        .flatMap((b) => b.activities)
+        .map((a) => DEFAULT_INDEX.templates.get(a.templateId))
+        .filter((t): t is NonNullable<typeof t> => Boolean(t) && t!.bucket === 'math')
+        .map((t) => t.difficulty as number)
+      return d.reduce((x, y) => x + y, 0) / Math.max(1, d.length)
     }
-    expect(meanOf(strong)).toBeGreaterThan(meanOf(cold))
+    expect(mathMeanOf(strong)).toBeGreaterThan(mathMeanOf(cold))
   })
 
   it('never fills a block with clones of one question family', () => {
