@@ -43,6 +43,18 @@ export interface AttemptContext {
   day: number
   /** Total graded attempts so far. */
   attempts: number
+  /**
+   * The area the item belongs to.
+   *
+   * Every learner spec before this one was uniformly able across all ten
+   * areas, which is the single case where a global difficulty signal cannot
+   * be caught being wrong. Real learners are lopsided — this app's owner is
+   * a strong maths student — and the mis-aim only appears once the model can
+   * express that.
+   */
+  bucket: BucketId
+  /** The skills the item carries evidence for. */
+  skillIds: readonly string[]
 }
 
 export interface LearnerSpec {
@@ -260,6 +272,8 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
             difficulty: tpl.difficulty,
             day,
             attempts: state.events.length,
+            bucket: tpl.bucket as BucketId,
+            skillIds: tpl.skillIds,
           }
           const hinted = rand() < spec.hintRate(ctx)
           const ok = rand() < spec.p(ctx)

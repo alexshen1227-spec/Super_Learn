@@ -3226,3 +3226,217 @@ deliberately never asks how or how long (which drops it to .24).
 | Passing the app's checkpoints shows the idea is usable | Schwartz & Bransford: verification 93% in every condition, predicted nothing (p > .6) |
 | Bridging is proven | Perkins & Salomon 1988 is a practitioner article; its support is 1980s vote-counts that would fail §29a's standard |
 | There is a known base rate for far transfer | Barnett & Ceci argue pooling would mislead |
+
+---
+
+## 42. Theory of mind and inner speech (2026-08-15)
+
+Asked for directly by the owner: make the app enhance "theory of mind /
+mentalizing" and "inner dialogue". Both turn out to be areas where the popular
+claim and the evidence point in different directions, so the headline goes
+first.
+
+### 42a. The headline, stated first
+
+**Neither is trainable-by-app in the way the request assumes, and the reason is
+different in each case.**
+
+Theory of mind is a developmental milestone that this app's learner passed
+around a decade ago. Every strong training result is in preschoolers acquiring
+first-order false belief for the first time; there is nothing comparable for
+adolescents, and the best review of ToM training in a population that keeps
+struggling with it found the gains do not generalise.
+
+Inner speech is not a milestone but a *variable*: people differ enormously in
+how much of it they have, and the one intervention literature with a solid
+effect size is about motor skills in sport.
+
+**What IS defensible, and is what this pass builds: the epistemics of reading
+other people.** Not "get better at knowing what someone thinks", which the
+evidence says an app cannot deliver, but "know how reliable your reading of
+someone is, and know what actually improves it". That is a taught, named,
+abstract rule of exactly the kind 41a identifies as the only thing with real
+support, it is falsifiable, it is assessable offline, and it belongs to
+Observer/Insight as DEFENCE rather than as social technique.
+
+### 42b. Theory of mind: what the training evidence actually says
+
+**Hofmann, Doan, Sprung, Wilson, Ebesutani et al. (2016), *Cognition* 150,
+200-212.** 32 papers, 45 procedures, 1,529 children. Aggregate **Hedges'
+g = 0.75, CI [0.60, 0.89], p < .001** — the number usually quoted as "theory of
+mind is trainable".
+
+**The number that disqualifies it here is in the sample description: mean age
+63 months (SD 28.7).** These are four-to-six-year-olds being taught first-order
+false belief, a milestone typically reached at about four. A 14-year-old passed
+it a decade ago. Quoting g = 0.75 at an adolescent would be transferring an
+effect from acquiring a capacity to sharpening one already held, across a
+ten-year age gap, with no study in between. Moderators that reached
+significance were length of session and length of training period — dosage, not
+mechanism.
+
+**Fletcher-Watson, McConnell, Manola & McConachie (2014), Cochrane Database of
+Systematic Reviews, CD008785.** 22 studies, 695 participants. The conclusion is
+the decisive one for anything an app would build: there is some evidence ToM
+skills **can be taught**, and **poor quality evidence that they are maintained,
+that they generalise to other settings, or that teaching them affects
+developmentally-linked abilities.**
+
+So the honest summary is: the trained task improves, and nothing else has been
+shown to. That is the same shape as the working-memory training literature
+(29a) and deserves the same treatment.
+
+### 42c. The measure most people mean is probably not measuring it
+
+The Reading the Mind in the Eyes Test is what "mentalizing test" usually means
+in popular coverage, and it is contested as a ToM measure at all. The recurring
+critiques: it may index **emotion recognition rather than mental-state
+attribution**; performance depends heavily on **emotion vocabulary**, so a low
+score can mean not knowing a word rather than not reading a face; and it is
+**moderately related to verbal IQ**.
+
+Consequence: the app must not use eye/face reading as a mentalizing measure, and
+should not build content in that shape at all. It would be measuring vocabulary
+and calling it social insight — the app's own 29a-style error, one level up.
+
+### 42d. The result that changes what to build
+
+**Eyal, Steffel & Epley (2018), *JPSP* 114(4), 547-571, "Perspective
+mistaking".** 25 experiments. Experiments 1-15 standard interpersonal-accuracy
+tests, 16-24 naturalistic (married couples, romantic partners, friends), 25 the
+decisive contrast. Tasks included reading emotions from faces, RMET,
+genuine-versus-fake smiles, lie detection, and predicting a partner's
+preferences.
+
+**Being instructed to take another person's perspective did not reliably
+improve accuracy, if anything decreased it, and increased confidence.**
+Experiment 25 tested *perspective getting* — actually asking the person — and
+that improved accuracy.
+
+This is the most useful finding in the whole pass, for two reasons. It is a
+crisp, teachable, counterintuitive rule. And it is **protective**: confident
+mind-reading is the engine both of being manipulated and of ordinary conflict.
+Teaching its unreliability is Insight-path DEFENCE in the strictest sense, and
+it points the learner toward asking rather than toward inferring — the opposite
+direction from every cold-reading technique the founding brief refuses.
+
+It also connects to machinery the app already has: the gap between confidence
+and accuracy is precisely what `engine/calibration.ts` measures.
+
+### 42e. The fiction claim, since it will come up
+
+Kidd & Castano (2013, *Science*) reported that reading literary fiction improves
+ToM. Panero et al. (2016, *JPSP*) failed to replicate. Kidd & Castano (2017)
+replied that the replication's participants demonstrably had not read the
+passages and that two of its largest studies failed random assignment; Panero et
+al. (2017) reaffirmed the null after reanalysis. **Unresolved, actively
+disputed, and measured on RMET (42c) — so unusable in either direction.**
+Recorded here only so a later session does not treat it as settled.
+
+### 42f. Inner speech: the construct is a variable, not a skill
+
+**Nedergaard & Lupyan (2024), *Psychological Science*, "Not everybody has an
+inner voice: behavioral consequences of anendophasia".** Adults reporting low
+inner speech (N = 46) versus high (N = 47): the low group performed worse on
+verbal working memory and rhyme judgment, and **no differently on task-switching
+or categorical perceptual judgments**. Lind (2025, same journal) disputes that
+anyone truly lacks it.
+
+Two consequences, both binding on design. Inner speech varies from near-constant
+to nearly absent across ordinary people, and **the app has no way to tell which
+kind of learner it has** — self-report about one's own inner experience is
+exactly the sort of thing this app elsewhere refuses to grade. And where the low
+group did differ, it was on verbal-memory tasks; the reasoning-shaped measures
+showed nothing.
+
+So a feature that *requires* an inner voice would work unevenly and invisibly.
+Anything built here has to be an offered option phrased as "some people find",
+never an instruction.
+
+### 42g. Self-talk: the good effect size is in the wrong domain
+
+**Hatzigeorgiadis, Zourbanos, Galanis & Theodorakis (2011), *Perspectives on
+Psychological Science* 6(4), 348-356.** 32 studies, 62 effect sizes,
+**ES = .48**. Moderators: larger for **fine** than gross motor demands, and
+larger for **novel** than well-learned tasks.
+
+This is a sports motor-skill literature. The novelty moderator is the one that
+tempts a reader toward generalising — new tasks benefit most, and this app works
+at a learner's frontier — but a dart throw and a proportional-reasoning problem
+share no mechanism, and nothing in the meta-analysis speaks to cognitive work.
+**HEURISTIC at best if borrowed; it is not evidence for this app's domain.**
+
+**Distanced self-talk** (Kross et al. 2014, *JPSP* 106(2), 304-324; seven
+studies, N = 585) is the most-cited practical version: using your own name or
+"you" instead of "I" while thinking through something stressful. Kross reported
+better observer-rated performance and less distress under social stress.
+
+**Murdoch et al. (2023), *Stress and Health*, meta-analysed it: 25 experiments,
+2,397 adults, a small-to-moderate advantage for self-distanced over
+self-immersed reflection — with the authors' own overall quality-of-evidence
+assessment reporting "uncertainty regarding the benefit of this pragmatic
+self-regulatory tactic" and an "urgent need for high-powered, high-quality
+experiments".** So: real enough to mention, nowhere near strong enough to build
+a mechanic on, and its outcomes are affect and distress rather than reasoning
+quality.
+
+**Meichenbaum & Goodman (1971) self-instructional training** is the classic
+"teach the inner voice" intervention. Its modern standing is poor: effects
+typically did not generalise beyond the trained task and setting, and reviews
+conclude it has not demonstrated an effect on the self-regulatory system itself.
+Same shape as 42b.
+
+### 42h. Where inner speech actively HURTS, which matters more here
+
+**Alogna et al. (2014), *Perspectives on Psychological Science* 9(5), Registered
+Replication Report of Schooler & Engstler-Schooler (1990).** Describing a face
+in words before identifying it — verbal overshadowing. The original reported 25%
+worse identification. The RRR found **4% worse when the description immediately
+followed the event, and 16% worse at a 20-minute delay**: a real effect, much
+smaller than reported, and strongly timing-dependent.
+
+**This app contains exactly the tasks that literature warns about**: chess
+positions, manipulable diagrams, and the Observer path's perceptual observation
+work. A feature that prompted learners to narrate their thinking during visual
+work would be pushing on the one place the evidence says verbalising costs
+accuracy. Any inner-speech prompt must be excluded from perceptual and
+visual-search items.
+
+Note also 41e, already in this ledger: self-explanation prompts asking about a
+**concept** significantly outperform **metacognitive** prompts about one's own
+planning or performance. Generic "narrate your thinking" prompts are the weaker
+class by the app's own best-supported number.
+
+### 42i. What this pass builds, and at what tier
+
+1. **The unreliability of mind-reading, as a named rule** — EVIDENCE
+   (Eyal/Steffel/Epley 2018, 25 experiments). Offline-assessable: given a
+   situation, which move actually raises your odds of being right? Confidence
+   and accuracy separated. Insight/Observer, DEFENCE framing.
+2. **Observation versus inference about a person** — extends the Observer
+   path's existing core to social material rather than inventing a mechanic.
+   The claim is about the learner's own epistemics, not about reading anyone.
+3. **Nested belief reasoning** ("A believes that B believes X") — HEURISTIC as
+   social skill, EVIDENCE-adjacent as *logic*. This is nested conditional
+   reasoning in a social costume and should be labelled as such: it is a
+   reasoning form the app already teaches, not a route to understanding real
+   people. Second-order false belief is assessable offline as ordinary multiple
+   choice.
+4. **Asking beats guessing, as a checkable habit** — EVIDENCE for the direction
+   (Experiment 25), HEURISTIC that practising it in an app changes anything
+   outside one.
+
+### 42j. Refused, with numbers
+
+| Claim | Against it |
+|---|---|
+| The app can improve theory of mind / mentalizing | Hofmann 2016's g = .75 is on children of mean age 63 months acquiring first-order false belief; no adolescent evidence exists |
+| Teaching ToM skills improves social functioning | Fletcher-Watson 2014 (Cochrane, 22 studies, 695 participants): poor quality evidence for maintenance, generalisation, or effect on linked abilities |
+| Eye/face reading measures mentalizing | RMET is contested as measuring emotion recognition and emotion vocabulary, and is moderately related to verbal IQ |
+| Taking someone's perspective helps you understand them | Eyal, Steffel & Epley 2018, 25 experiments: no reliable accuracy gain, sometimes worse, confidence up |
+| Reading fiction improves theory of mind | Kidd & Castano 2013 vs Panero et al. 2016 unresolved; both sides dispute the other's method; outcome measure is RMET |
+| Training your inner voice improves self-regulation | Meichenbaum-style self-instruction did not generalise beyond trained tasks; no demonstrated effect on the self-regulatory system |
+| Self-talk improves performance (ES = .48) | True for sport: fine motor, novel tasks. Nothing in that meta-analysis is cognitive work |
+| Distanced self-talk is an established technique | Murdoch 2023, 25 experiments N = 2,397: small-to-moderate, authors report "uncertainty regarding the benefit" and call for high-quality trials |
+| Everyone has an inner voice to train | Nedergaard & Lupyan 2024: inner speech ranges from near-constant to nearly absent; the app cannot tell which learner it has |
+| Narrating your thinking is generally good | Alogna 2014 RRR: verbalising costs 4% immediate / 16% delayed on visual identification; 41e: concept prompts beat metacognitive prompts |

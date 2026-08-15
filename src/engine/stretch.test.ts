@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MIN_SAMPLE, stretchSignal } from './stretch'
+import { areaStretch, MIN_SAMPLE, stretchSignal } from './stretch'
 import { targetDifficulty } from './planner'
 import type { AttemptEvent, SkillEvidence } from '../domain/types'
 
@@ -93,5 +93,91 @@ describe('difficulty actually responds', () => {
     expect(targetDifficulty(top, 'high', false, 'strong', 1.5)).toBeLessThanOrEqual(5)
     const bottom = { ...base, state: 'unseen', recentMisses: 5 } as SkillEvidence
     expect(targetDifficulty(bottom, 'low', false, undefined, -1)).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('the per-area dial', () => {
+  /*
+   * Mathematics at 90%, physics at 20%, INTERLEAVED.
+   *
+   * The order matters and the first version of this fixture got it wrong: the
+   * global signal reads the last 25 events, so appending one area after the
+   * other put a single area in the whole window and the "global" figure was
+   * really that area's. Alternating is also what a real log looks like, since
+   * a session mixes areas.
+   */
+  const interleave = (a: AttemptEvent[], b: AttemptEvent[]): AttemptEvent[] => {
+    const out: AttemptEvent[] = []
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      if (a[i]) out.push(a[i])
+      if (b[i]) out.push(b[i])
+    }
+    return out
+  }
+  const lopsided = interleave(
+    // Unbroken in mathematics. Shrinkage pulls this down toward the global
+    // figure, so anything less than emphatic does not clear a band and the
+    // test would be measuring the prior rather than the signal.
+    Array.from({ length: 30 }, () => at(true, { bucket: 'math' })),
+    // 20% correct in physics: one hit every five.
+    Array.from({ length: 30 }, (_, i) => at(i % 5 === 0, { bucket: 'physics' })),
+  )
+
+  it('stays silent whenever the global signal is silent', () => {
+    const thin = run(3, 1, { bucket: 'math' })
+    const dial = areaStretch(thin, NOW)
+    expect(stretchSignal(thin, NOW).accuracy, 'fixture should be under the global floor').toBeNull()
+    expect(dial('math').adjust).toBe(0)
+    expect(dial('math').why).toBeNull()
+  })
+
+  it('pulls a strong area up and a weak one down from the same log', () => {
+    const dial = areaStretch(lopsided, NOW)
+    const global = stretchSignal(lopsided, NOW)
+    expect(dial('math').adjust).toBeGreaterThan(global.adjust)
+    expect(dial('physics').adjust).toBeLessThan(global.adjust)
+    // Each area's sentence names itself, or the plan could not explain why one
+    // block got harder while another got easier.
+    expect(dial('math').why).toContain('mathematics')
+    expect(dial('physics').why).toContain('physics')
+  })
+
+  it('falls back to the global figure for an area with too little of its own', () => {
+    const dial = areaStretch(lopsided, NOW)
+    const global = stretchSignal(lopsided, NOW)
+    // Nothing at all in coding.
+    expect(dial('coding')).toEqual(global)
+    // A handful is still not enough to speak on its own. Note the global
+    // figure has to be recomputed from the SAME log: appending events moves
+    // the 25-attempt window, so comparing against the other log's figure would
+    // be testing the fixture rather than the fallback.
+    const withTrace = interleave(lopsided, Array.from({ length: 3 }, () => at(false, { bucket: 'coding' })))
+    expect(areaStretch(withTrace, NOW)('coding')).toEqual(stretchSignal(withTrace, NOW))
+  })
+
+  it('shrinks a thin area toward the global figure rather than believing it', () => {
+    // Eight misses in a row in coding. Believed raw that is 0%, the hardest
+    // easing there is; shrunk toward a strong global figure it is milder.
+    const events = interleave(lopsided, Array.from({ length: 8 }, () => at(false, { bucket: 'coding' })))
+    const dial = areaStretch(events, NOW)
+    const global = stretchSignal(events, NOW)
+    const coding = dial('coding')
+    // Believed raw, eight misses is 0%. Shrunk toward the global figure it sits
+    // strictly between the two — pulled down, but not all the way.
+    expect(coding.accuracy!).toBeGreaterThan(0)
+    expect(coding.accuracy!).toBeLessThan(global.accuracy!)
+  })
+
+  it('does not let a first meeting be made harder by success elsewhere', () => {
+    const unseen = { ...base, state: 'unseen', ability: null } as unknown as SkillEvidence
+    const seen = { ...base, state: 'independent', ability: null } as unknown as SkillEvidence
+    const flat = targetDifficulty(unseen, 'ok', false, undefined, 0)
+    const pushed = targetDifficulty(unseen, 'ok', false, undefined, 1.5)
+    expect(pushed, 'a brand-new skill must not arrive harder because another area is going well').toBe(flat)
+    // Easing still reaches it, and an established skill still moves both ways.
+    expect(targetDifficulty(unseen, 'ok', false, undefined, -1)).toBeLessThan(flat)
+    expect(targetDifficulty(seen, 'ok', false, undefined, 1.5)).toBeGreaterThan(
+      targetDifficulty(seen, 'ok', false, undefined, 0),
+    )
   })
 })

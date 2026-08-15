@@ -473,13 +473,20 @@ const EMPTY_MODE_NOTE: Record<string, string> = {
     (nextBlockIndex: number, nextActIndex: number) => {
       if (!plan) return
 
-      // Read the last three graded outcomes of this session, most recent first.
-      const outcomes: boolean[] = []
-      for (let bi = plan.blocks.length - 1; bi >= 0 && outcomes.length < 3; bi--) {
+      // The session's graded outcomes so far, most recent first, each tagged
+      // with the area it came from — the engine weighs same-area results
+      // differently from the rest, so an untagged list would throw away the
+      // distinction it needs. Four rather than three, because the weaker
+      // cross-area branch asks for a longer run before it moves anything.
+      const outcomes: { ok: boolean; bucket: BucketId }[] = []
+      for (let bi = plan.blocks.length - 1; bi >= 0 && outcomes.length < 4; bi--) {
         const b = plan.blocks[bi]
-        for (let ai = b.activities.length - 1; ai >= 0 && outcomes.length < 3; ai--) {
+        for (let ai = b.activities.length - 1; ai >= 0 && outcomes.length < 4; ai--) {
           const rec = records[`${bi}:${ai}`]
-          if (rec?.eventLogged && rec.firstCorrect !== null) outcomes.push(rec.firstCorrect === true)
+          if (!rec?.eventLogged || rec.firstCorrect === null) continue
+          const bucket = index.templates.get(b.activities[ai].templateId)?.bucket
+          if (!bucket) continue
+          outcomes.push({ ok: rec.firstCorrect === true, bucket })
         }
       }
 

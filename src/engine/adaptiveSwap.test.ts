@@ -29,8 +29,16 @@ function planWith(activities: { templateId: string; seed: number }[]): SessionPl
   } as unknown as SessionPlan
 }
 
-const CRUISING = [true, true, true]
-const STRUGGLING = [false, false]
+/*
+ * Outcomes carry the area they came from: the engine trusts same-area results
+ * on a shorter run than results from elsewhere. These fixtures are all
+ * mathematics, matching the m-proportion families under test, so they exercise
+ * the local branch — thresholds 3 up, 2 down.
+ */
+const ok = (n: number, val: boolean) =>
+  Array.from({ length: n }, () => ({ ok: val, bucket: 'math' as const }))
+const CRUISING = ok(3, true)
+const STRUGGLING = ok(2, false)
 
 describe('within-session difficulty adjustment', () => {
   it('never swaps in a template already used this session', () => {
@@ -66,8 +74,48 @@ describe('within-session difficulty adjustment', () => {
   it('does nothing without enough graded evidence, or on a mixed run', () => {
     const plan = planWith([{ templateId: 'prop-word', seed: 3 }])
     expect(adaptiveSwap(plan, DEFAULT_INDEX, { block: 0, act: 0 }, [])).toBeNull()
-    expect(adaptiveSwap(plan, DEFAULT_INDEX, { block: 0, act: 0 }, [true])).toBeNull()
-    expect(adaptiveSwap(plan, DEFAULT_INDEX, { block: 0, act: 0 }, [true, false, true])).toBeNull()
+    expect(adaptiveSwap(plan, DEFAULT_INDEX, { block: 0, act: 0 }, ok(1, true))).toBeNull()
+    expect(
+      adaptiveSwap(plan, DEFAULT_INDEX, { block: 0, act: 0 }, [
+        { ok: true, bucket: 'math' },
+        { ok: false, bucket: 'math' },
+        { ok: true, bucket: 'math' },
+      ]),
+    ).toBeNull()
+  })
+
+  /**
+   * The reason outcomes carry an area at all: a run of misses somewhere else
+   * is not evidence that THIS area is too hard. Two wrong answers in physics
+   * used to ease the next mathematics item.
+   */
+  it('does not ease an area on the strength of misses in a different one', () => {
+    const plan = planWith([{ templateId: 'prop-word', seed: 3 }])
+    const elsewhere = [
+      { ok: false, bucket: 'physics' as const },
+      { ok: false, bucket: 'physics' as const },
+    ]
+    expect(
+      adaptiveSwap(plan, DEFAULT_INDEX, { block: 0, act: 0 }, elsewhere),
+      'two misses in another area moved a mathematics item',
+    ).toBeNull()
+
+    // The same two misses IN mathematics do move it, so the test is measuring
+    // the area rule rather than some unrelated refusal to swap at all.
+    const here = ok(2, false)
+    const local = adaptiveSwap(plan, DEFAULT_INDEX, { block: 0, act: 0 }, here)
+    expect(local?.direction, 'same-area misses should still ease').toBe('eased')
+  })
+
+  it('still reacts to a longer run of misses across areas', () => {
+    const plan = planWith([{ templateId: 'prop-word', seed: 3 }])
+    // Three from elsewhere clears the weaker cross-area bar of 3.
+    const wide = [
+      { ok: false, bucket: 'physics' as const },
+      { ok: false, bucket: 'observer' as const },
+      { ok: false, bucket: 'coding' as const },
+    ]
+    expect(adaptiveSwap(plan, DEFAULT_INDEX, { block: 0, act: 0 }, wide)?.direction).toBe('eased')
   })
 
   it('picks a seed that does not repeat a form already served', () => {

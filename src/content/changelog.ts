@@ -11,6 +11,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '10.2',
+    date: '2026-08-15',
+    title: 'One Dial Per Subject, And The Limits Of Reading People',
+    points: [
+      'The app had a single difficulty dial for all ten subjects. It watched how often you got things right first try and pushed the work up or down — but it pushed everything up or down together, which only makes sense if you are equally good at everything. Simulating a learner who is strong at maths and weak at reasoning showed exactly what goes wrong: 96% correct in maths, 39% in observation, and the app reading the average, calling it 68%, and deciding you were in a good place. So the maths stayed too easy and the observation stayed too hard, at the same time. Each subject now has its own dial.',
+      'A thin subject does not get to shout, though. A subject you have only done six questions in recently is pulled back toward your overall level rather than believed on its own, because with numbers that small the swings are mostly noise — a learner who is genuinely the same at everything still showed 17-point gaps between subjects. After the change, that even learner shifts by 0.08 of a star (nothing), while the genuinely lopsided one separates by half a star.',
+      'Within a session, the same fix: getting two questions wrong in physics used to make the next maths question easier. Results from the subject you are actually working on now count on their own; results from elsewhere still count, but need a longer run before they move anything.',
+      'A new subject no longer arrives hard because you are doing well elsewhere. Being good at proportions says nothing about how difficult your first circuit question should be, and the old behaviour also quietly narrowed what you saw, because hard questions are rarer — so the app kept returning to topics it had already opened. One simulated learner went from meeting 133 topics to 126 before this was caught.',
+      'The identical question can no longer come back the same day. This was meant to be true already, but it was a preference rather than a rule, and it could be outvoted whenever a topic had few questions left.',
+      'Ten new question families on what your read of another person is actually worth. This is deliberately NOT a "understand people better" feature — the research pass behind it found that the training studies people cite are on four-to-six-year-olds, and the best review of the field found taught gains do not carry into real situations. What does hold up is less flattering and more useful: across 25 experiments, imagining someone else\'s point of view made people MORE confident and no more accurate, while simply asking them worked. So the topics are how to tell those two apart, how to keep what you saw separate from what you added, how to track who knows what, and how to ask a question that can actually be answered honestly. All of it is defensive — about doubting your own confident reads, never about reading anyone else for advantage — and one item in each set says plainly that some situations are not yours to work out alone.',
+    ],
+  },
+  {
     version: '10.1',
     date: '2026-08-12',
     title: 'The Balance Was Never In The Settings',

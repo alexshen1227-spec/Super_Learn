@@ -37,7 +37,7 @@ import { goalSkillIds } from './goals'
 import type { RepairTarget } from './errors'
 import { calendarDaysUntil } from './time'
 import { calibrationGap } from './calibration'
-import { stretchSignal } from './stretch'
+import { areaStretch, stretchSignal } from './stretch'
 import { isPflTemplate } from './pfl'
 import { type MathTrack } from '../content/tracks'
 import { getReadyReport } from './getReady'
@@ -288,9 +288,24 @@ export function targetDifficulty(
   // A placement floor applies only where practice has not yet spoken.
   const placementFloor = stateRank(ev.state) >= stateRank('independent') ? 0 : placement === 'strong' ? 3 : placement === 'ok' ? 2.5 : 0
   const base = Math.max(fromEvidence, placementFloor)
+  /*
+   * The dial may lower a first meeting; it may not raise one.
+   *
+   * An unseen skill enters at 1.5, so a learner cruising elsewhere used to have
+   * brand-new skills introduced at 3. That is wrong on its own terms — doing
+   * well at proportions says nothing about how hard someone's first circuit
+   * problem should be — and it quietly cost breadth, because hard templates are
+   * scarcer than easy ones, so the selector kept returning to skills it had
+   * already met rather than opening one it had not. Measured when the dial went
+   * per-area: one low-volume learner shape fell from 133 skills met to 126.
+   *
+   * Easing still applies. Someone struggling across the board should meet a new
+   * idea gently, and that direction costs no coverage.
+   */
+  const localStretch = ev.state === 'unseen' ? Math.min(0, stretch) : stretch
   const adjusted =
     base +
-    stretch +
+    localStretch +
     (energy === 'high' && !conservative ? 0.5 : 0) -
     (energy === 'low' ? 0.5 : 0) -
     // Recent misses on THIS skill still pull down even while the global signal
@@ -358,7 +373,26 @@ function pickTemplates(
   // just a re-read. So diagrams stay filtered out of every degraded stage —
   // without this, the extra variety the cooldown created pushed one diagram
   // to 11 servings against a soft cap of 3.
-  const degrade = (list: ItemTemplate[]) => list.filter((t) => !isExploreTemplate(t.id) || rested.includes(t))
+  /*
+   * One thing the degrade must never trade away: the IDENTICAL question twice
+   * inside a day.
+   *
+   * `rested` already excludes it, so while the top stage has anything in it the
+   * rule holds by accident. Both lower stages dropped the whole cooldown, which
+   * left the guarantee resting on the scorer happening to prefer something
+   * else — and it only has to lose once. It duly did, the first time a change
+   * elsewhere moved the difficulty targets: a learner practising twice a day
+   * was handed back a question from that morning.
+   *
+   * The comment above justifies degrading by "a due review is never skipped",
+   * and that reason does not reach this case. The review is of a SKILL, and the
+   * skill can be reviewed through any other template in its family; only when a
+   * family has exactly one does this bite, and then the honest options are a
+   * few hours' wait or a re-read of an answer already given today. Spacing wins.
+   */
+  const sameDay = (t: ItemTemplate) => (templateUse.get(t.id)?.daysSince ?? Number.POSITIVE_INFINITY) < 1
+  const degrade = (list: ItemTemplate[]) =>
+    list.filter((t) => (!isExploreTemplate(t.id) || rested.includes(t)) && !sameDay(t))
   const pickable = rested.length ? rested : notThisSession.length ? degrade(notThisSession) : degrade(pool)
   const scored = pickable
     .map((t) => ({
@@ -567,7 +601,7 @@ export const PATH_CORE_DEBT = 0.2
 export const STARVED_BOOST = 3.4
 
 /** Placement-cleared material is deprioritised so the frontier moves on. */
-const CAPABLE_PENALTY = 2
+const CAPABLE_PENALTY = 2
 /**
  * How hard to push the frontier off a skill the content cannot prove.
  *
@@ -990,16 +1024,35 @@ export function adaptiveSwap(
   plan: SessionPlan,
   index: ContentIndex,
   at: { block: number; act: number },
-  outcomes: boolean[],
+  /** The session's graded outcomes so far, most recent first, tagged by area. */
+  outcomes: { ok: boolean; bucket: BucketId }[],
 ): { templateId: string; seed: number; direction: 'eased' | 'stepped-up' } | null {
   const target = plan.blocks[at.block]?.activities[at.act]
   if (!target) return null
   const current = index.templates.get(target.templateId)
   if (!current) return null
 
-  if (outcomes.length < 2) return null
-  const struggling = outcomes.slice(0, 2).every((ok) => !ok)
-  const cruising = outcomes.length >= 3 && outcomes.slice(0, 3).every((ok) => ok)
+  /*
+   * Whose outcomes count.
+   *
+   * These used to be the session's last three results whatever area they came
+   * from, so two misses in physics could ease the next mathematics item — the
+   * within-session twin of the problem `areaStretch` fixes between sessions.
+   *
+   * Outcomes from the SAME area as the item being replaced are the relevant
+   * evidence, so they are used whenever there are enough of them. Outcomes from
+   * elsewhere are weak evidence rather than none — a learner falling apart
+   * across the whole session is telling you something — so they still count,
+   * but need a longer run to move anything.
+   */
+  const sameArea = outcomes.filter((o) => o.bucket === current.bucket).map((o) => o.ok)
+  const relevant = sameArea.length >= 2 ? sameArea : outcomes.map((o) => o.ok)
+  const local = sameArea.length >= 2
+  const needDown = local ? 2 : 3
+  const needUp = local ? 3 : 4
+  if (relevant.length < needDown) return null
+  const struggling = relevant.slice(0, needDown).every((ok) => !ok)
+  const cruising = relevant.length >= needUp && relevant.slice(0, needUp).every((ok) => ok)
   if (!struggling && !cruising) return null
 
   const wanted = Math.max(1, Math.min(5, current.difficulty + (struggling ? -1 : 1)))
@@ -1089,13 +1142,55 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   // Is the diet currently under or over this learner? Silent until there is
   // enough graded evidence to say (engine/stretch.ts).
   const stretch = stretchSignal(judged, now)
+  // The same question per area, because one number cannot describe a learner
+  // who is cruising in one subject and drowning in another. Falls back to the
+  // global figure wherever an area has too little of its own evidence.
+  const areaDial = areaStretch(judged, now)
+  /*
+   * The dial may push an area up by less than the global signal is allowed to.
+   *
+   * `stretchSignal`'s top band (+1.5, "the work is under you") was written for
+   * a figure blended across all ten areas, which almost never reaches 90%. A
+   * PER-AREA figure reaches it often — a strong maths student sits at 95% in
+   * maths alone — and +1.5 on top of an established skill asks for difficulty
+   * 4.5, at which point the selector's too-easy penalty (2.6 a star) swamps the
+   * unseen-family bonus (3.25) for every other skill sharing that block. The
+   * measured cost was 11 skills never met over five years for a learner who
+   * drops to weekends.
+   *
+   * Capping the rise keeps almost all of the aim and none of the cost. On the
+   * lopsided learner in `sim/lopsided.sim.ts` the gap in difficulty served
+   * between strong and weak areas reads 0.46 stars capped against 0.50
+   * uncapped, where a single global dial managed 0.21; the learner who drops to
+   * weekends is back above the coverage floor, and the lightest learner of all
+   * gains four skills over the uncapped version.
+   *
+   * Easing is deliberately NOT capped. Lowering a target cannot crowd anything
+   * out of a block, so the failure mode this guards against does not exist in
+   * that direction.
+   */
+  const MAX_AREA_RISE = 0.75
+  const dialFor = (skillId: string): number =>
+    Math.min(MAX_AREA_RISE, areaDial(index.skills.get(skillId)?.bucket).adjust)
   if (stretch.why && stretch.adjust !== 0) rationale.push(stretch.why)
+  // Areas that disagree with the overall reading get their own line, or the
+  // plan would silently aim one block up and another down while showing a
+  // single sentence that explains neither.
+  {
+    const seen = new Set<string>()
+    for (const b of BUCKETS) {
+      const a = areaDial(b.id)
+      if (a.adjust === stretch.adjust || !a.why || seen.has(a.why)) continue
+      seen.add(a.why)
+      rationale.push(a.why)
+    }
+  }
   /*
    * While the dial is asking for easier work, template selection has to want
    * easier work too. Without this the dial computed a lower target and the
    * selector quietly overshot it — see MISMATCH_EASING in plannerPolicy.
    */
-  const easing = stretch.adjust < 0
+  const easingFor = (skillId: string | undefined): boolean => (skillId ? dialFor(skillId) < 0 : stretch.adjust < 0)
   const total = checkIn.minutes
   const short = total <= 12
   /*
@@ -1221,10 +1316,10 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     const ev = evidenceFor(evidence, d.skillId)
     const picks = pickTemplates(
       index.bySkill.get(d.skillId) ?? [],
-      Math.min(stretch.adjust > 0 ? 4 : 3, targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, d.skillId), stretch.adjust)),
+      Math.min(dialFor(d.skillId) > 0 ? 4 : 3, targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, d.skillId), dialFor(d.skillId))),
       1,
       templateUse,
-      { easing, used },
+      { easing: easingFor(d.skillId), used },
     )
     if (picks.length && warmFits(picks[0].minutes)) {
       for (const s of picks[0].skillIds) coveredSkills.add(s)
@@ -1409,7 +1504,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   }
   if (coreChoice) {
     const ev = evidenceFor(evidence, coreChoice.skill.id)
-    const diff = targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, coreChoice.skill.id), stretch.adjust)
+    const diff = targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, coreChoice.skill.id), dialFor(coreChoice.skill.id))
     // Every block the plan is going to add has to come out of the same budget.
     // The short branch used to omit `labBudget` while the comment beside
     // `labBudget` claimed it subtracted it — so a ten-minute session was
@@ -1441,7 +1536,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       maxCount: short ? 2 : 8,
       minCount: short ? 1 : 3,
       preferCalibration: miscalibrated,
-      easing,
+      easing: easingFor(coreChoice.skill.id),
       used,
     })
     const actsCore: PlannedActivity[] = picks.map((t, i) =>
@@ -1496,10 +1591,10 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       labTemplates.push(
         ...pickTemplatesForBudget(
           index.bySkill.get(labSkill.skill.id) ?? [],
-          targetDifficulty(evidenceFor(evidence, labSkill.skill.id), checkIn.energy, conservative, placementSignal(state, labSkill.skill.id), stretch.adjust),
+          targetDifficulty(evidenceFor(evidence, labSkill.skill.id), checkIn.energy, conservative, placementSignal(state, labSkill.skill.id), dialFor(labSkill.skill.id)),
           labBudget,
           templateUse,
-          { maxCount: short ? 1 : total >= 40 ? 4 : 3, minCount: 1, easing, used },
+          { maxCount: short ? 1 : total >= 40 ? 4 : 3, minCount: 1, easing: easingFor(labSkill.skill.id), used },
         ),
       )
     } else {
@@ -1565,11 +1660,11 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       2,
       1,
       templateUse,
-      { easing, used },
+      { easing: easingFor(coreSkillId), used },
     )
     const fallback = exitPick.length
       ? exitPick
-      : pickTemplates(index.bySkill.get(coreSkillId) ?? [], 2, 1, templateUse, { easing, used })
+      : pickTemplates(index.bySkill.get(coreSkillId) ?? [], 2, 1, templateUse, { easing: easingFor(coreSkillId), used })
     if (fallback.length) {
       blocks.push({
         id: uid('b'),

@@ -38,6 +38,23 @@ export default defineConfig({
       manifest: false, // public/manifest.webmanifest is hand-maintained
       includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'manifest.webmanifest'],
       workbox: {
+        /*
+         * The content bundle is one big chunk and it has to be precached.
+         *
+         * Workbox refuses anything over 2 MiB by default, and the question-bank
+         * chunk crossed that line as the bank grew. Silently leaving it out is
+         * the worst available outcome for this app specifically: a learner who
+         * installs the PWA and opens it on a train would get a shell with no
+         * questions in it, which reads as the app being broken rather than as a
+         * caching limit. Offline-first is a founding constraint, so the limit
+         * moves rather than the content.
+         *
+         * The cost is honest and bounded: a larger first-install download. It
+         * is a one-off, it is already being downloaded on first visit, and the
+         * chunk is content rather than code, so it changes only when the bank
+         * does.
+         */
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
         globIgnores: [
           // version.json must always come from the network — it is the update signal.

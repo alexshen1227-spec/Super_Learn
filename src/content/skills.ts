@@ -410,6 +410,37 @@ const insight = defineCourse(
         { id: 'h-repair', name: 'Repair after it goes wrong', bucket: 'insight', prereqs: ['h-boundary'], gradeBand: 8, blurb: 'What an apology has to contain to actually work, and what turns one into a second injury.' },
       ],
     },
+    {
+      /*
+       * Requested as "theory of mind / mentalizing". RESEARCH.md §42 explains at
+       * length why that is NOT what this unit claims to train, and the short
+       * version belongs here where the skills are defined.
+       *
+       * The training evidence people cite (Hofmann et al. 2016, g = .75) is on
+       * children of mean age 63 months acquiring first-order false belief —
+       * a milestone this app's learner passed a decade ago — and the Cochrane
+       * review of ToM interventions found poor evidence that taught gains are
+       * maintained or generalise at all. So none of these skills promises that
+       * the learner will understand people better.
+       *
+       * What they teach is the EPISTEMICS of reading people: how reliable your
+       * reading is, what actually improves it, and what only feels like it does.
+       * That rests on Eyal, Steffel & Epley (2018), 25 experiments in which
+       * being told to take someone's perspective did not improve accuracy,
+       * sometimes worsened it, and raised confidence — while ASKING worked.
+       *
+       * Direction is content law, as everywhere in Insight. This is defence and
+       * self-correction: it makes the learner doubt their own confident reads,
+       * which is the opposite of a technique for reading people.
+       */
+      id: 'u-minds',
+      name: 'Other minds, honestly',
+      skills: [
+        { id: 'h-mindread', name: 'How good is your read?', bucket: 'insight', prereqs: ['h-projection'], gradeBand: 9, blurb: 'Imagining someone’s point of view makes you more confident without making you more right. Know which moves actually help.' },
+        { id: 'h-nested', name: 'What they think you think', bucket: 'insight', prereqs: ['h-mindread'], gradeBand: 9, blurb: 'Track a belief about a belief without losing the thread. This is nested logic wearing a social costume.' },
+        { id: 'h-asking', name: 'Asking instead of guessing', bucket: 'insight', prereqs: ['h-mindread'], gradeBand: 9, blurb: 'The question that would settle it, phrased so it can actually be asked out loud.' },
+      ],
+    },
   ],
 )
 
