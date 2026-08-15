@@ -861,6 +861,39 @@ describe('items are answerable and fair', () => {
     }
   })
 
+  /**
+   * The narrower rule above only fires mid-text, after a full stop or a blank
+   * line, and it needs a verb from a fixed list right after the first word. So
+   * a prompt whose very FIRST character came from an interpolation slipped
+   * through it completely: "two coffee stalls are placing themselves along a
+   * single station platform" shipped and was caught by eye in the browser, not
+   * by this file.
+   *
+   * This checks the one position the other rule cannot see.
+   */
+  it('no visible text begins with a lower-case letter', () => {
+    const offences: string[] = []
+    for (const { t, seed, item } of renders) {
+      // SENTENCES only. Answer options are legitimately fragments — "meters
+      // per second", "newtons (N)" — and the first version of this flagged
+      // every SI unit in the physics bank, which is the audit being wrong
+      // rather than the content.
+      const sentences = [item.prompt, item.explanation, ...(item.parts ?? []).flatMap((p) => [p.prompt, p.explanation])]
+      for (const text of sentences) {
+        if (!text) continue
+        const firstLine = text.split('\n')[0]
+        // Deliberate markdown emphasis on a term keeps its own case: an
+        // explanation opening "**meters per second**" is correct, and stripping
+        // the asterisks before testing flagged every SI unit in physics.
+        if (/^[\s*_`>#-]/.test(text)) continue
+        // Code prompts open lower-case by definition.
+        if (/[=;{}()]/.test(firstLine)) continue
+        if (/^[a-z][a-z-]{2,}\s/.test(text)) offences.push(`${t.id}@${seed}: "${firstLine.slice(0, 40)}"`)
+      }
+    }
+    expect(offences.slice(0, 8), 'visible text starts lower-case').toEqual([])
+  })
+
   it('multiple choice offers a real choice', () => {
     for (const { t, seed, item } of renders) {
       for (const spec of specsOf(item)) {

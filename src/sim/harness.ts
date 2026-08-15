@@ -87,6 +87,15 @@ export interface SimResult {
   rungs: Record<string, number>
   /** Skills at `independent` or above. */
   owned: number
+  /**
+   * WHICH skills reached Independent, not just how many.
+   *
+   * The five-year reach gate asks whether a learner was left holding skills
+   * they were READY for, and readiness means the prerequisites were PROVED —
+   * merely having been served one once is not the same thing, and a gate built
+   * on the weaker signal reports gaps that are the planner correctly waiting.
+   */
+  ownedSkills: string[]
   /** North star: re-proved unaided after 14+ days on a different family. */
   durable: number
   everUnaided: number
@@ -380,6 +389,7 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
     untouched: ALL_SKILLS.filter((s) => !ev.has(s)),
     rungs,
     owned: [...ev.values()].filter((v) => rank(v.state) >= rank('independent')).length,
+    ownedSkills: [...ev.entries()].filter(([, v]) => rank(v.state) >= rank('independent')).map(([id]) => id),
     durable: star.durable.length,
     everUnaided: star.everUnaided,
     minutesPerDurable: star.minutesPerDurableSkill,

@@ -513,3 +513,55 @@ harder. Averaging them together meant any breadth/core change moved the number
 for reasons unrelated to the frontier. Narrowed to maths items, and CANARIED:
 making the frontier ignore the placement signal still fails it (2.56 against
 2.78), so it caught what it was written for.
+
+---
+
+## The deepest game theory does not reach the lightest users (2026-08-15)
+
+Found by reframing the five-year reach gate. It used to ask "did this learner
+touch 85% of all skills" — a constant that breaks every time the curriculum
+grows, so growing the bank made it fail for arithmetic reasons while hiding
+anything real underneath. It now asks the question it always meant: **of the
+skills whose prerequisites this learner has PROVED to Independent, how many
+were never served at all?**
+
+**Measured over five years, after the game-theory expansion — 53 across five of
+the 38 shapes:**
+
+| learner shape | skills stranded | why |
+|---|---|---|
+| goal: everything at once | 13 | tilt |
+| goal: Everyday reasoning & judgement | 11 | tilt |
+| keen for a year, then weekends | 11 | volume |
+| 10m sporadic — the lightest real user | 10 | volume |
+| leans on hints (45% hinted) | 8 | volume |
+| the other 33 shapes | 0 | — |
+
+Every stranded skill is one added in this pass: `i-levelk`, `i-mixed`,
+`i-median`, `i-credible`, `i-fairness`, `i-trust`, `i-commons`, `i-unpredict`,
+`i-selection`, `i-iterated`, `i-common`, `i-backward`.
+
+### Two causes, and only one is a defect
+
+**Volume.** Twelve new topics went into one bucket. That bucket has a fixed share of the
+minutes, so its tail now takes longer to arrive than a ten-minute sporadic
+learner has in five years. Nothing is unreachable in principle and no earlier
+skill was displaced — the pre-existing Path skills that appeared in the first
+measurement turned out to be an artifact of a looser definition of "ready", and
+do not strand once readiness means prerequisites PROVED rather than merely met.
+
+Shortening four prerequisite chains helped and was worth doing on its own
+terms: level-k, mixed strategies, fairness and trust now hang off the
+cooperation lab rather than off each other, because they are parallel ideas
+rather than sequential ones.
+
+### The honest trade
+
+The game-theory material is now deep enough that the lightest users will not
+finish it inside five years. Two ways to make that number go away and both are
+worse: thin the curriculum, or give the Investigator bucket a larger share and
+starve something else. **This is a real cost of depth and it is worth paying.**
+For the app's actual owner at 30+ minutes a day, everything is reached.
+
+The gate pins the three shapes by name and asserts the count does not grow, so
+the cost stays visible and anything NEW stranding fails.

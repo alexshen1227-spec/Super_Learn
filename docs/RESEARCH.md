@@ -3568,3 +3568,133 @@ zero anyway, so the exemption stays visible rather than tidied away.
 **Generalisable, and the second time this pass:** a feature whose failure mode is
 SILENCE needs a delivery measurement, not just a correctness one. Every gate
 here was green while the thing never ran.
+
+---
+
+## 44. Behavioural game theory, and the "neuroplasticity" claim (2026-08-15)
+
+Two requests in one message: complete the game-theory curriculum against named
+sources, and a screenshot of a search-engine summary asserting that you can
+"absolutely increase your functional intelligence by practicing and tackling
+tough problems". The second is answered first because it is the one that would
+change what the app is allowed to say.
+
+### 44a. The summary is partly right, and wrong where it matters
+
+The claim bundles two things that behave completely differently.
+
+**True, and it is the whole app**: you get better at what you practise, and the
+brain changes as you do. Nobody disputes that.
+
+**Not supported**: that this raises general ability. Simons, Boot, Charness,
+Gathercole, Chabris, Hambrick & Stine-Morrow (2016), *Psychological Science in
+the Public Interest* 17(3), 103-186 — the largest review of the field — found
+extensive evidence that training improves performance **on the trained tasks**,
+less evidence for closely related tasks, and **little evidence that it improves
+distantly related tasks or everyday cognitive performance**. That sits beside
+§29a's g = 0.00 far transfer against active controls.
+
+Two specific mechanisms in the summary are shakier than it implies:
+
+- **"Drives neurogenesis: heavy learning grows new brain cells."** Stated as
+  settled; it is not. Sorrells et al. (2018), *Nature* 555, found young neurons
+  dropping to **undetectable levels in adults aged 18-77**, while Boldrini et
+  al. (2018, *Cell Stem Cell*) reported persistent neurogenesis using comparable
+  tissue. The field is in open methodological disagreement about whether the
+  phenomenon exists in adult humans at all.
+- **"Thicker myelin makes thoughts travel faster"** → therefore smarter. Each
+  step is plausible and the chain from conduction velocity to general ability is
+  not established. A mechanism that could explain a result is not evidence for
+  the result.
+
+**Consequence for the app: nothing changes.** The founding brief's refusal to
+claim an intelligence gain stands, and §41a's defensible substitute stands with
+it. The right reply to a learner who reads that summary is not "you cannot get
+better at thinking" — you can — but "you get better at the things you practise,
+and the app should be judged on whether those things show up unprompted", which
+is exactly what §43's spontaneity probes now measure.
+
+### 44b. The curriculum is now complete against a named standard
+
+Requested sources: Dixit & Nalebuff (*Thinking Strategically*, *The Art of
+Strategy*) and Yale's ECON 159 (Ben Polak, Open Yale Courses). ECON 159's
+24-lecture sequence was used as the checklist, since it is public and specific:
+
+| ECON 159 | Where it lives now |
+|---|---|
+| Dominance; never play a dominated strategy | `gameTheory.ts` (part one) |
+| Iterative deletion | `i-iterated` |
+| Median voter | `i-median` — **added this pass** |
+| Best response | part one |
+| Nash equilibrium | part one |
+| Mixed strategies (tennis, penalties) | `i-mixed` — **added this pass** |
+| Evolutionary stability | not built — see below |
+| Backward induction | `i-backward` |
+| Credible threats, commitment | `i-credible` — **added this pass** |
+| Ultimatums and bargaining | `i-fairness` — **added this pass** |
+| Subgame perfection | partly, via `i-credible` |
+| Wars of attrition | not built |
+| Repeated games | part one |
+| Asymmetric information, signalling | part one, `i-selection` |
+| Auctions and the winner's curse | `i-selection` |
+
+Deliberately not built: **evolutionary stability** and **wars of attrition**.
+The first needs a population dynamic the app has no way to render or grade
+offline; the second is largely a variant of commitment and would duplicate
+`i-credible` without adding a distinct rule. Recorded so a later session does
+not treat the gap as an oversight.
+
+From Dixit & Nalebuff the debt is emphasis rather than content: rules a person
+can carry — "look ahead and reason back", make a threat impossible to back out
+of, mix deliberately — rather than solution concepts they can name. Every
+scenario, payoff and phrase is original; the app reproduces nothing from either
+book or from the course.
+
+### 44c. Behavioural game theory, and why it belongs
+
+Equilibrium answers "what would two perfectly rational players do", and the
+experimental record repeatedly says that is not what happens. A learner who knew
+only the theory would get all three of these wrong:
+
+- **The guessing game** (pick a number, closest to two thirds of the average
+  wins). The unique equilibrium is 0 and **playing it loses**. Real play
+  clusters at 50, 33 and 22 — one, two and three steps of reasoning. A large
+  online study of chess players averaged 32.15 with visible spikes at those
+  points; in a 1981 French magazine competition with roughly 15,000 entrants,
+  two thirds of the average landed at about 9% of the maximum.
+- **The ultimatum game.** Theory: offer the minimum, since something beats
+  nothing. Practice: offers cluster at 40-50%, and an offer near 20% is refused
+  about half the time, more as it falls.
+- **Public goods with punishment.** Fehr & Gächter (2000), *American Economic
+  Review* 90(4), 980-994: adding a costly punishment option takes cooperation to
+  near-complete and holds it, where selfish rationality predicts none.
+
+Trust: Berg, Dickhaut & McCabe (1995) — with a $10 stake tripled in transit, the
+average sent was **$5.16** and the average returned **$4.66**, against a
+backward-induction prediction of zero in both directions.
+
+**Why this is not a debunking section.** The equilibrium is the correct answer
+to a precise question, and the useful skill is knowing which question you are
+in. `i-levelk` is the sharpest form: aim one step past the ACTUAL crowd, not one
+step past a perfect reasoner, because reasoning to the end overshoots the room.
+
+Boundary held throughout: the ultimatum material is framed as "the offer people
+accept", never "the least you can extract", and the punishment items are about
+norms a group would agree to in the open. The expected-value item makes the
+point without needing goodwill — the greedy offer loses on arithmetic.
+
+### 44d. What the second computation caught this time
+
+`gameTheoryLab.test.ts` re-derives every key from the rendered prompt, as §43d
+recommended. It found a defect that no structural gate could:
+
+**The trust item's prompt said the stake was "tripled" while the arithmetic used
+whichever multiplier the seed had chosen.** A learner reading carefully would
+compute a different answer from the key, on roughly two thirds of variants. The
+word and the number are now generated together.
+
+It also verifies the harder claims positively rather than by inspection: that
+the mixed-strategy key really does equalise the opponent's two payoffs (checked
+by evaluating both), and that the median-voter key really does beat every one of
+the other 100 possible proposals head to head (checked by brute force, not by
+trusting the sorting).

@@ -44,6 +44,9 @@ import type { ItemTemplate } from '../../domain/types'
 import { pick, rint, type Rng } from '../../engine/rng'
 import { mcq, multi, numeric, tpl } from '../lib'
 
+/** Capitalise an interpolated fragment that opens a sentence. */
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
+
 // ============================================================ shared engine
 
 /** A 3x3 payoff grid: grid[r][c] = [rowPayoff, colPayoff]. */
@@ -173,7 +176,7 @@ const iterated = tpl(
     const key = `**${s.cols[deadCol]}** — but only after **${s.rows[deadRow]}** is gone`
     return {
       title: 'Two steps, not one',
-      prompt: `${s.story}.\n\n${grid3String(s.rows, s.cols, g)}\n\nOne of YOUR options is worse than another no matter what they do, so you would never play it — and they can see that too. Once it is crossed out, which of THEIR options becomes one they would never play?`,
+      prompt: `${cap(s.story)}.\n\n${grid3String(s.rows, s.cols, g)}\n\nOne of YOUR options is worse than another no matter what they do, so you would never play it — and they can see that too. Once it is crossed out, which of THEIR options becomes one they would never play?`,
       answer: mcq(rng, key, [
         `**${s.cols[(deadCol + 1) % 3]}** — but only after **${s.rows[deadRow]}** is gone`,
         `**${s.cols[(deadCol + 2) % 3]}** — but only after **${s.rows[deadRow]}** is gone`,
@@ -316,7 +319,7 @@ const winnersCurse = tpl(
     return {
       title: 'The highest bidder',
       prompt:
-        `${s.who} are bidding for ${s.thing}. Nobody knows what it is really worth — each person looks it over and forms their own estimate, and everyone is equally sensible about it.\n\n` +
+        `${cap(s.who)} are bidding for ${s.thing}. Nobody knows what it is really worth — each person looks it over and forms their own estimate, and everyone is equally sensible about it.\n\n` +
         `The five estimates turn out to be: **${guesses.join(', ')}** ${s.unit}.\n\n` +
         `Each person bids their own estimate, so the winner is whoever guessed **${top}**. You are that person.\n\nWhat does winning tell you?`,
       answer: mcq(rng, `That I probably had the most over-optimistic estimate of the five, so I likely overpaid`, [
@@ -606,7 +609,7 @@ const commons = tpl(
     return {
       title: 'Worth it for me, not for us',
       prompt:
-        `${s.who} share ${s.pool}. Any one of them can take **${s.unit}** for ${s.gain}.\n\n` +
+        `${cap(s.who)} share ${s.pool}. Any one of them can take **${s.unit}** for ${s.gain}.\n\n` +
         `- Taking it is worth **+${gain}** to the club that takes it.\n` +
         `- It costs **${costEach}** to every one of the ${n} clubs, including the one that took it.\n\n` +
         `Work out the net effect on the club that takes it, and on the ${n} clubs added together.`,
@@ -732,7 +735,7 @@ const iteratedEntry = tpl(
     const { g, deadRow } = iteratedGame(rng)
     return {
       title: 'One step',
-      prompt: `${s.story}.\n\n${grid3String(s.rows, s.cols, g)}\n\nOne of your three options pays you less than another **whatever they do**. Which one would you never play?`,
+      prompt: `${cap(s.story)}.\n\n${grid3String(s.rows, s.cols, g)}\n\nOne of your three options pays you less than another **whatever they do**. Which one would you never play?`,
       answer: mcq(rng, `**${s.rows[deadRow]}**`, [
         `**${s.rows[(deadRow + 1) % 3]}**`,
         `**${s.rows[(deadRow + 2) % 3]}**`,
