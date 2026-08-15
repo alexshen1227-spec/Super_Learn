@@ -341,6 +341,12 @@ const investigator = defineCourse(
          * adopted K-12 reasoning standard beyond this; everything else in the
          * Paths is the app's own construction and says so.
          */
+        { id: 'i-iterated', name: 'Cross out, then look again', bucket: 'investigator', prereqs: ['i-equilibrium'], gradeBand: 9, blurb: 'Ruling out what you would never do can rule out something for them. Most people stop after one pass.' },
+        { id: 'i-backward', name: 'Start at the end', bucket: 'investigator', prereqs: ['i-equilibrium'], gradeBand: 9, blurb: 'When someone moves after you, your real choice is between their replies — so solve the last move first.' },
+        { id: 'i-selection', name: 'Why winning can be bad news', bucket: 'investigator', prereqs: ['i-refclass'], gradeBand: 10, blurb: 'If you got it because you were keenest, ask what the people who passed could see.' },
+        { id: 'i-common', name: 'Do they know that you know?', bucket: 'investigator', prereqs: ['i-conditional'], gradeBand: 10, blurb: '“Everyone knows” and “everyone knows that everyone knows” are different, and acting together needs the second.' },
+        { id: 'i-unpredict', name: 'When a pattern is the loss', bucket: 'investigator', prereqs: ['i-equilibrium'], gradeBand: 9, blurb: 'Where somebody can act on your pattern, having one IS the loss — and you cannot be random by trying.' },
+        { id: 'i-commons', name: 'Sensible each time, ruinous together', bucket: 'investigator', prereqs: ['i-game'], gradeBand: 9, blurb: 'Private gain, shared cost: everyone choosing correctly still wrecks the thing. Fix the arithmetic, not the manners.' },
         { id: 'i-fallacy', name: 'Named ways an argument breaks', bucket: 'investigator', prereqs: ['i-logic'], gradeBand: 9, blurb: 'A closed list of specific, nameable faults — and the practice of finding which one is present.' },
       ],
     },

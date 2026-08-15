@@ -61,19 +61,33 @@ export function aggregateParts(outcomes: PartOutcome[], hintsUsed: number): Aggr
  * `supported` marks work that handed the learner the explanation up front — a
  * PFL probe. Answering one is genuinely informative, but it is never unaided,
  * so it must never be described as the evidence that advances skills.
+ *
+ * `unprompted` marks a SPONTANEITY probe, which is the opposite case: the
+ * learner had no help at all, and it still does not advance any skill, because
+ * a probe deliberately withholds which method applies. Shipped once without
+ * this and caught on the production build: the banner read "that is the
+ * evidence that advances skills" directly above an explanation saying the
+ * opposite. The learner would have had no way to tell which was true.
  */
 export function verdictMessage({
   ok,
   firstTry,
   hintsUsed,
   supported,
+  unprompted = false,
 }: {
   ok: boolean | null
   firstTry: boolean
   hintsUsed: number
   supported: boolean
+  unprompted?: boolean
 }): string {
   if (ok === null) return 'Recorded.'
+  if (unprompted) {
+    return ok
+      ? 'Right, with nothing pointing at the answer. That is the harder version — and it is reported on its own rather than counting toward any skill.'
+      : 'Not this time. Nothing here told you which idea applied, which is the whole point of these — they are reported on their own and never count against a skill.'
+  }
   if (supported) {
     return ok
       ? 'Correct — but you were given the explanation, so this is not counted as independent evidence. It measures how well you pick a new idea up.'

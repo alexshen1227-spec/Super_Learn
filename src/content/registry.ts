@@ -54,6 +54,8 @@ import { UNSEEN_TEMPLATES } from './items/unseenLab'
 import { CHOICE_TEMPLATES } from './items/choiceLab'
 import { READING_TEMPLATES } from './items/readingSituations'
 import { OTHER_MINDS_TEMPLATES } from './items/otherMinds'
+import { GAME_DEPTH_TEMPLATES } from './items/gameTheoryDepth'
+import { SPONTANEITY_TEMPLATES } from './items/spontaneityProbes'
 import { SEARCH_TEMPLATES } from './items/searchLab'
 import { DATA_LITERACY_TEMPLATES } from './items/dataLiteracy'
 import { IMPORTED_TEMPLATES } from './items/imported'
@@ -125,6 +127,8 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...CHOICE_TEMPLATES,
   ...READING_TEMPLATES,
   ...OTHER_MINDS_TEMPLATES,
+  ...GAME_DEPTH_TEMPLATES,
+  ...SPONTANEITY_TEMPLATES,
   ...SEARCH_TEMPLATES,
   ...DATA_LITERACY_TEMPLATES,
   ...IMPORTED_TEMPLATES,

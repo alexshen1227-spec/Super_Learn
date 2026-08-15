@@ -21,6 +21,7 @@
  */
 import type { AttemptEvent, SkillEvidence, SkillState } from '../domain/types'
 import { isPflTemplate } from './pflId'
+import { isSpontaneousTemplate } from './probeId'
 
 export const STATE_ORDER: SkillState[] = [
   'unseen',
@@ -613,9 +614,15 @@ export function deriveEvidence(events: AttemptEvent[], now: number): Map<string,
 }
 
 /**
- * A PFL probe hands the learner the explanation before asking, so it can never
- * be evidence of ownership in either direction. The player writes probes as
- * exposure already; this re-imposes it during REPLAY so the guarantee does not
+ * Two kinds of item can never be evidence of ownership in either direction.
+ *
+ * A PFL probe hands the learner the explanation before asking. A SPONTANEITY
+ * probe deliberately withholds which method applies, so a miss says the rule
+ * did not fire rather than that the skill is weak — and a hit is not proof of
+ * the skill either, since several probes share one topic. Both are measured
+ * elsewhere and neither may touch the ladder.
+ *
+ * This re-imposes it during REPLAY so the guarantee does not
  * depend on who wrote the event.
  *
  * That matters for two real cases: events imported from another device (all
@@ -625,7 +632,7 @@ export function deriveEvidence(events: AttemptEvent[], now: number): Map<string,
  * over-crediting forever.
  */
 function asExposureIfProbe(e: AttemptEvent): AttemptEvent {
-  if (!isPflTemplate(e.templateId)) return e
+  if (!isPflTemplate(e.templateId) && !isSpontaneousTemplate(e.templateId)) return e
   if (e.correct === null && e.firstCorrect === null) return e
   return { ...e, correct: null, firstCorrect: null }
 }

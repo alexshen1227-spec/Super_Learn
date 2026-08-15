@@ -12,10 +12,12 @@
  * cost in focused minutes.
  */
 import { useMemo } from 'react'
-import { useStore } from '../../store/store'
+import { useEvidence, useStore } from '../../store/store'
 import { DURABLE_GAP_DAYS, QUARTER_DAYS, durableByWeek, northStar } from '../../engine/northStar'
 import { SKILL_BY_ID, SKILLS } from '../../content/skills'
 import { curriculumEnd } from '../../engine/curriculumEnd'
+import { spontaneityReport } from '../../engine/spontaneity'
+import { DEFAULT_INDEX } from '../../content/registry'
 import { Card } from '../components'
 
 function Figure({ value, label, sub }: { value: string; label: string; sub?: string }) {
@@ -40,6 +42,11 @@ export function NorthStarPanel() {
   const end = useMemo(
     () => curriculumEnd(state.events, state.disputes, SKILLS, now),
     [state.events, state.disputes, now],
+  )
+  const evidence = useEvidence()
+  const spont = useMemo(
+    () => spontaneityReport(state.events, DEFAULT_INDEX, evidence),
+    [state.events, evidence],
   )
 
   return (
@@ -91,6 +98,29 @@ export function NorthStarPanel() {
                 is a finite curriculum, so at some point new topics stop arriving and practice becomes maintenance.
               </>
             )}
+          </p>
+        </div>
+      ) : null}
+
+      {/*
+        The one thing every other number here cannot tell you.
+        Everything above measures answers given inside a topic's own practice,
+        which shows a method can be RUN once you know to reach for it. This asks
+        whether it fires when nothing points the way. It stays silent until
+        there are enough probes to mean anything, and it deliberately does not
+        appear as a score next to the others — it is not a rung, and nothing
+        about it feeds what gets scheduled.
+      */}
+      {spont.summary ? (
+        <div className="mt-5 pt-4 border-t border-line">
+          <h3 className="text-[14px] font-medium">When nothing tells you which idea to use</h3>
+          <p className="text-[13px] text-muted leading-snug mt-1">{spont.summary}</p>
+          <p className="text-[12px] text-muted leading-snug mt-1.5">
+            Measured over {spont.attempts} unprompted {spont.attempts === 1 ? 'question' : 'questions'}
+            {spont.promptedAttempts > 0
+              ? ` against ${spont.promptedAttempts} ordinary ${spont.promptedAttempts === 1 ? 'one' : 'ones'} on the same topics`
+              : ''}
+            . These never count toward any skill.
           </p>
         </div>
       ) : null}

@@ -3205,9 +3205,16 @@ deliberately never asks how or how long (which drops it to .24).
    EVIDENCE mechanism (41d).
 5. Contrasting cases BEFORE the explanation, not after — §20a already records
    that most Path explanations do the failing order.
-6. A genuine spontaneity probe: several taught principles plausible, none named
-   in the prompt, "none of these applies" a real answer. The only thing that
-   would measure Barnett & Ceci's memory-demands dimension rather than modality.
+6. ~~A genuine spontaneity probe~~ — **BUILT 2026-08-15.** `sp-` templates,
+   `engine/spontaneity.ts`, and a readout on Progress comparing the unprompted
+   rate against the same learner's prompted rate on the same skills. Three
+   things had to be true and each was got wrong first: probes must never move
+   the ladder (the flag was declarative and unenforced until `mastery.ts`
+   excluded the `sp-` prefix during replay, exactly as it does for PFL); the
+   prompt must never name the method (pinned by a banned-word list with a
+   canary); and "nothing applies" must be correct sometimes and not always
+   WITHIN each template — pooled across templates it read as a healthy mix
+   while one template carried every null answer and the other none.
 7. Concreteness fading as an authored sequence, concrete → faded → abstract and
    never reversed (Fyfe et al. 2014/2015 — EVIDENCE for children's maths,
    HEURISTIC elsewhere).
@@ -3440,3 +3447,124 @@ class by the app's own best-supported number.
 | Distanced self-talk is an established technique | Murdoch 2023, 25 experiments N = 2,397: small-to-moderate, authors report "uncertainty regarding the benefit" and call for high-quality trials |
 | Everyone has an inner voice to train | Nedergaard & Lupyan 2024: inner speech ranges from near-constant to nearly absent; the app cannot tell which learner it has |
 | Narrating your thinking is generally good | Alogna 2014 RRR: verbalising costs 4% immediate / 16% delayed on visual identification; 41e: concept prompts beat metacognitive prompts |
+
+---
+
+## 43. Measuring spontaneity, and what game theory is for (2026-08-15)
+
+Asked for as "make the user functionally smarter / better reasoning, game
+theory helps with that too". §41a already answers the first half and the answer
+has not changed: **no app makes anyone functionally smarter**, and this ledger
+will not start claiming otherwise. What this pass did was build the one thing
+that makes the *defensible* version checkable, and expand the content where the
+named-rule argument is strongest.
+
+### 43a. The gap that was never measured
+
+§41c recorded it and nothing acted on it. Every checkpoint in the bank
+announces its own topic simply by existing inside that topic's practice, so a
+correct answer shows the method can be RUN once selected and says nothing about
+whether it would be selected. Barnett & Ceci's "memory demands" dimension is
+exactly that distinction, and §21 had mapped it onto answer format, which is
+really the modality dimension.
+
+Gick & Holyoak size it: roughly **30% solve after reading a structurally
+identical story, 75-80% once told to use it**. About two thirds of people who
+already hold the answer fail to retrieve it unprompted. Detterman, quoted in
+Barnett & Ceci: *"Telling subjects to use a principle is not transfer. It is
+following instructions."*
+
+**Built:** `sp-` templates, `engine/spontaneity.ts`, and a Progress readout that
+compares the unprompted rate against the same learner's rate on ORDINARY items
+for the same skills — the only comparison that is not confounded by difficulty.
+Under five probes it says nothing; without enough ordinary practice on the same
+skills it reports the rate and refuses the comparison.
+
+### 43b. Three ways a spontaneity probe stops being one
+
+Each was got wrong first and each is now pinned by a test, because none of them
+is visible by reading the item:
+
+1. **The flag was declarative.** `spontaneous: true` marked the templates and
+   nothing enforced it — the events advanced the ladder exactly like any other.
+   Caught on the production build, where the feedback banner read "that is the
+   evidence that advances skills" directly above an explanation saying the
+   opposite. Now excluded during REPLAY by id prefix in `mastery.ts`, the same
+   mechanism PFL probes use, so the guarantee does not depend on who wrote the
+   event. An audit pins prefix and flag together in both directions.
+2. **Naming the method.** One option said "anchoring" outright. A banned-word
+   list now covers the textbook terms and the app's own topic names, with a
+   canary asserting the list matches a known string — a previous audit here was
+   assembled programmatically, picked up a stray escape, and matched nothing at
+   all for weeks.
+3. **A predictable null answer.** "Nothing applies" must be correct sometimes
+   and not always, and the first version checked that POOLED across templates.
+   It passed while the design was broken: one template carried every null
+   answer and the other none, so recognising which template you were in gave
+   you the answer. Now checked within each template, and both templates draw
+   from one mixed pool.
+
+### 43c. Game theory: why these six
+
+The existing file covers best response, dominance, Nash, the prisoner's
+dilemma, coordination, repetition, commitment and signalling on 2x2 games.
+Added: iterated elimination, backward induction, the winner's curse and adverse
+selection, common knowledge, unpredictability, and the commons.
+
+The selection rule was §41a's: a named, abstract rule that can be produced on
+surface-different material. Each has a transfer item set outside any payoff
+table, and `i-common` deliberately shares its structure with `h-nested` in the
+Insight path so the same idea is met in two costumes (§41d — the app itself
+becoming the retrieval cue is the risk).
+
+**What is claimed:** these are reasoning forms with clear structure, and the app
+can teach and test them. **What is not:** that knowing them makes anyone a
+better negotiator or decision-maker in life. No study is offered for that
+because none was found, and §41b is blunt that practice does not reliably
+transfer to problem-solving.
+
+### 43d. The audit that structure cannot do
+
+A generator that computed dominance with a flipped comparison would emit a
+perfectly well-formed item with a wrong key, and every gate in
+`contentAudit.test.ts` would pass it — the audit checks that items are
+answerable and fair, not that they are *right*.
+
+So `gameTheoryDepth.test.ts` re-derives every key from the RENDERED prompt:
+it parses the payoff table or the tree back out of the text the learner sees,
+runs the analysis a second time, and checks the marked answer is the one that
+analysis picks. A shared bug would have to exist in both directions to survive.
+
+It immediately found two real defects that no structural gate could see: the
+3x3 grids were leaving a SECOND dominated row on one seed in four, and a second
+dominated column before the elimination step — in both cases two different
+answers were defensible and the item claimed one. The grid is now constructed so
+exactly one row and one column die, and the column only after the row.
+
+**Generalisable:** any content whose answer is computed rather than looked up
+should have a second, independent computation checking it, and that check
+should read the rendered output rather than the generator's own variables.
+
+### 43e. A probe nobody meets measures nothing
+
+Built, audited, correct, and very nearly invisible. `sim/probes.sim.ts` plays
+four learner shapes forward and counts what actually arrives, and the first run
+said: 30 min/day 7 unaided probes in a year, 15 min/day **2**, struggling
+learner **0**. `MIN_PROBES` is five, so for half the shapes the readout would
+have silently never appeared — indistinguishable, from the outside, from a
+feature nobody built.
+
+Cause: both probes were authored at difficulty 4, and being UNPROMPTED is not
+the same as being HARD. Difficulty 2 and 3 probes fixed the reachable half.
+
+The struggling learner still meets none, and after measuring it that is correct
+rather than a hole: they never reach `x-method` at all in a year — 1,005 minutes
+of Meta Lab and none of it there. A probe asks whether a taught rule fires
+unprompted; a learner who has not yet acquired the rules has nothing to probe,
+and the readout refusing to speak for them is the designed behaviour. The gate
+now asserts delivery for learners who are progressing and prints the struggler's
+zero anyway, so the exemption stays visible rather than tidied away.
+
+**Generalisable, and the second time this pass:** a feature whose failure mode is
+SILENCE needs a delivery measurement, not just a correctness one. Every gate
+here was green while the thing never ran.

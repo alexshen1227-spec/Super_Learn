@@ -551,6 +551,27 @@ export interface ItemTemplate {
   provenance: string
   /** Marks items suitable as transfer probes for their skills. */
   transfer?: boolean
+  /**
+   * A SPONTANEITY probe: several taught principles are plausible, none of them
+   * is named anywhere in the prompt, and "none of these applies" is a real
+   * answer that is sometimes correct.
+   *
+   * This is the one thing the app was not measuring at all, and RESEARCH.md
+   * §41c names it: Barnett & Ceci's "memory demands" dimension is whether the
+   * learner must SELECT the approach or merely execute a prompted one. Every
+   * other item here tells you which skill it belongs to by existing inside that
+   * skill's practice. Gick & Holyoak size the gap — about 30% of people solve
+   * after reading a structurally identical story, about 75-80% once TOLD to use
+   * it — so roughly two thirds of those who already hold the answer fail to
+   * retrieve it unprompted. Detterman's line is the standard being applied:
+   * "Telling subjects to use a principle is not transfer. It is following
+   * instructions."
+   *
+   * These NEVER move the evidence ladder. A probe that counted toward mastery
+   * would be a probe the planner starts optimising for, and the number would
+   * stop meaning anything. They are reported separately and nowhere else.
+   */
+  spontaneous?: boolean
   /** Ask for a confidence rating on this item. */
   calibration?: boolean
   /** Approximate minutes a focused attempt takes. */

@@ -20,6 +20,7 @@ import { useStore } from '../../store/store'
 import { uid } from '../../engine/rng'
 import type { ActivityResult } from './SessionScreen'
 import { aggregateParts, resumePhase, verdictMessage, type PartOutcome } from '../../engine/activity'
+import { isSpontaneousTemplate } from '../../engine/probeId'
 import { isPflTemplate } from '../../engine/pfl'
 import { diagnose, type RepairPath } from '../../engine/diagnose'
 import { ExplorePlot } from './ExplorePlot'
@@ -736,6 +737,7 @@ export function ItemPlayer({
               }
               parts={Boolean(parts)}
               supported={isPflTemplate(template.id)}
+              unprompted={isSpontaneousTemplate(template.id)}
               ok={parts ? retryVerdictOk : retryVerdictOk === null ? true : retryVerdictOk}
               firstTry={parts
                 ? partOutcomes[partOutcomes.length - 1]?.firstCorrect === true
@@ -1236,6 +1238,7 @@ function FinalFeedback({
   continueLabel,
   parts,
   supported,
+  unprompted,
 }: {
   ok: boolean | null
   firstTry: boolean
@@ -1252,13 +1255,14 @@ function FinalFeedback({
   continueLabel: string
   parts: boolean
   supported: boolean
+  unprompted: boolean
 }) {
   const suggested = commonErrors ? (Object.keys(commonErrors)[0] as ErrorTag | undefined) : undefined
   return (
     <div className="mt-4 anim-in" role="status" aria-live="polite">
       <Card className={`p-4 ${ok ? 'border-good/40' : 'border-warn/40'}`}>
         <p className={`font-semibold text-[15px] ${ok ? 'text-good' : 'text-warn'}`}>
-          {verdictMessage({ ok, firstTry, hintsUsed, supported })}
+          {verdictMessage({ ok, firstTry, hintsUsed, supported, unprompted })}
         </p>
         <div className="mt-3 pt-3 border-t border-line">
           <p className="text-[12px] font-semibold text-muted uppercase tracking-wide mb-1">Why</p>

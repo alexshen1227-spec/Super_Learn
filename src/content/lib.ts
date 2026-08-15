@@ -31,6 +31,7 @@ export interface TplOpts {
   minutes: number
   kind?: ItemKind
   transfer?: boolean
+  spontaneous?: boolean
   calibration?: boolean
   authentic?: ItemTemplate['authentic']
   provenance?: string
@@ -56,6 +57,7 @@ export function tpl(opts: TplOpts, gen: (rng: Rng, seed: number) => SingleBody):
     variants: opts.variants,
     minutes: opts.minutes,
     ...(opts.transfer ? { transfer: true } : {}),
+    ...(opts.spontaneous ? { spontaneous: true } : {}),
     ...(opts.calibration ? { calibration: true } : {}),
     ...(opts.authentic ? { authentic: opts.authentic } : {}),
     ...(opts.novelty ? { novelty: opts.novelty } : {}),
