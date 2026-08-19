@@ -1,5 +1,5 @@
 /**
- * The five-year gate: 36 simulated learners, each played through 1,825 days of
+ * The five-year gate: 38 simulated learners, each played through 1,825 days of
  * real `buildSessionPlan` calls.
  *
  * This exists because every serious planner bug this project has found was

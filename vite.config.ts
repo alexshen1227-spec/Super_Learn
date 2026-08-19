@@ -1,5 +1,6 @@
-import type { Plugin } from 'vite'
+import { searchForWorkspaceRoot, type Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
+import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -117,6 +118,16 @@ export default defineConfig({
       },
     },
   },
-  server: { port: Number(process.env.PORT) || 5199, strictPort: true },
+  server: {
+    port: Number(process.env.PORT) || 5199,
+    strictPort: true,
+    // Dev-only. Agent worktrees live under <repo>/.claude/worktrees/<name> and
+    // resolve fonts from the PARENT repo's node_modules, which sits outside
+    // Vite's default fs sandbox — every font request 403'd, failing the e2e
+    // zero-console-error gate from a worktree while passing from a normal
+    // checkout. Allowing the grandparent root only widens DEV file serving,
+    // and only when running from such a worktree; builds are untouched.
+    fs: { allow: [searchForWorkspaceRoot(process.cwd()), resolve(__dirname, '../../..')] },
+  },
   preview: { port: Number(process.env.PORT) || 4199, strictPort: true },
 })

@@ -8,6 +8,7 @@ import { buildIndex, type ContentIndex } from '../engine/content-index'
 import { SKILLS } from './skills'
 import { MATH_NUMBER_TEMPLATES } from './items/mathNumber'
 import { MATH_ALGEBRA_TEMPLATES } from './items/mathAlgebra'
+import { MATH_THIN_DEPTH_TEMPLATES } from './items/mathThinDepth'
 import { PHYSICS_TEMPLATES } from './items/physics'
 import { CODING_TEMPLATES } from './items/coding'
 import { SCIENCE_TEMPLATES } from './items/science'
@@ -57,6 +58,7 @@ import { OTHER_MINDS_TEMPLATES } from './items/otherMinds'
 import { GAME_DEPTH_TEMPLATES } from './items/gameTheoryDepth'
 import { SPONTANEITY_TEMPLATES } from './items/spontaneityProbes'
 import { GAME_LAB_TEMPLATES } from './items/gameTheoryLab'
+import { GAME_THEORY_TAIL_TEMPLATES } from './items/gameTheoryTail'
 import { SEARCH_TEMPLATES } from './items/searchLab'
 import { DATA_LITERACY_TEMPLATES } from './items/dataLiteracy'
 import { IMPORTED_TEMPLATES } from './items/imported'
@@ -82,6 +84,7 @@ import { STUCK_TEMPLATES } from './items/stuck'
 export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...MATH_NUMBER_TEMPLATES,
   ...MATH_ALGEBRA_TEMPLATES,
+  ...MATH_THIN_DEPTH_TEMPLATES,
   ...PHYSICS_TEMPLATES,
   ...CODING_TEMPLATES,
   ...SCIENCE_TEMPLATES,
@@ -131,6 +134,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...GAME_DEPTH_TEMPLATES,
   ...SPONTANEITY_TEMPLATES,
   ...GAME_LAB_TEMPLATES,
+  ...GAME_THEORY_TAIL_TEMPLATES,
   ...SEARCH_TEMPLATES,
   ...DATA_LITERACY_TEMPLATES,
   ...IMPORTED_TEMPLATES,
