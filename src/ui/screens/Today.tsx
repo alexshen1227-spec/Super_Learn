@@ -2,7 +2,7 @@
  * Today: one dominant action, honest context around it. No feed, no streaks —
  * a deliberate daily entry point that explains itself.
  */
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useEvidence, useStore } from '../../store/store'
 import { useNav } from '../nav'
 import { buildContentIndex } from '../../content/registry'
@@ -18,8 +18,11 @@ import { WeekReviewModal } from '../WeekReview'
 import { useState } from 'react'
 import { activeMission, missionReadiness } from '../../engine/mission'
 import { checkpointAvailable, checkpointSkills } from '../../engine/checkpoint'
-import { TRACK_BY_ID } from '../../content/tracks'
+import { TRACK_BY_ID, trackSkillIds } from '../../content/tracks'
+import { trackFrontierUnit } from '../../engine/planner'
+import { stateRank } from '../../engine/mastery'
 import { calendarDaysUntil } from '../../engine/time'
+import { useMinuteClock } from '../useMinuteClock'
 
 function greeting(name: string): string {
   const h = new Date().getHours()
@@ -64,6 +67,18 @@ export function Today() {
   const deadline = mission
     ? { ...mission, days: Math.max(0, calendarDaysUntil(mission.dateISO, now)) }
     : null
+
+  // Course position for the frontier tile: owned-of-total plus the next unit.
+  // Counted from the evidence ladder (independent+), same rule as the coach.
+  const coursePosition = useMemo(() => {
+    const track = state.profile.mathTrack ? TRACK_BY_ID.get(state.profile.mathTrack) ?? null : null
+    if (!track) return null
+    const ids = trackSkillIds(track)
+    const owned = ids.filter((sid) => stateRank(evidenceFor(evidence, sid).state) >= stateRank('independent')).length
+    const unit = trackFrontierUnit(track, evidence)
+    if (owned === ids.length) return `${track.name}: all ${ids.length} skills owned`
+    return `${track.name}: ${owned} of ${ids.length} owned${unit ? ` · next: ${unit.name}` : ''}`
+  }, [state.profile.mathTrack, evidence])
 
   const checkpoint = useMemo(
     () => checkpointAvailable(state, index, evidence, now),
@@ -203,6 +218,10 @@ export function Today() {
               <div className="mt-1.5">
                 <StateBadge state={evidenceFor(evidence, frontier.id).state} />
               </div>
+              {/* "Where am I" in course terms. The coach has always computed
+                  this; it lived three taps away on its own screen, which is
+                  the wrong distance for the one number a student asks daily. */}
+              {coursePosition ? <p className="text-[12px] text-faint mt-1.5">{coursePosition}</p> : null}
             </>
           ) : (
             <p className="text-[13px] text-faint mt-1">Map fills in as you practice</p>
@@ -287,23 +306,26 @@ export function Today() {
             Settings.
           </p>
         ) : (
-          <div className="space-y-2">
-            {BUCKETS.filter((b) => report.target[b.id] > 0).map((b) => (
-              <div key={b.id} className="flex items-center gap-2.5">
-                <span className="text-[12px] w-20 shrink-0 text-muted font-medium truncate">{b.short}</span>
-                <div className="flex-1 h-2 rounded bg-surface2 relative overflow-hidden">
-                  <div className="absolute inset-y-0 w-0.5 bg-line-strong z-10" style={{ left: `${report.target[b.id] * 100}%` }} aria-hidden />
-                  <div
-                    className={`h-full rounded ${report.actual[b.id] > report.target[b.id] * 1.4 ? 'bg-warn/70' : 'bg-accent/80'}`}
-                    style={{ width: `${Math.min(100, report.actual[b.id] * 100)}%` }}
-                  />
+          <>
+            <div className="space-y-2">
+              {BUCKETS.filter((b) => report.target[b.id] > 0).map((b) => (
+                <div key={b.id} className="flex items-center gap-2.5">
+                  <span className="text-[12px] w-20 shrink-0 text-muted font-medium truncate">{b.short}</span>
+                  <div className="flex-1 h-2 rounded bg-surface2 relative overflow-hidden">
+                    <div className="absolute inset-y-0 w-0.5 bg-line-strong z-10" style={{ left: `${report.target[b.id] * 100}%` }} aria-hidden />
+                    <div
+                      className={`h-full rounded ${report.actual[b.id] > report.target[b.id] * 1.4 ? 'bg-warn/70' : 'bg-accent/80'}`}
+                      style={{ width: `${Math.min(100, report.actual[b.id] * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-[11px] font-mono text-faint w-16 text-right shrink-0">
+                    {Math.round(report.actual[b.id] * 100)}% / {Math.round(report.target[b.id] * 100)}%
+                  </span>
                 </div>
-                <span className="text-[11px] font-mono text-faint w-16 text-right shrink-0">
-                  {Math.round(report.actual[b.id] * 100)}% / {Math.round(report.target[b.id] * 100)}%
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <p className="text-[12px] text-muted mt-2.5">Bars show your last 28 days; the tick is each area's target.</p>
+          </>
         )}
         {/* Adjustments belong WITH the chart they explain, and in the quiet
             palette. Sitting above the card in warning orange, a routine note
@@ -359,18 +381,4 @@ export function Today() {
       <WeekReviewModal open={weekOpen} onClose={() => setWeekOpen(false)} />
     </div>
   )
-}
-
-/**
- * A clock that only changes once a minute, so it can be used as a memo
- * dependency. Review dues, deadlines, and coach lines all move at minute
- * resolution at best; a per-render timestamp just defeats memoization.
- */
-function useMinuteClock(): number {
-  const [now, setNow] = useState(() => Math.floor(Date.now() / 60_000) * 60_000)
-  useEffect(() => {
-    const id = setInterval(() => setNow(Math.floor(Date.now() / 60_000) * 60_000), 30_000)
-    return () => clearInterval(id)
-  }, [])
-  return now
 }

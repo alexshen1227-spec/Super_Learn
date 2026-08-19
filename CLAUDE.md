@@ -56,6 +56,10 @@ knowing a report was mistaken is worth as much to them as a fix.
 
 - `npm run dev` — dev server (port 5199, strictPort)
 - `npm run test` — vitest (engine + FULL CONTENT AUDIT; chess search takes ~1 min)
+- `npm run sim` — behavioral gates: five-year matrix, cold-start day-by-day,
+  census, variants (~5-6 min; not in `npm test`, run it for any planner or
+  mastery change)
+- `npm run test:e2e` — playwright mobile smoke (CI runs it; needs the dev port free)
 - `npm run check` — tests, then `tsc --noEmit` + production build
 - `npm run icons` — regenerate PNG icons (procedural, dependency-free)
 - `node scripts/find-tactics.mjs` — mine new search-verified chess positions

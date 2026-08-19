@@ -9,6 +9,7 @@ import { deriveEvidence, STATE_LABEL, stateRank } from '../engine/mastery'
 import { weeklyObjective } from '../engine/coach'
 import { BUCKET_BY_ID, type BucketId } from '../domain/types'
 import { Button, Chip, Modal } from './components'
+import { useMinuteClock } from './useMinuteClock'
 
 const DAY = 86_400_000
 
@@ -16,7 +17,7 @@ export function WeekReviewModal({ open, onClose }: { open: boolean; onClose: () 
   const { state } = useStore()
   const evidence = useEvidence()
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
-  const now = Date.now()
+  const now = useMinuteClock()
 
   const data = useMemo(() => {
     const weekEvents = state.events.filter((e) => e.t > now - 7 * DAY && e.mode !== 'placement')

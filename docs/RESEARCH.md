@@ -3698,3 +3698,141 @@ the mixed-strategy key really does equalise the opponent's two payoffs (checked
 by evaluating both), and that the median-voter key really does beat every one of
 the other 100 possible proposals head to head (checked by brute force, not by
 trusting the sorting).
+
+## 45. The opening week, honest review arithmetic, and the second rescue (2026-08-18)
+
+Engine pass, measured with the day-by-day cold-start sim (new,
+`src/sim/coldstart.sim.ts`), the five-year matrix, and unit gates. Everything
+here is inspectable in `planner.ts` / `mastery.ts`; nothing new is claimed
+about far transfer.
+
+### 45a. The opening breadth sampler — HEURISTIC (structure), measured
+
+The first three days were a maths app: 7-8 maths items in 10 on each of days
+one to three at 25 minutes (docs/OPEN.md, 2026-08-12, four failed fixes
+recorded). Cause restated: every balancing mechanism keys off debt, debt needs
+~60 minutes of history, and before that the core block goes wholly to the
+highest scorer — mathematics, whose gateway role and course tilt are correct
+and should not be weakened.
+
+The structural fix those failures pointed at: while the balance system is
+blind (first ~6 sessions, under an hour of history, never on short sessions or
+against a focus request), the two next-best ACADEMIC buckets each get one
+"first look" item, paid out of the core budget in minutes. The core keeps its
+winner and its difficulty ramp; the session keeps its length.
+
+Measured (fresh 25m learner, with and without a course):
+
+- days 1-3 maths: 7-8/10 → 5-6/10 (still leading, no longer the whole day)
+- areas per day, days 1-3: 2-3 → 4
+- areas met in week one: 8/10 → 9/10
+- session size days 1-3: 10-11 items (no under-fill)
+- week-one maths difficulty mean 2.4-2.5, and difficultyFloor's
+  strong-placement ordering still holds (see 45c).
+
+No study fixes "two samplers for six sessions"; the constants are product
+judgment. What is evidence-adjacent is only the refusal to hand a first
+session entirely to one subject the product promised was one of ten.
+
+### 45b. First meetings do not get the far end of the pool — EVIDENCE-aligned direction
+
+`targetDifficulty` already ruled that the dial may lower a first meeting and
+never raise one. The POOL could still raise it: thin skills carry 4-5★ search
+items beside their 2★ introductions, and the budget picker serves essentially
+the whole pool when it is small. Measured: a cold learner's first session
+carried a 5★ digit-placement optimisation against an aim of 1.5. While a
+skill is below `guided`, items more than 2★ above the aim now step aside
+unless almost nothing else exists. Direction from Alfieri et al. 2011
+(unassisted discovery d = −0.38, §14); the "+2 stars" line is HEURISTIC.
+
+### 45c. The exit ticket aims at today's level — correction of a silent constant
+
+The exit was hardcoded to difficulty 2 and a flat 2-minute claim. Both were
+invisible while the core was large; the sampler surfaced them. It now aims at
+the session's own target for the core skill, capped at 3★ so a session never
+ends on the hardest thing it contains, restricted to short single items
+(≤3 minutes — a 14-minute case file once ranked "nearest" and a 20-minute ask
+planned 38), and reports its real minutes. Consequence stated plainly: plan
+estimates read ~1 minute higher because they stopped under-reporting, and the
+engine gate now checks against the app's own promise (ask + SESSION_GRACE_MIN)
+instead of a magic number.
+
+### 45d. The second academic rescue — HEURISTIC pair, checked by the five-year gate
+
+Physics sat at 3.8-4.9% against 7% on multi-session and goal-tilted shapes: a
+relative debt of 0.30-0.46, parked just under `STARVED_DEBT`'s 0.4 bar exactly
+as Human Insight once parked under 0.5. Lowering the main bar thrashes
+(measured 2026-08-12). The new rescue fires on a smaller relative shortfall
+(≥0.25) only when it is also real in MINUTES (≥24 owed in the 28-day window —
+about two core blocks). The absolute-minutes condition self-selects the
+high-volume shapes that were measured short and cannot be tripped by a
+ten-minute learner's drift; serving one block does not clear 24 minutes, so
+consecutive rescues are catch-up rather than thrash.
+
+Measured across the matrix: physics worst case 3.8% → 4.8%, mean 6.3%.
+The remaining shortfall concentrates where goal tilts deliberately pull
+minutes elsewhere, and in the persistent struggler, whose frontier logic is
+working as intended.
+
+### 45e. Interleaving now interleaves in PLAY ORDER — closing a gap in §3's claim
+
+The core block's "interleaved" pool was emitted in rank order, which tends to
+run all of skill A then all of skill B — blocked practice wearing the label.
+The evidence (§3, Rohrer lines) is about the schedule the learner experiences.
+Picks are now round-robined by skill (greedy, stable within a skill so each
+skill's difficulty ramp survives). No new claim; the implementation now
+matches the ledger's existing one.
+
+### 45f. Review arithmetic became honest in both directions — form EVIDENCE-aligned, constants HEURISTIC
+
+Two defects in `mastery.ts`, both directional lies:
+
+1. **The survived gap was thrown away.** A review answered 45 days late and
+   still correct was rescheduled from its ladder step as if the memory had
+   only been shown to survive a week. The demonstrated gap is now the FLOOR
+   for the next interval's base (then the personal stability factor applies),
+   capped at `MAX_REVIEW_DAYS = 120` — the same ceiling the old arithmetic
+   already implied (60 × factor 2). Cepeda et al.'s optimal-gap curves and the
+   personalised-spacing literature support intervals that grow with
+   demonstrated retention; no study fixes this exact rule, so: form
+   evidence-aligned, arithmetic HEURISTIC.
+
+2. **Massed successes bought spacing credit.** Every post-independence unaided
+   success fed the stability factor, so five correct answers in one core block
+   stretched the schedule as far as five successes spread over weeks. Only
+   retrievals ≥48h after the previous success count now (the same bar the
+   retention rung uses, so "spaced" means one thing in the file), at both the
+   skill and the family level — which also closes a documented divergence
+   where the family ladder counted its very first success.
+
+   A consequence worth recording: a family's first success now schedules its
+   review at the ladder's stated 1.0 days rather than an accidental 1.15. One
+   checkpoint test rode on that 3.6-hour artifact and its probe time was
+   corrected to match its own comment ("checked immediately").
+
+   NOT built, deliberately: per-item ease factors, FSRS-style memory models,
+   or a retention-target parameter. They would be tuning an instrument this
+   app cannot validate offline; the two fixes above remove measured lies
+   without adding a model. §40b's "transfer items need shorter intervals"
+   remains recorded and unbuilt.
+
+### 45g. The dispute quarantine now reaches every consumer — completing a stated invariant
+
+The rule (types.ts): a disputed attempt informs no derived number. The planner
+obeyed it; the coach, the Error Clinic and the weekly objective read the raw
+log, so a contested confident miss kept driving "weak area" beliefs,
+calibration, mal-rule profiles and repair plans while the evidence engine had
+already set it aside. All three now read through `evidenceEvents`. Regression
+tests with controls (the undisputed twin still fires) in `dispute.test.ts`.
+
+### 45h. Two five-year shapes pinned as razor-edge — a gate lesson
+
+"Reaches everything by day 1825" is not a stable property of shapes whose
+game-theory tail becomes ready only in the final months. Measured across four
+planner configurations: the same skill arrived on day ~1400 in one and NEVER
+in the next, while total ownership stayed at 157-164 of 165 throughout. The
+harness's own documented noise (±1 skill of coverage) decides which side of
+the horizon the last arrival lands on. '30m sporadic' and 'plateaus early'
+join the pinned list with that reasoning written beside them; the hard total
+ceiling moves 53 → 57 (the measured worst), and any NEW shape stranding still
+fails.

@@ -15,13 +15,14 @@ import { Button, Card, Chip, EmptyState, HeaderBar, Modal, SectionTitle, Segment
 import { Rich } from '../richtext'
 import { useNav } from '../nav'
 import { addLocalDaysISO, calendarDaysUntil } from '../../engine/time'
+import { useMinuteClock } from '../useMinuteClock'
 
 export function CoachScreen() {
   const { state, dispatch } = useStore()
   const evidence = useEvidence()
   const { go } = useNav()
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
-  const now = Date.now()
+  const now = useMinuteClock()
   const beliefs = useMemo(() => coachBeliefs(index, evidence, state, now), [index, evidence, state, now])
   const bottleneck = useMemo(() => findBottleneck(index, evidence, state), [index, evidence, state])
   const objective = useMemo(() => weeklyObjective(index, evidence, state, now), [index, evidence, state, now])

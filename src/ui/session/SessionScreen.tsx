@@ -105,7 +105,7 @@ export function SessionScreen({ launch }: { launch: SessionLaunch }) {
   const [plan, setPlan] = useState<SessionPlan | null>(null)
   const [blockIndex, setBlockIndex] = useState(0)
   const [actIndex, setActIndex] = useState(0)
-  const [phase, setPhase] = useState<SessionPhase | 'checkin' | 'interstitial'>('checkin')
+  const [phase, setPhase] = useState<SessionPhase | 'checkin' | 'overview' | 'interstitial'>('checkin')
   const [records, setRecords] = useState<Record<string, ActivityRecord>>({})
   const [scratch, setScratch] = useState('')
   const [principle, setPrinciple] = useState('')
@@ -307,7 +307,10 @@ const EMPTY_MODE_NOTE: Record<string, string> = {
       }
       setPlan(p)
       setCheckIn(ci)
-      setPhase('interstitial')
+      // The learner sees the WHOLE plan before starting it. The engine has
+      // always produced a full rationale; showing it one interstitial at a
+      // time meant you could only learn what today held by committing to it.
+      setPhase('overview')
       dispatch({
         type: 'log-decision',
         decision: {
@@ -352,7 +355,7 @@ const EMPTY_MODE_NOTE: Record<string, string> = {
       checkIn,
       blockIndex,
       actIndex,
-      phase: phase === 'interstitial' ? 'item' : (phase as SessionPhase),
+      phase: phase === 'interstitial' || phase === 'overview' ? 'item' : (phase as SessionPhase),
       records,
       scratch,
       activeSec: activeSec.current,
@@ -515,43 +518,6 @@ const EMPTY_MODE_NOTE: Record<string, string> = {
     [plan, index, records],
   )
 
-  const advance = useCallback(() => {
-    if (!plan || !block) return
-    setAdaptNote(null)
-    const next = nextSessionStep(plan, blockIndex, actIndex)
-    if (next.kind === 'activity') {
-      adaptNext(next.blockIndex, next.actIndex)
-      setActIndex(next.actIndex)
-      setPhase('item')
-    } else if (next.kind === 'block') {
-      adaptNext(next.blockIndex, next.actIndex)
-      setBlockIndex(next.blockIndex)
-      setActIndex(next.actIndex)
-      setPhase('interstitial')
-    } else {
-      // The plan is out of work — but planned minutes are only estimates, and
-      // finishing a "30 minute" session in twelve real ones is not the dose
-      // that was chosen. Top it up until we are inside the grace window, at a
-      // block boundary so the session still ends somewhere deliberate.
-      const elapsedMin = activeSec.current / 60
-      const extra = checkIn
-        ? buildExtensionBlock(
-            { index, evidence, state, now: Date.now(), checkIn },
-            plan,
-            elapsedMin,
-          )
-        : null
-      if (extra) {
-        setPlan((prev) => (prev ? { ...prev, blocks: [...prev.blocks, extra] } : prev))
-        setBlockIndex(plan.blocks.length)
-        setActIndex(0)
-        setPhase('interstitial')
-        return
-      }
-      setPhase('exit-reflect')
-    }
-  }, [plan, block, actIndex, blockIndex, adaptNext, checkIn, index, evidence, state])
-
   const finishSession = useCallback(
     async (interrupted: boolean, extraActions: Action[] = []) => {
       if (!plan || !checkIn) return false
@@ -609,6 +575,61 @@ const EMPTY_MODE_NOTE: Record<string, string> = {
     },
     [plan, checkIn, state.events, records, principle, index, commit],
   )
+
+  const advance = useCallback(() => {
+    if (!plan || !block) return
+    setAdaptNote(null)
+    const next = nextSessionStep(plan, blockIndex, actIndex)
+    if (next.kind === 'activity') {
+      adaptNext(next.blockIndex, next.actIndex)
+      setActIndex(next.actIndex)
+      setPhase('item')
+    } else if (next.kind === 'block') {
+      adaptNext(next.blockIndex, next.actIndex)
+      setBlockIndex(next.blockIndex)
+      setActIndex(next.actIndex)
+      setPhase('interstitial')
+    } else {
+      // The plan is out of work — but planned minutes are only estimates, and
+      // finishing a "30 minute" session in twelve real ones is not the dose
+      // that was chosen. Top it up until we are inside the grace window, at a
+      // block boundary so the session still ends somewhere deliberate.
+      /*
+       * A single-item launch is not a dose. Its check-in minutes are only the
+       * template's own length, so "top up to the chosen time" has no meaning —
+       * and a fast solve used to trigger the extension and hand the learner
+       * more work they never asked for, followed by the full end-of-session
+       * ceremony. One tapped problem finishes as one tapped problem.
+       */
+      if (launch.kind === 'single') {
+        void (async () => {
+          if (finishing) return
+          setFinishing(true)
+          const saved = await finishSession(false)
+          setFinishSaved(saved)
+          setPhase('summary')
+        })()
+        return
+      }
+      const elapsedMin = activeSec.current / 60
+      const extra = checkIn
+        ? buildExtensionBlock(
+            { index, evidence, state, now: Date.now(), checkIn },
+            plan,
+            elapsedMin,
+          )
+        : null
+      if (extra) {
+        setPlan((prev) => (prev ? { ...prev, blocks: [...prev.blocks, extra] } : prev))
+        setBlockIndex(plan.blocks.length)
+        setActIndex(0)
+        setPhase('interstitial')
+        return
+      }
+      setPhase('exit-reflect')
+    }
+  }, [plan, block, actIndex, blockIndex, adaptNext, checkIn, index, evidence, state, launch.kind, finishing, finishSession])
+
 
   // ---------- screens ----------
   if (overwritePrompt) {
@@ -716,8 +737,16 @@ const EMPTY_MODE_NOTE: Record<string, string> = {
           <div className="text-4xl mb-3" aria-hidden>
             ✓
           </div>
-          <h1 className="font-display text-2xl font-bold">You're done for today.</h1>
-          <p className="text-muted mt-1 text-sm">A clean stop is part of the method — no feed follows this screen.</p>
+          {/* One tapped problem is not "done for today", and saying so read as
+              the app inflating a two-minute errand into a ceremony. */}
+          <h1 className="font-display text-2xl font-bold">
+            {launch.kind === 'single' ? 'Logged.' : "You're done for today."}
+          </h1>
+          <p className="text-muted mt-1 text-sm">
+            {launch.kind === 'single'
+              ? 'One activity, recorded like any other — it counts as evidence, nothing more is owed.'
+              : 'A clean stop is part of the method — no feed follows this screen.'}
+          </p>
         </div>
         <Card className="mt-6 p-5">
           <h2 className="font-semibold text-[15px] mb-3">Verified this session</h2>
@@ -779,6 +808,60 @@ const EMPTY_MODE_NOTE: Record<string, string> = {
           Leave the lab
         </Button>
         <div className="h-10" />
+      </div>
+    )
+  }
+
+  if (phase === 'overview') {
+    const planned = Math.round(plan.blocks.reduce((sum, b) => sum + b.minutes, 0))
+    return (
+      <div className="pt-safe min-h-dvh flex flex-col anim-in">
+        <div className="flex-1 px-2 pb-16 pt-6 w-full max-w-md mx-auto">
+          <h1 className="font-display text-2xl font-bold">Today's plan</h1>
+          <p className="text-muted mt-1 text-[14px]">
+            ~{planned} min across {plan.blocks.length} block{plan.blocks.length === 1 ? '' : 's'} — you asked for{' '}
+            {checkIn.minutes}. Nothing starts until you say so.
+          </p>
+          <div className="mt-4 space-y-2">
+            {plan.blocks.map((b, i) => (
+              <Card key={b.id} className="p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-faint text-[12px] font-mono shrink-0">{i + 1}</span>
+                    <span className="font-semibold text-[15px] truncate">{b.label}</span>
+                  </div>
+                  <Chip tone="accent">{BUCKET_BY_ID[b.bucket].name}</Chip>
+                </div>
+                <p className="text-faint text-[12px] mt-1">
+                  ~{Math.round(b.minutes)} min · {b.activities.length}{' '}
+                  {b.activities.length === 1 ? 'activity' : 'activities'}
+                </p>
+              </Card>
+            ))}
+          </div>
+          {plan.rationale.length ? (
+            <Card className="mt-4 p-4">
+              <h2 className="font-semibold text-[14px] mb-2">Why this plan</h2>
+              <ul className="space-y-1.5">
+                {plan.rationale.map((r, i) => (
+                  <li key={i} className="text-[13px] text-muted leading-relaxed">
+                    {r}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
+          <Button className="w-full mt-5" onClick={() => setPhase('interstitial')}>
+            Start
+          </Button>
+          <button
+            type="button"
+            className="w-full mt-3 text-center text-sm text-muted underline min-h-11"
+            onClick={() => go({ name: 'today' })}
+          >
+            Not now — back to Today
+          </button>
+        </div>
       </div>
     )
   }

@@ -38,6 +38,10 @@ test('the mobile shell navigates and can build a daily session', async ({ page }
   await page.getByRole('button', { name: /Skip.*start a session conservatively/ }).click()
   await expect(page.getByRole('heading', { name: 'Quick check-in' })).toBeVisible()
   await page.getByRole('button', { name: 'Build my session' }).click()
+  // The whole plan shows before anything starts (blocks, minutes, reasons)…
+  await expect(page.getByRole('heading', { name: "Today's plan" })).toBeVisible()
+  await page.getByRole('button', { name: 'Start', exact: true }).click()
+  // …then the first block's interstitial takes over.
   await expect(page.getByRole('button', { name: 'Begin' })).toBeVisible()
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)

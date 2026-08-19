@@ -19,6 +19,7 @@ import { curriculumEnd } from '../../engine/curriculumEnd'
 import { spontaneityReport } from '../../engine/spontaneity'
 import { DEFAULT_INDEX } from '../../content/registry'
 import { Card } from '../components'
+import { useMinuteClock } from '../useMinuteClock'
 
 function Figure({ value, label, sub }: { value: string; label: string; sub?: string }) {
   return (
@@ -32,7 +33,7 @@ function Figure({ value, label, sub }: { value: string; label: string; sub?: str
 
 export function NorthStarPanel() {
   const { state } = useStore()
-  const now = Date.now()
+  const now = useMinuteClock()
   const star = useMemo(() => northStar(state.events, state.disputes, now), [state.events, state.disputes, now])
   const weeks = useMemo(() => durableByWeek(star, now, 12), [star, now])
   const peak = Math.max(1, ...weeks.map((w) => w.proved))

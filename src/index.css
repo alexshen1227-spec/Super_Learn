@@ -21,7 +21,7 @@ html.light {
   --c-border-strong: #c4bfae;
   --c-ink: #1c2433;
   --c-muted: #566074;
-  --c-faint: #8b93a5;
+  --c-faint: #616a7d; /* carries footnote text: must keep ≥4.5:1 (WCAG AA) on bg, surface, and surface2 */
   --c-accent: #0e7490;
   --c-accent-strong: #155e75;
   --c-accent-soft: #0e749018;
@@ -44,7 +44,7 @@ html.dark {
   --c-border-strong: #3a4a68;
   --c-ink: #e9e7e2;
   --c-muted: #a4aec3;
-  --c-faint: #6d7890;
+  --c-faint: #8e9ab2; /* carries footnote text: must keep ≥4.5:1 (WCAG AA) on bg, surface, and surface2 */
   --c-accent: #22d3ee;
   --c-accent-strong: #67e8f9;
   --c-accent-soft: #22d3ee1c;

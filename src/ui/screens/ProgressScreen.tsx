@@ -20,6 +20,7 @@ import { WeekReviewModal } from '../WeekReview'
 import { useState } from 'react'
 import { learningQualityReport, outcomeReport } from '../../engine/outcomes'
 import { pflProbes, pflReport } from '../../engine/pfl'
+import { useMinuteClock } from '../useMinuteClock'
 
 const DAY = 86_400_000
 
@@ -34,7 +35,7 @@ export function ProgressScreen() {
   const { state } = useStore()
   const evidence = useEvidence()
   const index = useMemo(() => buildContentIndex(state.customPacks), [state.customPacks])
-  const now = Date.now()
+  const now = useMinuteClock()
   const events = useMemo(() => state.events.filter((e) => e.mode !== 'placement'), [state.events])
 
   const stateCounts = useMemo(() => {
@@ -277,15 +278,6 @@ export function ProgressScreen() {
 
       <SectionTitle>Balance · 28 days{alloc.tuned ? ' · coach-tuned' : ''}</SectionTitle>
       <Card className="p-4">
-        {alloc.tuned && alloc.notes.length ? (
-          <div className="mb-3 bg-warn-soft border border-warn/30 rounded-lg px-3 py-2">
-            {alloc.notes.map((n, i) => (
-              <p key={i} className="text-[12px] text-warn leading-snug">
-                {n}
-              </p>
-            ))}
-          </div>
-        ) : null}
         <BarPair
           rows={BUCKETS.filter((b) => report.target[b.id] > 0).map((b) => ({
             name: b.short,
@@ -296,6 +288,22 @@ export function ProgressScreen() {
           bLabel="target"
         />
         <p className="text-[12px] text-faint mt-2.5">{Math.round(report.totalMinutes)} focused minutes counted — task time only, never browsing.</p>
+        {/* Same quiet treatment as Today's balance card: these are routine
+            notes about goals, and in warning orange they read as something
+            being wrong. */}
+        {alloc.tuned && alloc.notes.length ? (
+          <div className="mt-3 pt-3 border-t border-line">
+            <p className="text-[11px] font-semibold text-muted uppercase tracking-wide">Adjusted this week</p>
+            <ul className="mt-1 space-y-0.5">
+              {alloc.notes.map((note, i) => (
+                <li key={i} className="text-[12px] text-faint leading-snug flex gap-1.5">
+                  <span className="text-accent shrink-0" aria-hidden>·</span>
+                  <span>{note}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </Card>
 
       {brier ? (

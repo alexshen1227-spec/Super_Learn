@@ -7,7 +7,7 @@ Ordered by the project's own tie-breakers: fixing a way the app is wrong about
 the learner beats adding anything; honest evidence beats more content;
 measurement beats features; depth in maths beats breadth elsewhere.
 
-Last reviewed: 2026-08-11 (fourth pass).
+Last reviewed: 2026-08-18 (fifth pass — the upgrade section at the bottom).
 
 **Numbers measured before 2026-08-11 are STALE.** Removing the burned-item
 flag changed the baseline for anything involving owned skills or pool depth —
@@ -399,10 +399,11 @@ learners on the same day do not get identical variants.
 
 ### Still open
 
-- **Physics is now the thinnest-served area** at 3.8-4.9% against a 7% target on
-  multi-session and goal-tilted shapes. Same shape of problem as Insight had,
-  one rung further down; the fix that worked for Paths does not apply because
-  physics already reaches the core through the ordinary academic rotation.
+- ~~**Physics is now the thinnest-served area** at 3.8-4.9% against a 7% target on
+  multi-session and goal-tilted shapes.~~ CLOSED 2026-08-18: a second, gentler
+  academic rescue (relative debt ≥ 0.25 AND ≥ 24 owed minutes in the window)
+  fires for persistent small shortfalls without the thrash that killed the
+  0.3 experiment. Worst case 4.8%, mean 6.3%. RESEARCH.md §45d.
 - **Mathematics delivers ~3 points above target** through the review queue. This
   is arguably correct and is recorded so nobody later reads it as bias.
 - Everything under "Still open, measured" from the previous section that is not
@@ -410,7 +411,15 @@ learners on the same day do not get identical variants.
 
 ---
 
-## The first three days are a maths app (2026-08-12)
+## ~~The first three days are a maths app~~ (2026-08-12) — CLOSED 2026-08-18
+
+CLOSED by the structural fix this section asked for: an opening breadth
+sampler, separate from the core, paid in minutes, fading exactly where the
+debt machinery switches on. Days 1-3 went from 7-8/10 maths across 2-3 areas
+to 5-6/10 across 4 areas; week one now meets 9 of 10 areas; sessions stay
+full; the strong-placement difficulty ordering holds. Day-by-day gate:
+`src/sim/coldstart.sim.ts`. Full account: RESEARCH.md §45a-c. The analysis
+below is kept because the four failed attempts are why the fix has this shape.
 
 Found because the owner reset their progress, which made the first-run
 experience suddenly the live question. Almost everything verified until now has
@@ -565,3 +574,31 @@ For the app's actual owner at 30+ minutes a day, everything is reached.
 
 The gate pins the three shapes by name and asserts the count does not grow, so
 the cost stays visible and anything NEW stranding fails.
+
+---
+
+## The 2026-08-18 upgrade pass — closed, opened, and a process scar
+
+### Closed (details in RESEARCH.md §45)
+
+- **The first three days are a maths app** — opening breadth sampler (§45a).
+- **Physics under-serving** — second academic rescue, worst 4.8% / mean 6.3% (§45d).
+- **Interleaving order** — interleaved core blocks now alternate skills in play order (§45e).
+- **Review arithmetic lied twice** — survived gaps now floor the next interval; only spaced (≥48h) retrievals feed the stability factor (§45f).
+- **Dispute quarantine leaked** — coach, Error Clinic and weekly objective now read the filtered log like the planner always did (§45g).
+- **Warm-up ceiling** — the flat min(9, …) swallowed the queue-pressure widening for every session over ~30 minutes; the ceiling now scales (30% of the session), and 40+ minute sessions under pressure may retire 7 reviews.
+
+### Newly pinned, not fixed
+
+- **'30m sporadic' and 'plateaus early' joined the razor-edge list** in the
+  five-year stranded gate: their game-theory tail arrives within ~90 days of
+  the horizon and which side it lands on is harness noise (ownership 157-164
+  of 165 across four configurations). Ceiling 53 → 57. §45h.
+
+### A process scar worth keeping
+
+During this pass an agent ran `git stash` on the shared working tree and swept
+every in-flight edit from four parallel workstreams. Recovery was clean (the
+stash held everything), but the rule it wrote: **commit each verified batch
+before parallel agents start, and agents never run git write commands.** The
+engine batch went in as its own commit within minutes of being re-verified.

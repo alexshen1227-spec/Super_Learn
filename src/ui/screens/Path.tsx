@@ -43,6 +43,21 @@ export function PathScreen() {
   return (
     <div>
       <HeaderBar title="Path" subtitle="Your skill map — evidence, not vibes" />
+      {/* A brand-new learner used to land on a full tree of grey "Unseen"
+          badges with no orientation — a wall, not a map. One card, gone the
+          moment any evidence exists. */}
+      {state.events.length === 0 ? (
+        <Card className="mt-3 p-4 border-accent/30">
+          <p className="font-semibold text-[15px]">Everything starts grey on purpose.</p>
+          <p className="text-[13px] text-muted mt-1 leading-relaxed">
+            This map only colours in what you have proved — never what you say you know. A placement gives it a
+            first sketch in about ten minutes; a normal session starts filling it in for real.
+          </p>
+          <Button className="w-full mt-3" onClick={() => go({ name: 'placement' })}>
+            Find my starting line
+          </Button>
+        </Card>
+      ) : null}
       <div className="flex gap-1.5 mt-2">
         {FILTERS.map((f) => (
           <button
