@@ -6,7 +6,7 @@ import { useMemo } from 'react'
 import { useEvidence, useStore } from '../../store/store'
 import { useNav } from '../nav'
 import { buildContentIndex } from '../../content/registry'
-import { dueReviews, nextReviewAt } from '../../engine/scheduler'
+import { dueReviews, dueSkillCount, nextReviewAt } from '../../engine/scheduler'
 import { effectiveAllocation } from '../../engine/allocationPlus'
 import { todayInsight, weeklyObjective } from '../../engine/coach'
 import { reviewsPerSession, scoreSkills } from '../../engine/planner'
@@ -47,6 +47,7 @@ export function Today() {
   // not surface (or be resumable) inside the sample profile.
   const draft = state.sampleMode ? null : loadDraftSync()
   const due = useMemo(() => dueReviews(evidence, now), [evidence, now])
+  const dueCount = useMemo(() => dueSkillCount(evidence, now), [evidence, now])
   const alloc = useMemo(() => effectiveAllocation(state, evidence, index, now), [state, evidence, index, now])
   const report = alloc.report
   const objective = useMemo(() => weeklyObjective(index, evidence, state, now), [index, evidence, state, now])
@@ -185,9 +186,13 @@ export function Today() {
       ) : null}
 
       <div className="grid grid-cols-2 gap-3 mt-3">
-        <Card className="p-4" onClick={() => go(due.length ? { name: 'session', launch: { kind: 'mixed' } } : { name: 'practice' })}>
+        <Card className="p-4" onClick={() => go(dueCount ? { name: 'session', launch: { kind: 'mixed' } } : { name: 'practice' })}>
           <p className="text-[12px] text-muted font-medium uppercase tracking-wide">Reviews due</p>
-          <p className="font-display text-2xl font-bold mt-1">{due.length}</p>
+          {/* Skills with ANYTHING waiting — the skill schedule or a lapsed
+              question family. The old count was skill-level only, so this
+              could read 0 while the next warm-up was already planning two
+              lapsed families. Counted the way the planner actually serves. */}
+          <p className="font-display text-2xl font-bold mt-1">{dueCount}</p>
           {/*
             The raw count stays visible — hiding it would be its own dishonesty
             — but it is not a to-do list, and left bare it reads as one. A
@@ -199,12 +204,14 @@ export function Today() {
             planner's own rule, imported rather than restated.
           */}
           <p className="text-[12px] text-faint mt-0.5">
-            {due.length
-              ? due[0].reason === 'misconception'
+            {dueCount
+              ? due[0]?.reason === 'misconception'
                 ? 'incl. a confident error to repair'
-                : due.length > reviewsToday
+                : dueCount > reviewsToday
                   ? `today takes the ${reviewsToday} most urgent — the rest keep their own dates`
-                  : 'retrieval keeps it yours'
+                  : due.length === 0
+                    ? 'question types that lapsed — the exact kind, not just the topic'
+                    : 'retrieval keeps it yours'
               : nextDue
                 ? `next ${new Date(nextDue).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
                 : 'none scheduled yet'}

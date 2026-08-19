@@ -227,6 +227,28 @@ export function pickSeed(template: ItemTemplate, used: Set<string>): number {
 /** Predicted success rate the planner aims each item at. HEURISTIC. */
 export const ABILITY_TARGET_RATE = 0.6
 
+/**
+ * Rust easing: how the difficulty aim decays while a skill goes unpracticed.
+ *
+ * Every input to the aim is a snapshot — the fitted ability, the rung, the
+ * placement floor — and none of them knows how long ago it was taken. A skill
+ * last touched eleven months ago still reported ability 4.2 and was served a
+ * near-4★ item on the comeback session, exactly when the memory is at its
+ * weakest. The review LADDER already handles when a skill comes back; this
+ * handles how hard it lands when it does.
+ *
+ * Shape: nothing changes for three weeks (ordinary spacing is not rust), then
+ * the aim eases linearly to at most one star lower by about nine weeks idle.
+ * Fresh evidence resets it instantly, and `recentMisses` still stacks on top —
+ * struggling after a return is more specific information than the calendar.
+ * Direction is EVIDENCE (forgetting curves, RESEARCH.md §2); the three
+ * constants are HEURISTIC, checked by the seasonal and cooling five-year
+ * shapes rather than argued.
+ */
+export const RUST_GRACE_DAYS = 21
+export const RUST_FULL_DAYS = 63
+export const RUST_MAX_EASE = 1
+
 export function targetDifficulty(
   ev: SkillEvidence,
   energy: CheckIn['energy'],
@@ -240,6 +262,8 @@ export function targetDifficulty(
    * difficulty 2.4 four months in.
    */
   stretch = 0,
+  /** When provided, enables rust easing against `ev.lastAttemptAt`. */
+  now?: number,
 ): number {
   /*
    * ABILITY FIRST, RUNG AS FALLBACK.
@@ -303,11 +327,21 @@ export function targetDifficulty(
    * idea gently, and that direction costs no coverage.
    */
   const localStretch = ev.state === 'unseen' ? Math.min(0, stretch) : stretch
+  // A usable number, not merely "not null" — the same defence the ability
+  // guard above takes, and for the same reason: a fixture or an imported
+  // shape can carry `undefined`, and NaN here poisons the whole aim.
+  const idleDays =
+    now !== undefined && typeof ev.lastAttemptAt === 'number' && Number.isFinite(ev.lastAttemptAt)
+      ? (now - ev.lastAttemptAt) / 86_400_000
+      : 0
+  const rustEase =
+    Math.min(1, Math.max(0, (idleDays - RUST_GRACE_DAYS) / (RUST_FULL_DAYS - RUST_GRACE_DAYS))) * RUST_MAX_EASE
   const adjusted =
     base +
     localStretch +
     (energy === 'high' && !conservative ? 0.5 : 0) -
     (energy === 'low' ? 0.5 : 0) -
+    rustEase -
     // Recent misses on THIS skill still pull down even while the global signal
     // pushes up: struggling here is more specific information than cruising
     // everywhere, so it wins locally.
@@ -1373,7 +1407,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     const ev = evidenceFor(evidence, d.skillId)
     const picks = pickTemplates(
       index.bySkill.get(d.skillId) ?? [],
-      Math.min(dialFor(d.skillId) > 0 ? 4 : 3, targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, d.skillId), dialFor(d.skillId))),
+      Math.min(dialFor(d.skillId) > 0 ? 4 : 3, targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, d.skillId), dialFor(d.skillId), now)),
       1,
       templateUse,
       { easing: easingFor(d.skillId), used },
@@ -1611,7 +1645,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     for (const { bucket, scored } of runnersUp) {
       const pick = scored[0]
       const sev = evidenceFor(evidence, pick.skill.id)
-      const sdiff = targetDifficulty(sev, checkIn.energy, conservative, placementSignal(state, pick.skill.id), dialFor(pick.skill.id))
+      const sdiff = targetDifficulty(sev, checkIn.energy, conservative, placementSignal(state, pick.skill.id), dialFor(pick.skill.id), now)
       const picks = pickTemplates(
         // A template listing this skill can live in ANOTHER bucket (cross-area
         // items); a sampler block claims to be its bucket, so it must serve it.
@@ -1644,7 +1678,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
 
   if (coreChoice) {
     const ev = evidenceFor(evidence, coreChoice.skill.id)
-    const diff = targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, coreChoice.skill.id), dialFor(coreChoice.skill.id))
+    const diff = targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, coreChoice.skill.id), dialFor(coreChoice.skill.id), now)
     // Every block the plan is going to add has to come out of the same budget.
     // The short branch used to omit `labBudget` while the comment beside
     // `labBudget` claimed it subtracted it — so a ten-minute session was
@@ -1756,7 +1790,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       labTemplates.push(
         ...pickTemplatesForBudget(
           index.bySkill.get(labSkill.skill.id) ?? [],
-          targetDifficulty(evidenceFor(evidence, labSkill.skill.id), checkIn.energy, conservative, placementSignal(state, labSkill.skill.id), dialFor(labSkill.skill.id)),
+          targetDifficulty(evidenceFor(evidence, labSkill.skill.id), checkIn.energy, conservative, placementSignal(state, labSkill.skill.id), dialFor(labSkill.skill.id), now),
           labBudget,
           templateUse,
           { maxCount: short ? 1 : total >= 40 ? 4 : 3, minCount: 1, easing: easingFor(labSkill.skill.id), used },
@@ -1837,6 +1871,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
         conservative,
         placementSignal(state, coreSkillId),
         dialFor(coreSkillId),
+        now,
       ),
     )
     // The exit is ONE short unaided problem. Without this shape filter, aiming
@@ -1955,7 +1990,7 @@ export function buildReadyPlan(ctx: PlannerContext, trackId: string): SessionPla
   const perSkill = Math.max(4, Math.floor(checkIn.minutes / 2))
   for (const skill of report.missing.slice(0, 2)) {
     const ev = evidenceFor(evidence, skill.id)
-    const diff = targetDifficulty(ev, checkIn.energy, false, placementSignal(state, skill.id))
+    const diff = targetDifficulty(ev, checkIn.energy, false, placementSignal(state, skill.id), 0, now)
     const picks = pickTemplatesForBudget(index.bySkill.get(skill.id) ?? [], diff, perSkill, templateUse, {
       maxCount: 4,
       minCount: 2,
@@ -1993,7 +2028,7 @@ export function buildFocusPlan(ctx: PlannerContext, skillId: string): SessionPla
   const ev = evidenceFor(evidence, skillId)
   const used = recentlyUsedForms(state.events, ctx.now)
   const templateUse = recentTemplateUse(state.events, ctx.now)
-  const diff = targetDifficulty(ev, checkIn.energy, false, placementSignal(state, skillId))
+  const diff = targetDifficulty(ev, checkIn.energy, false, placementSignal(state, skillId), 0, ctx.now)
   const picks = pickTemplatesForBudget(index.bySkill.get(skillId) ?? [], diff, checkIn.minutes, templateUse, {
     maxCount: Math.max(3, Math.min(10, Math.ceil(checkIn.minutes / 2))),
     minCount: 2,
@@ -2042,7 +2077,7 @@ export function buildErrorClinicPlan(ctx: PlannerContext, targets: RepairTarget[
       ? [failedTemplate, ...candidates.filter((t) => t.id !== failedTemplate.id)]
       : candidates
     const repairUse = new Map(templateUse)
-    const picks = pickTemplatesForBudget(preferred, Math.max(1, targetDifficulty(ev, checkIn.energy, false, placementSignal(state, target.skillId)) - 0.5), perTargetBudget, repairUse, {
+    const picks = pickTemplatesForBudget(preferred, Math.max(1, targetDifficulty(ev, checkIn.energy, false, placementSignal(state, target.skillId), 0, ctx.now) - 0.5), perTargetBudget, repairUse, {
       maxCount: Math.min(6, Math.max(2, Math.ceil(perTargetBudget / 2))),
       minCount: Math.min(2, preferred.length),
       prioritizeTemplateId: failedTemplate?.id,

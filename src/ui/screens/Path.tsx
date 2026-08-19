@@ -15,7 +15,8 @@ import type { BucketId, SkillNode } from '../../domain/types'
 import { BUCKET_BY_ID } from '../../domain/types'
 import { Button, Card, Chip, DifficultyBadge, Divider, HeaderBar, Modal, ProgressBar, Row, StateBadge } from '../components'
 import { Rich } from '../richtext'
-import { PATHS, pathProgress, type PathDef } from '../../content/paths'
+import { PATHS, pathBeyondArc, pathProgress, type PathDef } from '../../content/paths'
+import { SKILLS } from '../../content/skills'
 import { resourcesFor } from '../../content/resources'
 import { TACTICS } from '../../content/items/chessTactics'
 
@@ -80,6 +81,7 @@ export function PathScreen() {
           <div className="grid grid-cols-2 gap-3">
             {PATHS.map((p) => {
               const prog = pathProgress(p, evidence)
+              const beyond = pathBeyondArc(p, SKILLS, evidence)
               return (
                 <Card key={p.id} className="p-4" onClick={() => setPathDetail(p)}>
                   <PathEmblem path={p} size={26} />
@@ -91,6 +93,14 @@ export function PathScreen() {
                     </div>
                     <span className="text-[10px] font-mono text-muted shrink-0">{prog.rankName}</span>
                   </div>
+                  {/* The rank rides the named arc only, on purpose — see
+                      pathBeyondArc. The depth around it still deserves to
+                      exist somewhere the Path presents itself. */}
+                  {beyond.total > 0 ? (
+                    <p className="text-[10px] text-faint mt-1.5">
+                      beyond the arc: {beyond.owned}/{beyond.total} advanced skills
+                    </p>
+                  ) : null}
                 </Card>
               )
             })}
@@ -313,6 +323,16 @@ function PathDetailSheet({
           Rank derives from live skill evidence — it can fall when skills need review. That is the system being honest,
           not cruel.
         </p>
+        {(() => {
+          const beyond = pathBeyondArc(path, SKILLS, evidence)
+          return beyond.total > 0 ? (
+            <p className="text-[12px] text-muted mt-2 leading-relaxed">
+              Beyond the arc, this Path's area holds {beyond.total} more advanced skills — you own{' '}
+              {beyond.owned} of them. The rank stays on the named arc so it cannot drop just because new
+              material shipped; the depth is all in the course tree below.
+            </p>
+          ) : null
+        })()}
       </div>
 
       <div className="mt-4">

@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react'
 import { useEvidence, useStore } from '../../store/store'
 import { buildContentIndex } from '../../content/registry'
 import { activityIntake, coachBeliefs, findBottleneck, weeklyObjective } from '../../engine/coach'
+import { evidenceEvents } from '../../engine/dispute'
 import { brierScore } from '../../engine/calibration'
 import { searchKb, type KbCard } from '../../content/kb'
 import { uid } from '../../engine/rng'
@@ -26,7 +27,12 @@ export function CoachScreen() {
   const beliefs = useMemo(() => coachBeliefs(index, evidence, state, now), [index, evidence, state, now])
   const bottleneck = useMemo(() => findBottleneck(index, evidence, state), [index, evidence, state])
   const objective = useMemo(() => weeklyObjective(index, evidence, state, now), [index, evidence, state, now])
-  const intake = useMemo(() => activityIntake(state.events, now), [state.events, now])
+  // Same dispute quarantine as every other consumer: what the coach says it
+  // is counting must match what the evidence engine actually counts.
+  const intake = useMemo(
+    () => activityIntake(evidenceEvents(state.events, state.disputes), now),
+    [state.events, state.disputes, now],
+  )
   const [query, setQuery] = useState('')
   const results = useMemo(() => (query.trim() ? searchKb(query) : []), [query])
   const [forecastOpen, setForecastOpen] = useState(false)

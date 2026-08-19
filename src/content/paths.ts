@@ -139,3 +139,35 @@ export function pathProgress(path: PathDef, evidence: Map<string, SkillEvidence>
     nextStep: weakest,
   }
 }
+
+/**
+ * The skills living in a Path's bucket BEYOND its named arc.
+ *
+ * The arc (`skillIds`) is the Path's spine and carries its rank — five
+ * stations, deliberately stable. Every depth pass since the arcs were named
+ * added skills to the same buckets (game theory, uncertainty, reading
+ * situations, other minds…), until 37 of the 55 skills in the four Path
+ * buckets appeared in no arc and nowhere the Paths present themselves. The
+ * rank stays on the spine on purpose: recomputing it over a growing roster
+ * would move a real learner's rank every time content ships, which reads as
+ * demotion by update. The depth is surfaced BESIDE the rank instead.
+ *
+ * Takes the skill list as an argument so this stays derivable in tests
+ * without importing the whole bank here.
+ */
+export function pathBeyondArc(
+  path: PathDef,
+  allSkills: readonly { id: string; bucket: string }[],
+  evidence: Map<string, SkillEvidence>,
+): { owned: number; total: number } {
+  const arc = new Set(path.skillIds)
+  let total = 0
+  let owned = 0
+  for (const s of allSkills) {
+    if (s.bucket !== path.bucket || arc.has(s.id)) continue
+    total++
+    const ev = evidence.get(s.id)
+    if (ev && stateRank(ev.state) >= stateRank('independent')) owned++
+  }
+  return { owned, total }
+}

@@ -94,3 +94,40 @@ describe('a strong placement starts the learner high', () => {
     }
   })
 })
+
+describe('rust easing: the aim stops trusting stale evidence', () => {
+  const DAY = 86_400_000
+  const NOW2 = Date.UTC(2026, 7, 7, 12)
+  const retained = (idleDays: number): SkillEvidence =>
+    ({
+      ...base,
+      state: 'retained',
+      lastAttemptAt: NOW2 - idleDays * DAY,
+      lastCorrectAt: NOW2 - idleDays * DAY,
+    }) as SkillEvidence
+
+  it('recent practice keeps the full aim', () => {
+    expect(targetDifficulty(retained(2), 'ok', false, undefined, 0, NOW2)).toBe(4)
+    // Ordinary review spacing (under three weeks) is not rust.
+    expect(targetDifficulty(retained(20), 'ok', false, undefined, 0, NOW2)).toBe(4)
+  })
+
+  it('a long-idle skill comes back a notch easier, bounded at one star', () => {
+    const nineWeeks = targetDifficulty(retained(63), 'ok', false, undefined, 0, NOW2)
+    expect(nineWeeks).toBe(3)
+    // The ease is bounded: a year idle is not harder-eased than nine weeks.
+    expect(targetDifficulty(retained(365), 'ok', false, undefined, 0, NOW2)).toBe(3)
+    // And it ramps rather than cliffs.
+    const sixWeeks = targetDifficulty(retained(42), 'ok', false, undefined, 0, NOW2)
+    expect(sixWeeks).toBeGreaterThan(3)
+    expect(sixWeeks).toBeLessThan(4)
+  })
+
+  it('without a clock the behavior is exactly the old one', () => {
+    expect(targetDifficulty(retained(365), 'ok', false)).toBe(4)
+  })
+
+  it('an unseen skill is untouched — there is nothing to be rusty at', () => {
+    expect(targetDifficulty(base, 'ok', false, undefined, 0, NOW2)).toBeLessThan(2)
+  })
+})

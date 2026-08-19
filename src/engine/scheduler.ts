@@ -97,6 +97,19 @@ export function dueForms(
     .slice(0, cap)
 }
 
+/**
+ * How many SKILLS have anything waiting — the skill-level schedule OR any
+ * question family's. The Today count used `dueReviews` alone, which is
+ * skill-level only, so a learner could read "0 due" while the next warm-up
+ * was already planning two lapsed families through `dueForms`. One count,
+ * taken the way the planner actually serves.
+ */
+export function dueSkillCount(evidence: Map<string, SkillEvidence>, now: number): number {
+  const ids = new Set(dueReviews(evidence, now).map((d) => d.skillId))
+  for (const f of dueForms(evidence, now, 999)) ids.add(f.skillId)
+  return ids.size
+}
+
 /** Next future review, for "next review in N days" copy. Null if none scheduled. */
 export function nextReviewAt(evidence: Map<string, SkillEvidence>, now: number): number | null {
   let next: number | null = null
