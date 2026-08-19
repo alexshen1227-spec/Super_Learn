@@ -202,6 +202,36 @@ function retriedTooSoon(evidence: Map<string, SkillEvidence>, skillId: string, n
   return last !== null && now - last < MIN_REVIEW_GAP_MS
 }
 
+/**
+ * Session-repeat policy (docs/OPEN.md §5; measured 2026-08-19, RESEARCH.md
+ * §46e).
+ *
+ * The 2026-08 single-seed measurements found every repetition-reducing
+ * variant cost a struggling learner owned skills. Re-run on the doubled pool
+ * with FIVE seeds per cell, that cost dissolved into noise (±3-4 owned per
+ * seed against a −1.8 mean) while the gains became clear: the climbing
+ * learner +5.0 owned, and same-session repetition collapsing from ~130 to
+ * ~7 minutes a year. The shipped policy is therefore the hard cap: one
+ * serving of a family per block, and the cooldown's last degrade stage (a
+ * template already planned this session) stays closed — a due skill review
+ * still reaches the learner through any other family, and where a family is
+ * the only one, a few hours' wait beats re-reading today's answer.
+ *
+ * Kept as a mutable policy object so the next re-measurement is one edit
+ * (the experiment harness drives these fields directly).
+ */
+export const SESSION_REPEAT_POLICY = {
+  /** Max servings of one template inside a single block. */
+  maxPerTemplate: 1,
+  /** When true, a template within 0.5★ of the block's aim may repeat even
+   *  under a tighter cap. Measured worse for the strong learner (−2.6 owned)
+   *  and no better than the hard cap elsewhere — off. */
+  wellFittedException: false,
+  /** When true, the cooldown's last degrade stage (same-session repeats)
+   *  is closed entirely except for well-fitted templates. */
+  hardSessionCap: true,
+}
+
 export function pickSeed(template: ItemTemplate, used: Set<string>): number {
   for (let i = 0; i < 24; i++) {
     const seed = Math.floor(Math.random() * 0x7fffffff)
@@ -427,7 +457,15 @@ function pickTemplates(
   const sameDay = (t: ItemTemplate) => (templateUse.get(t.id)?.daysSince ?? Number.POSITIVE_INFINITY) < 1
   const degrade = (list: ItemTemplate[]) =>
     list.filter((t) => (!isExploreTemplate(t.id) || rested.includes(t)) && !sameDay(t))
-  const pickable = rested.length ? rested : notThisSession.length ? degrade(notThisSession) : degrade(pool)
+  // Experiment hook: under a hard session cap the final degrade stage (serving
+  // a template already planned this session) closes, except for templates
+  // sitting at the block's aim when the exception is on.
+  const lastStage = SESSION_REPEAT_POLICY.hardSessionCap
+    ? degrade(pool).filter(
+        (t) => SESSION_REPEAT_POLICY.wellFittedException && Math.abs(t.difficulty - wantDifficulty) <= 0.5,
+      )
+    : degrade(pool)
+  const pickable = rested.length ? rested : notThisSession.length ? degrade(notThisSession) : lastStage
   const scored = pickable
     .map((t) => ({
       t,
@@ -480,15 +518,22 @@ function pickTemplatesForBudget(
   // VARIANTS are legitimate practice, but a block that is all one family is
   // monotonous and narrow. Cap the repeats and return short instead; the
   // session tops itself up from elsewhere (see buildExtensionBlock).
-  const maxPerTemplate = opts.maxPerTemplate ?? 2
+  // Experiment hook: under a tighter policy a well-fitted template (at the
+  // block's aim) may still repeat — repetition only where it is the right
+  // level anyway. With the shipped defaults this is a constant 2, as before.
+  const capFor = (t: ItemTemplate): number =>
+    opts.maxPerTemplate ??
+    (SESSION_REPEAT_POLICY.wellFittedException && Math.abs(t.difficulty - wantDifficulty) <= 0.5
+      ? 2
+      : SESSION_REPEAT_POLICY.maxPerTemplate)
   while (out.length < opts.maxCount) {
     const template = cursor < ranked.length ? ranked[cursor] : reusable.length ? reusable[(cursor - ranked.length) % reusable.length] : null
     if (!template) break
     cursor++
     const seen = timesUsed.get(template.id) ?? 0
-    if (seen >= maxPerTemplate) {
+    if (seen >= capFor(template)) {
       // Nothing left to rotate through — every candidate is exhausted.
-      if (cursor > ranked.length + reusable.length * maxPerTemplate) break
+      if (cursor > ranked.length + reusable.length * 2) break
       continue
     }
     const next = minutes + template.minutes
