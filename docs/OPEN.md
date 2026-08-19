@@ -602,3 +602,18 @@ every in-flight edit from four parallel workstreams. Recovery was clean (the
 stash held everything), but the rule it wrote: **commit each verified batch
 before parallel agents start, and agents never run git write commands.** The
 engine batch went in as its own commit within minutes of being re-verified.
+
+### An observation from the 2026-08-19 verification, filed rather than fixed
+
+On a local `vite preview` of the production build, the app's automatic
+service-worker registration failed once with a MIME error (the register call
+raced the preview server's warm-up and received HTML), and
+`onRegisterError: () => undefined` swallowed it silently — so the tab ran with
+no service worker and nothing said so. Manual registration of the same
+`/sw.js` succeeded immediately afterwards. The deployed site's bundle carries
+the identical registration machinery and a previous session measured zero
+console errors across full production runs, so this is believed to be a
+preview-environment race, not a live defect. Two things worth a look someday:
+whether `onRegisterError` should at least log in dev builds, and whether the
+registration should retry once — a PWA whose offline layer fails SILENTLY on
+one bad response is fragile in exactly the way this app dislikes.

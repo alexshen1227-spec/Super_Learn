@@ -16,13 +16,10 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
-        "preview",
-        "--",
-        "--port",
-        "5210",
-        "--strictPort"
+        "preview"
       ],
-      "port": 5210
+      "port": 5210,
+      "autoPort": true
     }
   ]
 }
