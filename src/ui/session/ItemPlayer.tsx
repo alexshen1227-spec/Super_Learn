@@ -5,7 +5,7 @@
  * fresh twin problem after a full reveal), confidence capture on calibration
  * items, and an honest distinction between first-try and eventual success.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type Ref } from 'react'
 import type { AnswerSpec, AttemptMode, ErrorTag, ItemTemplate, RenderedItem } from '../../domain/types'
 import { ERROR_TAGS } from '../../domain/types'
 import { describeAnswer, describeResponse, firstFailedStep, validate, validatorName } from '../../engine/validate'
@@ -13,7 +13,7 @@ import { checkHolds, parseConstruct, serializeConstruct } from '../../engine/con
 import type { ContentIndex } from '../../engine/content-index'
 import { KB_BY_SKILL } from '../../content/kb'
 import type { ActivityRecord } from '../../store/draft'
-import { Button, Card, Chip, DifficultyBadge, Modal } from '../components'
+import { Button, Card, Chip, DifficultyBadge, HintLadder, Modal, TransferBridge, useRovingRadio } from '../components'
 import { Rich } from '../richtext'
 import { IconFlag, IconHint } from '../icons'
 import { useStore } from '../../store/store'
@@ -26,6 +26,10 @@ import { diagnose, type RepairPath } from '../../engine/diagnose'
 import { ExplorePlot } from './ExplorePlot'
 
 type Phase = 'study' | 'answer' | 'wrong' | 'retry' | 'revealed' | 'final'
+
+/** One list serves rendering and keyboard order alike — the confidence
+ *  radiogroup is addressed by index, so the values must never fork. */
+const CONFIDENCE_STEPS = [20, 40, 60, 80, 95]
 
 interface SavedItemPlayerState {
   kind: 'item-player-v3'
@@ -153,6 +157,11 @@ export function ItemPlayer({
 
   const isFirstAttemptPhase = phase === 'answer'
   const needsConfidence = askConfidence && isFirstAttemptPhase && spec.type !== 'draft'
+  const confRadio = useRovingRadio(
+    CONFIDENCE_STEPS.length,
+    confidence === null ? -1 : CONFIDENCE_STEPS.indexOf(confidence),
+    (i) => setConfidence(CONFIDENCE_STEPS[i]),
+  )
 
   // A multi-part activity asks a different question at every checkpoint, so
   // prefer that checkpoint's own ladder when the content provides one.
@@ -426,6 +435,41 @@ export function ItemPlayer({
     }
   }
 
+  // ----- keyboard flow -----
+
+  /** Every phase transition unmounts the control that was clicked, dropping
+   *  keyboard focus to <body> — the next Tab restarts from the top of the
+   *  page and a screen reader announces nothing. The incoming phase's card
+   *  takes focus instead, guarded on focus actually being lost so an
+   *  autofocused input (or anything mid-typing) is never robbed. */
+  const phaseFocusRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const el = phaseFocusRef.current
+    if (!el) return
+    const active = document.activeElement
+    if (active && active !== document.body && active !== document.documentElement) return
+    el.focus()
+  }, [phase])
+
+  /** Enter continues from the verdict — but never from inside a control
+   *  (buttons keep their native Enter; anything else would double-fire),
+   *  never while the report dialog is up, and never on key repeat, so a held
+   *  Enter from the submit cannot blow through the feedback. */
+  const continueAction = useRef<() => void>(() => {})
+  continueAction.current = parts ? nextPart : onContinue
+  useEffect(() => {
+    if (phase !== 'final' || reportOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.repeat) return
+      const t = e.target instanceof HTMLElement ? e.target : null
+      if (t && (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(t.tagName) || t.isContentEditable)) return
+      e.preventDefault()
+      continueAction.current()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [phase, reportOpen])
+
   // ----- render helpers -----
   const currentPrompt = twinItem ? twinItem.prompt : parts ? parts[partIndex].prompt : item.prompt
   const currentExplanation = twinItem ? twinItem.explanation : parts ? parts[partIndex].explanation : item.explanation
@@ -550,7 +594,7 @@ export function ItemPlayer({
 
           {/* ---------- input area ---------- */}
           {(phase === 'answer' || phase === 'retry') && (
-            <div className="mt-4">
+            <div className="mt-4" tabIndex={-1} ref={phaseFocusRef}>
               {spec.type === 'draft' ? (
                 <DraftInput
                   spec={spec}
@@ -582,12 +626,13 @@ export function ItemPlayer({
                     <div className="mt-4">
                       <span className="text-[13px] text-muted font-medium">How sure are you?</span>
                       <div className="flex gap-1.5 mt-1.5" role="radiogroup" aria-label="Confidence">
-                        {[20, 40, 60, 80, 95].map((c) => (
+                        {CONFIDENCE_STEPS.map((c, i) => (
                           <button
                             type="button"
                             key={c}
                             role="radio"
                             aria-checked={confidence === c}
+                            {...confRadio(i)}
                             onClick={() => setConfidence(c)}
                             className={`flex-1 min-h-11 rounded-lg border text-[13px] font-medium transition-colors ${
                               confidence === c ? 'bg-accent-soft border-accent/50 text-accent' : 'bg-surface border-line text-faint'
@@ -622,7 +667,7 @@ export function ItemPlayer({
 
           {/* ---------- wrong: repair fork ---------- */}
           {phase === 'wrong' && (
-            <Card className="mt-4 p-4 border-warn/40 bg-warn-soft">
+            <Card className="mt-4 p-4 border-warn/40 bg-warn-soft anim-in" role="alert" tabIndex={-1} ref={phaseFocusRef}>
               <p className="font-semibold text-[15px]">Not yet.</p>
               {activeSpec.type === 'steps' ? (
                 (() => {
@@ -675,7 +720,7 @@ export function ItemPlayer({
 
           {/* ---------- full reveal + twin ---------- */}
           {phase === 'revealed' && (
-            <Card className="mt-4 p-4">
+            <Card className="mt-4 p-4 anim-in" tabIndex={-1} ref={phaseFocusRef}>
               <p className="text-[12px] font-semibold text-accent uppercase tracking-wide mb-1">The full path</p>
               <Rich text={currentExplanation} className="text-[15px]" />
               <p className="text-[13px] text-muted mt-2">
@@ -755,6 +800,7 @@ export function ItemPlayer({
               transferBridge={!parts || partIndex === parts.length - 1 ? item.transferBridge : undefined}
               onContinue={parts ? nextPart : onContinue}
               continueLabel={parts && partIndex + 1 < parts.length ? 'Next part' : 'Continue'}
+              focusRef={phaseFocusRef}
             />
           )}
         </>
@@ -778,7 +824,7 @@ export function ItemPlayer({
         </div>
       ) : null}
 
-      <HintSheet open={hintOpen} onClose={() => setHintOpen(false)} hints={activeHints} shown={hintsShown} onMore={revealHint} />
+      <HintLadder presentation="modal" open={hintOpen} onClose={() => setHintOpen(false)} hints={activeHints} shown={hintsShown} onMore={revealHint} />
       <ReportDialog open={reportOpen} onClose={() => setReportOpen(false)} templateId={template.id} version={template.version} seed={item.seed} attemptId={attemptId} graded={firstResponse !== null} />
     </div>
   )
@@ -830,6 +876,13 @@ export function AnswerInput({
     latest.current = v
     onChange(v)
   }
+  // The mcq branch is the only consumer, but a hook cannot live inside the
+  // switch — for every other answer type the group collapses to zero options.
+  const mcqRadio = useRovingRadio(
+    spec.type === 'mcq' ? spec.options.length : 0,
+    spec.type === 'mcq' && value !== '' ? Number(value) : -1,
+    (i) => onChange(String(i)),
+  )
   switch (spec.type) {
     case 'numeric':
     case 'fraction':
@@ -876,6 +929,7 @@ export function AnswerInput({
               key={i}
               role="radio"
               aria-checked={value === String(i)}
+              {...mcqRadio(i)}
               onClick={() => onChange(String(i))}
               className={`w-full text-left min-h-12 px-4 py-3 rounded-xl border text-[15px] leading-snug transition-colors ${
                 value === String(i) ? 'bg-accent-soft border-accent/60 text-ink' : 'bg-surface border-line hover:border-line-strong'
@@ -973,25 +1027,7 @@ export function AnswerInput({
       return (
         <div className="space-y-3">
           {spec.statements.map((s, si) => (
-            <div key={si} className="bg-surface border border-line rounded-xl p-3">
-              <p className="text-[14px] leading-snug mb-2">{s.text}</p>
-              <div className="flex gap-1.5 flex-wrap" role="radiogroup" aria-label={`Category for: ${s.text}`}>
-                {spec.categories.map((c, ci) => (
-                  <button
-                    type="button"
-                    key={ci}
-                    role="radio"
-                    aria-checked={picks[si] === ci}
-                    onClick={() => setPick(si, ci)}
-                    className={`min-h-11 px-3 rounded-lg border text-[13px] font-medium transition-colors ${
-                      picks[si] === ci ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <ClassifyGroup key={si} text={s.text} categories={spec.categories} pick={picks[si] ?? -1} onPick={(ci) => setPick(si, ci)} />
           ))}
         </div>
       )
@@ -1111,7 +1147,7 @@ export function AnswerInput({
                     aria-hidden
                     className={`mt-px h-4 w-4 shrink-0 rounded-full border grid place-items-center text-[10px] ${
                       state === 'met'
-                        ? 'bg-ok/15 border-ok/50 text-ok'
+                        ? 'bg-good-soft border-good/50 text-good'
                         : state === 'unmet'
                           ? 'border-line-strong text-faint'
                           : 'border-line text-faint'
@@ -1142,6 +1178,45 @@ export function AnswerInput({
     case 'draft':
       return null // drafts render through DraftInput, never as a graded input
   }
+}
+
+/** One classify statement's category picker. Split out because every
+ *  statement is its own radiogroup, and a roving tabindex is a hook — it
+ *  cannot be called from inside the statements map. */
+function ClassifyGroup({
+  text,
+  categories,
+  pick,
+  onPick,
+}: {
+  text: string
+  categories: string[]
+  pick: number
+  onPick: (ci: number) => void
+}) {
+  const radio = useRovingRadio(categories.length, pick, onPick)
+  return (
+    <div className="bg-surface border border-line rounded-xl p-3">
+      <p className="text-[14px] leading-snug mb-2">{text}</p>
+      <div className="flex gap-1.5 flex-wrap" role="radiogroup" aria-label={`Category for: ${text}`}>
+        {categories.map((c, ci) => (
+          <button
+            type="button"
+            key={ci}
+            role="radio"
+            aria-checked={pick === ci}
+            {...radio(ci)}
+            onClick={() => onPick(ci)}
+            className={`min-h-11 px-3 rounded-lg border text-[13px] font-medium transition-colors ${
+              pick === ci ? 'bg-accent text-bg border-accent' : 'bg-surface2 border-line text-muted'
+            }`}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 /**
@@ -1239,6 +1314,7 @@ function FinalFeedback({
   parts,
   supported,
   unprompted,
+  focusRef,
 }: {
   ok: boolean | null
   firstTry: boolean
@@ -1256,10 +1332,11 @@ function FinalFeedback({
   parts: boolean
   supported: boolean
   unprompted: boolean
+  focusRef?: Ref<HTMLDivElement>
 }) {
   const suggested = commonErrors ? (Object.keys(commonErrors)[0] as ErrorTag | undefined) : undefined
   return (
-    <div className="mt-4 anim-in" role="status" aria-live="polite">
+    <div className="mt-4 anim-in" role="status" aria-live="polite" tabIndex={-1} ref={focusRef}>
       <Card className={`p-4 ${ok ? 'border-good/40' : 'border-warn/40'}`}>
         <p className={`font-semibold text-[15px] ${ok ? 'text-good' : 'text-warn'}`}>
           {verdictMessage({ ok, firstTry, hintsUsed, supported, unprompted })}
@@ -1300,42 +1377,12 @@ function FinalFeedback({
         </Card>
       ) : null}
 
-      {transferBridge ? (
-        <Card className="p-4 mt-3 border-accent/30">
-          <p className="text-[12px] font-semibold text-accent uppercase tracking-wide mb-1">Transfer bridge</p>
-          <Rich text={transferBridge} className="text-[14px] text-muted" />
-        </Card>
-      ) : null}
+      {transferBridge ? <TransferBridge text={transferBridge} /> : null}
 
       <Button className="w-full mt-4" onClick={onContinue}>
         {continueLabel}
       </Button>
     </div>
-  )
-}
-
-function HintSheet({ open, onClose, hints, shown, onMore }: { open: boolean; onClose: () => void; hints: string[]; shown: number; onMore: () => void }) {
-  return (
-    <Modal open={open} onClose={onClose} title="Hints">
-      <p className="text-[12px] text-faint mb-3">
-        Hints are honest helpers: using one moves this attempt from “independent” to “guided” evidence — still progress, just labeled truthfully.
-      </p>
-      <div className="space-y-2.5">
-        {hints.slice(0, shown).map((h, i) => (
-          <div key={i} className="bg-surface2 border border-line rounded-xl px-3.5 py-2.5">
-            <p className="text-[11px] font-mono text-faint mb-0.5">hint {i + 1}</p>
-            <Rich text={h} className="text-[14px]" />
-          </div>
-        ))}
-      </div>
-      {shown < hints.length ? (
-        <Button kind="secondary" className="w-full mt-3" onClick={onMore}>
-          Next hint ({shown}/{hints.length} used)
-        </Button>
-      ) : (
-        <p className="text-[13px] text-muted mt-3">That's the whole ladder — the last rung is the full path.</p>
-      )}
-    </Modal>
   )
 }
 

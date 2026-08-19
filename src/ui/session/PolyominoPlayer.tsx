@@ -16,7 +16,7 @@ import {
   type Placement,
 } from '../../engine/polyomino'
 import type { ActivityRecord } from '../../store/draft'
-import { Button, Card, Chip } from '../components'
+import { Button, Card, Chip, HintLadder, TransferBridge } from '../components'
 import { Rich } from '../richtext'
 import { IconRotate } from '../icons'
 import type { ActivityResult } from './SessionScreen'
@@ -79,6 +79,12 @@ export function PolyominoPlayer({
   }
 
   const rotOf = (id: string): Placement['rot'] => (((rotations[id] ?? 0) % 4) as Placement['rot'])
+
+  const revealHint = () => {
+    const next = Math.min(hintsShown + 1, item.hints.length)
+    setHintsShown(next)
+    onSnapshot({ hintsUsed: next })
+  }
 
   const checkComplete = (nextPlaced: Record<string, Placement>) => {
     if (isComplete(spec, nextPlaced) && !finished.current) {
@@ -350,15 +356,7 @@ export function PolyominoPlayer({
             </div>
           ) : null}
           <div className="flex gap-2 mt-3">
-            <Button
-              kind="secondary"
-              className="flex-1"
-              onClick={() => {
-                const next = Math.min(hintsShown + 1, item.hints.length)
-                setHintsShown(next)
-                onSnapshot({ hintsUsed: next })
-              }}
-            >
+            <Button kind="secondary" className="flex-1" onClick={revealHint}>
               Hint {hintsShown > 0 ? `(${hintsShown}/${item.hints.length})` : ''}
             </Button>
             <Button
@@ -372,15 +370,7 @@ export function PolyominoPlayer({
               Clear board
             </Button>
           </div>
-          {hintsShown > 0 ? (
-            <div className="space-y-2 mt-2">
-              {item.hints.slice(0, hintsShown).map((h, i) => (
-                <div key={i} className="bg-surface2 border border-line rounded-xl px-3.5 py-2.5 text-[14px]">
-                  <Rich text={h} />
-                </div>
-              ))}
-            </div>
-          ) : null}
+          {hintsShown > 0 ? <HintLadder presentation="inline" hints={item.hints} shown={hintsShown} onMore={revealHint} /> : null}
         </>
       ) : (
         <div className="anim-in">
@@ -390,12 +380,7 @@ export function PolyominoPlayer({
               <Rich text={item.explanation} className="text-[15px]" />
             </div>
           </Card>
-          {item.transferBridge ? (
-            <Card className="p-4 mt-3 border-accent/30">
-              <p className="text-[12px] font-semibold text-accent uppercase tracking-wide mb-1">Transfer bridge</p>
-              <Rich text={item.transferBridge} className="text-[14px] text-muted" />
-            </Card>
-          ) : null}
+          {item.transferBridge ? <TransferBridge text={item.transferBridge} /> : null}
           <Button className="w-full mt-4" onClick={onContinue}>
             Continue
           </Button>

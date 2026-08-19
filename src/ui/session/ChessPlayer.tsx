@@ -16,7 +16,7 @@ import {
   turnOf,
 } from '../../engine/chessTools'
 import type { ActivityRecord } from '../../store/draft'
-import { Button, Card, Chip, Modal } from '../components'
+import { Button, Card, Chip, HintLadder, TransferBridge } from '../components'
 import { Rich } from '../richtext'
 import { IconHint } from '../icons'
 import type { ActivityResult } from './SessionScreen'
@@ -81,6 +81,13 @@ export function ChessPlayer({
   const persist = (p: ChessProgress) => {
     setProgress(p)
     onSnapshot({ extra: p, hintsUsed: hintsShown })
+  }
+
+  const revealHint = () => {
+    const next = Math.min(hintsShown + 1, item.hints.length)
+    setHintsShown(next)
+    onSnapshot({ hintsUsed: next })
+    setHintOpen(true)
   }
 
   const complete = (p: ChessProgress) => {
@@ -262,28 +269,14 @@ export function ChessPlayer({
               <Rich text={spec.explanation} className="text-[15px]" />
             </div>
           </Card>
-          {item.transferBridge ? (
-            <Card className="p-4 mt-3 border-accent/30">
-              <p className="text-[12px] font-semibold text-accent uppercase tracking-wide mb-1">Transfer bridge</p>
-              <Rich text={item.transferBridge} className="text-[14px] text-muted" />
-            </Card>
-          ) : null}
+          {item.transferBridge ? <TransferBridge text={item.transferBridge} /> : null}
           <Button className="w-full mt-4" onClick={onContinue}>
             Continue
           </Button>
         </div>
       ) : (
         <div className="flex gap-2 mt-3">
-          <Button
-            kind="secondary"
-            className="flex-1"
-            onClick={() => {
-              const next = Math.min(hintsShown + 1, item.hints.length)
-              setHintsShown(next)
-              onSnapshot({ hintsUsed: next })
-              setHintOpen(true)
-            }}
-          >
+          <Button kind="secondary" className="flex-1" onClick={revealHint}>
             <IconHint size={17} /> Hint{hintsShown ? ` (${hintsShown})` : ''}
           </Button>
           <Button
@@ -296,17 +289,7 @@ export function ChessPlayer({
         </div>
       )}
 
-      <Modal open={hintOpen} onClose={() => setHintOpen(false)} title="Hints">
-        <div className="space-y-2.5">
-          {item.hints.slice(0, hintsShown).map((h, i) => (
-            <div key={i} className="bg-surface2 border border-line rounded-xl px-3.5 py-2.5">
-              <p className="text-[11px] font-mono text-faint mb-0.5">hint {i + 1}</p>
-              <Rich text={h} className="text-[14px]" />
-            </div>
-          ))}
-        </div>
-        <p className="text-[12px] text-faint mt-3">Hint use is recorded — a hinted solve counts as guided, not independent.</p>
-      </Modal>
+      <HintLadder presentation="modal" open={hintOpen} onClose={() => setHintOpen(false)} hints={item.hints} shown={hintsShown} onMore={revealHint} />
       <span className="sr-only" aria-live="polite">
         {message ?? ''}
       </span>

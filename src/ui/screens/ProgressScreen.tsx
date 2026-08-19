@@ -119,10 +119,39 @@ export function ProgressScreen() {
     <div>
       <HeaderBar title="Progress" subtitle="Evidence, not scores" />
 
+      {/* Fifteen sections of equal visual weight made this screen a wall —
+          the most important panel and the session log looked the same size.
+          A jump row is navigation, not hierarchy: everything stays on one
+          honest page, you just stop scroll-hunting for the part you want. */}
+      <div className="flex gap-1.5 mt-2 overflow-x-auto pb-1 -mx-1 px-1" role="navigation" aria-label="Jump to section">
+        {[
+          ['p-survived', 'Survived'],
+          ['p-signal', 'Signal'],
+          ['p-independence', 'Independence'],
+          ['p-calibration', 'Calibration'],
+          ['p-balance', 'Balance'],
+          ['p-history', 'History'],
+        ].map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            className="min-h-9 px-3 rounded-full border border-line bg-surface text-[12px] font-medium text-muted whitespace-nowrap shrink-0"
+            onClick={() =>
+              document.getElementById(id)?.scrollIntoView({
+                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+                block: 'start',
+              })
+            }
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* First, because it is the only number the project is FOR. The three
           cards below it are the LADDER's view, which is deliberately more
           generous — see engine/northStar.ts on why the two disagree. */}
-      <div className="mt-3">
+      <div className="mt-3 scroll-mt-3" id="p-survived">
         <NorthStarPanel />
       </div>
 
@@ -147,6 +176,7 @@ export function ProgressScreen() {
         </p>
       ) : null}
 
+      <div id="p-signal" aria-hidden className="scroll-mt-3" />
       <SectionTitle>30-minute training signal · 28 days</SectionTitle>
       <Card className="p-4">
         <div className="grid grid-cols-3 gap-3">
@@ -184,6 +214,7 @@ export function ProgressScreen() {
         {burden > 0 ? <p className="text-[12px] text-faint mt-2">Review load: {burden} skill{burden === 1 ? '' : 's'} due within 7 days.</p> : null}
       </Card>
 
+      <div id="p-independence" aria-hidden className="scroll-mt-3" />
       <SectionTitle>Independence trend</SectionTitle>
       <Card className="p-4">
         <TrendColumns
@@ -222,6 +253,7 @@ export function ProgressScreen() {
         )}
       </Card>
 
+      <div id="p-calibration" aria-hidden className="scroll-mt-3" />
       <SectionTitle>Confidence calibration</SectionTitle>
       <Card className="p-4">
         <CalibrationChart bands={bands} />
@@ -276,6 +308,7 @@ export function ProgressScreen() {
         </>
       ) : null}
 
+      <div id="p-balance" aria-hidden className="scroll-mt-3" />
       <SectionTitle>Balance · 28 days{alloc.tuned ? ' · coach-tuned' : ''}</SectionTitle>
       <Card className="p-4">
         <BarPair
@@ -393,6 +426,7 @@ export function ProgressScreen() {
         </>
       ) : null}
 
+      <div id="p-history" aria-hidden className="scroll-mt-3" />
       <SectionTitle>Session history</SectionTitle>
       <div className="space-y-2 mb-6">
         {[...state.sessions]

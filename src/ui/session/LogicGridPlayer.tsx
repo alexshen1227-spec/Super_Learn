@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ItemTemplate, RenderedItem } from '../../domain/types'
 import { assignmentCorrect, clueHolds, type Assignment } from '../../engine/logicGrid'
 import type { ActivityRecord } from '../../store/draft'
-import { Button, Card, Chip } from '../components'
+import { Button, Card, Chip, HintLadder, TransferBridge } from '../components'
 import { Rich } from '../richtext'
 import type { ActivityResult } from './SessionScreen'
 
@@ -58,6 +58,12 @@ export function LogicGridPlayer({
 
   const persist = (p: Partial<LGProgress>) => {
     onSnapshot({ extra: { assignment, checks, struck, solved, ...p }, hintsUsed: hintsShown })
+  }
+
+  const revealHint = () => {
+    const next = Math.min(hintsShown + 1, item.hints.length)
+    setHintsShown(next)
+    onSnapshot({ hintsUsed: next })
   }
 
   const setCell = (cat: number, key: number, val: number) => {
@@ -200,27 +206,12 @@ export function LogicGridPlayer({
             <Button className="flex-1" onClick={check} disabled={!complete}>
               Check solution{checks > 0 ? ` (attempt ${checks + 1})` : ''}
             </Button>
-            <Button
-              kind="secondary"
-              onClick={() => {
-                const next = Math.min(hintsShown + 1, item.hints.length)
-                setHintsShown(next)
-                onSnapshot({ hintsUsed: next })
-              }}
-            >
+            <Button kind="secondary" onClick={revealHint}>
               Hint{hintsShown ? ` (${hintsShown})` : ''}
             </Button>
           </div>
           {!complete ? <p className="text-[12px] text-faint mt-2">Fill every cell to check — partial grids are where the deductions live.</p> : null}
-          {hintsShown > 0 ? (
-            <div className="space-y-2 mt-2">
-              {item.hints.slice(0, hintsShown).map((h, i) => (
-                <div key={i} className="bg-surface2 border border-line rounded-xl px-3.5 py-2.5 text-[14px]">
-                  <Rich text={h} />
-                </div>
-              ))}
-            </div>
-          ) : null}
+          {hintsShown > 0 ? <HintLadder presentation="inline" hints={item.hints} shown={hintsShown} onMore={revealHint} /> : null}
         </>
       ) : (
         <div className="anim-in">
@@ -232,12 +223,7 @@ export function LogicGridPlayer({
               <Rich text={item.explanation} className="text-[15px]" />
             </div>
           </Card>
-          {item.transferBridge ? (
-            <Card className="p-4 mt-3 border-accent/30">
-              <p className="text-[12px] font-semibold text-accent uppercase tracking-wide mb-1">Transfer bridge</p>
-              <Rich text={item.transferBridge} className="text-[14px] text-muted" />
-            </Card>
-          ) : null}
+          {item.transferBridge ? <TransferBridge text={item.transferBridge} /> : null}
           <Button className="w-full mt-4" onClick={onContinue}>
             Continue
           </Button>

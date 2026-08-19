@@ -1,9 +1,10 @@
 /** Shared UI kit — quiet lab aesthetic, 44px touch targets, visible focus. */
 import { createPortal } from 'react-dom'
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type Ref } from 'react'
 import type { SkillState } from '../domain/types'
 import { STATE_LABEL } from '../engine/mastery'
 import { useNav } from './nav'
+import { Rich } from './richtext'
 import { IconSettings } from './icons'
 import { DIFFICULTY_INFO, difficultyInfo, type Difficulty } from '../content/difficulty'
 
@@ -44,10 +45,26 @@ export function Button({
   )
 }
 
-export function Card({ children, className = '', onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
+export function Card({
+  children,
+  className = '',
+  onClick,
+  role,
+  tabIndex,
+  ref,
+}: {
+  children: ReactNode
+  className?: string
+  onClick?: () => void
+  /** role/tabIndex/ref apply to the static variant only — a clickable Card is
+   *  already a real button with its own semantics and focus behavior. */
+  role?: string
+  tabIndex?: number
+  ref?: Ref<HTMLDivElement>
+}) {
   const classes = `block w-full text-left bg-surface border border-line rounded-2xl shadow-card ${onClick ? 'interactive-card cursor-pointer active:bg-surface2' : ''} ${className}`
   if (onClick) return <button type="button" className={classes} onClick={onClick}>{children}</button>
-  return <div className={classes}>{children}</div>
+  return <div className={classes} role={role} tabIndex={tabIndex} ref={ref}>{children}</div>
 }
 
 export function SectionTitle({ children, right }: { children: ReactNode; right?: ReactNode }) {
@@ -271,6 +288,62 @@ export function Confirm({
   )
 }
 
+/**
+ * The hint ladder, shared by every player. The honesty line lives inside the
+ * component rather than at the call sites, so no surface can show hints
+ * without stating their cost: one hint moves the attempt from independent to
+ * guided evidence. Reveal state and its recording stay with the caller —
+ * `onMore` must do whatever the caller's hint button already does.
+ */
+export function HintLadder(
+  props: {
+    hints: string[]
+    shown: number
+    onMore: () => void
+  } & ({ presentation: 'inline' } | { presentation: 'modal'; open: boolean; onClose: () => void }),
+) {
+  const { hints, shown, onMore } = props
+  const body = (
+    <>
+      <p className="text-[12px] text-faint mb-3">
+        Hints are honest helpers: using one moves this attempt from “independent” to “guided” evidence — still progress,
+        just labeled truthfully.
+      </p>
+      <div className="space-y-2.5">
+        {hints.slice(0, shown).map((h, i) => (
+          <div key={i} className="bg-surface2 border border-line rounded-xl px-3.5 py-2.5">
+            <p className="text-[11px] font-mono text-faint mb-0.5">hint {i + 1}</p>
+            <Rich text={h} className="text-[14px]" />
+          </div>
+        ))}
+      </div>
+      {shown < hints.length ? (
+        <Button kind="secondary" className="w-full mt-3" onClick={onMore}>
+          Next hint ({shown}/{hints.length} used)
+        </Button>
+      ) : (
+        <p className="text-[13px] text-muted mt-3">That's the whole ladder — the last rung is the full path.</p>
+      )}
+    </>
+  )
+  if (props.presentation === 'inline') return <div className="mt-3">{body}</div>
+  return (
+    <Modal open={props.open} onClose={props.onClose} title="Hints">
+      {body}
+    </Modal>
+  )
+}
+
+/** Post-solve "where else this idea applies" card — identical in every player. */
+export function TransferBridge({ text }: { text: string }) {
+  return (
+    <Card className="p-4 mt-3 border-accent/30">
+      <p className="text-[12px] font-semibold text-accent uppercase tracking-wide mb-1">Transfer bridge</p>
+      <Rich text={text} className="text-[14px] text-muted" />
+    </Card>
+  )
+}
+
 export function EmptyState({ icon, title, body, action }: { icon?: string; title: string; body: string; action?: ReactNode }) {
   return (
     <div className="text-center py-10 px-6">
@@ -280,6 +353,38 @@ export function EmptyState({ icon, title, body, action }: { icon?: string; title
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
   )
+}
+
+/**
+ * ARIA radiogroup roving tabindex: ONE tab stop per group (the selected
+ * option, or the first when nothing is selected yet), arrows move focus and
+ * selection together, Home/End jump to the ends, both directions wrap.
+ * Returns a props-getter to spread onto each `role="radio"` button; click
+ * behavior stays with the caller.
+ */
+export function useRovingRadio(count: number, selected: number, onSelect: (index: number) => void) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([])
+  const anchor = selected >= 0 && selected < count ? selected : 0
+  const moveTo = (index: number) => {
+    if (count < 1) return
+    const next = ((index % count) + count) % count
+    onSelect(next)
+    refs.current[next]?.focus()
+  }
+  return (index: number) => ({
+    ref: (el: HTMLButtonElement | null) => {
+      refs.current[index] = el
+    },
+    tabIndex: index === anchor ? 0 : -1,
+    onKeyDown: (e: ReactKeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') moveTo(index + 1)
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') moveTo(index - 1)
+      else if (e.key === 'Home') moveTo(0)
+      else if (e.key === 'End') moveTo(count - 1)
+      else return
+      e.preventDefault()
+    },
+  })
 }
 
 export function Segmented<T extends string>({
@@ -298,14 +403,20 @@ export function Segmented<T extends string>({
   // 320px screen — worse with relaxed text spacing, but broken without it too.
   // A basis lets them share a row when they fit and drop to a second row when
   // they do not, so no label is ever truncated.
+  const radio = useRovingRadio(
+    options.length,
+    options.findIndex((o) => o.value === value),
+    (i) => onChange(options[i].value),
+  )
   return (
     <div role="radiogroup" aria-label={ariaLabel} className="flex flex-wrap gap-1 bg-surface2 border border-line rounded-xl p-1">
-      {options.map((o) => (
+      {options.map((o, i) => (
         <button
           type="button"
           key={o.value}
           role="radio"
           aria-checked={value === o.value}
+          {...radio(i)}
           onClick={() => onChange(o.value)}
           className={`flex-1 basis-auto min-h-11 px-2 rounded-lg text-sm font-medium transition-colors ${
             value === o.value ? 'bg-surface text-ink shadow-card border border-line' : 'text-muted hover:text-ink'

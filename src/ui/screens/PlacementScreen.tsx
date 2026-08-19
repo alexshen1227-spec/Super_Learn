@@ -18,12 +18,16 @@ import {
 import { validate, validatorName } from '../../engine/validate'
 import { uid } from '../../engine/rng'
 import type { AttemptEvent, ItemTemplate } from '../../domain/types'
-import { Button, Card, Chip } from '../components'
+import { Button, Card, Chip, useRovingRadio } from '../components'
 import { Rich } from '../richtext'
 import { AnswerInput } from '../session/ItemPlayer'
 import { useWakeLock } from '../useWakeLock'
 
 type Phase = 'intro' | 'probe' | 'report'
+
+/** One list serves rendering and keyboard order alike — the confidence
+ *  radiogroup is addressed by index, so the values must never fork. */
+const CONFIDENCE_STEPS = [20, 40, 60, 80, 95]
 
 export function PlacementScreen() {
   const { state, dispatch } = useStore()
@@ -36,6 +40,11 @@ export function PlacementScreen() {
   // would cost routing accuracy on the one pass that sets the starting point.
   useWakeLock(phase === 'probe')
   const [confidence, setConfidence] = useState<number | null>(null)
+  const confRadio = useRovingRadio(
+    CONFIDENCE_STEPS.length,
+    confidence === null ? -1 : CONFIDENCE_STEPS.indexOf(confidence),
+    (i) => setConfidence(CONFIDENCE_STEPS[i]),
+  )
   const [probeCount, setProbeCount] = useState(0)
   /** Wrong on the math ladder → one easier constructed follow-up (slip vs gap). */
   const [followUp, setFollowUp] = useState<{ skillId: string } | null>(null)
@@ -255,12 +264,13 @@ export function PlacementScreen() {
           <div className="mt-4">
             <span className="text-[13px] text-muted font-medium">How sure are you?</span>
             <div className="flex gap-1.5 mt-1.5" role="radiogroup" aria-label="Confidence">
-              {[20, 40, 60, 80, 95].map((c) => (
+              {CONFIDENCE_STEPS.map((c, i) => (
                 <button
                   type="button"
                   key={c}
                   role="radio"
                   aria-checked={confidence === c}
+                  {...confRadio(i)}
                   onClick={() => setConfidence(c)}
                   className={`flex-1 min-h-11 rounded-lg border text-[13px] font-medium ${confidence === c ? 'bg-accent-soft border-accent/50 text-accent' : 'bg-surface border-line text-faint'}`}
                 >
