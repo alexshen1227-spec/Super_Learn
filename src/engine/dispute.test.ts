@@ -214,3 +214,46 @@ describe('suppression reaches the real planner, not just the helper', () => {
     expect(servedAfter.length).toBeGreaterThan(0)
   })
 })
+
+describe('the quarantine reaches every consumer, not only mastery', () => {
+  // The rule in types.ts: a disputed attempt informs NO derived number. The
+  // planner always read through the filter; the coach and the Error Clinic
+  // read the raw log until 2026-08-18, so a contested confident miss kept
+  // driving beliefs and repair plans while the evidence engine had already
+  // set it aside.
+  it('a disputed confident miss cannot become an Error Clinic target', async () => {
+    const { openRepairTargets } = await import('./errors')
+    const confident = { ...attempt('cm', 'tpl-9', T0 + 20 * DAY, false), confidence: 95, errorTags: ['concept'] }
+    const state = {
+      ...initialState(),
+      onboarded: true,
+      events: [...wins, confident],
+      disputes: [raise('cm', 'tpl-9', NOW)],
+    } as AppState
+    const judged = evidenceEvents(state.events, state.disputes)
+    const evidence = deriveEvidence(judged, NOW)
+    const targets = openRepairTargets(state, evidence, NOW)
+    expect(targets.map((t) => t.skillId)).not.toContain(SKILL)
+    // Control: the identical state with no dispute DOES produce the target.
+    const undisputed = { ...state, disputes: [] } as AppState
+    const rawEvidence = deriveEvidence(undisputed.events, NOW)
+    expect(openRepairTargets(undisputed, rawEvidence, NOW).map((t) => t.skillId)).toContain(SKILL)
+  })
+
+  it('a disputed miss does not surface as a high-confidence error in the coach', async () => {
+    const { todayInsight } = await import('./coach')
+    const confident = { ...attempt('cm2', 'tpl-9', T0 + 20 * DAY, false), confidence: 95 }
+    const state = {
+      ...initialState(),
+      onboarded: true,
+      events: [...wins, confident],
+      disputes: [raise('cm2', 'tpl-9', NOW)],
+    } as AppState
+    const evidence = deriveEvidence(evidenceEvents(state.events, state.disputes), NOW)
+    expect(todayInsight(DEFAULT_INDEX, evidence, state, NOW)).not.toMatch(/confident error/)
+    const undisputed = { ...state, disputes: [] } as AppState
+    expect(todayInsight(DEFAULT_INDEX, deriveEvidence(undisputed.events, NOW), undisputed, NOW)).toMatch(
+      /confident error/,
+    )
+  })
+})

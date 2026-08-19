@@ -100,7 +100,15 @@ export function coachBeliefs(
   now: number,
 ): CoachBelief[] {
   const beliefs: CoachBelief[] = []
-  const recent = recentEvents(state.events, now, 28)
+  /*
+   * Disputed attempts must not inform any belief. The planner already reads
+   * through this filter; the coach read the RAW log, so a contested miss
+   * could keep driving "weak area", calibration, and mal-rule beliefs while
+   * the evidence engine had already set it aside. One filtered view, used by
+   * every belief below.
+   */
+  const judged = evidenceEvents(state.events, state.disputes)
+  const recent = recentEvents(judged, now, 28)
   const graded = recent.filter((e) => e.firstCorrect !== null)
 
   /*
@@ -158,7 +166,7 @@ export function coachBeliefs(
    * else, and it refuses to name a habit from too few errors — see
    * engine/malRules.ts for the thresholds and why they exist.
    */
-  const mal = malRuleProfile(state.events, now)
+  const mal = malRuleProfile(judged, now)
   for (const rule of mal.rules.slice(0, 2)) {
     const where = rule.topSkillIds
       .map((id) => index.skills.get(id)?.name)
@@ -188,7 +196,7 @@ export function coachBeliefs(
    * not change it — the learner cannot check a decision they were never told
    * about. Stated as a belief with its evidence, like everything else here.
    */
-  const stretch = stretchSignal(evidenceEvents(state.events, state.disputes), now)
+  const stretch = stretchSignal(judged, now)
   if (stretch.accuracy !== null && stretch.why) {
     const cruising = stretch.adjust > 0
     const easing = stretch.adjust < 0
@@ -366,7 +374,10 @@ export function weeklyObjective(
   now: number,
 ): string {
   const due = dueReviews(evidence, now)
-  const report = effectiveAllocation(state, evidence, index, now).report
+  // Same quarantine as the planner: allocation debt must not see disputes.
+  const judged = evidenceEvents(state.events, state.disputes)
+  const forEvidence = judged.length === state.events.length ? state : { ...state, events: judged }
+  const report = effectiveAllocation(forEvidence, evidence, index, now).report
   const ctx = { index, evidence, state, now, checkIn: { minutes: 25, energy: 'ok' as const, focus: null } }
   let top: ReturnType<typeof scoreSkills>[number] | null = null
   for (const bucket of ACADEMIC_BUCKETS) {
@@ -396,14 +407,15 @@ export function todayInsight(
   state: AppState,
   now: number,
 ): string {
-  const hce = highConfidenceErrors(recentEvents(state.events, now, 14))
+  const judged = evidenceEvents(state.events, state.disputes)
+  const hce = highConfidenceErrors(recentEvents(judged, now, 14))
   if (hce.length)
     return `You have ${hce.length} confident error${hce.length > 1 ? 's' : ''} waiting for repair — clearing those beats new material today.`
   const due = dueReviews(evidence, now)
   if (due.length >= 3) return `${count(due.length, 'review')} ${due.length === 1 ? 'is' : 'are'} due; retrieval first, then new ground.`
   const bn = findBottleneck(index, evidence, state)
   if (bn) return `${bn.name} is blocking ${bn.dependents} downstream skill${bn.dependents > 1 ? 's' : ''} — today's core targets it.`
-  const gap = calibrationGap(recentEvents(state.events, now, 28))
+  const gap = calibrationGap(recentEvents(judged, now, 28))
   if (gap !== null && gap > 0.12) return 'Recent confidence has run ahead of accuracy — slow down before you commit an answer.'
   const retained = [...evidence.values()].filter((e) => stateRank(e.state) >= stateRank('retained')).length
   if (retained > 0) return `${retained} skill${retained > 1 ? 's' : ''} now show delayed retention — the kind of learning that lasts.`

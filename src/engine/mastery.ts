@@ -48,6 +48,32 @@ export const STATE_LABEL: Record<SkillState, string> = {
 /** Review interval ladder in days — explainable, adaptive, heuristic. */
 export const REVIEW_LADDER_DAYS = [1, 3, 7, 14, 30, 60]
 
+/**
+ * The longest interval any review may be scheduled at, in days. Equal to the
+ * ceiling the old arithmetic already implied (top rung 60 × stability cap 2),
+ * stated as its own constant now that survived-gap credit can also reach it.
+ */
+export const MAX_REVIEW_DAYS = 120
+
+/**
+ * A retrieval that arrived LATER than asked and still succeeded is evidence
+ * about the gap it actually survived, not about the rung it sat on.
+ *
+ * The old arithmetic threw that information away: answering a rung-3 review
+ * 45 days late scheduled the next check from the 7-day ladder step, exactly
+ * as if the memory had only been shown to survive a week. The demonstrated
+ * gap is the honest floor for the next one — scheduling a check SOONER than
+ * a gap the learner just survived spends reviews on retrieval that taught
+ * nothing. (Spacing evidence supports gaps that grow with demonstrated
+ * retention — Cepeda et al. 2008's optimal-gap curves, and personalized-
+ * spacing systems built on the same observation — but no study fixes this
+ * exact rule: the FORM is evidence-aligned, the arithmetic is a HEURISTIC,
+ * like the ladder itself.)
+ */
+function nextIntervalDays(ladderDays: number, survivedDays: number, stability: number): number {
+  return Math.min(MAX_REVIEW_DAYS, Math.max(ladderDays, survivedDays) * stability)
+}
+
 const DAY = 86_400_000
 export const RETENTION_GAP_MS = 48 * 3_600_000
 const HIGH_CONF = 80
@@ -152,10 +178,11 @@ export const TRANSFER_DIMENSIONS_REQUIRED = 2
  * file counts hinted work. `K` decays with experience so the first few attempts
  * move the estimate quickly and later ones only refine it.
  *
- * HEURISTIC in its constants (start point, decay, the 0.7 target rate the
- * planner asks for); EVIDENCE-shaped in its form, which is the standard item-
- * response model. It refuses to exist below `ABILITY_MIN_SAMPLES` rather than
- * reporting a number built from two answers.
+ * HEURISTIC in its constants (start point, decay, the 0.6 target rate the
+ * planner asks for — swept, not picked; see ABILITY_TARGET_RATE);
+ * EVIDENCE-shaped in its form, which is the standard item-response model. It
+ * refuses to exist below `ABILITY_MIN_SAMPLES` rather than reporting a number
+ * built from two answers.
  */
 export const ABILITY_MIN_SAMPLES = 4
 const ABILITY_START = 2
@@ -284,13 +311,20 @@ function applyFormEvent(
   eventualSuccess: boolean,
   confidentMiss: boolean,
 ): void {
+  // Prior state, read before it is overwritten: the survived-gap credit and
+  // the spaced-retrieval test below are about the attempt BEFORE this one.
+  const priorAt = form.lastAttemptAt
+  const priorCorrect = form.lastOutcomeCorrect
   form.lastAttemptAt = e.t
   form.lastOutcomeCorrect = e.firstCorrect
   if (firstSuccess) {
-    form.successes++
+    // Spaced-only, same 48-hour bar as the skill level — a second correct
+    // answer minutes after the first is the same sitting, not a retrieval.
+    if (priorAt > 0 && e.t - priorAt >= RETENTION_GAP_MS) form.successes++
+    const survivedDays = priorAt > 0 && priorCorrect === true ? (e.t - priorAt) / DAY : 0
     form.reviewIndex = Math.min(form.reviewIndex + 1, REVIEW_LADDER_DAYS.length)
-    const baseDays = REVIEW_LADDER_DAYS[Math.min(form.reviewIndex - 1, REVIEW_LADDER_DAYS.length - 1)]
-    form.reviewDue = e.t + baseDays * stabilityFactor(form.successes, form.lapses) * DAY
+    const ladderDays = REVIEW_LADDER_DAYS[Math.min(form.reviewIndex - 1, REVIEW_LADDER_DAYS.length - 1)]
+    form.reviewDue = e.t + nextIntervalDays(ladderDays, survivedDays, stabilityFactor(form.successes, form.lapses)) * DAY
   } else if (eventualSuccess) {
     // Repaired: hold the rung but bring it back soon.
     form.reviewDue = e.t + 1 * DAY
@@ -382,7 +416,16 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
 
   if (firstSuccess) {
     tr.recentMisses = 0
-    if (tr.independentForms.size >= required && e.mode !== 'placement') tr.reviewSuccesses++
+    /*
+     * Only a SPACED retrieval counts toward the stability factor. This used
+     * to increment on every post-independence unaided success, so five
+     * correct answers inside one core block stretched the review schedule
+     * exactly as far as five successes spread over weeks — massed practice
+     * buying spacing credit it had not earned. The bar is the same 48 hours
+     * the retention rung uses, so "spaced" means one thing in this file.
+     */
+    const spacedRetrieval = tr.lastCorrectAt !== null && e.t - tr.lastCorrectAt >= RETENTION_GAP_MS
+    if (tr.independentForms.size >= required && e.mode !== 'placement' && spacedRetrieval) tr.reviewSuccesses++
     // Placement gives at most one form of credit; it routes, it does not prove.
     //
     // A form is the FAMILY, not the variant. This used to key on
@@ -436,15 +479,18 @@ function applyEvent(tr: Tracker, e: AttemptEvent): void {
       tr.transferredAt = e.t
       tr.transferCrossed = describeCrossed(crossed)
     }
-    tr.lastCorrectAt = e.t
     // Review ladder advances on unaided success (placement does not schedule).
     // First success schedules ladder[0] = 1 day; each further success climbs.
-    // The base interval is scaled by the skill's personal stability factor.
+    // The base is the LARGER of the ladder step and the gap this success just
+    // survived (see nextIntervalDays), scaled by the personal stability factor.
     if (e.mode !== 'placement') {
+      const survivedDays =
+        !recycled && tr.lastCorrectAt !== null ? (e.t - tr.lastCorrectAt) / DAY : 0
       tr.reviewIndex = Math.min(tr.reviewIndex + 1, REVIEW_LADDER_DAYS.length)
-      const baseDays = REVIEW_LADDER_DAYS[Math.min(tr.reviewIndex - 1, REVIEW_LADDER_DAYS.length - 1)]
-      tr.reviewDue = e.t + baseDays * stabilityFactor(tr.reviewSuccesses, tr.lapses) * DAY
+      const ladderDays = REVIEW_LADDER_DAYS[Math.min(tr.reviewIndex - 1, REVIEW_LADDER_DAYS.length - 1)]
+      tr.reviewDue = e.t + nextIntervalDays(ladderDays, survivedDays, stabilityFactor(tr.reviewSuccesses, tr.lapses)) * DAY
     }
+    tr.lastCorrectAt = e.t
   } else if (eventualSuccess) {
     // Solved with hints or on retry: guided evidence.
     tr.guidedSuccesses++

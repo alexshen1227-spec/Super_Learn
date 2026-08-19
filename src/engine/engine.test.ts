@@ -5,7 +5,7 @@ import { initialState } from '../domain/types'
 import { allocationReport, relativeDebt } from './allocation'
 import { brierScore, calibrationBands, calibrationGap, highConfidenceErrors } from './calibration'
 import { deriveEvidence } from './mastery'
-import { buildChallengePlan, buildFocusPlan, buildMixedReviewPlan, buildSessionPlan, estimatedPlanMinutes, prereqsMet, scoreSkills, targetDifficulty } from './planner'
+import { SESSION_GRACE_MIN, buildChallengePlan, buildFocusPlan, buildMixedReviewPlan, buildSessionPlan, estimatedPlanMinutes, prereqsMet, scoreSkills, targetDifficulty } from './planner'
 import { applyProbe, nextProbe, PLACEMENT_MAX_ITEMS, startPlacement, summarizePlacement, MATH_LADDER } from './placement'
 import { activityIntake, coachBeliefs, findBottleneck, todayInsight, weeklyObjective } from './coach'
 import { assignmentCorrect, countSolutions, puzzleValid } from './logicGrid'
@@ -199,7 +199,12 @@ describe('planner', () => {
       checkIn: { minutes: 30, energy: 'ok', focus: null },
     })
     expect(estimatedPlanMinutes(plan)).toBeGreaterThanOrEqual(24)
-    expect(estimatedPlanMinutes(plan)).toBeLessThanOrEqual(33)
+    // The ceiling is the app's own promise: a session may land within
+    // SESSION_GRACE_MIN of the ask (readiness probes are appended past the
+    // budget by design — they must never displace practice). The old magic 33
+    // only held because the exit block under-reported its item by a minute;
+    // when the estimate became honest the same plan read one minute higher.
+    expect(estimatedPlanMinutes(plan)).toBeLessThanOrEqual(30 + SESSION_GRACE_MIN)
     const forms = plan.blocks.flatMap((block) => block.activities.map((activity) => {
       const template = DEFAULT_INDEX.templates.get(activity.templateId)!
       return `${activity.templateId}:${activity.seed % template.variants}`

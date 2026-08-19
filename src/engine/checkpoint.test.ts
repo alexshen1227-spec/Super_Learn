@@ -43,8 +43,15 @@ describe('unit checkpoints are offered only when they would mean something', () 
 
   it('offers nothing when the skills were only just practised', () => {
     // Same evidence, but checked immediately — nothing has come due yet.
+    //
+    // "Immediately" means BEFORE the first family's 1-day due, not after it.
+    // This used to sit 60 seconds past that due and passed anyway, because
+    // the first success was (wrongly) counted into the stability factor and
+    // stretched the interval to 1.15 days — a 3.6-hour artifact margin. The
+    // spaced-only counting removed the artifact, and the probe time now says
+    // what the comment always meant.
     const events = ownUnit(unitSkills)
-    const soon = T0 + 1 * DAY + 60_000
+    const soon = T0 + 1 * DAY - 60_000
     expect(findUnitCheckpoint(DEFAULT_INDEX, deriveEvidence(events, soon), soon)).toBeNull()
   })
 

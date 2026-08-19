@@ -600,6 +600,30 @@ export const PATH_CORE_DEBT = 0.2
  *  on purpose: retention still outranks balance. HEURISTIC. */
 export const STARVED_BOOST = 3.4
 
+/**
+ * The second, gentler academic rescue — for a bucket that is persistently a
+ * LITTLE short rather than dramatically short.
+ *
+ * Physics measured 3.8-4.9% against a 7% target on the multi-session and
+ * goal-tilted five-year shapes: a relative debt of 0.30-0.46, parked just
+ * under `STARVED_DEBT`'s 0.4 bar exactly the way Human Insight once parked
+ * under 0.5 — a threshold set below where the problem lives is invisible,
+ * because nothing ever fails and the number is simply always a bit wrong.
+ * Lowering `STARVED_DEBT` itself to 0.3 was tried and thrashes (the planner
+ * flip-flops between buckets and `sessionRhythm` catches it reviewing a skill
+ * twice in a day).
+ *
+ * So this bar is lower but carries a second condition: the shortfall must be
+ * real in MINUTES, not only in proportion. Two full core blocks' worth of owed
+ * minutes cannot be week-to-week drift — and because the threshold is
+ * absolute, it self-selects the high-volume shapes that were measured short
+ * while a ten-minute learner's small wobbles never trip it. Serving one core
+ * block does not clear a 24-minute debt, so consecutive rescues are catch-up,
+ * not thrash. HEURISTIC pair, checked by the five-year gate.
+ */
+export const ACADEMIC_RESCUE_DEBT = 0.25
+export const ACADEMIC_RESCUE_MINUTES = 24
+
 /** Placement-cleared material is deprioritised so the frontier moves on. */
 const CAPABLE_PENALTY = 2
 /**
@@ -879,6 +903,30 @@ function minutesOf(templates: ItemTemplate[]): number {
   return templates.reduce((a, t) => a + t.minutes, 0)
 }
 
+/**
+ * Reorder a picked set so consecutive items change skill wherever possible.
+ *
+ * `pickTemplatesForBudget` returns rank order, which tends to run all of one
+ * skill's items and then all of the next — blocked practice wearing an
+ * interleaved label. The interleaving evidence (RESEARCH.md §3) is about the
+ * SCHEDULE the learner experiences: the mixing is the treatment, so the
+ * emitted order has to actually alternate. Greedy and stable within a skill,
+ * so each skill's own difficulty ramp survives the shuffle.
+ */
+export function interleaveOrder(picks: ItemTemplate[]): ItemTemplate[] {
+  const rest = [...picks]
+  const out: ItemTemplate[] = []
+  let last: string | null = null
+  while (rest.length) {
+    let at = rest.findIndex((t) => (t.skillIds[0] ?? '') !== last)
+    if (at === -1) at = 0
+    const t = rest.splice(at, 1)[0]
+    out.push(t)
+    last = t.skillIds[0] ?? ''
+  }
+  return out
+}
+
 function act(t: ItemTemplate, mode: AttemptMode, used: Set<string>): PlannedActivity {
   const seed = pickSeed(t, used)
   used.add(`${t.id}:${seed}`)
@@ -905,7 +953,10 @@ function act(t: ItemTemplate, mode: AttemptMode, used: Set<string>): PlannedActi
  */
 export function reviewsPerSession(dueCount: number, sessionMinutes: number): number {
   if (sessionMinutes <= 12) return 2
-  return dueCount / 20 >= 0.75 ? 5 : 3
+  // A long session under real queue pressure may work the queue harder: the
+  // old flat cap of 5 meant a 45-minute session retired reviews no faster
+  // than a 20-minute one, while due demand scales with every skill owned.
+  return dueCount / 20 >= 0.75 ? (sessionMinutes >= 40 ? 7 : 5) : 3
 }
 
 export function estimatedPlanMinutes(plan: SessionPlan): number {
@@ -1251,7 +1302,13 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
    */
   const duePressure = Math.min(1, due.length / 20)
   const warmShare = 0.18 + 0.12 * duePressure
-  const warmBudget = short ? 3 : Math.min(9, Math.max(4, Math.round(total * warmShare)))
+  // The ceiling scales with the session: a flat min(9, …) silently swallowed
+  // the whole `duePressure` widening for any session over ~30 minutes, so a
+  // 45- or 60-minute learner's warm-up could never actually widen. The 30%
+  // bound is the same promise as before — urgent work leans on the plan, it
+  // never takes it over.
+  const warmCeiling = Math.max(9, Math.round(total * 0.3))
+  const warmBudget = short ? 3 : Math.min(warmCeiling, Math.max(4, Math.round(total * warmShare)))
   let warmMin = 0
   const warmSkills: string[] = []
   // FAMILY-LEVEL first. Asking for the exact question family that lapsed is
@@ -1465,6 +1522,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
   let coreBucket: BucketId = 'math'
   let coreEffective = -Infinity
   let starvedPick: BucketId | null = null
+  const scoredByBucket = new Map<BucketId, SkillScore[]>()
   /*
    * Math's incumbency is a TIE-BREAKER, not a shield. Adding it on top of the
    * course tilt (TRACK_BONUS + TRACK_UNIT_BONUS = 1.7) put a track-boosted math
@@ -1474,16 +1532,29 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
    * bigger number (whack-a-mole between four coupled constants), incumbency
    * simply stands down while another academic bucket is starving.
    */
-  const anyStarving =
+  /*
+   * Starved either the dramatic way (relative debt past `STARVED_DEBT`) or
+   * the persistent way (a smaller relative shortfall that has accumulated
+   * into real owed minutes — see ACADEMIC_RESCUE_DEBT). The second branch is
+   * academic-only: a Path bucket's route into the core is `PATH_CORE_DEBT`,
+   * which is already gentler than either.
+   */
+  const rescueWorthy = (b: BucketId): boolean =>
     historyEnough &&
-    academicDebtOrder.some(
-      (b) => b !== 'math' && relativeDebt(report, b) >= STARVED_DEBT && scoreSkills(b, ctx, report).length > 0,
-    )
+    b !== 'math' &&
+    (relativeDebt(report, b) >= STARVED_DEBT ||
+      (ACADEMIC_BUCKETS.includes(b) &&
+        relativeDebt(report, b) >= ACADEMIC_RESCUE_DEBT &&
+        report.debtMinutes[b] >= ACADEMIC_RESCUE_MINUTES))
+  const anyStarving = academicDebtOrder.some(
+    (b) => rescueWorthy(b) && scoreSkills(b, ctx, report).length > 0,
+  )
   for (const bucket of academicDebtOrder) {
     const scored = scoreSkills(bucket, ctx, report)
+    scoredByBucket.set(bucket, scored)
     if (!scored.length) continue
     const best = scored[0]
-    const starved = historyEnough && bucket !== 'math' && relativeDebt(report, bucket) >= STARVED_DEBT
+    const starved = rescueWorthy(bucket)
     const effective =
       best.score + (starved ? STARVED_BOOST : 0) + (bucket === 'math' && !anyStarving ? MATH_CORE_MARGIN : 0)
     if (
@@ -1502,6 +1573,75 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       `${BUCKET_BY_ID[starvedPick].name} has been served well under its target, so it leads today.`,
     )
   }
+  /*
+   * ---- 2b. Opening breadth sampler (the first sessions only)
+   *
+   * THE FIRST THREE DAYS USED TO BE A SINGLE-SUBJECT APP. Every balancing
+   * mechanism in this file keys off DEBT, and debt needs history:
+   * `historyEnough` requires 60 minutes of practice before starvation or
+   * rescue can move anything. Before that, the core block simply goes to the
+   * highest-scoring bucket — mathematics, whose skills gate physics and carry
+   * the course tilt — and the core is most of a session. Measured on a fresh
+   * profile at 25 minutes a day: 7-8 maths items out of 10 on each of days
+   * one to three (src/sim/coldstart.sim.ts pins this now).
+   *
+   * Four tuning-level fixes were tried and reverted (docs/OPEN.md): rotating
+   * the cold-start bucket order is a no-op, and every version that shrank the
+   * core's ITEM COUNT either under-filled the session or broke the
+   * placement-informed difficulty aim, because breadth, session length and
+   * difficulty aiming all lived in one block.
+   *
+   * This is the structural version those failures pointed at. The core keeps
+   * its winner and its difficulty ramp; a SEPARATE sampler hands one item
+   * each to the two next-best academic buckets, paid for out of the core
+   * budget in MINUTES — so the session stays the length the learner chose and
+   * the winner's picks are still the ones nearest its difficulty target. It
+   * runs only while the balance system is blind (first ~6 sessions, under an
+   * hour of history) and never on short sessions or against an explicit
+   * focus request, then the ordinary single-focus core returns.
+   */
+  const coldOpen = !historyEnough && ordinal < 6 && !short && !checkIn.focus && coreChoice !== null
+  const samplerBlocks: PlannedBlock[] = []
+  if (coldOpen) {
+    const runnersUp = ACADEMIC_BUCKETS.filter((b) => b !== coreBucket)
+      .map((b) => ({ bucket: b, scored: scoredByBucket.get(b) ?? scoreSkills(b, ctx, report) }))
+      .filter((x) => x.scored.length > 0)
+      .sort((a, b) => b.scored[0].score - a.scored[0].score)
+      .slice(0, 2)
+    for (const { bucket, scored } of runnersUp) {
+      const pick = scored[0]
+      const sev = evidenceFor(evidence, pick.skill.id)
+      const sdiff = targetDifficulty(sev, checkIn.energy, conservative, placementSignal(state, pick.skill.id), dialFor(pick.skill.id))
+      const picks = pickTemplates(
+        // A template listing this skill can live in ANOTHER bucket (cross-area
+        // items); a sampler block claims to be its bucket, so it must serve it.
+        (index.bySkill.get(pick.skill.id) ?? []).filter((t) => t.bucket === bucket),
+        sdiff,
+        1,
+        templateUse,
+        { easing: easingFor(pick.skill.id), used },
+      )
+      if (!picks.length) continue
+      samplerBlocks.push({
+        id: uid('b'),
+        kind: 'rotation',
+        bucket,
+        label: `${BUCKET_BY_ID[bucket].name} · first look`,
+        minutes: picks[0].minutes,
+        activities: [act(picks[0], stateRank(sev.state) < stateRank('guided') ? 'guided' : 'independent', used)],
+        why: `${pick.skill.name} — your first sessions sample each area while the app learns where you stand.`,
+      })
+    }
+    if (samplerBlocks.length) {
+      rationale.push(
+        `Opening breadth: one first look at ${samplerBlocks
+          .map((b) => BUCKET_BY_ID[b.bucket].name)
+          .join(' and ')} alongside the main focus — the balance system needs about an hour of evidence before it can steer.`,
+      )
+    }
+  }
+  const samplerMinutes = samplerBlocks.reduce((a, b) => a + b.minutes, 0)
+
   if (coreChoice) {
     const ev = evidenceFor(evidence, coreChoice.skill.id)
     const diff = targetDifficulty(ev, checkIn.energy, conservative, placementSignal(state, coreChoice.skill.id), dialFor(coreChoice.skill.id))
@@ -1511,7 +1651,7 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     // planned at 15.1 minutes on 99% of days.
     const coreBudget = short
       ? Math.max(2, total - warmMin - labBudget - exitBudget)
-      : Math.max(6, total - warmMin - labBudget - exitBudget)
+      : Math.max(6, total - warmMin - labBudget - exitBudget - samplerMinutes)
     const needsIntro = stateRank(ev.state) < stateRank('guided')
     // Calibration steering: only once there is enough rated history to say
     // anything. calibrationGap returns null below its sample floor.
@@ -1532,14 +1672,36 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       ...(index.bySkill.get(coreChoice.skill.id) ?? []),
       ...neighbours.flatMap((n) => index.bySkill.get(n.skill.id) ?? []),
     ]
-    const picks = pickTemplatesForBudget(corePool, diff, coreBudget, templateUse, {
+    /*
+     * A FIRST MEETING does not get the far end of the pool.
+     *
+     * `targetDifficulty` already rules that the dial may lower a first meeting
+     * and never raise one — but the POOL could still raise it: when a skill
+     * has few families, `pickTemplatesForBudget` serves essentially all of
+     * them, and several skills carry 4-5★ search problems tagged alongside
+     * their 2★ introductions. Measured on a cold learner's first session: a
+     * 5★ digit-placement optimisation served on day one, against an aim of
+     * 1.5 — unassisted discovery, the one instructional move with a negative
+     * effect size (RESEARCH.md §14), arriving through pool thinness rather
+     * than any decision. So while the skill is still being introduced, items
+     * far above the aim step aside — unless so little else exists that the
+     * block could not fill at all, the same fallback shape every other filter
+     * here takes.
+     */
+    const introPool =
+      needsIntro && corePool.filter((t) => t.difficulty <= diff + 2).length >= 2
+        ? corePool.filter((t) => t.difficulty <= diff + 2)
+        : corePool
+    const picks = pickTemplatesForBudget(introPool, diff, coreBudget, templateUse, {
       maxCount: short ? 2 : 8,
       minCount: short ? 1 : 3,
       preferCalibration: miscalibrated,
       easing: easingFor(coreChoice.skill.id),
       used,
     })
-    const actsCore: PlannedActivity[] = picks.map((t, i) =>
+    // When the block claims to interleave, the played order must interleave.
+    const ordered = neighbours.length ? interleaveOrder(picks) : picks
+    const actsCore: PlannedActivity[] = ordered.map((t, i) =>
       act(
         t,
         needsIntro && i === 0 ? 'guided' : stateRank(ev.state) >= stateRank('independent') && t.transfer ? 'transfer' : 'independent',
@@ -1573,6 +1735,9 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
       }
     }
   }
+  // The sampler plays AFTER the main focus: the lead subject opens the
+  // session, then the first looks widen it.
+  blocks.push(...samplerBlocks)
 
   // ---- 3. Rotating lab block (one item on a short day, a full block otherwise)
   {
@@ -1655,23 +1820,53 @@ export function buildSessionPlan(ctx: PlannerContext): SessionPlan {
     // easing the rest of the session does. Left un-threaded it was measured as
     // the HARDEST block in a struggling learner's day (3.0★ against a 2★ ask)
     // — the last thing they saw before the session ended.
+    /*
+     * And it must respect the same AIM. A hardcoded ask of 2 was invisible
+     * while the core block was large, and surfaced the moment the opening
+     * sampler shrank it: one 2★ exit among five maths items pulled a
+     * strong-placement learner's maths mean below a cold learner's, failing
+     * difficultyFloor.test.ts. The exit is "one unaided problem on today's
+     * focus" — its level should be today's level, capped at 3 so the session
+     * never ENDS on the hardest thing it contains.
+     */
+    const exitDiff = Math.min(
+      3,
+      targetDifficulty(
+        evidenceFor(evidence, coreSkillId),
+        checkIn.energy,
+        conservative,
+        placementSignal(state, coreSkillId),
+        dialFor(coreSkillId),
+      ),
+    )
+    // The exit is ONE short unaided problem. Without this shape filter, aiming
+    // it at the session's difficulty let a 14-minute case file rank "nearest"
+    // and a 20-minute ask planned 38 — caught by sessionRhythm.test.ts. If the
+    // skill has no short single item, the session ends without an exit rather
+    // than with a block that lies about its size.
+    // ≤3 minutes because that is what `exitBudget` reserves — a block that
+    // reports more than its reservation grows the session past the ask.
+    const exitShaped = (t: ItemTemplate) => t.kind === 'single' && t.minutes <= 3
     const exitPick = pickTemplates(
-      (index.bySkill.get(coreSkillId) ?? []).filter((t) => !usedInCore.has(t.id)),
-      2,
+      (index.bySkill.get(coreSkillId) ?? []).filter((t) => exitShaped(t) && !usedInCore.has(t.id)),
+      exitDiff,
       1,
       templateUse,
       { easing: easingFor(coreSkillId), used },
     )
     const fallback = exitPick.length
       ? exitPick
-      : pickTemplates(index.bySkill.get(coreSkillId) ?? [], 2, 1, templateUse, { easing: easingFor(coreSkillId), used })
+      : pickTemplates((index.bySkill.get(coreSkillId) ?? []).filter(exitShaped), exitDiff, 1, templateUse, {
+          easing: easingFor(coreSkillId),
+          used,
+        })
     if (fallback.length) {
       blocks.push({
         id: uid('b'),
         kind: 'exit',
         bucket: coreChoice!.skill.bucket,
         label: 'Exit ticket',
-        minutes: 2,
+        minutes: Math.max(2, fallback[0].minutes),
         activities: [act(fallback[0], 'independent', used)],
         why: 'One unaided problem on today’s focus — independent evidence is what advances a skill.',
       })

@@ -1,5 +1,6 @@
 /** Open-error detection shared by Practice and the Error Clinic planner. */
 import type { AppState, ErrorTag, SkillEvidence } from '../domain/types'
+import { evidenceEvents } from './dispute'
 
 const DAY = 86_400_000
 
@@ -20,7 +21,10 @@ export function openRepairTargets(
 ): RepairTarget[] {
   const cutoff = now - windowDays * DAY
   const latest = new Map<string, RepairTarget>()
-  for (const event of state.events) {
+  // Disputed attempts are quarantined from everything evidential (the app-wide
+  // rule in types.ts). This walked the RAW log, so the Error Clinic could
+  // build a repair block around the very attempt the learner has contested.
+  for (const event of evidenceEvents(state.events, state.disputes)) {
     if (event.t < cutoff || event.firstCorrect !== false) continue
     for (const skillId of event.skillIds) {
       const ev = evidence.get(skillId)
