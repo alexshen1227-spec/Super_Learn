@@ -87,6 +87,8 @@ export function Today() {
     (state.profile.trackConfirmedAt === null || now - state.profile.trackConfirmedAt > TRACK_CHECKIN_MS)
   const isWeekend = [0, 6].includes(new Date().getDay())
   const hasWeekData = state.events.some((e) => e.t > now - 7 * 86_400_000 && e.mode !== 'placement')
+  const draftCaseCount = state.reasoningCases.filter((reasoningCase) => reasoningCase.status === 'draft').length
+  const openCaseCount = state.reasoningCases.filter((reasoningCase) => reasoningCase.status !== 'resolved').length
 
   return (
     <div>
@@ -330,6 +332,21 @@ export function Today() {
 
       <SectionTitle>Quick starts</SectionTitle>
       <div className="grid grid-cols-2 gap-3 mb-6 auto-rows-fr">
+        <Card className="p-4 h-full col-span-2 border-accent/40" onClick={() => go({ name: 'practice', openWorkbench: true })}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-semibold text-[15px]">Reasoning Workbench</p>
+              <p className="text-[12px] text-muted mt-0.5">
+                {draftCaseCount
+                  ? 'Resume a real claim or decision: separate facts, keep rivals alive, choose a test.'
+                  : 'Bring a real claim or decision. Expose assumptions and decide what could change your mind.'}
+              </p>
+            </div>
+            {openCaseCount ? (
+              <Chip tone="accent">{openCaseCount} open</Chip>
+            ) : null}
+          </div>
+        </Card>
         <Card className="p-4 h-full" onClick={() => go({ name: 'session', launch: { kind: 'mixed' } })}>
           <p className="font-semibold text-[15px]">Mixed review</p>
           <p className="text-[12px] text-muted mt-0.5">Interleaved retrieval across everything you own</p>

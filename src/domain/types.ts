@@ -826,6 +826,49 @@ export interface Forecast {
   revisions: { t: number; probability: number }[]
 }
 
+// ---------------------------------------------------------------- real-world reasoning cases
+
+export type ReasoningCaseKind = 'claim' | 'decision' | 'explanation'
+export type ReasoningCaseStatus = 'draft' | 'committed' | 'resolved'
+
+/**
+ * A structured pass over a real claim, decision, or explanation.
+ *
+ * These are intentionally NOT learning evidence. They are written by the
+ * learner, have no audited answer, and therefore never enter the mastery
+ * replay. Their purpose is transfer: carry the app's reasoning moves into a
+ * live situation, commit before the outcome, and make the later comparison
+ * possible without hindsight rewriting the original reasoning.
+ */
+export interface ReasoningCase {
+  id: string
+  createdAt: number
+  updatedAt: number
+  kind: ReasoningCaseKind
+  status: ReasoningCaseStatus
+  /** Last completed workbench stage, 0..3. Makes drafts resumable. */
+  stage: number
+  question: string
+  stakes: string
+  /** Directly checkable inputs only; the workbench audits inference language. */
+  observations: string[]
+  /** Interpretations drawn from the observations. */
+  inferences: string[]
+  /** At least two live explanations/options prevent one-story lock-in. */
+  alternatives: string[]
+  assumptions: string[]
+  /** The next observation that would separate the leading alternatives. */
+  disconfirmingTest: string
+  conclusion: string
+  confidence: number
+  resolution: {
+    outcome: 'held-up' | 'mixed' | 'wrong'
+    note: string
+    lesson: string
+    resolvedAt: number
+  } | null
+}
+
 // ---------------------------------------------------------------- profile
 
 export type AgeBand = 'under13' | '13-17' | '18plus' | 'unspecified'
@@ -1065,6 +1108,8 @@ export interface AppState {
   sessions: SessionRecord[]
   coachLog: CoachDecision[]
   forecasts: Forecast[]
+  /** Real-world reasoning workbench drafts and commitments; never evidence. */
+  reasoningCases: ReasoningCase[]
   reports: ProblemReport[]
   /** Append-only challenges to the RECORD. See DisputeEvent. */
   disputes: DisputeEvent[]
@@ -1124,6 +1169,7 @@ export function initialState(): AppState {
     sessions: [],
     coachLog: [],
     forecasts: [],
+    reasoningCases: [],
     reports: [],
     disputes: [],
     plans: [],

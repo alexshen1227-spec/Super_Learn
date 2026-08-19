@@ -23,6 +23,7 @@ import type {
   Forecast,
   PlacementResult,
   ProblemReport,
+  ReasoningCase,
   DisputeEvent,
   Profile,
   SessionRecord,
@@ -243,6 +244,64 @@ function sanitizeForecast(raw: unknown): Forecast | null {
   }
 }
 
+function sanitizeReasoningCase(raw: unknown): ReasoningCase | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const r = raw as Record<string, unknown>
+  const question = str(r.question, '', 500)
+  if (question.trim().length < 3) return null
+  const createdAt = num(r.createdAt, 0, 4102444800000, Date.now())
+  const rawResolution = typeof r.resolution === 'object' && r.resolution !== null
+    ? (r.resolution as Record<string, unknown>)
+    : null
+  const rawOutcome = rawResolution?.outcome
+  const resolutionOutcome: 'held-up' | 'mixed' | 'wrong' | null =
+    rawOutcome === 'held-up' || rawOutcome === 'mixed' || rawOutcome === 'wrong' ? rawOutcome : null
+  const resolution =
+    rawResolution && resolutionOutcome
+      ? {
+          outcome: resolutionOutcome,
+          note: str(rawResolution.note, '', 1000),
+          lesson: str(rawResolution.lesson, '', 1000),
+          resolvedAt: num(rawResolution.resolvedAt, createdAt, 4102444800000, Date.now()),
+        }
+      : null
+  const observations = strArray(r.observations, 8, 500)
+  const inferences = strArray(r.inferences, 8, 500)
+  const alternatives = strArray(r.alternatives, 6, 500)
+  const assumptions = strArray(r.assumptions, 8, 500)
+  const disconfirmingTest = str(r.disconfirmingTest, '', 1000)
+  const conclusion = str(r.conclusion, '', 1000)
+  const structurallyComplete =
+    question.trim().length >= 8 && observations.length > 0 && inferences.length > 0 &&
+    alternatives.length >= 2 && assumptions.length > 0 && disconfirmingTest.trim().length >= 8 &&
+    conclusion.trim().length >= 8
+  const safeResolution = structurallyComplete ? resolution : null
+  const rawStatus = r.status
+  const status: ReasoningCase['status'] = safeResolution
+    ? 'resolved'
+    : rawStatus === 'committed' && structurallyComplete
+      ? 'committed'
+      : 'draft'
+  return {
+    id: str(r.id, `rc${Math.random().toString(36).slice(2, 8)}`, 40),
+    createdAt,
+    updatedAt: num(r.updatedAt, createdAt, 4102444800000, createdAt),
+    kind: r.kind === 'decision' || r.kind === 'explanation' ? r.kind : 'claim',
+    status,
+    stage: num(r.stage, 0, 3, 0),
+    question,
+    stakes: str(r.stakes, '', 500),
+    observations,
+    inferences,
+    alternatives,
+    assumptions,
+    disconfirmingTest,
+    conclusion,
+    confidence: num(r.confidence, 0, 100, 50),
+    resolution: safeResolution,
+  }
+}
+
 function sanitizeDeadline(raw: unknown): Deadline | null {
   if (typeof raw !== 'object' || raw === null) return null
   const d = raw as Record<string, unknown>
@@ -446,6 +505,11 @@ export function sanitizeState(raw: unknown): AppState {
       .map(sanitizeForecast)
       .filter((f): f is Forecast => f !== null)
       .slice(-200),
+    reasoningCases: (Array.isArray(r.reasoningCases) ? r.reasoningCases : [])
+      .map(sanitizeReasoningCase)
+      .filter((reasoningCase): reasoningCase is ReasoningCase => reasoningCase !== null)
+      .sort((a, b) => a.createdAt - b.createdAt)
+      .slice(-100),
     reports: (Array.isArray(r.reports) ? r.reports : [])
       .map(sanitizeReport)
       .filter((p): p is ProblemReport => p !== null)

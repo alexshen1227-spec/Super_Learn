@@ -20,7 +20,7 @@ export type View =
   /** `openCreator` lets the end-of-session invitation land ON the Challenge
    *  Creator rather than dumping the learner on the Practice list to hunt for
    *  the thing they just said yes to. */
-  | { name: Tab; openCreator?: boolean }
+  | { name: Tab; openCreator?: boolean; openWorkbench?: boolean }
   | { name: 'settings' }
   | { name: 'session'; launch: SessionLaunch }
   | { name: 'placement' }
@@ -39,7 +39,7 @@ function initialView(): View {
   // Active learning surfaces restore through their own crash-safe drafts.
   // Reloading directly into a stale launch would bypass the Resume path.
   if (saved && ['today', 'path', 'coach', 'practice', 'progress', 'settings'].includes(saved.name)) {
-    // Name only: a one-shot intent like `openCreator` must not survive a
+    // Name only: one-shot intents like `openCreator` and `openWorkbench` must not survive a
     // reload and re-open a sheet the learner already closed.
     return { name: saved.name } as View
   }

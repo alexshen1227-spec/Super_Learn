@@ -25,7 +25,8 @@ import type {
   Forecast,
   PlacementResult,
   FieldPlan,
-  ProblemReport,
+  ProblemReport,
+  ReasoningCase,
   DisputeEvent,
   Profile,
   SessionRecord,
@@ -64,6 +65,7 @@ export type Action =
   | { type: 'add-forecast'; forecast: Forecast }
   | { type: 'revise-forecast'; id: string; probability: number }
   | { type: 'resolve-forecast'; id: string; outcome: boolean; note: string }
+  | { type: 'upsert-reasoning-case'; reasoningCase: ReasoningCase }
   | { type: 'add-report'; report: ProblemReport }
   | { type: 'raise-dispute'; dispute: DisputeEvent }
   | { type: 'resolve-dispute'; dispute: DisputeEvent }
@@ -185,6 +187,28 @@ export function reduceState(state: AppState, action: Action): AppState {
             : f,
         ),
       }
+    case 'upsert-reasoning-case': {
+      const existing = state.reasoningCases.find((reasoningCase) => reasoningCase.id === action.reasoningCase.id)
+      // A commitment is a pre-outcome record. Once made, its inputs must not
+      // be rewritten with hindsight. The only allowed change is attaching the
+      // eventual resolution; a resolved case is fully immutable.
+      if (existing?.status === 'resolved') return state
+      if (existing?.status === 'committed') {
+        if (action.reasoningCase.status !== 'resolved' || !action.reasoningCase.resolution) return state
+        const resolved = {
+          ...existing,
+          status: 'resolved' as const,
+          updatedAt: action.reasoningCase.updatedAt,
+          resolution: action.reasoningCase.resolution,
+        }
+        return {
+          ...state,
+          reasoningCases: state.reasoningCases.map((reasoningCase) => reasoningCase.id === resolved.id ? resolved : reasoningCase),
+        }
+      }
+      const others = state.reasoningCases.filter((reasoningCase) => reasoningCase.id !== action.reasoningCase.id)
+      return { ...state, reasoningCases: [...others, action.reasoningCase].sort((a, b) => a.createdAt - b.createdAt).slice(-100) }
+    }
     case 'add-plan':
       // Capped like reports: a runaway list is a storage problem, not a feature.
       return { ...state, plans: [...state.plans, action.plan].slice(-100) }

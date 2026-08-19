@@ -18,6 +18,7 @@ import { MATH_TRACKS, TRACK_BY_ID } from '../../content/tracks'
 import { getReadyReport } from '../../engine/getReady'
 import { effectiveAllocation } from '../../engine/allocationPlus'
 import { ChallengeCreator } from './ChallengeCreator'
+import { ReasoningWorkbench } from './ReasoningWorkbench'
 
 const LAB_ORDER: BucketId[] = ['observer', 'investigator', 'strategist', 'puzzle', 'insight', 'meta']
 const ACADEMIC_ORDER: BucketId[] = ['math', 'physics', 'coding', 'science']
@@ -41,6 +42,7 @@ export function Practice() {
   const [homework, setHomework] = useState(false)
   // Opened directly when the end-of-session invitation was accepted.
   const [creator, setCreator] = useState(() => view.name === 'practice' && view.openCreator === true)
+  const [workbench, setWorkbench] = useState(() => view.name === 'practice' && view.openWorkbench === true)
   const [workOpen, setWorkOpen] = useState(false)
   const [query, setQuery] = useState('')
   const searchResults = useMemo(() => {
@@ -87,6 +89,7 @@ export function Practice() {
     )
   }, [index, state.events])
   const confidentRepairs = repairs.filter((r) => r.blockedByMisconception).length
+  const draftCaseCount = state.reasoningCases.filter((reasoningCase) => reasoningCase.status === 'draft').length
   const authenticWork = useMemo(
     () => [...index.templates.values()].filter((t) => t.authentic).sort((a, b) => b.minutes - a.minutes || a.name.localeCompare(b.name)),
     [index],
@@ -130,6 +133,14 @@ export function Practice() {
       <SectionTitle>Modes</SectionTitle>
       <div className="grid grid-cols-2 gap-3 auto-rows-fr">
         <ModeCard title="Coach chooses" sub="The full adaptive session" onClick={() => go({ name: 'session', launch: { kind: 'daily' } })} accent />
+        <ModeCard
+          title="Reasoning Workbench"
+          sub={draftCaseCount
+            ? `${draftCaseCount} case${draftCaseCount === 1 ? '' : 's'} waiting — facts, rivals, assumptions, test`
+            : 'Stress-test a real claim or decision before you commit'}
+          onClick={() => setWorkbench(true)}
+          accent
+        />
         <ModeCard title="Mixed review" sub={due.length ? `${due.length} due now` : 'Interleaved retrieval'} onClick={() => go({ name: 'session', launch: { kind: 'mixed' } })} />
         <ModeCard title="Challenge" sub="Non-routine, near your ceiling" onClick={() => go({ name: 'session', launch: { kind: 'challenge' } })} />
         <ModeCard title="Exam simulator" sub="Blind, timed, cumulative — like the real thing" onClick={() => go({ name: 'exam' })} accent />
@@ -194,6 +205,7 @@ export function Practice() {
       <BrowseSheet bucket={browse} onClose={() => setBrowse(null)} />
       <HomeworkSheet open={homework} onClose={() => setHomework(false)} />
       <ChallengeCreator open={creator} onClose={() => setCreator(false)} />
+      <ReasoningWorkbench open={workbench} onClose={() => setWorkbench(false)} />
       {workOpen ? (
         <WorkChooser
           work={authenticWork}

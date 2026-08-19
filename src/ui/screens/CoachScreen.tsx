@@ -32,6 +32,7 @@ export function CoachScreen() {
   const [logOpen, setLogOpen] = useState(false)
 
   const openForecasts = state.forecasts.filter((f) => !f.resolved)
+  const casesAwaitingResolution = state.reasoningCases.filter((reasoningCase) => reasoningCase.status === 'committed')
   const brier = brierScore(state.forecasts)
 
   return (
@@ -57,6 +58,21 @@ export function CoachScreen() {
           </>
         ) : null}
       </Card>
+
+      {casesAwaitingResolution.length ? (
+        <Card className="mt-3 p-4 border-good/30" onClick={() => go({ name: 'practice', openWorkbench: true })}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[12px] font-semibold text-good uppercase tracking-wide">Close the loop</p>
+              <p className="text-[14px] font-medium mt-1">
+                {casesAwaitingResolution.length} reasoning case{casesAwaitingResolution.length === 1 ? '' : 's'} waiting for reality
+              </p>
+              <p className="text-[12px] text-muted mt-0.5">Compare the commitment with what happened before memory edits the prediction.</p>
+            </div>
+            <span className="text-accent text-lg" aria-hidden>→</span>
+          </div>
+        </Card>
+      ) : null}
 
       <SectionTitle>What the coach is counting</SectionTitle>
       <Card className="p-4">
