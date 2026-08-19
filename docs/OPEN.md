@@ -7,7 +7,7 @@ Ordered by the project's own tie-breakers: fixing a way the app is wrong about
 the learner beats adding anything; honest evidence beats more content;
 measurement beats features; depth in maths beats breadth elsewhere.
 
-Last reviewed: 2026-08-18 (fifth pass — the upgrade section at the bottom).
+Last reviewed: 2026-08-19 (sixth pass — the two upgrade sections at the bottom).
 
 **Numbers measured before 2026-08-11 are STALE.** Removing the burned-item
 flag changed the baseline for anything involving owned skills or pool depth —
@@ -42,10 +42,17 @@ The diagram-at-11-servings note that used to sit here is RESOLVED, and was a
 real bug in the shipped planner rather than an artefact of the variant. See the
 smaller-items list below.
 
-WORTH REDOING. The trade existed because there was not enough content at the
-right difficulty, and the pool is now much deeper than when this was measured:
-every template can carry evidence again and nothing sits below the independence
-bar. A repeat of this experiment might find the cost has gone.
+~~WORTH REDOING.~~ REDONE 2026-08-19, and SETTLED — see RESEARCH.md §46e for
+the full table. The finding that matters most is about the MEASUREMENT: the
+struggling learner's owned count swings ±7-8 skills on seed alone in a
+single-year run, larger than any config effect, so this table's single-seed
+cells (and the first two re-runs, which contradicted each other at +8 and −7)
+were noise. On five-seed means: cap 1 hard costs the struggling learner
+−1.8 ± ~2 (inside noise), gains the climbing learner +5.0, and collapses
+same-session repetition from ~130 to ~7 min/year. SHIPPED as cap 1 hard under
+a pre-declared decision rule; the `SESSION_REPEAT_POLICY` hook in planner.ts
+makes the next re-measurement a one-line change. Watch-item: the struggling
+learner's −1.8 residual.
 
 ### 5b. Original cooldown spec, for reference
 Suppress recently-seen problems without ever blocking a due skill review.
@@ -617,3 +624,53 @@ preview-environment race, not a live defect. Two things worth a look someday:
 whether `onRegisterError` should at least log in dev builds, and whether the
 registration should retry once — a PWA whose offline layer fails SILENTLY on
 one bad response is fragile in exactly the way this app dislikes.
+
+---
+
+## The 2026-08-19 second pass — measurement grew teeth
+
+Closed this pass (details in RESEARCH.md §46): comeback difficulty now eases
+with idleness (rust easing, §46a); the reviews-due count includes lapsed
+question families (§46b); the Paths surface the 37 advanced skills their
+rank arcs deliberately exclude (§46c); the dispute quarantine reached the
+last two readers (intake panel, error-pattern profile — §46d); the cooldown
+experiment was settled properly and shipped as cap-1-hard (§46e, and §5
+above); the difficulty dial's hollow 1★/5★ rungs outside maths were filled
+(26 templates) and the Puzzle Lab's method skills gained six ordinary-format
+families, cutting the chess share to 41.7%.
+
+The verification system itself grew the most:
+
+- The simulated learner can now REPAIR mistakes, rate confidence, and tag
+  errors (all opt-in per spec; byte-identical streams for every existing
+  shape, proven by masked hashes). Four subsystems that previously had zero
+  aggregate delivery measurement — the corrective loop, the misconception
+  block, calibration readouts, mal-rule profiles — now have end-to-end gates
+  in `src/sim/realism.sim.ts`, each pinned only after measuring.
+- A backup export → import → replay round-trip is verified exactly: zero
+  field mismatches across a simulated year including repaired, rated and
+  tagged events (`src/sim/roundtrip.sim.ts`).
+- The five-year stranded-skills gate stopped counting horizon luck as
+  neglect: a skill counts only when its prerequisite chain was first served
+  at least a year before the end. Three planner changes in two days had each
+  reshuffled which razor-edge shape needed a new pin while ownership stayed
+  at 157-164 of 165 — a gate that needs a new pin per unrelated change was
+  measuring noise. The pinned list is expected to SHRINK under the guard;
+  whatever remains is real volume shortfall, which is the documented trade.
+
+Still open, new this pass:
+
+- **The struggling learner's −1.8 owned-skill residual** under cap-1-hard
+  (inside seed noise at n=5; a 10-seed run would settle it).
+- **`interleaveOrder` neighbour choice** still ranks by frontier score, not
+  confusability (shared answer format / co-occurring error tags would be the
+  honest signal). The play-order fix landed; the selection question remains.
+
+**Outcome of the horizon guard, measured 2026-08-19:** the stranded list
+reads 60 on the 1,112-template bank — the guard removed the luck entries,
+and the depth added this round (a fourth family on all twelve game-theory
+tail skills, new rungs in five buckets) legitimately grew the real tail for
+the eight lightest/tilted shapes ('10m daily' joined the pinned list, same
+volume class). Every entry is now a year-plus-ready non-arrival; the ceiling
+is re-baselined at 60 with the reasoning written beside it, and any UNPINNED
+shape stranding still fails regardless of the ceiling.

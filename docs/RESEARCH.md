@@ -3836,3 +3836,92 @@ the horizon the last arrival lands on. '30m sporadic' and 'plateaus early'
 join the pinned list with that reasoning written beside them; the hard total
 ceiling moves 53 → 57 (the measured worst), and any NEW shape stranding still
 fails.
+
+## 46. Rust, under-counting, and the depth the Paths were hiding (2026-08-19)
+
+Second pass of the upgrade. Same law as §45: measured claims, labeled tiers.
+
+### 46a. Rust easing — the aim stops trusting stale evidence
+
+Every input to `targetDifficulty` was a snapshot that did not know its own
+age: a skill last practised months ago still reported its old fitted ability
+and was served a near-4★ item on the comeback session, exactly when the
+memory is weakest. The review ladder already decides WHEN a skill returns;
+nothing decided how hard it lands.
+
+Now: no change for three weeks idle (ordinary spacing is not rust), then a
+linear ease to at most one star lower by ~nine weeks (`RUST_GRACE_DAYS 21`,
+`RUST_FULL_DAYS 63`, `RUST_MAX_EASE 1`). Fresh evidence resets it instantly;
+`recentMisses` still stacks on top. Direction: forgetting curves (§2,
+EVIDENCE). The three constants: HEURISTIC, pinned by unit tests (ramp, bound,
+no-clock fallback, NaN defence for fixture shapes) and checked by the
+seasonal/cooling five-year shapes.
+
+### 46b. The reviews-due count told a half-truth
+
+Today's count came from `dueReviews` alone — skill-level schedules — while
+the warm-up also serves lapsed question FAMILIES from `dueForms`. A learner
+could read "0 due" while the next session already planned two family
+reviews. `dueSkillCount` now counts any skill with anything waiting, the way
+the planner actually serves, with a caption for the family-only case. The
+planner itself is unchanged; this was a display lying by omission.
+
+### 46c. The Paths stop hiding two thirds of their own depth
+
+The four rank arcs cover 18 named skills; the Path buckets hold 55. Every
+depth pass since the arcs were named (game theory, uncertainty, reading
+situations, other minds) was invisible anywhere the Paths present
+themselves. Path cards and the detail sheet now show "beyond the arc:
+X/Y advanced skills" (`pathBeyondArc`).
+
+The rank itself deliberately STAYS on the named arc. Recomputing it over a
+growing roster would move a real learner's rank every time content ships —
+demotion by update — and the learner this app belongs to has live ranks.
+
+### 46d. Quarantine completeness, part two
+
+`activityIntake` (the Coach screen's "what the coach is counting" panel) and
+the Progress error-pattern profile now read through `evidenceEvents` like
+every other belief-grade number. Progress also finally shows the REPAIR the
+mal-rule profile has always computed next to each recurring cause — the cure
+belongs beside the diagnosis, and it had never been rendered.
+
+### 46e. The cooldown experiment, re-run properly — and the real finding
+
+OPEN.md §5 marked the session-repeat experiment WORTH REDOING on the deeper
+pool (the 2026-08 measurement: every repetition-reducing variant cost a
+struggling learner owned skills). Re-run 2026-08-19 with hooks against the
+real planner (`SESSION_REPEAT_POLICY`), three configs, one simulated year at
+25m/day.
+
+The first single-seed run showed the hard cap WINNING for the struggling
+learner (+8 owned). The second, with different seeds, showed it LOSING (−7).
+The honest finding is therefore about the measurement, not the policy:
+**single-seed year-runs swing the struggling learner's owned count by ±7-8
+skills — larger than any config effect measured — so the original table's
+single-seed cells were themselves noise-dominated.** Five-seed means per cell
+(below) are the first defensible numbers this question has had.
+
+RESULT (5 seeds × 3 learners × 3 configs, means):
+| config | strong 85% | struggling 55% | climbing | repeat min/yr (s/st/c) |
+| --- | --- | --- | --- | --- |
+| baseline (cap 2) | 122.0 | 66.2 | 127.4 | 102 / 33 / 132 |
+| cap 1 + well-fitted | 119.4 | 68.0 | 133.4 | 84 / 13 / 92 |
+| cap 1 hard | 122.8 | 64.4 | 132.4 | 19 / 0 / 7 |
+
+Per-seed spreads: struggling55 swings +-3-4 owned within one config (e.g.
+baseline [61,68,65,70,67]), so the -1.8 mean cost of the hard cap sits inside
+its own noise; the climbing gain (+5.0, distributions barely overlapping) and
+the collapse of same-session repetition (132 -> 7 min/yr for the climbing
+learner) are the two effects that look real.
+
+VERDICT: cap1+wellfit REJECTED by the rule (strong -2.6). cap1hard PASSES the
+rule and ships as the new default - the same-session degrade stage closes and
+one family may fill a block once, not twice - PROVIDED the full five-year
+matrix stays inside its pinned gates on the settled tree; the struggling
+learner's -1.8 +- ~2 residual is recorded as the watch-item, and the
+SESSION_REPEAT_POLICY hook stays so the next re-measurement is one edit.
+
+Decision rule declared before the numbers: ship a tighter cap only if no
+learner shape loses ≥2 owned skills on the five-seed mean; otherwise keep
+the shipped default and record the spread.

@@ -21,7 +21,9 @@ import { buildSessionPlan } from '../engine/planner'
 import { DEFAULT_INDEX } from '../content/registry'
 import { deriveEvidence } from '../engine/mastery'
 import { northStar } from '../engine/northStar'
-import { initialState, type AppState, type AttemptEvent, type BucketId, type SessionRecord, type SkillEvidence } from '../domain/types'
+import { isPflTemplate } from '../engine/pflId'
+import { isSpontaneousTemplate } from '../engine/probeId'
+import { initialState, type AppState, type AttemptEvent, type BucketId, type ErrorTag, type SessionRecord, type SkillEvidence } from '../domain/types'
 
 const DAY = 86_400_000
 
@@ -61,7 +63,15 @@ export interface LearnerSpec {
   name: string
   /** Probability of a first-submission, zero-hint success. */
   p: (ctx: AttemptContext) => number
-  /** Probability the hint ladder is opened at all (blocks unaided credit). */
+  /**
+   * Probability the hint ladder is opened at all (blocks unaided credit).
+   *
+   * Receives the full AttemptContext, so a spec CAN condition hint use on
+   * `ctx.difficulty`, area, or day. Every spec written before 2026-08-19
+   * ignores the argument, which models hint use as independent of difficulty
+   * — that independence is a property of THOSE SPECS, not of the harness,
+   * and real learners presumably reach for hints more on harder items.
+   */
   hintRate: (ctx: AttemptContext) => number
   /** Session lengths in minutes for a given day; [] means the day is skipped. */
   daySessions: (day: number, rand: () => number) => number[]
@@ -69,6 +79,37 @@ export interface LearnerSpec {
   mathTrack: string | null
   grade: number
   seed: number
+  /**
+   * OPTIONAL — probability that a first-try miss is corrected on the app's
+   * corrective retry. A repaired attempt is written exactly the way the
+   * player writes one: `firstCorrect: false, correct: true`, which earns
+   * guided credit in `deriveEvidence` and can never count as independence.
+   *
+   * Absent = no miss is ever repaired, which is precisely the pre-2026-08-19
+   * behaviour: the extra PRNG draw happens only when this field exists (and
+   * only on misses), so every spec without it replays a byte-identical
+   * event stream — verified by hashing streams before and after the field
+   * was added. The same holds for `confidence` and `errorTag` below.
+   */
+  repair?: (ctx: AttemptContext) => number
+  /**
+   * OPTIONAL — stated confidence for this attempt, 0-100, or null to leave
+   * the item unrated. The app records confidence in five steps —
+   * 20/40/60/80/95 (CONFIDENCE_STEPS in ItemPlayer.tsx / PlacementScreen.tsx)
+   * — so realistic specs should return one of those. `willBeCorrect` is the
+   * already-drawn first-try outcome, letting a spec model any correlation
+   * between confidence and accuracy, including none. Draws nothing from the
+   * shared PRNG (a spec wanting noise closes over its own `rng`). Absent =
+   * every event carries `confidence: null`, as before.
+   */
+  confidence?: (ctx: AttemptContext, willBeCorrect: boolean) => number | null
+  /**
+   * OPTIONAL — the cause tag the learner attaches to a MISS (first try
+   * wrong); null = left untagged, exactly like a learner skipping the
+   * why-did-this-go-wrong picker. Called only on misses. Draws nothing from
+   * the shared PRNG. Absent = every event carries `errorTags: []`, as before.
+   */
+  errorTag?: (ctx: AttemptContext) => ErrorTag | null
 }
 
 export interface SimResult {
@@ -133,6 +174,28 @@ export interface SimResult {
   skillMinutes: Record<string, number>
   /** Day index on which each skill was first served. */
   firstReachedDay: Record<string, number>
+  /**
+   * Ordered primary-skill ids (`skillIds[0]`, the key `interleaveOrder`
+   * sorts by) of every core block's activities, in PLAYED order. Captured so
+   * an aggregate gate can measure whether blocks that claim to interleave are
+   * genuinely mixed — max same-skill run length — rather than blocked
+   * practice wearing the label. Core blocks only: warm-up and lab blocks mix
+   * across areas by construction and would only dilute the signal.
+   */
+  coreBlockSkillSequences: string[][]
+  /** Graded events that earned guided credit: eventually correct, but not a first-try unaided success. */
+  guidedCreditEvents: number
+  /** The corrective-fork subset of guided credit: wrong first try, corrected on retry (firstCorrect false, correct true). */
+  repairedEvents: number
+  /** Events carrying a confidence rating — the calibration machinery's raw material. */
+  confidenceRatedEvents: number
+  /**
+   * Misconception blocks armed: a confident miss (confidence ≥ 80, mirroring
+   * HIGH_CONF in mastery.ts) on a skill that was not already blocked…
+   */
+  misconceptionArmed: number
+  /** …and later cleared by an unaided first-attempt success on that skill. */
+  misconceptionCleared: number
   /** The raw event log, for building import/export fixtures. */
   eventsForExport: AttemptEvent[]
   /** Per-year snapshots of owned / durable / skillsTouched. */
@@ -214,6 +277,7 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
   const freshTemplatesByYear = [0, 0, 0, 0, 0]
   const skillMinutes: Record<string, number> = {}
   const firstReachedDay: Record<string, number> = {}
+  const coreBlockSkillSequences: string[][] = []
 
   for (let day = 0; day < days; day++) {
     const t0 = startAt + day * DAY
@@ -243,9 +307,14 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
       let minutesHere = 0
 
       for (const b of plan.blocks) {
+        // Play order per core block (primary skill per item), for the
+        // interleaving gate. Recorded as served, before any outcome is drawn,
+        // so it is a fact about the plan rather than about this learner.
+        const coreSeq: string[] | null = b.kind === 'core' ? [] : null
         for (const a of b.activities) {
           const tpl = DEFAULT_INDEX.templates.get(a.templateId)
           if (!tpl) continue
+          if (coreSeq) coreSeq.push(tpl.skillIds[0] ?? '')
           const already = seenThisSession.get(tpl.id) ?? 0
           if (already > 0) repeatMinutes += tpl.minutes
           seenThisSession.set(tpl.id, already + 1)
@@ -286,6 +355,19 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
           }
           const hinted = rand() < spec.hintRate(ctx)
           const ok = rand() < spec.p(ctx)
+          /*
+           * The optional realism fields draw from the shared PRNG only when
+           * their spec function exists, and strictly after the two draws
+           * above. A spec without them therefore replays a byte-identical
+           * event stream to the one it produced before these fields existed
+           * — which is what keeps every gate pinned on those streams honest.
+           * (`confidence` and `errorTag` are pure functions of the context
+           * by contract and draw nothing here.)
+           */
+          const repaired = !ok && spec.repair !== undefined && rand() < spec.repair(ctx)
+          const stated = spec.confidence !== undefined ? spec.confidence(ctx, ok) : null
+          const confidence = stated === null ? null : Math.min(100, Math.max(0, stated))
+          const missTag = !ok && spec.errorTag !== undefined ? spec.errorTag(ctx) : null
           // The explain-back exit records WHICH skill it asked about, and its
           // own rotation reads that back. A harness that omits the field pins
           // the rotation to one target forever and then reports the app
@@ -309,18 +391,19 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
             mode: a.mode,
             firstResponse: 'x',
             finalResponse: 'x',
-            correct: ok,
+            correct: ok || repaired,
             firstCorrect: ok,
             score: null,
             validator: 'numeric',
             hintLevel: hinted ? 1 : 0,
-            confidence: null,
+            confidence,
             elapsedSec: tpl.minutes * 60,
-            errorTags: [],
+            errorTags: missTag !== null ? [missTag] : [],
             difficulty: tpl.difficulty,
             ...(about.length ? { aboutSkillIds: about } : {}),
           })
         }
+        if (coreSeq && coreSeq.length) coreBlockSkillSequences.push(coreSeq)
       }
 
       // The planner reads `state.sessions` — the every-third-session retention
@@ -376,6 +459,41 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
     if (tpl && seeds.size >= Math.max(1, tpl.variants)) exhausted += 1
   }
 
+  /*
+   * Delivery counts for the corrective / calibration / error-tag machinery
+   * (2026-08-19). Counted from the FINISHED event log — read-only, after the
+   * run, so the measurement cannot perturb the thing it measures. The
+   * misconception counts mirror mastery.ts: arming is a graded confident
+   * miss (confidence ≥ 80 — HIGH_CONF there) on a skill not already blocked;
+   * clearing is a later unaided first-attempt success on that skill. Probe
+   * templates are skipped because deriveEvidence strips their verdicts
+   * before they reach the ladder (asExposureIfProbe), and a mirror that
+   * counted them would report blocks the engine never saw.
+   */
+  let guidedCreditEvents = 0
+  let repairedEvents = 0
+  let confidenceRatedEvents = 0
+  let misconceptionArmed = 0
+  let misconceptionCleared = 0
+  const misconceptionLive = new Set<string>()
+  for (const e of state.events) {
+    if (e.confidence !== null) confidenceRatedEvents += 1
+    if (e.correct === true && !(e.firstCorrect === true && e.hintLevel === 0)) guidedCreditEvents += 1
+    if (e.correct === true && e.firstCorrect === false) repairedEvents += 1
+    if (isPflTemplate(e.templateId) || isSpontaneousTemplate(e.templateId)) continue
+    const confidentMiss = e.firstCorrect === false && e.confidence !== null && e.confidence >= 80
+    const firstSuccess = e.firstCorrect === true && e.hintLevel === 0
+    for (const id of e.skillIds) {
+      if (confidentMiss && !misconceptionLive.has(id)) {
+        misconceptionLive.add(id)
+        misconceptionArmed += 1
+      } else if (firstSuccess && misconceptionLive.has(id)) {
+        misconceptionLive.delete(id)
+        misconceptionCleared += 1
+      }
+    }
+  }
+
   return {
     name: spec.name,
     days,
@@ -414,6 +532,12 @@ export function simulate(spec: LearnerSpec, days: number, startAt = Date.UTC(202
     eventsForExport: state.events,
     skillMinutes,
     firstReachedDay,
+    coreBlockSkillSequences,
+    guidedCreditEvents,
+    repairedEvents,
+    confidenceRatedEvents,
+    misconceptionArmed,
+    misconceptionCleared,
     byYear,
   }
 }

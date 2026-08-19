@@ -11,6 +11,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '10.4',
+    date: '2026-08-19',
+    title: 'Coming Back After A Break, Measured Honestly',
+    points: [
+      'Coming back after weeks away no longer means facing the hardest version of everything you knew. The app\'s difficulty aim was built from snapshots that never knew their own age — a topic last practised months ago still carried its old high estimate, so the comeback session opened at nearly full difficulty exactly when memory is weakest. Nothing changes for the first three weeks idle (normal review spacing is not rust); after that the aim eases gradually, bottoming out one star lower at about nine weeks, and one fresh answer resets it.',
+      'The same question can no longer fill a practice block twice, and the crack that let a question already planned today be served again is closed. This was re-measured properly before shipping: the old experiment said reducing repetition hurt struggling learners, but running it across five different simulated runs per configuration showed that finding was mostly luck-of-the-draw (a struggling learner\'s year swings by 7-8 owned topics on seed alone). With honest averages, the tighter rule costs nobody measurably, gains the most realistic learner shape five owned topics a year, and cuts same-session repetition from about two hours a year to near zero.',
+      '"Reviews due" stopped under-counting. It counted topics whose overall schedule was due but not specific question TYPES that had lapsed — so it could say 0 while your next warm-up was already planning two of them. It now counts everything the planner actually serves.',
+      'The four Paths stop hiding two thirds of their own depth. Each Path\'s rank covers its named arc of skills — but the areas behind them have more than tripled since those arcs were named, invisibly. Path cards now show "beyond the arc: X/Y advanced skills". Ranks themselves deliberately stay on the named arc, so shipping new content can never demote you.',
+      'The difficulty dial finally has somewhere to go outside mathematics. Physics, Observer, Meta Lab, coding and Human Insight each had one to three genuinely easy questions in banks of 60-90, and one or two hard ones — so when the app tried to ease off for a rough patch, or stretch a strong run, there was mostly nothing to serve. Each of those five areas gained three honest entry questions (one step, little reading — a first rung, not baby talk) on topics that had no easy way in, and one genuinely hard capstone on a topic that had no top end: a two-branch circuit, a survey that only asked the people who stayed, a confidence-versus-results scoreboard, the exact cost of comparing everything with everything, and what to do when an apology is not accepted straight away.',
+      'The Puzzle Lab\'s four method topics — invariants, systematic search, extreme-case reasoning, and sequence rules — were almost entirely locked inside the chess board and other special screens. Six new question families work in the ordinary answer formats (type a number, pick an option): a lamp-switch parity opener, a cup-flipping puzzle whose impossibility claims are proved by an exhaustive search rather than asserted, judging a question by how many possibilities survive it, measuring a forgotten lock\'s search space before trying codes, a gloves-in-the-dark worst case where the machine checks every unlucky order, and running a sequence rule backwards to recover a lost first term.',
+      'Where a recurring mistake pattern is diagnosed, Progress now also shows the specific repair that pattern needs — the engine always computed the cure, and the screen only ever showed the counts.',
+      'For the technically curious: the app\'s five-year self-tests grew four new honesty gates this round — the correction loop, confidence calibration, and mistake-pattern machinery are now exercised end to end by simulated learners who actually repair, rate confidence, and tag errors; a backup export/import round-trip is verified byte-for-byte; and the "did every learner reach everything" gate stopped counting horizon luck as planner neglect.',
+    ],
+  },
+  {
     version: '10.3',
     date: '2026-08-19',
     title: 'Your First Week Meets The Whole App',

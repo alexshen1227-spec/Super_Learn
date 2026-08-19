@@ -60,6 +60,7 @@ import { SPONTANEITY_TEMPLATES } from './items/spontaneityProbes'
 import { GAME_LAB_TEMPLATES } from './items/gameTheoryLab'
 import { GAME_THEORY_TAIL_TEMPLATES } from './items/gameTheoryTail'
 import { SEARCH_TEMPLATES } from './items/searchLab'
+import { RUNGS_AND_METHODS_TEMPLATES } from './items/rungsAndMethods'
 import { DATA_LITERACY_TEMPLATES } from './items/dataLiteracy'
 import { IMPORTED_TEMPLATES } from './items/imported'
 import { GRADE_CORE_TEMPLATES } from './items/gradeCore'
@@ -136,6 +137,7 @@ export const BUILTIN_TEMPLATES: ItemTemplate[] = [
   ...GAME_LAB_TEMPLATES,
   ...GAME_THEORY_TAIL_TEMPLATES,
   ...SEARCH_TEMPLATES,
+  ...RUNGS_AND_METHODS_TEMPLATES,
   ...DATA_LITERACY_TEMPLATES,
   ...IMPORTED_TEMPLATES,
   ...GRADE_CORE_TEMPLATES,

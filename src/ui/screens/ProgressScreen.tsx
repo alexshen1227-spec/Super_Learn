@@ -21,6 +21,8 @@ import { useState } from 'react'
 import { learningQualityReport, outcomeReport } from '../../engine/outcomes'
 import { pflProbes, pflReport } from '../../engine/pfl'
 import { useMinuteClock } from '../useMinuteClock'
+import { malRuleProfile } from '../../engine/malRules'
+import { evidenceEvents } from '../../engine/dispute'
 
 const DAY = 86_400_000
 
@@ -83,6 +85,14 @@ export function ProgressScreen() {
     () => pflReport(pflProbes(state.events, SKILL_BY_ID, (upTo) => deriveEvidence(state.events.filter((e) => e.t <= upTo), upTo))),
     [state.events],
   )
+
+  // Judged through the dispute filter like every other belief-grade number.
+  const malProfile = useMemo(
+    () => malRuleProfile(evidenceEvents(state.events, state.disputes), now),
+    [state.events, state.disputes, now],
+  )
+  const malRules = malProfile.rules.slice(0, 2)
+  const malTagged = malProfile.tagged
 
   const errorPattern = useMemo(() => {
     const cutoff = now - 28 * DAY
@@ -304,6 +314,18 @@ export function ProgressScreen() {
               })}
             </div>
             <p className="text-[12px] text-faint mt-2.5">Filed by cause, not topic — because the cause picks the cure (Error Clinic works from this).</p>
+            {/* The engine has always computed WHAT TO DO about a recurring
+                cause (malRules carries a specific repair per rule, with its
+                own refuse-below-8-tags floor); this screen showed only the
+                counts. The cure belongs next to the diagnosis. */}
+            {malRules.map((rule) => (
+              <div key={rule.tag} className="mt-2.5 pt-2.5 border-t border-line">
+                <p className="text-[12px] font-medium">
+                  {rule.name} <span className="text-faint font-normal">— {rule.count} of {malTagged} tagged</span>
+                </p>
+                <p className="text-[12px] text-muted mt-0.5 leading-relaxed">{rule.repair}</p>
+              </div>
+            ))}
           </Card>
         </>
       ) : null}
